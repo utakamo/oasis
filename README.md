@@ -29,7 +29,9 @@ Commands:
 Docs
         https://utakamo.com
 ```
-Example of setting up an AI server (Ollama)
+Example of setting up an AI server (Ollama) 
+> [!NOTE]
+> Due to ongoing development, cloud-based AI services such as ChatGPT are not available.
 ```
 root@OpenWrt:~# aihelper add
 Please enter any service name  :ollama
