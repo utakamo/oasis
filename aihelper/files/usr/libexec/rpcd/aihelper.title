@@ -1,0 +1,200 @@
+#!/usr/bin/env lua
+
+local jsonc = require("luci.jsonc")
+local transfer = require("ai_chat_transfer")
+local common = require("aihelper_common")
+
+--[[
+local sys = require("luci.sys")
+local debug_log = function(log)
+    sys.exec("echo " .. log .. " >> /tmp/aihelper.log")
+end
+]]
+
+local read_chat_data = function(file_path)
+
+    -- debug_log(file_path)
+
+    local file = io.open(file_path, "r")
+
+    if not file then
+        return ""
+    end
+
+    local chat_data = file:read("*a")
+    file:close()
+
+    -- debug_log(chat_data)
+
+    return chat_data
+end
+
+local set_chat_title = function(id, title)
+
+    local unnamed_section = common.get_target_id_section(id)
+
+    if #unnamed_section == 0 then
+        return false
+    end
+
+    uci:set("aihelper", unnamed_section, "title", title)
+    uci:commit("aihelper")
+
+    return true
+end
+
+local methods = {
+
+    auto_set = {
+        args = { id = "a_string" },
+
+        call = function(args)
+            local r = {}
+            local conf = common.get_aihelper_conf()
+            local file_name = conf.prefix .. args.id
+            local file_path = common.normalize_path(conf.path) .. file_name
+
+            -- debug_log(file_name)
+            local is_search = common.search_chat_id(args.id)
+
+            if not is_search then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
+
+            local title = ""
+            local chat_data = read_chat_data(file_path)
+            local chat_json_tbl = jsonc.parse(chat_data)
+
+            chat_json_tbl.model = conf.model or "unknown"
+            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {
+                role = "user",
+                content = "Please title the conversation so far."
+                        .. " Please use only the title name in your response."
+                        .. " Do not include any text not related to the title."
+            }
+
+            local chat_json_str = jsonc.stringify(chat_json_tbl, false)
+
+            -- debug_log(chat_json_str)
+
+            -- Post
+            transfer.post_to_server(conf.url, chat_json_str, function(chunk)
+                local chunk_json = jsonc.parse(chunk)
+                title = title .. chunk_json.message.content
+            end)
+
+            title = title:gsub("%s+", "")
+
+            local is_set = false
+
+            -- debug_log(title)
+
+            if #title ~= 0 then
+                is_set = set_chat_title(args.id, title)
+            end
+
+            if not is_set then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
+
+            r.result = jsonc.stringify({ status = common.status.ok, title = title })
+            return r
+        end
+    },
+
+    manual_set = {
+        args = { id = "a_string", title = "a_string" },
+
+        call = function(args)
+            local r = {}
+            local is_set = false
+
+            if #args.title ~= 0 then
+                is_set = set_chat_title(args.id, args.title)
+            end
+
+            if not is_set then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
+
+            r.result = jsonc.stringify({ status = common.status.ok, title = args.title })
+            return r
+        end
+    },
+}
+
+local function parseInput()
+
+    local parse = jsonc.new()
+    local done, err
+
+    while true do
+        local chunk = io.read(4096)
+        if not chunk then
+            break
+        elseif not done and not err then
+            done, err = parse:parse(chunk)
+        end
+    end
+
+    if not done then
+        print(jsonc.stringify({
+            error = err or "Incomplete input for argument parsing"
+        }))
+        os.exit(1)
+    end
+
+    return parse:get()
+end
+
+-- validation
+local function validateArgs(func, uargs)
+
+    local method = methods[func]
+    if not method then
+        print(jsonc.stringify({error = "Method not found in methods table"}))
+        os.exit(1)
+    end
+
+    local n = 0
+    for _, _ in pairs(uargs) do n = n + 1 end
+
+    if method.args and n == 0 then
+        print(jsonc.stringify({
+            error = "Received empty arguments for " .. func ..
+                " but it requires " .. jsonc.stringify(method.args)
+        }))
+        os.exit(1)
+    end
+
+    uargs.ubus_rpc_session = nil
+
+    local margs = method.args or {}
+    for k, v in pairs(uargs) do
+        if margs[k] == nil or (v ~= nil and type(v) ~= type(margs[k])) then
+            print(jsonc.stringify({
+                error = "Invalid argument '" .. k .. "' for " .. func ..
+                    " it requires " .. jsonc.stringify(method.args)
+            }))
+            os.exit(1)
+        end
+    end
+
+    return method
+end
+
+-- ubus list & call
+if arg[1] == "list" then
+    local _, rv = nil, {}
+    for _, method in pairs(methods) do rv[_] = method.args or {} end
+    print((jsonc.stringify(rv):gsub(":%[%]", ":{}")))
+elseif arg[1] == "call" then
+    local args = parseInput()
+    local method = validateArgs(arg[2], args)
+    local run = method.call(args)
+    print(run.result)
+    os.exit(run.code or 0)
+end

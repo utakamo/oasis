@@ -1,0 +1,387 @@
+#!/usr/bin/env lua
+local ubus = require("ubus")
+local uci = require("luci.model.uci").cursor()
+local jsonc = require("luci.jsonc")
+local transfer = require("ai_chat_transfer")
+
+local role = {
+    user = "user",
+    assistant = "assistant"
+}
+
+local id
+
+local call = function(object, method, json_param)
+
+    local conn = ubus.connect()
+
+    if not conn then
+        return
+    end
+
+    local result = conn:call(object, method, json_param)
+
+    return result
+end
+
+local init = function(opt, arg)
+
+    local basic = {}
+    basic.url = uci:get_first("aihelper", "service", "url", "")
+    basic.api_key = nil
+
+    local chat = {}
+
+    if arg.id then
+        basic.id = arg.id
+        chat = call("aihelper.chat", "load", {id = basic.id})
+    end
+
+    chat.model = uci:get_first("aihelper", "service", "model", "")
+
+    if not chat.messages then
+        chat.messages = {}
+    end
+
+    for _, tbl in ipairs(chat.messages) do
+        if tbl.role == role.user then
+            print("You :" .. tbl.content)
+        elseif tbl.role == role.assistant then
+            print()
+            print(chat.model)
+            print(tbl.content)
+        end
+    end
+
+    return basic, chat
+end
+
+local update_chat = function(basic, chat, speaker)
+
+    if (not speaker.role) or (not speaker.message) or (#speaker.message == 0) then
+        return
+    end
+
+    chat.messages[#chat.messages + 1] = {}
+    chat.messages[#chat.messages].role = speaker.role
+    chat.messages[#chat.messages].content = speaker.message
+
+    -- First Conversation!!
+    if #chat.messages == 2 then
+        local message = {}
+        message.role1 = chat.messages[#chat.messages - 1].role
+        message.content1 = chat.messages[#chat.messages - 1].content
+        message.role2 = chat.messages[#chat.messages].role
+        message.content2 = chat.messages[#chat.messages].content
+        local result = call("aihelper.chat", "create", message)
+        id = result.id
+        call("aihelper.title", "auto_set", {id = id})
+    -- Conversation after the second
+    elseif (#chat.messages % 2) == 0 then
+        local message = {}
+        message.id = id or basic.id
+        message.role1 = chat.messages[#chat.messages - 1].role
+        message.content1 = chat.messages[#chat.messages - 1].content
+        message.role2 = chat.messages[#chat.messages].role
+        message.content2 = chat.messages[#chat.messages].content
+        call("aihelper.chat", "append", message)
+    end
+end
+
+local show_chat_history = function(chat)
+    local chat_json = jsonc.stringify(chat, false)
+    print(chat_json)
+end
+
+local communicate = function(basic, chat)
+
+    local chat_json = jsonc.stringify(chat, false)
+    local ai = {}
+    ai.role = "unknown"
+    ai.message = ""
+
+    print("\n" .. chat.model)
+
+    -- Post
+    transfer.post_to_server(basic.url, chat_json, function(chunk)
+        local chunk_json = jsonc.parse(chunk)
+        ai.role = chunk_json.message.role
+        ai.message = ai.message .. chunk_json.message.content
+        io.write(chunk_json.message.content)
+    end)
+
+    if (ai.role ~= "unknown") and (#ai.message > 0) then
+        update_chat(basic, chat, ai)
+    end
+end
+
+local storage = function(args)
+
+    local storage = {}
+
+    local storage_path = uci:get("aihelper", "storage", "path")
+    local chat_max = uci:get("aihelper", "storage", "chat_max")
+
+    print("[Current Storage Config]")
+    print(string.format("%-10s :%s", "path", storage_path))
+    print(string.format("%-10s :%s\n", "chat-max", chat_max))
+
+    print("[Setup New Storage Config]")
+    print("please input new config!")
+
+    if (not args.path) then
+        io.write(string.format("%-10s :", "path"))
+        io.flush()
+        storage.path = io.read()
+    else
+        print(string.format("%-10s :%s", "path", args.path))
+        storage.path = args.path
+    end
+
+    if (not args.chat_max) then
+        io.write(string.format("%-10s :", "chat-max"))
+        io.flush()
+        storage.chat_max = io.read()
+    else
+        print(string.format("%-10s :%s", "chat-max", args.chat_max))
+        storage.chat_max = args.chat_max
+    end
+
+    uci:set("aihelper", "storage", "path", storage.path)
+    uci:set("aihelper", "storage", "chat_max", storage.chat_max)
+    uci:commit("aihelper")
+end
+
+local add = function(args)
+
+    local setup = {}
+
+    if (not args.service) then
+        io.write(string.format("%-30s :", "Please enter any service name"))
+        io.flush()
+        setup.service = io.read()
+    else
+        print(string.format("%-30s :%s", "Please enter any service name", args.service))
+        setup.service = args.service
+    end
+
+    if (not args.url) then
+        io.write(string.format("%-30s :", "URL"))
+        io.flush()
+        setup.url = io.read()
+    else
+        print(string.format("%-30s :%s", "URL", args.url))
+        setup.url = args.url
+    end
+
+    if (not args.api_key) then
+        io.write(string.format("%-30s :", "API KEY (leave blank if none)"))
+        io.flush()
+        setup.api_key = io.read()
+    else
+        print(string.format("%-30s :%s", "API KEY (leave blank if none)", args.api_key))
+        setup.api_key = args.api_key
+    end
+
+    if (not args.model) then
+        io.write(string.format("%-30s :", "LLM MODEL"))
+        io.flush()
+        setup.model = io.read()
+    else
+        print(string.format("%-30s :%s", "LLM MODEL", args.model))
+        setup.model = args.model
+    end
+
+    if (not args.storage) or ((args.storage ~= "ON") and (args.storage ~= "OFF")) then
+        io.write(string.format("%-30s :", "USE INTERNAL STORAGE? (ON/OFF)"))
+        io.flush()
+        setup.storage = io.read()
+    else
+        print(string.format("%-30s :%s", "USE INTERNAL STORAGE? (ON/OFF)", args.storage))
+        setup.storage = args.storage
+    end
+
+    local unnamed_section = uci:add("aihelper", "service")
+    uci:set("aihelper", unnamed_section, "name", setup.service)
+    uci:set("aihelper", unnamed_section, "url", setup.url)
+    uci:set("aihelper", unnamed_section, "api_key", setup.api_key)
+    uci:set("aihelper", unnamed_section, "model", setup.model)
+    uci:set("aihelper", unnamed_section, "storage", setup.storage)
+    uci:commit("aihelper")
+end
+
+local change = function(opt, arg)
+
+    local is_update = false
+
+    uci:foreach("aihelper", "service", function(service)
+        if service.name == arg.service then
+            is_update = true
+            if opt.n then
+                uci:set("aihelper", service[".name"], "name", opt.n)
+            end
+            if opt.u then
+                uci:set("aihelper", service[".name"], "url", opt.u)
+            end
+            if opt.k then
+                uci:set("aihelper", service[".name"], "api_key", opt.k)
+            end
+            if opt.m then
+                uci:set("aihelper", service[".name"], "model", opt.m)
+            end
+            if opt.s then
+                uci:set("aihelper", service[".name"], "storage", opt.s)
+            end
+            uci:commit("aihelper")
+        end
+    end)
+
+    if is_update then
+        print("Service Update!")
+    else
+        print("Service Not Found...")
+    end
+end
+
+local select = function(arg)
+
+    if not arg.service then
+        return
+    end
+
+    local unnamed_section_idx = 0
+
+    local top_unnamed_section
+    local top_service = {}
+
+    local swap_target_section
+    local swap_target_service = {}
+
+    uci:foreach("aihelper", "service", function(service)
+
+        if unnamed_section_idx == 0 then
+            top_unnamed_section = service[".name"]
+            top_service.name = service.name
+            top_service.url = service.url
+            top_service.api_key = service.api_key
+            top_service.model = service.model
+            top_service.storage = service.storage
+        end
+
+        if (service.name == arg.service) then
+            swap_target_section = service[".name"]
+            swap_target_service.name = service.name
+            swap_target_service.url = service.url
+            swap_target_service.api_key = service.api_key
+            swap_target_service.model = service.model
+            swap_target_service.storage = service.storage
+        end
+
+        unnamed_section_idx = unnamed_section_idx + 1
+    end)
+
+    -- swap section data
+    uci:tset("aihelper", top_unnamed_section, {
+        name = swap_target_service.name,
+        url = swap_target_service.url,
+        api_key = swap_target_service.api_key,
+        model = swap_target_service.model,
+        storage = swap_target_service.storage,
+    })
+
+    uci:tset("aihelper", swap_target_section, {
+        name = top_service.name,
+        url = top_service.url,
+        api_key = top_service.api_key,
+        model = top_service.model,
+        storage = top_service.storage,
+    })
+
+    uci:commit("aihelper")
+end
+
+local chat = function(opt, arg)
+
+    local is_exist = false
+
+    uci:foreach("aihelper", "service", function()
+        is_exist = true
+    end)
+
+    if not is_exist then
+        print("Error!\n\tOne of the service settings exist!")
+        print("\tPlease add the service configuration with the add command.")
+        return
+    end
+
+    local basic, chat = init(opt, arg)
+    local your_message
+
+    while true do
+        repeat
+            io.write("You :")
+            io.flush()
+            your_message = io.read()
+
+            if your_message == "show" then
+                show_chat_history(chat)
+            end
+
+        until (#your_message > 0) and (your_message ~= "show")
+
+        if your_message == "exit" then
+            print("The chat is over.")
+            break;
+        end
+
+        local user = {}
+        user.role = role.user
+        user.message = your_message
+
+        update_chat(basic, chat, user)
+        communicate(basic, chat)
+
+        print()
+    end
+end
+
+local prompt = function()
+
+    local your_message
+
+    io.write("You :")
+    io.flush()
+    your_message = io.read()
+
+    local prompt = {}
+    prompt.role = role.user
+    prompt.message = your_message
+end
+
+local list = function()
+
+    local list = call("aihelper.chat", "list", {})
+
+    if #list.item == 0 then
+        print("No chat file ...")
+        return
+    end
+
+    print("-----------------------------------------------------")
+    print(string.format(" %3s | %-30s | %s", "No.", "title", "id" ))
+    print("-----------------------------------------------------")
+
+    for i, chat_info in ipairs(list.item) do
+        print(string.format("[%2d]: %-30s   %s", i, chat_info.title, chat_info.id))
+    end
+end
+
+return {
+    storage = storage,
+    add = add,
+    change = change,
+    select = select,
+    chat = chat,
+    prompt = prompt,
+    list = list,
+}
