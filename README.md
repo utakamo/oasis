@@ -1,5 +1,6 @@
-This application is currently under development.
-Therefore, some commands may not be available.
+> [!IMPORTANT]
+> This application is currently under development.
+> Therefore, some commands may not be available.
 
 ```
 root@OpenWrt:~# aihelper
