@@ -5,6 +5,7 @@ local jsonc = require("luci.jsonc")
 local transfer = require("ai_chat_transfer")
 
 local role = {
+    system = "system",
     user = "user",
     assistant = "assistant"
 }
