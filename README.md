@@ -41,7 +41,7 @@ USE INTERNAL STORAGE? (ON/OFF) :ON
 Example of chat with ai
 ```
 root@OpenWrt:~# aihelper chat
-You :Hello!  あなた：こんにちは！
+You :Hello!
 gemma2:2b
 Hello! 👋  
 
