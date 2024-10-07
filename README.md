@@ -34,7 +34,7 @@ Docs
         https://utakamo.com
 ```
 ## Usage
-Step1: Example of setting up an AI server (Ollama) 
+Step1: Example of setting up an local ai server (Ollama) 
 ```
 root@OpenWrt:~# aihelper add
 Please enter any service name  :ollama
