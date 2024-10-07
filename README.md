@@ -31,8 +31,6 @@ Docs
         https://utakamo.com
 ```
 Example of setting up an AI server (Ollama) 
-> [!NOTE]
-> Due to ongoing development, cloud-based AI services such as ChatGPT are not available.
 ```
 root@OpenWrt:~# aihelper add
 Please enter any service name  :ollama
@@ -41,6 +39,8 @@ API KEY (leave blank if none)  :
 LLM MODEL                      :gemma2:2b
 USE INTERNAL STORAGE? (ON/OFF) :ON
 ```
+> [!NOTE]
+> Due to ongoing development, cloud-based AI services such as ChatGPT are not available.
 Example of chat with ai
 ```
 root@OpenWrt:~# aihelper chat
