@@ -40,7 +40,8 @@ LLM MODEL                      :gemma2:2b
 USE INTERNAL STORAGE? (ON/OFF) :ON
 ```
 > [!NOTE]
-> Due to ongoing development, cloud-based AI services such as ChatGPT are not available.  
+> Due to ongoing development, cloud-based AI services such as ChatGPT are not available.
+
 Example of chat with ai
 ```
 root@OpenWrt:~# aihelper chat
