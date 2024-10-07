@@ -1,3 +1,4 @@
+# Commands
 > [!IMPORTANT]
 > This application is currently under development.
 > Therefore, some commands may not be available.
@@ -30,7 +31,8 @@ Commands:
 Docs
         https://utakamo.com
 ```
-Example of setting up an AI server (Ollama) 
+# Usage
+Step1: Example of setting up an AI server (Ollama) 
 ```
 root@OpenWrt:~# aihelper add
 Please enter any service name  :ollama
@@ -42,7 +44,7 @@ USE INTERNAL STORAGE? (ON/OFF) :ON
 > [!NOTE]
 > Due to ongoing development, cloud-based AI services such as ChatGPT are not available.
 
-Example of chat with ai
+Step2: Example of chat with ai
 ```
 root@OpenWrt:~# aihelper chat
 You :Hello!
@@ -51,3 +53,5 @@ Hello! 👋
 
 How can I help you today? 😄
 ```
+# Dependent Package
+- lua-curl-v3
