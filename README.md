@@ -1,7 +1,9 @@
-# Commands
+# OpenWrt AI Support Application - aihelper
+This application is currently under development...
+
+## Commands
 > [!IMPORTANT]
-> This application is currently under development.
-> Therefore, some commands may not be available.
+> Some commands may not be available.
 
 ```
 root@OpenWrt:~# aihelper
@@ -31,7 +33,7 @@ Commands:
 Docs
         https://utakamo.com
 ```
-# Usage
+## Usage
 Step1: Example of setting up an AI server (Ollama) 
 ```
 root@OpenWrt:~# aihelper add
