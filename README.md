@@ -56,5 +56,7 @@ Hello! 👋
 
 How can I help you today? 😄
 ```
+End the chat --> type 'exit'  
+Display the chat history --> type 'show'
 # Dependent Package
 - lua-curl-v3
