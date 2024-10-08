@@ -38,10 +38,10 @@ Step1: Example of setting up an local ai server (Ollama)
 ```
 root@OpenWrt:~# aihelper add
 Please enter any service name  :ollama
-URL                            :http://192.168.3.12:11434/api/chat 
+URL                            :http://192.168.3.12:11434/api/chat
 API KEY (leave blank if none)  :
 LLM MODEL                      :gemma2:2b
-USE INTERNAL STORAGE? (ON/OFF) :ON
+Use internal storage? (on/off) :on
 ```
 > [!NOTE]
 > Due to ongoing development, cloud-based AI services such as ChatGPT are not available.
@@ -50,6 +50,7 @@ Step2: Example of chat with ai
 ```
 root@OpenWrt:~# aihelper chat
 You :Hello!
+
 gemma2:2b
 Hello! 👋  
 
