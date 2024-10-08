@@ -193,14 +193,20 @@ local add = function(args)
         setup.model = args.model
     end
 
-    if (not args.storage) or ((args.storage ~= "ON") and (args.storage ~= "OFF")) then
-        io.write(string.format("%-30s :", "USE INTERNAL STORAGE? (ON/OFF)"))
-        io.flush()
-        setup.storage = io.read()
-    else
-        print(string.format("%-30s :%s", "USE INTERNAL STORAGE? (ON/OFF)", args.storage))
-        setup.storage = args.storage
+    local function is_valid_storage_option(option)
+        return option == "on" or option == "off"
     end
+
+    if not is_valid_storage_option(args.storage) then
+        repeat
+            io.write(string.format("%-30s :", "Use internal storage? (on/off)"))
+            io.flush()
+            args.storage = io.read()
+        until is_valid_storage_option(args.storage)
+    end
+
+    print(string.format("%-30s :%s", "Use internal storage? (on/off)", args.storage))
+    setup.storage = args.storage
 
     local unnamed_section = uci:add("aihelper", "service")
     uci:set("aihelper", unnamed_section, "name", setup.service)
