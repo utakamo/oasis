@@ -17,6 +17,19 @@ local get_aihelper_conf = function()
     return conf
 end
 
+local get_target_id_section = function(id)
+
+    local unnamed_section = ""
+
+    uci:foreach("aihelper", "chat", function(info)
+        if id == info.id then
+            unnamed_section = info[".name"]
+        end
+    end)
+
+    return unnamed_section
+end
+
 local normalize_path = function(path)
     if string.sub(path, -1) ~= "/" then
         path = path .. "/"
@@ -41,6 +54,7 @@ end
 return {
     status = status,
     get_aihelper_conf = get_aihelper_conf,
+    get_target_id_section = get_target_id_section,
     normalize_path = normalize_path,
     search_chat_id = search_chat_id,
 }

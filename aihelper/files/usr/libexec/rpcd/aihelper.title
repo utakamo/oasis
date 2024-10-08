@@ -1,15 +1,15 @@
 #!/usr/bin/env lua
 
+local uci = require("luci.model.uci").cursor()
 local jsonc = require("luci.jsonc")
 local transfer = require("ai_chat_transfer")
 local common = require("aihelper_common")
 
---[[
+
 local sys = require("luci.sys")
 local debug_log = function(log)
     sys.exec("echo " .. log .. " >> /tmp/aihelper.log")
 end
-]]
 
 local read_chat_data = function(file_path)
 
@@ -54,7 +54,7 @@ local methods = {
             local file_name = conf.prefix .. args.id
             local file_path = common.normalize_path(conf.path) .. file_name
 
-            -- debug_log(file_name)
+            debug_log(file_name)
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
@@ -76,7 +76,7 @@ local methods = {
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
-            -- debug_log(chat_json_str)
+            debug_log(chat_json_str)
 
             -- Post
             transfer.post_to_server(conf.url, chat_json_str, function(chunk)
@@ -88,7 +88,7 @@ local methods = {
 
             local is_set = false
 
-            -- debug_log(title)
+            debug_log(title)
 
             if #title ~= 0 then
                 is_set = set_chat_title(args.id, title)
