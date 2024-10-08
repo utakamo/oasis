@@ -203,9 +203,10 @@ local add = function(args)
             io.flush()
             args.storage = io.read()
         until is_valid_storage_option(args.storage)
+    else
+        print(string.format("%-30s :%s", "Use internal storage? (on/off)", args.storage))
     end
 
-    print(string.format("%-30s :%s", "Use internal storage? (on/off)", args.storage))
     setup.storage = args.storage
 
     local unnamed_section = uci:add("aihelper", "service")
