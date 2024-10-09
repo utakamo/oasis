@@ -11,7 +11,6 @@ local post_to_server = function(url, json, callback)
 
     if not success then
         print("Error")
-        return
     end
 
     easy:close()
