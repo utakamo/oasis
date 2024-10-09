@@ -1,14 +1,20 @@
 #!/usr/bin/env lua
-local curl = require("cURL")
+local curl = require("cURL.safe")
 
 local post_to_server = function(url, json, callback)
-    curl.easy()
-    :setopt_url(url)
-    :setopt_writefunction(callback)
-    :setopt_httppost(curl.form())
-    :setopt_postfields(json)
-    :perform()
-    :close()
+    local easy = curl.easy()
+    easy:setopt_url(url)
+    easy:setopt_writefunction(callback)
+    easy:setopt_httppost(curl.form())
+    easy:setopt_postfields(json)
+    local response = easy:perform()
+
+    if not response then
+        print("Error")
+        return
+    end
+
+    easy:close()
 end
 
 return {
