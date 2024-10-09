@@ -106,9 +106,11 @@ local communicate = function(basic, chat)
     -- Post
     transfer.post_to_server(basic.url, chat_json, function(chunk)
         local chunk_json = jsonc.parse(chunk)
-        ai.role = chunk_json.message.role
-        ai.message = ai.message .. chunk_json.message.content
-        io.write(chunk_json.message.content)
+        if type(chunk_json) == "table" then
+            ai.role = chunk_json.message.role
+            ai.message = ai.message .. chunk_json.message.content
+            io.write(chunk_json.message.content)
+        end
     end)
 
     if (ai.role ~= "unknown") and (#ai.message > 0) then
