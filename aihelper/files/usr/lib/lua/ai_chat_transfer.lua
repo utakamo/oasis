@@ -10,7 +10,7 @@ local post_to_server = function(url, json, callback)
     local success = easy:perform()
 
     if not success then
-        print("Error")
+        print("\27[31m" .. "Error" .. "\27[0m")
     end
 
     easy:close()
