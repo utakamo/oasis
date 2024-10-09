@@ -7,9 +7,9 @@ local post_to_server = function(url, json, callback)
     easy:setopt_writefunction(callback)
     easy:setopt_httppost(curl.form())
     easy:setopt_postfields(json)
-    local response = easy:perform()
+    local success = easy:perform()
 
-    if not response then
+    if not success then
         print("Error")
         return
     end
