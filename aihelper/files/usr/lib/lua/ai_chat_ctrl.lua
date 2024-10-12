@@ -95,6 +95,39 @@ local show_chat_history = function(chat)
     print(chat_json)
 end
 
+local function markdown(mark, message)
+
+    local is_code_block = (message:match("```") ~= nil)
+    local is_bold_text = (message:match("**") ~= nil)
+
+    if not mark.cnt then
+        mark.cnt = {}
+        mark.cnt.code_block = 0
+        mark.cnt.bold_text = 0
+    end
+
+    if is_code_block then
+        mark.cnt.code_block = mark.cnt.code_block + 1
+    end
+
+    if is_bold_text then
+        mark.cnt.cod = mark.cnt.bold_text + 1
+    end
+
+    -- replace code blocks
+    if (mark.cnt.code_block % 2) == 1 then
+        message = message:gsub("```", "\27[1;30;47m")
+    else
+        message = message:gsub("```", "\27[0m")
+    end
+
+    -- replace bold text
+
+
+
+    return message
+end
+
 local communicate = function(basic, chat)
 
     local chat_json = jsonc.stringify(chat, false)
@@ -104,13 +137,17 @@ local communicate = function(basic, chat)
 
     print("\n" .. chat.model)
 
+    -- markdown ctrl table
+    local mark = {}
+
     -- Post
     transfer.post_to_server(basic.url, chat_json, function(chunk)
         local chunk_json = jsonc.parse(chunk)
         if type(chunk_json) == "table" then
             ai.role = chunk_json.message.role
             ai.message = ai.message .. chunk_json.message.content
-            io.write(chunk_json.message.content)
+            local content = markdown(mark, chunk_json.message.content)
+            io.write(content)
         end
     end)
 
