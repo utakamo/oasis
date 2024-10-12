@@ -77,7 +77,12 @@ local update_chat = function(basic, chat, speaker)
         local result = call("aihelper.chat", "create", message)
         id = result.id
         local request =call("aihelper.title", "auto_set", {id = id})
-        print("\27[1;35;47m" .. "Chat Title: " .. request.title .. "  Chat ID: " .. id  .. "\27[0m")
+        local announce = "\27[1;37;44m" .. "Title:"
+        announce = announce  .. "\27[1;33;44m" .. request.title
+        announce = announce .. "  \27[1;37;44m" .. "ID:"
+        announce = announce .. "\27[1;33;44m" .. id
+        announce = announce .. "\27[0m"
+        print(announce)
     -- Conversation after the second
     elseif (#chat.messages % 2) == 0 then
         local message = {}
