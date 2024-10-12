@@ -25,6 +25,48 @@ local call = function(object, method, json_param)
     return result
 end
 
+local function markdown(mark, message)
+
+    if not mark then
+        message = message:gsub("```", "\27[1;32;47m")
+        message = message:gsub("\27%[1;32;47m(.-)\27%[1;32;47m", "\27[1;32;47m%1\27[0m")
+        message = message:gsub("%*%*", "\27[1;33m")
+        message = message:gsub("\27%[1;33m(.-)\27%[1;33m", "\27[1;33m%1\27[0m")
+    else
+        local is_code_block = (message:match("```") ~= nil)
+        local is_bold_text = (message:match("%*%*") ~= nil)
+
+        if not mark.cnt then
+            mark.cnt = {}
+            mark.cnt.code_block = 0
+            mark.cnt.bold_text = 0
+        end
+
+        if is_code_block then
+            mark.cnt.code_block = mark.cnt.code_block + 1
+        end
+
+        if is_bold_text then
+            mark.cnt.bold_text = mark.cnt.bold_text + 1
+        end
+
+        -- replace code blocks
+        if (mark.cnt.code_block % 2) == 1 then
+            message = message:gsub("```", "\27[1;32;47m")
+        else
+            message = message:gsub("```", "\27[0m")
+        end
+
+        if (mark.cnt.bold_text % 2) == 1 then
+            message = message:gsub("%*%*", "\27[1;33m")
+        else
+            message = message:gsub("%*%*", "\27[0m")
+        end
+    end
+
+    return message
+end
+
 local init = function(opt, arg)
 
     local basic = {}
@@ -48,9 +90,12 @@ local init = function(opt, arg)
         if tbl.role == role.user then
             print("You :" .. tbl.content)
         elseif tbl.role == role.assistant then
+
+            local content = markdown(nil, tbl.content)
+
             print()
             print(chat.model)
-            print(tbl.content)
+            print(content)
         end
     end
 
@@ -98,41 +143,6 @@ end
 local show_chat_history = function(chat)
     local chat_json = jsonc.stringify(chat, false)
     print(chat_json)
-end
-
-local function markdown(mark, message)
-
-    local is_code_block = (message:match("```") ~= nil)
-    local is_bold_text = (message:match("%*%*") ~= nil)
-
-    if not mark.cnt then
-        mark.cnt = {}
-        mark.cnt.code_block = 0
-        mark.cnt.bold_text = 0
-    end
-
-    if is_code_block then
-        mark.cnt.code_block = mark.cnt.code_block + 1
-    end
-
-    if is_bold_text then
-        mark.cnt.bold_text = mark.cnt.bold_text + 1
-    end
-
-    -- replace code blocks
-    if (mark.cnt.code_block % 2) == 1 then
-        message = message:gsub("```", "\27[1;32;47m")
-    else
-        message = message:gsub("```", "\27[0m")
-    end
-
-    if (mark.cnt.bold_text % 2) == 1 then
-        message = message:gsub("%*%*", "\27[1;33m")
-    else
-        message = message:gsub("%*%*", "\27[0m")
-    end
-
-    return message
 end
 
 local communicate = function(basic, chat)
