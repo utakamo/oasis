@@ -39,8 +39,4 @@ define Package/aihelper/install
 	$(INSTALL_DATA) ./files/etc/config/aihelper.config $(1)$(UCI_CONFIG_DIR)/aihelper
 endef
 
-define Package/aihelper/postinst
-	service rpcd restart
-endef
-
 $(eval $(call BuildPackage,aihelper))
