@@ -388,6 +388,10 @@ local chat = function(opt, arg)
             io.flush()
             your_message = io.read()
 
+            if not your_message then
+                return
+            end
+
             if your_message == "show" then
                 show_chat_history(chat)
             end
