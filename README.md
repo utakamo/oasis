@@ -34,19 +34,27 @@ Docs
         https://utakamo.com
 ```
 ## Usage
-Step1: Example of setting up an local ai server (Ollama) 
+### Step1: Setting up ai service  
+- Example of local ai service (Ollama) 
 ```
 root@OpenWrt:~# aihelper add
-Please enter any service name  :ollama
-URL                            :http://192.168.3.12:11434/api/chat
-API KEY (leave blank if none)  :
-LLM MODEL                      :gemma2:2b
-Use internal storage? (on/off) :on
+Service Name                   >> my-ollama
+Endpoint(url)                  >> http://192.168.3.12:11434/api/chat       
+API KEY (leave blank if none)  >>
+LLM MODEL                      >> gemma2:2b
+``````
+- Example of chatgpt
+```
+Service Name                   >> my-chatgpt
+Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
+API KEY (leave blank if none)  >> <your_api-key>
+LLM MODEL                      >> gpt-3.5-turbo
 ```
 > [!NOTE]
-> Due to ongoing development, cloud-based AI services such as ChatGPT are not available.
+> If you want to use chatgpt, you need to set the Endpoint to the following URL.
+> https://api.openai.com/v1/chat/completions  
 
-Step2: Example of chat with ai
+### Step2: Example of chat with ai
 ```
 root@OpenWrt:~# aihelper chat
 You :Hello!
@@ -58,5 +66,5 @@ How can I help you today? 😄
 ```
 End the chat --> type 'exit'  
 Display the chat history --> type 'show'
-# Dependent Package
+# Dependency Package
 - lua-curl-v3
