@@ -77,11 +77,21 @@ local methods = {
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
             debug_log(chat_json_str)
+            debug_log(conf.url)
+            debug_log(conf.api_key)
 
             -- Post
-            transfer.post_to_server(conf.url, chat_json_str, function(chunk)
+            transfer.post_to_server(conf.url, conf.api_key, chat_json_str, function(chunk)
+
                 local chunk_json = jsonc.parse(chunk)
-                title = title .. chunk_json.message.content
+
+                -- chatgpt
+                if conf.url == "https://api.openai.com/v1/chat/completions" then
+                    title = title .. chunk_json.choices[1].message.content
+                -- other ai service (ollama etc ...)
+                else
+                    title = title .. chunk_json.message.content
+                end
             end)
 
             title = title:gsub("%s+", "")

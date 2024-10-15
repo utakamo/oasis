@@ -13,7 +13,8 @@ local get_aihelper_conf = function()
     conf.path = uci:get("aihelper", "storage", "path")
     conf.prefix = uci:get("aihelper", "storage", "prefix")
     conf.model = uci:get_first("aihelper", "service", "model")
-    conf.url = uci:get_first("aihelper", "service", "url")
+    conf.url = uci:get_first("aihelper", "service", "url", "")
+    conf.api_key = uci:get_first("aihelper", "service", "api_key", "")
     return conf
 end
 

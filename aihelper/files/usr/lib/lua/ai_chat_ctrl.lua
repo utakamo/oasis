@@ -71,7 +71,7 @@ local init = function(opt, arg)
 
     local basic = {}
     basic.url = uci:get_first("aihelper", "service", "url", "")
-    basic.api_key = nil
+    basic.api_key = uci:get_first("aihelper", "service", "api_key", "")
 
     local chat = {}
 
@@ -121,13 +121,14 @@ local update_chat = function(basic, chat, speaker)
         message.content2 = chat.messages[#chat.messages].content
         local result = call("aihelper.chat", "create", message)
         id = result.id
-        local request =call("aihelper.title", "auto_set", {id = id})
-        local announce = "\27[1;37;44m" .. "Title:"
+        local request = call("aihelper.title", "auto_set", {id = id})
+        local announce =  "\n" .. "\27[1;37;44m" .. "Title:"
         announce = announce  .. "\27[1;33;44m" .. request.title
         announce = announce .. "  \27[1;37;44m" .. "ID:"
         announce = announce .. "\27[1;33;44m" .. id
         announce = announce .. "\27[0m"
-        print(announce)
+        io.write(announce .. "\n")
+        io.flush()
     -- Conversation after the second
     elseif (#chat.messages % 2) == 0 then
         local message = {}
@@ -157,14 +158,62 @@ local communicate = function(basic, chat)
     -- markdown ctrl table
     local mark = {}
 
+    local chunk_all = ""
+
     -- Post
-    transfer.post_to_server(basic.url, chat_json, function(chunk)
-        local chunk_json = jsonc.parse(chunk)
-        if type(chunk_json) == "table" then
+    transfer.post_to_server(basic.url, basic.api_key, chat_json, function(chunk)
+
+        local chunk_json
+
+        chunk_all = chunk_all .. chunk
+        chunk_json = jsonc.parse(chunk_all)
+        local content = ""
+
+        if not chunk_json then
+            return
+        end
+
+        chunk_all = ""
+
+        if (chunk_json) and (type(chunk_json) == "table") then
+
+            -- for ChatGPT
+            -- A choices array exists in the response data of chatgpt.
+            if chunk_json.choices then
+                chunk_json.message = {}
+                chunk_json.message.role =  chunk_json.choices[1].message.role
+                chunk_json.message.content = chunk_json.choices[1].message.content
+            end
+
             ai.role = chunk_json.message.role
             ai.message = ai.message .. chunk_json.message.content
-            local content = markdown(mark, chunk_json.message.content)
+            content = markdown(mark, chunk_json.message.content)
+        end
+
+        --[[
+        -- chatgpt
+        if (basic.url == "https://api.openai.com/v1/chat/completions") and (type(chunk_json) == "table") then
+            if chunk_json.choices[1].message then
+                ai.role = chunk_json.choices[1].message.role
+                ai.message = ai.message .. chunk_json.choices[1].message.content
+                content = markdown(mark, chunk_json.choices[1].message.content)
+            elseif chunk_json.error then
+                content = "\27[31m" .. chunk_json.error.message .. "\27[0m" .. "\n"
+            end
+
+        -- other ai service (ollama etc ...)
+        elseif type(chunk_json) == "table" then
+            if chunk_json.message then
+                ai.role = chunk_json.message.role
+                ai.message = ai.message .. chunk_json.message.content
+                content = markdown(mark, chunk_json.message.content)
+            end
+        end
+        ]]
+
+        if #content > 0 then
             io.write(content)
+            io.flush()
         end
     end)
 
