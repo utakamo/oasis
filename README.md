@@ -63,8 +63,37 @@ gemma2:2b
 Hello! 👋  
 
 How can I help you today? 😄
+Title:ConversationStart  ID:7772532380
+
+You :show
+{"messages":[{"content":"Hello!","role":"user"},{"content":"Hello! 👋 How can I help you today? 😊 \n","role":"assistant"}],"model":"gemma2:2b"}
+
+You :exit
+The chat is over.
 ```
-End the chat --> type 'exit'  
-Display the chat history --> type 'show'
+'exit' ... End chat  
+'show' ... Display the chat history(JSON)
+
+## Load past chats and resume conversation.
+Confirm Chat ID
+```
+root@OpenWrt:~# aihelper list
+-----------------------------------------------------
+ No. | title                          | id
+-----------------------------------------------------
+[ 1]: Hello                            5727149461
+[ 2]: ConversationStart                7772532380
+```
+Resume conversation with the AI by specifying the chat ID.
+```
+root@OpenWrt:~# aihelper id=7772532380
+You :Hello!
+
+gemma2:2b
+Hello! 👋 How can I help you today? 😊
+
+You :
+```
+
 # Dependency Package
 - lua-curl-v3
