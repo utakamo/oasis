@@ -264,38 +264,38 @@ local add = function(args)
     local setup = {}
 
     if (not args.service) then
-        io.write(string.format("%-30s :", "Please enter any service name"))
+        io.write(string.format("%-30s >> ", "Service Name"))
         io.flush()
         setup.service = io.read()
     else
-        print(string.format("%-30s :%s", "Please enter any service name", args.service))
+        print(string.format("%-30s >> %s", "Service Name", args.service))
         setup.service = args.service
     end
 
     if (not args.url) then
-        io.write(string.format("%-30s :", "URL"))
+        io.write(string.format("%-30s >> ", "Endpoint(url)"))
         io.flush()
         setup.url = io.read()
     else
-        print(string.format("%-30s :%s", "URL", args.url))
+        print(string.format("%-30s >> %s", "Endpoint(url)", args.url))
         setup.url = args.url
     end
 
     if (not args.api_key) then
-        io.write(string.format("%-30s :", "API KEY (leave blank if none)"))
+        io.write(string.format("%-30s >> ", "API KEY (leave blank if none)"))
         io.flush()
         setup.api_key = io.read()
     else
-        print(string.format("%-30s :%s", "API KEY (leave blank if none)", args.api_key))
+        print(string.format("%-30s >> %s", "API KEY (leave blank if none)", args.api_key))
         setup.api_key = args.api_key
     end
 
     if (not args.model) then
-        io.write(string.format("%-30s :", "LLM MODEL"))
+        io.write(string.format("%-30s >> ", "LLM MODEL"))
         io.flush()
         setup.model = io.read()
     else
-        print(string.format("%-30s :%s", "LLM MODEL", args.model))
+        print(string.format("%-30s >> %s", "LLM MODEL", args.model))
         setup.model = args.model
     end
 
