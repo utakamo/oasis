@@ -86,7 +86,7 @@ root@OpenWrt:~# aihelper list
 ```
 Resume conversation with the AI by specifying the chat ID.
 ```
-root@OpenWrt:~# aihelper id=7772532380
+root@OpenWrt:~# aihelper chat id=7772532380
 You :Hello!
 
 gemma2:2b
