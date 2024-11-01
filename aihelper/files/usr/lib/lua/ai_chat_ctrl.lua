@@ -33,34 +33,44 @@ local function markdown(mark, message)
         message = message:gsub("%*%*", "\27[1;33m")
         message = message:gsub("\27%[1;33m(.-)\27%[1;33m", "\27[1;33m%1\27[0m")
     else
-        local is_code_block = (message:match("```") ~= nil)
-        local is_bold_text = (message:match("%*%*") ~= nil)
-
         if not mark.cnt then
             mark.cnt = {}
             mark.cnt.code_block = 0
             mark.cnt.bold_text = 0
         end
 
-        if is_code_block then
+        while true do
+            local is_code_block = (message:match("```") ~= nil)
+
+            if not is_code_block then
+                break
+            end
+
             mark.cnt.code_block = mark.cnt.code_block + 1
+
+            -- replace code blocks
+            if (mark.cnt.code_block % 2) == 1 then
+                message = message:gsub("```", "\27[1;32;47m", 1)
+            else
+                message = message:gsub("```", "\27[0m", 1)
+            end
         end
 
-        if is_bold_text then
+        while true do
+            local is_bold_text = (message:match("%*%*") ~= nil)
+
+            if not is_bold_text then
+                break
+            end
+
             mark.cnt.bold_text = mark.cnt.bold_text + 1
-        end
 
-        -- replace code blocks
-        if (mark.cnt.code_block % 2) == 1 then
-            message = message:gsub("```", "\27[1;32;47m")
-        else
-            message = message:gsub("```", "\27[0m")
-        end
-
-        if (mark.cnt.bold_text % 2) == 1 then
-            message = message:gsub("%*%*", "\27[1;33m")
-        else
-            message = message:gsub("%*%*", "\27[0m")
+            -- replace bold blocks
+            if (mark.cnt.bold_text % 2) == 1 then
+                message = message:gsub("%*%*", "\27[1;33m")
+            else
+                message = message:gsub("%*%*", "\27[0m")
+            end
         end
     end
 
