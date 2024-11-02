@@ -112,7 +112,7 @@ for i, command in ipairs(arg) do
             arguments.service = arg[i + 1]
             ai.select(arguments)
         else
-            print("No argument ...")
+            ai.show_service_list()
         end
 
         return

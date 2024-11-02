@@ -350,61 +350,64 @@ local change = function(opt, arg)
     end
 end
 
+local show_service_list = function()
+
+    local index = 0
+
+    uci:foreach("aihelper", "service", function(tbl)
+        index = index + 1
+        if tbl.name then
+            if index == 1 then
+                print("\n\27[1;34m[" .. index .. "] : " .. tbl.name .. " \27[1;32m(in use)\27[0m")
+            else
+                print("\n\27[1;34m[" .. index .. "] : " .. tbl.name .. "\27[0m")
+            end
+            print("-----------------------------------------------")
+            if tbl.url then
+                io.write(string.format("%-8s >> \27[33m%s\27[0m\n", "URL", tbl.url))
+                io.flush()
+            end
+
+            if tbl.api_key then
+                io.write(string.format("%-8s >> \27[33m%s\27[0m\n", "API KEY", tbl.api_key))
+                io.flush()
+            end
+
+            if tbl.model then
+                io.write(string.format("%-8s >> \27[33m%s\27[0m\n", "MODEL", tbl.model))
+                io.flush()
+            end
+        end
+    end)
+end
+
 local select = function(arg)
 
     if not arg.service then
         return
     end
 
-    local unnamed_section_idx = 0
-
-    local top_unnamed_section
-    local top_service = {}
-
-    local swap_target_section
-    local swap_target_service = {}
+    local target_section = ""
 
     uci:foreach("aihelper", "service", function(service)
-
-        if unnamed_section_idx == 0 then
-            top_unnamed_section = service[".name"]
-            top_service.name = service.name
-            top_service.url = service.url
-            top_service.api_key = service.api_key
-            top_service.model = service.model
-            top_service.storage = service.storage
+        if service.name == arg.service then
+            target_section = service[".name"]
         end
-
-        if (service.name == arg.service) then
-            swap_target_section = service[".name"]
-            swap_target_service.name = service.name
-            swap_target_service.url = service.url
-            swap_target_service.api_key = service.api_key
-            swap_target_service.model = service.model
-            swap_target_service.storage = service.storage
-        end
-
-        unnamed_section_idx = unnamed_section_idx + 1
     end)
 
+    if #target_section == 0 then
+        print("Service Name: " .. arg.service .. " is not found.")
+        return
+    end
+
     -- swap section data
-    uci:tset("aihelper", top_unnamed_section, {
-        name = swap_target_service.name,
-        url = swap_target_service.url,
-        api_key = swap_target_service.api_key,
-        model = swap_target_service.model,
-        storage = swap_target_service.storage,
-    })
-
-    uci:tset("aihelper", swap_target_section, {
-        name = top_service.name,
-        url = top_service.url,
-        api_key = top_service.api_key,
-        model = top_service.model,
-        storage = top_service.storage,
-    })
-
+    uci:reorder("aihelper", target_section, 1)
     uci:commit("aihelper")
+
+    local model = uci:get_first("aihelper", "service", "model")
+    print(arg.service .. " is selected.")
+    print("Target model: \27[33m" .. model .. "\27[0m")
+
 end
 
 local chat = function(opt, arg)
@@ -492,6 +495,7 @@ return {
     add = add,
     change = change,
     select = select,
+    show_service_list = show_service_list,
     chat = chat,
     prompt = prompt,
     list = list,
