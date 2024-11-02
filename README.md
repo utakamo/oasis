@@ -55,7 +55,9 @@ LLM MODEL                      >> gemma2:2b
 > https://api.openai.com/v1/chat/completions
 
 ### Step2: Select AI Service
+- The first service registered with the aihelper add command is selected.　
 <img width="416" alt="aihelper_select_service01" src="https://github.com/user-attachments/assets/03eec7e6-491e-4320-b08f-b61b0d04bbaa">  
+- To switch to another AI service, run aihelper select <service-name>. The following is an example of switching the service in use to my-ollama.
 <img width="416" alt="aihelper_select_service02" src="https://github.com/user-attachments/assets/e3b4acea-f4dd-4e4f-b120-83aeb215d8d1">
 
 ### Step3: Example of chat with ai
