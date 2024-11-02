@@ -107,6 +107,14 @@ for i, command in ipairs(arg) do
 
         ai.change(options, arguments)
         return
+    elseif command == "delete" then
+        if arg[i + 1] then
+            arguments.service = arg[i + 1]
+            ai.delete(arguments)
+            return
+        else
+            ai.show_service_list()
+        end
     elseif command == "select" then
         if arg[i + 1] then
             arguments.service = arg[i + 1]

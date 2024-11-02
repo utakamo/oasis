@@ -367,6 +367,41 @@ local show_service_list = function()
     end)
 end
 
+local delete = function(arg)
+
+    if not arg.service then
+        return
+    end
+
+    local target_section = ""
+
+    uci:foreach("aihelper", "service", function(service)
+        if service.name == arg.service then
+            target_section = service[".name"]
+        end
+    end)
+
+    if #target_section == 0 then
+        print("Service Name: " .. arg.service .. " is not found.")
+        return
+    end
+
+
+    io.write("Do you delete service [" ..arg.service .. "] (Y/N):")
+    io.flush()
+
+    local reply = io.read()
+
+    if reply == 'N' then
+        print("canceled.")
+    end
+
+    uci:delete("aihelper", target_section)
+    uci:commit("aihelper")
+
+    print("Delete service [" .. arg.service .. "]")
+end
+
 local select = function(arg)
 
     if not arg.service then
@@ -509,6 +544,7 @@ return {
     storage = storage,
     add = add,
     change = change,
+    delete = delete,
     select = select,
     show_service_list = show_service_list,
     chat = chat,
