@@ -19,7 +19,7 @@ local help = function()
     print(" - select [<service>]")
     print(" - delete <service>")
     print(" - chat [id=<chat-id>]")
-    print(" - prompt")
+    print(" - prompt <message>")
     print(" - delchat id=<chat-id>")
     print(" - rename <id> <title>")
     print(" - list [[chat] [knowledge]]")
@@ -135,7 +135,10 @@ for i, command in ipairs(arg) do
             return
         end
     elseif command == "prompt" then
-        ai.prompt()
+        if arg[i + 1] then
+            local message = arg[i + 1]
+            ai.prompt(message)
+        end
         return
     elseif command == "list" then
         ai.list()

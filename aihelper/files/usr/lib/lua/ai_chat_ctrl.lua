@@ -78,7 +78,7 @@ local function markdown(mark, message)
     return message
 end
 
-local init = function(opt, arg)
+local init = function(arg)
 
     local basic = {}
     basic.url = uci:get_first("aihelper", "service", "url", "")
@@ -86,7 +86,7 @@ local init = function(opt, arg)
 
     local chat = {}
 
-    if arg.id then
+    if arg and arg.id then
         basic.id = arg.id
         chat = call("aihelper.chat", "load", {id = basic.id})
     end
@@ -157,14 +157,16 @@ local show_chat_history = function(chat)
     print(chat_json)
 end
 
-local communicate = function(basic, chat)
+local communicate = function(basic, chat, format)
 
     local chat_json = jsonc.stringify(chat, false)
     local ai = {}
     ai.role = "unknown"
     ai.message = ""
 
-    print("\n" .. chat.model)
+    if format == "chat" then
+        print("\n" .. chat.model)
+    end
 
     -- markdown ctrl table
     local mark = {}
@@ -201,35 +203,18 @@ local communicate = function(basic, chat)
             content = markdown(mark, chunk_json.message.content)
         end
 
-        --[[
-        -- chatgpt
-        if (basic.url == "https://api.openai.com/v1/chat/completions") and (type(chunk_json) == "table") then
-            if chunk_json.choices[1].message then
-                ai.role = chunk_json.choices[1].message.role
-                ai.message = ai.message .. chunk_json.choices[1].message.content
-                content = markdown(mark, chunk_json.choices[1].message.content)
-            elseif chunk_json.error then
-                content = "\27[31m" .. chunk_json.error.message .. "\27[0m" .. "\n"
-            end
-
-        -- other ai service (ollama etc ...)
-        elseif type(chunk_json) == "table" then
-            if chunk_json.message then
-                ai.role = chunk_json.message.role
-                ai.message = ai.message .. chunk_json.message.content
-                content = markdown(mark, chunk_json.message.content)
-            end
-        end
-        ]]
-
         if #content > 0 then
             io.write(content)
             io.flush()
         end
     end)
 
-    if (ai.role ~= "unknown") and (#ai.message > 0) then
-        update_chat(basic, chat, ai)
+    print()
+
+    if format == "chat" then
+        if (ai.role ~= "unknown") and (#ai.message > 0) then
+            update_chat(basic, chat, ai)
+        end
     end
 end
 
@@ -425,7 +410,7 @@ local chat = function(opt, arg)
         return
     end
 
-    local basic, chat = init(opt, arg)
+    local basic, chat = init(arg)
     local your_message
 
     while true do
@@ -454,9 +439,7 @@ local chat = function(opt, arg)
         user.message = your_message
 
         update_chat(basic, chat, user)
-        communicate(basic, chat)
-
-        print()
+        communicate(basic, chat, "chat")
     end
 end
 
@@ -491,17 +474,17 @@ local delchat = function(arg)
     print("Delete chat data id=" .. arg.id)
 end
 
-local prompt = function()
+local prompt = function(message)
 
-    local your_message
+    local basic, prompt = init(nil)
 
-    io.write("You :")
-    io.flush()
-    your_message = io.read()
+    local user = {}
+    user.role = role.user
+    user.message = message
 
-    local prompt = {}
-    prompt.role = role.user
-    prompt.message = your_message
+    update_chat(basic, prompt, user)
+    communicate(basic, prompt, "prompt")
+    print()
 end
 
 local list = function()
