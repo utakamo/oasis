@@ -82,7 +82,7 @@ The chat is over.
 'exit' ... End chat  
 'show' ... Display the chat history(JSON)
 
-## Load past chats and resume conversation.
+### Step4: Load past chats and resume conversation.
 Confirm Chat ID
 ```
 root@OpenWrt:~# aihelper list
@@ -102,6 +102,13 @@ Hello! 👋 How can I help you today? 😊
 
 You :
 ```
+### Step5: How to send prompt to AI
+```
+root@OpenWrt:~# aihelper prompt "Hello!!"
+Hello! 👋  What can I do for you today? 😊 
 
+
+root@OpenWrt:~# 
+```
 # Dependency Package
 - lua-curl-v3
