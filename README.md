@@ -37,6 +37,7 @@ Docs
 ### Step1: Setting up ai service  
 - Example of chatgpt
 ```
+root@OpenWrt:~# aihelper add
 Service Name                   >> my-chatgpt
 Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
 API KEY (leave blank if none)  >> <your_api-key>
