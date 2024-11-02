@@ -46,7 +46,7 @@ LLM MODEL                      >> gpt-3.5-turbo
 ```
 root@OpenWrt:~# aihelper add
 Service Name                   >> my-ollama
-Endpoint(url)                  >> http://192.168.3.12:11434/api/chat       
+Endpoint(url)                  >> http://192.168.3.16:11434/api/chat       
 API KEY (leave blank if none)  >>
 LLM MODEL                      >> gemma2:2b
 ``````
