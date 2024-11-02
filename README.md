@@ -52,9 +52,12 @@ LLM MODEL                      >> gpt-3.5-turbo
 ```
 > [!NOTE]
 > If you want to use chatgpt, you need to set the Endpoint to the following URL.
-> https://api.openai.com/v1/chat/completions  
+> https://api.openai.com/v1/chat/completions
 
-### Step2: Example of chat with ai
+### Step2: Select AI Service
+<img width="416" alt="aihelper_select_service01" src="https://github.com/user-attachments/assets/03eec7e6-491e-4320-b08f-b61b0d04bbaa">
+
+### Step3: Example of chat with ai
 ```
 root@OpenWrt:~# aihelper chat
 You :Hello!
