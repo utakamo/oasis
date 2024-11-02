@@ -35,6 +35,13 @@ Docs
 ```
 ## Usage
 ### Step1: Setting up ai service  
+- Example of chatgpt
+```
+Service Name                   >> my-chatgpt
+Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
+API KEY (leave blank if none)  >> <your_api-key>
+LLM MODEL                      >> gpt-3.5-turbo
+```
 - Example of local ai service (Ollama) 
 ```
 root@OpenWrt:~# aihelper add
@@ -43,13 +50,6 @@ Endpoint(url)                  >> http://192.168.3.12:11434/api/chat
 API KEY (leave blank if none)  >>
 LLM MODEL                      >> gemma2:2b
 ``````
-- Example of chatgpt
-```
-Service Name                   >> my-chatgpt
-Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
-API KEY (leave blank if none)  >> <your_api-key>
-LLM MODEL                      >> gpt-3.5-turbo
-```
 > [!NOTE]
 > If you want to use chatgpt, you need to set the Endpoint to the following URL.
 > https://api.openai.com/v1/chat/completions
