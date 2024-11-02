@@ -3,6 +3,7 @@ local ubus = require("ubus")
 local uci = require("luci.model.uci").cursor()
 local jsonc = require("luci.jsonc")
 local transfer = require("ai_chat_transfer")
+local common = require("aihelper_common")
 
 local role = {
     system = "system",
@@ -459,6 +460,37 @@ local chat = function(opt, arg)
     end
 end
 
+local delchat = function(arg)
+
+    local is_search = common.search_chat_id(arg.id)
+
+    if is_search then
+        io.write("Do you delete chat data id=" ..arg.id .. " ? (Y/N):")
+        io.flush()
+
+        local reply = io.read()
+
+        if reply == 'N' then
+            print("canceled.")
+        end
+    else
+        print("No chat data found for id=" .. arg.id)
+    end
+
+    local storage_path = uci:get("aihelper", "storage", "path")
+    local prefix = uci:get("aihelper", "storage", "prefix")
+    local file_path = storage_path .. "/" .. prefix .. arg.id
+    os.remove(file_path)
+
+    uci:foreach("aihelper", "chat", function(tbl)
+        if tbl.id == arg.id then
+            uci:delete("aihelper", tbl[".name"])
+        end
+    end)
+
+    print("Delete chat data id=" .. arg.id)
+end
+
 local prompt = function()
 
     local your_message
@@ -497,6 +529,7 @@ return {
     select = select,
     show_service_list = show_service_list,
     chat = chat,
+    delchat = delchat,
     prompt = prompt,
     list = list,
 }

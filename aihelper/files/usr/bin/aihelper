@@ -124,6 +124,16 @@ for i, command in ipairs(arg) do
 
         ai.chat(options, arguments)
         return
+    elseif command == "delchat" then
+        local prefix = "id="
+        if (arg[i + 1] and (arg[i + 1]:sub(1,#prefix) == prefix)) then
+            arguments.id = arg[i + 1]:sub(#prefix + 1)
+            ai.delchat(arguments)
+            return
+        else
+            ai.list()
+            return
+        end
     elseif command == "prompt" then
         ai.prompt()
         return
