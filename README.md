@@ -23,8 +23,8 @@ Commands:
  - delete <service>
  - chat [id=<chat-id>]
  - prompt <message>
- - delchat <id>
- - rename <id> <title>
+ - delchat [id=<chat-id>]
+ - rename [id=<chat-id>] <title>
  - list [[chat] [knowledge]]
  - call <script> <messsage>
 
