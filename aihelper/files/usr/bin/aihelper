@@ -10,7 +10,6 @@ local help = function()
     print(" -u <url>               Set the url or ipaddr for ai service")
     print(" -k <api-key>           Set the api-key for ai service")
     print(" -m <model>             Set the llm model for ai service")
-    print(" -s enable or disable   Set the storage enable/disable")
 
     print("\nCommands:")
     print(" - storage <path> [<chat-max>] (default: chat-max = 30)")
