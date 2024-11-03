@@ -166,7 +166,7 @@ local communicate = function(basic, chat, format)
     ai.message = ""
 
     if format == "chat" then
-        print("\n" .. chat.model)
+        print("\n\27[34m" .. chat.model .. "\27[0m")
     end
 
     -- markdown ctrl table
@@ -469,9 +469,14 @@ local chat = function(opt, arg)
     local basic, chat = init(arg)
     local your_message
 
+    print("-----------------------------------")
+    print(string.format("%-14s :\27[33m %s \27[0m", "Target Service", uci:get_first("aihelper", "service", "name", "Unknown")))
+    print(string.format("%-14s :\27[33m %s \27[0m", "Model", chat.model))
+    print("-----------------------------------\n")
+
     while true do
         repeat
-            io.write("You :")
+            io.write("\27[32mYou :\27[0m")
             io.flush()
             your_message = io.read()
 
