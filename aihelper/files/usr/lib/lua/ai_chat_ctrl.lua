@@ -250,8 +250,14 @@ local storage = function(args)
         storage.chat_max = args.chat_max
     end
 
-    uci:set("aihelper", "storage", "path", storage.path)
-    uci:set("aihelper", "storage", "chat_max", storage.chat_max)
+    if #storage.path > 0 then
+        uci:set("aihelper", "storage", "path", storage.path)
+    end
+
+    if #storage.chat_max > 0 then
+        uci:set("aihelper", "storage", "chat_max", storage.chat_max)
+    end
+
     uci:commit("aihelper")
 end
 
