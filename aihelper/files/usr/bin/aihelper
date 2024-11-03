@@ -20,7 +20,7 @@ local help = function()
     print(" - chat [id=<chat-id>]")
     print(" - prompt <message>")
     print(" - delchat id=<chat-id>")
-    print(" - rename <title> id=<chat-id>")
+    print(" - rename id=<chat-id> <title>")
     print(" - list")
     print(" - call <script> <messsage>")
 
@@ -142,13 +142,31 @@ for i, command in ipairs(arg) do
         end
     elseif command == "prompt" then
         if arg[i + 1] then
-            local message = arg[i + 1]
-            ai.prompt(message)
+            arguments.message = arg[i + 1]
+            ai.prompt(arguments)
         end
         return
+    elseif command == "rename" then
+        local prefix = "id="
+        if (arg[i + 1] and (arg[i + 1]:sub(1,#prefix) == prefix) and arg[i + 2]) then
+            arguments.id = arg[i + 1]:sub(#prefix + 1)
+            arguments.title = arg[i + 2]
+            ai.rename(arguments)
+            return
+        else
+            ai.list()
+            return
+        end
     elseif command == "list" then
         ai.list()
         return
+    elseif command == "call" then
+        if arg[i + 1] and arg[i + 2] then
+            arguments.cmd = arg[i + 1]
+            arguments.message = arg[i + 1]
+            ai.cmd_call(arguments)
+            return
+        end
     end
 end
 

@@ -509,17 +509,27 @@ local delchat = function(arg)
     print("Delete chat data id=" .. arg.id)
 end
 
-local prompt = function(message)
+local prompt = function(arg)
 
     local basic, prompt = init(nil)
 
     local user = {}
     user.role = role.user
-    user.message = message
+    user.message = arg.message
 
     update_chat(basic, prompt, user)
     communicate(basic, prompt, "prompt")
     print()
+end
+
+local rename = function(arg)
+    local result = call("aihelper.title", "manual_set", {id = arg.id, title = arg.title})
+
+    if result.status == "OK" then
+        print("Changed title of chat data with id=" .. arg.id  .. " to " .. result.title .. ".")
+    else
+        print("Chat data for id=xxxxx could not be found.")
+    end
 end
 
 local list = function()
@@ -540,6 +550,18 @@ local list = function()
     end
 end
 
+local cmd_call = function(arg)
+
+    local basic, prompt = init(nil)
+
+    local user = {}
+    user.role = role.user
+    user.message = arg.message
+
+    update_chat(basic, prompt, user)
+    communicate(basic, prompt, "call")
+end
+
 return {
     storage = storage,
     add = add,
@@ -550,5 +572,7 @@ return {
     chat = chat,
     delchat = delchat,
     prompt = prompt,
+    rename = rename,
     list = list,
+    cmd_call =  cmd_call,
 }
