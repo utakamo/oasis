@@ -20,7 +20,7 @@ local help = function()
     print(" - chat [id=<chat-id>]")
     print(" - prompt <message>")
     print(" - delchat id=<chat-id>")
-    print(" - rename <id> <title>")
+    print(" - rename <title> id=<chat-id>")
     print(" - list [[chat] [knowledge]]")
     print(" - call <script> <messsage>")
 
