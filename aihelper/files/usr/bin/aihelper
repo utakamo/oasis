@@ -22,7 +22,6 @@ local help = function()
     print(" - delchat id=<chat-id>")
     print(" - rename <id> <title>")
     print(" - list [[chat] [knowledge]]")
-    print(" - test <service>")
     print(" - call <script> <messsage>")
 
     print("\nDocs")
