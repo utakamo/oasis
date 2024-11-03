@@ -554,7 +554,7 @@ local rename = function(arg)
     if result.status == "OK" then
         print("Changed title of chat data with id=" .. arg.id  .. " to " .. result.title .. ".")
     else
-        print("Chat data for id=xxxxx could not be found.")
+        print("Chat data for id=" .. arg.id .. " could not be found.")
     end
 end
 
