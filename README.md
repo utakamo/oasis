@@ -14,7 +14,6 @@ Options:
  -u <url>               Set the url or ipaddr for ai service
  -k <api-key>           Set the api-key for ai service
  -m <model>             Set the llm model for ai service
- -s enable or disable   Set the storage enable/disable
 
 Commands:
  - storage <path> [<chat-max>] (default: chat-max = 30)
