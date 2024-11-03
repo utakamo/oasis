@@ -33,7 +33,7 @@ Docs
 ```
 ## Usage
 ### Step1: Setting up ai service  
-- Example of chatgpt
+- Example of OpenAI
 ```
 root@OpenWrt:~# aihelper add
 Service Name                   >> my-chatgpt
@@ -50,7 +50,7 @@ API KEY (leave blank if none)  >>
 LLM MODEL                      >> gemma2:2b
 ``````
 > [!NOTE]
-> If you want to use chatgpt, you need to set the Endpoint to the following URL.
+> If you want to use OpenAI, you need to set the Endpoint to the following URL.
 > https://api.openai.com/v1/chat/completions
 
 ### Step2: Select AI Service
