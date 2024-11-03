@@ -1,5 +1,6 @@
 #!/usr/bin/env lua
 local ubus = require("ubus")
+local sys = require("luci.sys")
 local uci = require("luci.model.uci").cursor()
 local jsonc = require("luci.jsonc")
 local transfer = require("ai_chat_transfer")
@@ -222,12 +223,12 @@ local storage = function(args)
 
     local storage = {}
 
-    local storage_path = uci:get("aihelper", "storage", "path")
+    local current_storage_path = uci:get("aihelper", "storage", "path")
     local chat_max = uci:get("aihelper", "storage", "chat_max")
 
     print("[Current Storage Config]")
-    print(string.format("%-10s :%s", "path", storage_path))
-    print(string.format("%-10s :%s\n", "chat-max", chat_max))
+    print(string.format("%-30s :%s", "path (Blank if not change)", current_storage_path))
+    print(string.format("%-30s :%s\n", "chat-max", chat_max))
 
     print("[Setup New Storage Config]")
     print("please input new config!")
@@ -251,6 +252,20 @@ local storage = function(args)
     end
 
     if #storage.path > 0 then
+        local prefix = uci:get("aihelper", "storage", "prefix")
+
+        if (#current_storage_path == 0) or (#prefix == 0) then
+            print("Error! Failed to load configuration information.")
+            return
+        end
+
+        local result = sys.exec("mv " .. current_storage_path .. "/" .. prefix .. "* " .. storage.path)
+
+        if result ~= "0" then
+            print("Error! Failed to move data to new storage location.")
+            return
+        end
+
         uci:set("aihelper", "storage", "path", storage.path)
     end
 
