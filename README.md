@@ -24,7 +24,7 @@ Commands:
  - chat [id=<chat-id>]
  - prompt <message>
  - delchat id=<chat-id>
- - rename <title> id=<chat-id> 
+ - rename id=<chat-id> <title> 
  - list
  - call <script> <messsage>
 
