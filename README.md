@@ -22,11 +22,10 @@ Commands:
  - select [<service>]
  - delete <service>
  - chat [id=<chat-id>]
- - prompt
+ - prompt <message>
  - delchat <id>
  - rename <id> <title>
  - list [[chat] [knowledge]]
- - test <service>
  - call <script> <messsage>
 
 Docs
