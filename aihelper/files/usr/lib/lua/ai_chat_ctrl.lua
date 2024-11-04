@@ -160,14 +160,30 @@ end
 
 local communicate = function(basic, chat, format)
 
-    local chat_json = jsonc.stringify(chat, false)
     local ai = {}
     ai.role = "unknown"
     ai.message = ""
 
     if format == "chat" then
         print("\n\27[34m" .. chat.model .. "\27[0m")
+    elseif format == "prompt" then
+        table.insert(chat.messages, 1, {
+            role = "system",
+            content = "Please respond to the user's questions in short sentences,"
+            .. "and only provide command examples for questions about Linux commands, etc."
+        })
+    elseif format == "call" then
+        table.insert(chat.messages, 1, {
+            role = "system",
+            content = "Please use the commands presented by the user to respond to the user's request."
+            .. "If you cannot do so, please respond to that."
+        })
+    else
+        print("Error! Unknown format. The format is \"chat\" or \"prompt\" or \"call\").")
+        return
     end
+
+    local chat_json = jsonc.stringify(chat, false)
 
     -- markdown ctrl table
     local mark = {}
@@ -227,27 +243,27 @@ local storage = function(args)
     local chat_max = uci:get("aihelper", "storage", "chat_max")
 
     print("[Current Storage Config]")
-    print(string.format("%-30s :%s", "path (Blank if not change)", current_storage_path))
-    print(string.format("%-30s :%s\n", "chat-max", chat_max))
+    print(string.format("%-30s >> %s", "path", current_storage_path))
+    print(string.format("%-30s >> %s\n", "chat-max", chat_max))
 
     print("[Setup New Storage Config]")
     print("please input new config!")
 
     if (not args.path) then
-        io.write(string.format("%-10s :", "path"))
+        io.write(string.format("%-30s >> ", "path (Blank if not change)"))
         io.flush()
         storage.path = io.read()
     else
-        print(string.format("%-10s :%s", "path", args.path))
+        print(string.format("%-30s >> %s", "path", args.path))
         storage.path = args.path
     end
 
     if (not args.chat_max) then
-        io.write(string.format("%-10s :", "chat-max"))
+        io.write(string.format("%-30s >> ", "chat-max (Blank if not change)"))
         io.flush()
         storage.chat_max = io.read()
     else
-        print(string.format("%-10s :%s", "chat-max", args.chat_max))
+        print(string.format("%-30s >> %s", "chat-max", args.chat_max))
         storage.chat_max = args.chat_max
     end
 
@@ -259,10 +275,10 @@ local storage = function(args)
             return
         end
 
-        local result = sys.exec("mv " .. current_storage_path .. "/" .. prefix .. "* " .. storage.path)
-
-        if result ~= "0" then
-            print("Error! Failed to move data to new storage location.")
+        if storage.path:match("^[%w/]+$") then
+            sys.exec("mv " .. current_storage_path .. "/" .. prefix .. "* " .. storage.path)
+        else
+            print("Error! Invalid directory path.")
             return
         end
 
