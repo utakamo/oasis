@@ -1,0 +1,42 @@
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=luci-app-aihelper
+PKG_VERSION:=1.0
+PKG_RELEASE:=1
+
+APP_DIR = /usr/bin
+LIBRARY_DIR = /usr/lib/lua
+UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
+UCI_CONFIG_DIR = /etc/config
+STORAGE_DIR = /etc/luci-app-aihelper/chat_data
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/luci-app-aihelper
+    CATEGORY:=utakamo
+    SECTION:=utakamo
+    TITLE:= AI Support Application
+    DEPENDS:=+lua-curl-v3
+    PKGARCH:=all
+endef
+
+define Build/Compile
+endef
+
+define Package/luci-app-aihelper/install
+	$(INSTALL_DIR) $(1)$(APP_DIR)
+	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)
+	$(INSTALL_DIR) $(1)$(UBUS_SERVER_APP_DIR)
+	$(INSTALL_DIR) $(1)$(UCI_CONFIG_DIR)
+	$(INSTALL_DIR) $(1)$(STORAGE_DIR)
+	$(INSTALL_BIN) ./files/usr/bin/luci-app-aihelper $(1)$(APP_DIR)
+	$(INSTALL_BIN) ./files/usr/lib/lua/ai_chat_ctrl.lua $(1)$(LIBRARY_DIR)
+	$(INSTALL_BIN) ./files/usr/lib/lua/ai_chat_transfer.lua $(1)$(LIBRARY_DIR)
+	$(INSTALL_BIN) ./files/usr/lib/lua/luci-app-aihelper_common.lua $(1)$(LIBRARY_DIR)
+	$(INSTALL_BIN) ./files/usr/libexec/rpcd/luci-app-aihelper $(1)$(UBUS_SERVER_APP_DIR)
+	$(INSTALL_BIN) ./files/usr/libexec/rpcd/luci-app-aihelper.chat $(1)$(UBUS_SERVER_APP_DIR)
+	$(INSTALL_BIN) ./files/usr/libexec/rpcd/luci-app-aihelper.title $(1)$(UBUS_SERVER_APP_DIR)
+	$(INSTALL_DATA) ./files/etc/config/luci-app-aihelper.config $(1)$(UCI_CONFIG_DIR)/luci-app-aihelper
+endef
+
+$(eval $(call BuildPackage,luci-app-aihelper))
