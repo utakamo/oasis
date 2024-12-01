@@ -1,5 +1,5 @@
 # OpenWrt AI Support Application - aihelper
-This application is currently under development...このアプリケーションは現在開発中です...
+This application is currently under development...
 
 ## How to install aihelper
 ```
