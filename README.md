@@ -1,5 +1,5 @@
 # OpenWrt AI Support Application - aihelper
-This application is currently under development...
+This application is currently under development...このアプリケーションは現在開発中です...
 
 ## How to install aihelper
 ```
@@ -139,3 +139,6 @@ root@OpenWrt:~# ubus -v list
 
 # Dependency Package
 - lua-curl-v3
+
+# LuCI Plugin - luci-app-aihelper
+This application is currently under development...
