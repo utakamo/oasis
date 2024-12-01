@@ -47,6 +47,9 @@ Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
 API KEY (leave blank if none)  >> <your_api-key>
 LLM MODEL                      >> gpt-3.5-turbo
 ```
+> [!NOTE]
+> If you want to use OpenAI, you need to set the Endpoint to the following URL.
+> https://api.openai.com/v1/chat/completions
 - Example of local ai service (Ollama) 
 ```
 root@OpenWrt:~# aihelper add
@@ -56,8 +59,11 @@ API KEY (leave blank if none)  >>
 LLM MODEL                      >> gemma2:2b
 ``````
 > [!NOTE]
-> If you want to use OpenAI, you need to set the Endpoint to the following URL.
-> https://api.openai.com/v1/chat/completions
+> If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.
+> ```
+> OLLAMA_HOST=0.0.0.0
+> OLLAMA_ORIGINS=*
+> ```
 
 ### Step2: Select AI Service
 - The first service registered with the aihelper add command is selected.　
