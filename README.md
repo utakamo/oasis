@@ -113,7 +113,7 @@ Hello! 👋  What can I do for you today? 😊
 
 root@OpenWrt:~# 
 ```
-# aihelper ubus object and method
+# aihelper ubus objects and methods
 ```
 root@OpenWrt:~# ubus -v list
 'aihelper' @5a0d497e
