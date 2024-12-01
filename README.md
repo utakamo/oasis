@@ -64,6 +64,8 @@ LLM MODEL                      >> gemma2:2b
 > OLLAMA_HOST=0.0.0.0
 > OLLAMA_ORIGINS=*
 > ```
+> My technical blog has an introductory page on the above Ollama setup, which describes the setup on Windows and Linux.
+> https://utakamo.com/article/ai/llm/ollama/setup/index.html#network-support
 
 ### Step2: Select AI Service
 - The first service registered with the aihelper add command is selected.　
