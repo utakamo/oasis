@@ -111,8 +111,23 @@ You :
 root@OpenWrt:~# aihelper prompt "Hello!!"
 Hello! 👋  What can I do for you today? 😊 
 
-
 root@OpenWrt:~# 
 ```
+# aihelper ubus object and method
+```
+root@OpenWrt:~# ubus -v list
+'aihelper' @5a0d497e
+        "config":{}
+'aihelper.chat' @bd30aea7
+        "delete":{"id":"String"}
+        "list":{}
+        "append":{"content2":"String","id":"String","role2":"String","role1":"String","content1":"String"}
+        "load":{"id":"String"}
+        "create":{"content1":"String","role2":"String","role1":"String","content2":"String"}
+'aihelper.title' @57866132
+        "auto_set":{"id":"String"}
+        "manual_set":{"id":"String","title":"String"}
+```
+
 # Dependency Package
 - lua-curl-v3
