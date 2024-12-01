@@ -1,6 +1,12 @@
 # OpenWrt AI Support Application - aihelper
 This application is currently under development...
 
+## How to install aihelper
+```
+root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
+root@OpenWrt:~# service rpcd reload
+```
+
 ## Commands
 > [!IMPORTANT]
 > Some commands may not be available.
