@@ -18,7 +18,7 @@ define Package/luci-app-aihelper
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= AI Support Application
-	DEPENDS:=+aihelper
+    DEPENDS:=+aihelper
     PKGARCH:=all
 endef
 
