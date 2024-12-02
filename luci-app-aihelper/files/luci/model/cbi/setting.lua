@@ -1,4 +1,4 @@
-m = Map("aihelper", "Setting")
+m = Map("aihelper", nil)
 
 storage = m:section(TypedSection, "storage")
 storage.addremove = false
