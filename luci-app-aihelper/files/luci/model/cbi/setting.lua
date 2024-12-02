@@ -1,19 +1,30 @@
 m = Map("aihelper", "Setting")
 
 storage = m:section(TypedSection, "storage")
-storage.addremove = true
+storage.addremove = false
+storage.removable = false
+
 function storage:filter(value)
     return value
 end
 
 path = storage:option(Value, "path", "Storage Path")
 chat_max = storage:option(ListValue, "chat_max", "Chat Max")
-for i in 100 do
-    chat_max:value(i, i)
-end
+
+chat_max:value("10", "10")
+chat_max:value("20", "20")
+chat_max:value("30", "30")
+chat_max:value("40", "40")
+chat_max:value("50", "50")
+chat_max:value("60", "60")
+chat_max:value("70", "70")
+chat_max:value("80", "80")
+chat_max:value("90", "90")
+chat_max:value("100", "100")
 
 service = m:section(TypedSection, "service")
 service.addremove = true
+
 function service:filter(value)
     return value
 end
