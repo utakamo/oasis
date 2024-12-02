@@ -30,7 +30,7 @@ function service:filter(value)
 end
 
 name = service:option(Value, "name", "Service Name")
-endpoint = service:option(Value, "url", "Endpoint(URL)")
+endpoint = service:option(Value, "url", "Endpoint")
 api_key = service:option(Value, "api_key", "API Key")
 api_key.password = true
 model = service:option(Value, "model", "Model")
