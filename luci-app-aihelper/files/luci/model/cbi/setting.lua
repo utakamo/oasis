@@ -24,6 +24,7 @@ chat_max:value("100", "100")
 
 service = m:section(TypedSection, "service")
 service.addremove = true
+service.anonymous = true
 
 function service:filter(value)
     return value
