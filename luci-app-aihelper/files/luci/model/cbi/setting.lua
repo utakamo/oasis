@@ -4,10 +4,6 @@ storage = m:section(TypedSection, "storage")
 storage.addremove = false
 storage.removable = false
 
-function storage:filter(value)
-    return value
-end
-
 path = storage:option(Value, "path", "Storage Path")
 chat_max = storage:option(ListValue, "chat_max", "Chat Max")
 
@@ -25,10 +21,6 @@ chat_max:value("100", "100")
 service = m:section(TypedSection, "service")
 service.addremove = true
 service.anonymous = true
-
-function service:filter(value)
-    return value
-end
 
 name = service:option(Value, "name", "Service Name")
 endpoint = service:option(Value, "url", "Endpoint")
