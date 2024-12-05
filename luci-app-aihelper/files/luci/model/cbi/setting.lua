@@ -21,6 +21,7 @@ chat_max:value("100", "100")
 service = m:section(TypedSection, "service")
 service.addremove = true
 service.anonymous = true
+service.title = "SERVICE"
 
 name = service:option(Value, "name", "Service Name")
 endpoint = service:option(Value, "url", "Endpoint")
