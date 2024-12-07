@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 local uci = require("luci.model.uci").cursor()
-local aihelper = require("aihelper_ctrl")
+local aihelper = require("ai_chat_ctrl")
 
 local request_method = os.getenv("REQUEST_METHOD")
 
