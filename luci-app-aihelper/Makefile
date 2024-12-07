@@ -12,6 +12,7 @@ LUCI_MODULEDIR = $(LUCI_LIBRARYDIR)/controller
 LUCI_MODELDIR = $(LUCI_LIBRARYDIR)/model/cbi
 LUCI_VIEWDIR = $(LUCI_LIBRARYDIR)/view
 
+LUCI_CGI_BIN_DIR = /www/cgi-bin
 LUCI_RESOURCES_DIR = /www/luci-static/resources
 
 include $(INCLUDE_DIR)/package.mk
@@ -34,8 +35,10 @@ define Package/luci-app-aihelper/install
 	$(INSTALL_DATA) $(SOURCE_DIR)/model/cbi/setting.lua $(1)$(LUCI_MODELDIR)/luci-app-aihelper
 	$(INSTALL_DIR) $(1)$(LUCI_VIEWDIR)/luci-app-aihelper
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/chat.htm $(1)$(LUCI_VIEWDIR)/luci-app-aihelper
-	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)
-	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/aihelper/chat.css $(1)$(LUCI_BOOTSTRAP_DIR)
+	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/luci-app-aihelper
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-aihelper/chat.css $(1)$(LUCI_RESOURCES_DIR)/luci-app-aihelper
+	$(INSTALL_DIR) $(1)$(LUCI_CGI_BIN_DIR)
+	$(INSTALL_BIN) $(SOURCE_DIR)$(LUCI_CGI_BIN_DIR)/aihelper $(1)$(LUCI_CGI_BIN_DIR)
 endef
 
 $(eval $(call BuildPackage,luci-app-aihelper))
