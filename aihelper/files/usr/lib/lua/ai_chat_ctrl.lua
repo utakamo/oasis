@@ -139,7 +139,7 @@ local update_chat = function(basic, chat, speaker)
         announce = announce .. "  \27[1;37;44m" .. "ID:"
         announce = announce .. "\27[1;33;44m" .. id
         announce = announce .. "\27[0m"
-        io.write(announce .. "\n")
+        io.write("\n" .. announce .. "\n")
         io.flush()
     -- Conversation after the second
     elseif (#chat.messages % 2) == 0 then
@@ -166,22 +166,27 @@ local communicate = function(basic, chat, format)
 
     if format == "chat" then
         print("\n\27[34m" .. chat.model .. "\27[0m")
+    --[[
     elseif format == "prompt" then
         table.insert(chat.messages, 1, {
             role = "system",
             content = "Please respond to the user's questions in short sentences,"
             .. "and only provide command examples for questions about Linux commands, etc."
         })
+    ]]
     elseif format == "call" then
         table.insert(chat.messages, 1, {
             role = "system",
             content = "Please use the commands presented by the user to respond to the user's request."
-            .. "If you cannot do so, please respond to that."
+            .. " If you cannot do so, please respond to that."
         })
+    end
+    --[[
     else
         print("Error! Unknown format. The format is \"chat\" or \"prompt\" or \"call\").")
         return
     end
+    ]]
 
     local chat_json = jsonc.stringify(chat, false)
 
@@ -225,8 +230,6 @@ local communicate = function(basic, chat, format)
             io.flush()
         end
     end)
-
-    print()
 
     if format == "chat" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
@@ -553,15 +556,58 @@ end
 
 local prompt = function(arg)
 
-    local basic, prompt = init(nil)
+    if (not arg.message) then
+        return
+    end
+
+    local is_exist = false
+
+    uci:foreach("aihelper", "service", function()
+        is_exist = true
+    end)
+
+    if not is_exist then
+        print("Error!\n\tOne of the service settings exist!")
+        print("\tPlease add the service configuration with the add command.")
+        return
+    end
+
+    local basic, chat = init(arg)
 
     local user = {}
     user.role = role.user
     user.message = arg.message
 
-    update_chat(basic, prompt, user)
-    communicate(basic, prompt, "prompt")
-    print()
+    update_chat(basic, chat, user)
+    communicate(basic, chat, "prompt")
+end
+
+local output = function(arg)
+
+    if (not arg.message) then
+        return
+    end
+
+    local is_exist = false
+
+    uci:foreach("aihelper", "service", function()
+        is_exist = true
+    end)
+
+    if not is_exist then
+        print("Error!\n\tOne of the service settings exist!")
+        print("\tPlease add the service configuration with the add command.")
+        return
+    end
+
+    local basic, chat = init(arg)
+
+    local user = {}
+    user.role = role.user
+    user.message = arg.message
+
+    update_chat(basic, chat, user)
+    communicate(basic, chat, "output")
 end
 
 local rename = function(arg)
@@ -614,6 +660,7 @@ return {
     chat = chat,
     delchat = delchat,
     prompt = prompt,
+    output = output,
     rename = rename,
     list = list,
     cmd_call =  cmd_call,
