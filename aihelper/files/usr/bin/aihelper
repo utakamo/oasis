@@ -141,10 +141,18 @@ for i, command in ipairs(arg) do
             return
         end
     elseif command == "prompt" then
-        if arg[i + 1] then
+        local prefix = "id="
+        if (arg[i + 1] and (arg[i + 1]:sub(1,#prefix) == prefix)) then
+            arguments.id = arg[i + 1]:sub(#prefix + 1)
+            if (arg[i + 2]) then
+                arguments.message = arg[i + 2]
+            end
+            return
+        elseif arg[i + 1] then
             arguments.message = arg[i + 1]
-            ai.prompt(arguments)
         end
+
+        ai.prompt(arguments)
         return
     elseif command == "rename" then
         local prefix = "id="
