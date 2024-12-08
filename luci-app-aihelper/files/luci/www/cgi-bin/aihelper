@@ -28,9 +28,6 @@ if request_method == "POST" then
     end
 
     aihelper.output(json_tbl)
-
-    -- if (not post_data.id) or (#post_data.id == 0) then
-    -- end
 else
     io.write("This script only handles POST requests.")
 end
