@@ -1,8 +1,22 @@
+# LuCI Plugin - luci-app-aihelper
+This application is currently under development...
+
+## How to install luci-app-aihelper
+```
+root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
+root@OpenWrt:~# opkg install luci-app-aihelper_1.0-r1_all.ipk
+root@OpenWrt:~# service rpcd reload
+```
+## AI Setting
+
+## Chat with AI
+
+
 # OpenWrt AI Support Application - aihelper
 This application is currently under development...
 
 ## How to install aihelper
-```
+``````
 root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
@@ -138,6 +152,3 @@ root@OpenWrt:~# ubus -v list
 
 # Dependency Package
 - lua-curl-v3
-
-# LuCI Plugin - luci-app-aihelper
-This application is currently under development...
