@@ -37,6 +37,9 @@ define Package/luci-app-aihelper/install
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/chat.htm $(1)$(LUCI_VIEWDIR)/luci-app-aihelper
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/luci-app-aihelper
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-aihelper/chat.css $(1)$(LUCI_RESOURCES_DIR)/luci-app-aihelper
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-aihelper/operator.png $(1)$(LUCI_RESOURCES_DIR)/luci-app-aihelper
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-aihelper/openwrt.png $(1)$(LUCI_RESOURCES_DIR)/luci-app-aihelper
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-aihelper/chat.css $(1)$(LUCI_RESOURCES_DIR)/luci-app-aihelper
 	$(INSTALL_DIR) $(1)$(LUCI_CGI_BIN_DIR)
 	$(INSTALL_BIN) $(SOURCE_DIR)$(LUCI_CGI_BIN_DIR)/aihelper $(1)$(LUCI_CGI_BIN_DIR)
 endef
