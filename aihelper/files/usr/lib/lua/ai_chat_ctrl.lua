@@ -153,7 +153,7 @@ local update_chat = function(basic, chat, speaker)
     end
 end
 
-local show_chat_history = function(chat)
+local chat_history = function(chat)
     local chat_json = jsonc.stringify(chat, false)
     print(chat_json)
 end
@@ -512,8 +512,8 @@ local chat = function(opt, arg)
                 return
             end
 
-            if your_message == "show" then
-                show_chat_history(chat)
+            if your_message == "history" then
+                chat_history(chat)
             end
 
         until (#your_message > 0) and (your_message ~= "show")
