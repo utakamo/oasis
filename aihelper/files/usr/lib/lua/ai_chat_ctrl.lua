@@ -79,7 +79,7 @@ local function markdown(mark, message)
     return message
 end
 
-local init = function(arg)
+local init = function(arg, format)
 
     local basic = {}
     basic.url = uci:get_first("aihelper", "service", "url", "")
@@ -98,16 +98,19 @@ local init = function(arg)
         chat.messages = {}
     end
 
-    for _, tbl in ipairs(chat.messages) do
-        if tbl.role == role.user then
-            print("You :" .. tbl.content)
-        elseif tbl.role == role.assistant then
+    -- TODO: Separate the init function into load_service and load_chat_history and print.
+    if format ~= "output" then
+        for _, tbl in ipairs(chat.messages) do
+            if tbl.role == role.user then
+                print("You :" .. tbl.content)
+            elseif tbl.role == role.assistant then
 
-            local content = markdown(nil, tbl.content)
+                local content = markdown(nil, tbl.content)
 
-            print()
-            print(chat.model)
-            print(content)
+                print()
+                print(chat.model)
+                print(content)
+            end
         end
     end
 
@@ -535,7 +538,7 @@ local chat = function(opt, arg)
         return
     end
 
-    local basic, chat = init(arg)
+    local basic, chat = init(arg, "chat")
     local your_message
 
     print("-----------------------------------")
@@ -622,7 +625,7 @@ local prompt = function(arg)
         return
     end
 
-    local basic, chat = init(arg)
+    local basic, chat = init(arg, "chat")
 
     local user = {}
     user.role = role.user
@@ -651,7 +654,7 @@ local output = function(arg)
         return
     end
 
-    local basic, chat = init(arg)
+    local basic, chat = init(arg, "output")
 
     local user = {}
     user.role = role.user
@@ -692,7 +695,7 @@ end
 
 local cmd_call = function(arg)
 
-    local basic, prompt = init(nil)
+    local basic, prompt = init(nil, "call")
 
     local user = {}
     user.role = role.user
