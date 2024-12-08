@@ -10,6 +10,9 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 |  luci-app-aihelper |   This is a plugin to use AI chat from within LuCI's WebUI. (base software is aihelper)  |
 <img width="854" alt="aihelper_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
 
+> [!NOTE]
+> This software can be installed on all OpenWrt target devices. However, the dependent package lua-curl-v3 must be pre-installed or available for download and installation from the repository for the target device.
+
 ## How to install luci-app-aihelper (dependency: aihelper)
 ```
 root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
