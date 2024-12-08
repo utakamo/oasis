@@ -6,17 +6,11 @@ local request_method = os.getenv("REQUEST_METHOD")
 
 print("Content-Type: text/plain\n")
 
-local arg = {}
-arg.message = "Hello"
-
-aihelper.prompt(arg)
-
 if request_method == "POST" then
 
     local content_length = tonumber(os.getenv("CONTENT_LENGTH") or 0)
     local post_data = io.read(content_length)
-
-    io.write(post_data)
+    aihelper.prompt(post_data)
 else
     io.write("This script only handles POST requests.")
 end
