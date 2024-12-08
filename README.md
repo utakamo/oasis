@@ -37,6 +37,8 @@ root@OpenWrt:~# service rpcd reload
 > ```
 > My technical blog has an introductory page on the above Ollama setup, which describes the setup on Windows and Linux (Japanese Page).
 > https://utakamo.com/article/ai/llm/ollama/setup/index.html#network-support
+>
+> Your Ollama URL Format: ```http://<Your Ollama PC Address>/api/chat ```
 
 ## Chat with AI
 <img width="854" alt="aihelper_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
