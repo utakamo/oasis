@@ -114,7 +114,7 @@ local init = function(arg)
     return basic, chat
 end
 
-local update_chat = function(basic, chat, speaker)
+local push_chat_data_for_record = function(chat, speaker)
 
     if (not speaker.role) or (not speaker.message) or (#speaker.message == 0) then
         return
@@ -123,37 +123,55 @@ local update_chat = function(basic, chat, speaker)
     chat.messages[#chat.messages + 1] = {}
     chat.messages[#chat.messages].role = speaker.role
     chat.messages[#chat.messages].content = speaker.message
+end
+
+local create_chat_file = function(service, chat)
+    local message = {}
+    message.role1 = chat.messages[#chat.messages - 1].role
+    message.content1 = chat.messages[#chat.messages - 1].content
+    message.role2 = chat.messages[#chat.messages].role
+    message.content2 = chat.messages[#chat.messages].content
+    local result = call("aihelper.chat", "create", message)
+    service.id = result.id
+    return result.id
+end
+
+local set_chat_title = function(chat_id)
+    local request = call("aihelper.title", "auto_set", {id = chat_id})
+    local announce =  "\n" .. "\27[1;37;44m" .. "Title:"
+    announce = announce  .. "\27[1;33;44m" .. request.title
+    announce = announce .. "  \27[1;37;44m" .. "ID:"
+    announce = announce .. "\27[1;33;44m" .. chat_id
+    announce = announce .. "\27[0m"
+    io.write("\n" .. announce .. "\n")
+    io.flush()
+end
+
+local append_chat_data = function(service, chat)
+    local message = {}
+    message.id = id or service.id
+    message.role1 = chat.messages[#chat.messages - 1].role
+    message.content1 = chat.messages[#chat.messages - 1].content
+    message.role2 = chat.messages[#chat.messages].role
+    message.content2 = chat.messages[#chat.messages].content
+    call("aihelper.chat", "append", message)
+end
+
+local record_chat_data = function(service, chat)
 
     -- First Conversation!!
     if #chat.messages == 2 then
-        local message = {}
-        message.role1 = chat.messages[#chat.messages - 1].role
-        message.content1 = chat.messages[#chat.messages - 1].content
-        message.role2 = chat.messages[#chat.messages].role
-        message.content2 = chat.messages[#chat.messages].content
-        local result = call("aihelper.chat", "create", message)
-        id = result.id
-        local request = call("aihelper.title", "auto_set", {id = id})
-        local announce =  "\n" .. "\27[1;37;44m" .. "Title:"
-        announce = announce  .. "\27[1;33;44m" .. request.title
-        announce = announce .. "  \27[1;37;44m" .. "ID:"
-        announce = announce .. "\27[1;33;44m" .. id
-        announce = announce .. "\27[0m"
-        io.write("\n" .. announce .. "\n")
-        io.flush()
+        local chat_id = create_chat_file(service, chat)
+        set_chat_title(chat_id)
     -- Conversation after the second
     elseif (#chat.messages % 2) == 0 then
-        local message = {}
-        message.id = id or basic.id
-        message.role1 = chat.messages[#chat.messages - 1].role
-        message.content1 = chat.messages[#chat.messages - 1].content
-        message.role2 = chat.messages[#chat.messages].role
-        message.content2 = chat.messages[#chat.messages].content
-        call("aihelper.chat", "append", message)
+        append_chat_data(service, chat)
     end
 end
 
 local chat_history = function(chat)
+    print(#chat.messages)
+    print()
     local chat_json = jsonc.stringify(chat, false)
     print(chat_json)
 end
@@ -203,7 +221,7 @@ local communicate = function(basic, chat, format)
         -- [OpenAI Case]
         chunk_all = chunk_all .. chunk
         chunk_json = jsonc.parse(chunk_all)
-        local content = ""
+        local plain_text = ""
 
         if not chunk_json then
             return
@@ -221,19 +239,19 @@ local communicate = function(basic, chat, format)
 
             ai.role = chunk_json.message.role
             ai.message = ai.message .. chunk_json.message.content
-            content = markdown(mark, chunk_json.message.content)
+            plain_text = markdown(mark, chunk_json.message.content)
         end
 
-        if #content > 0 then
-            local ai_message = ""
+        if #plain_text > 0 then
+            local message = ""
 
             if (format == "chat") or (format == "call") then
-                ai_message = content
+                message = plain_text
             elseif format == "output" then
-                ai_message = chunk_all
+                message = chunk_all
             end
 
-            io.write(ai_message)
+            io.write(message)
             io.flush()
         end
 
@@ -242,7 +260,8 @@ local communicate = function(basic, chat, format)
 
     if format == "chat" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
-            update_chat(basic, chat, ai)
+            push_chat_data_for_record(chat, ai)
+            record_chat_data(basic, chat)
         end
     end
 end
@@ -516,7 +535,7 @@ local chat = function(opt, arg)
                 chat_history(chat)
             end
 
-        until (#your_message > 0) and (your_message ~= "show")
+        until (#your_message > 0) and (your_message ~= "history")
 
         if your_message == "exit" then
             break;
@@ -526,7 +545,8 @@ local chat = function(opt, arg)
         user.role = role.user
         user.message = your_message
 
-        update_chat(basic, chat, user)
+        push_chat_data_for_record(chat, user)
+        record_chat_data(basic, chat)
         communicate(basic, chat, "chat")
     end
 end
@@ -586,7 +606,8 @@ local prompt = function(arg)
     user.role = role.user
     user.message = arg.message
 
-    update_chat(basic, chat, user)
+    push_chat_data_for_record(chat, user)
+    record_chat_data(basic, chat)
     communicate(basic, chat, "prompt")
 end
 
@@ -614,7 +635,8 @@ local output = function(arg)
     user.role = role.user
     user.message = arg.message
 
-    update_chat(basic, chat, user)
+    push_chat_data_for_record(chat, user)
+    record_chat_data(basic, chat)
     communicate(basic, chat, "output")
 end
 
@@ -654,7 +676,8 @@ local cmd_call = function(arg)
     user.role = role.user
     user.message = arg.message
 
-    update_chat(basic, prompt, user)
+    push_chat_data_for_record(prompt, user)
+    record_chat_data(basic, prompt)
     communicate(basic, prompt, "call")
 end
 
