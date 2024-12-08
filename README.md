@@ -85,14 +85,13 @@ Hello! 👋
 How can I help you today? 😄
 Title:ConversationStart  ID:7772532380
 
-You :show
+You :history
 {"messages":[{"content":"Hello!","role":"user"},{"content":"Hello! 👋 How can I help you today? 😊 \n","role":"assistant"}],"model":"gemma2:2b"}
 
 You :exit
-The chat is over.
 ```
 'exit' ... End chat  
-'show' ... Display the chat history(JSON)
+'history' ... Display the chat history(JSON)
 
 ### Step4: Load past chats and resume conversation.
 Confirm Chat ID
