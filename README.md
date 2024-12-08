@@ -1,3 +1,6 @@
+# OpenWrt AI Support Application - aihelper
+This application is currently under development...
+
 # LuCI Plugin - luci-app-aihelper
 This application is currently under development...
 
@@ -11,11 +14,7 @@ root@OpenWrt:~# service rpcd reload
 
 ## Chat with AI
 
-
-# OpenWrt AI Support Application - aihelper
-This application is currently under development...
-
-## How to install aihelper
+## How to install only aihelper
 ``````
 root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
