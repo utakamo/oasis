@@ -1,4 +1,5 @@
 #!/usr/bin/env lua
+local jsonc = require("luci.jsonc")
 local uci = require("luci.model.uci").cursor()
 local aihelper = require("ai_chat_ctrl")
 
@@ -6,11 +7,30 @@ local request_method = os.getenv("REQUEST_METHOD")
 
 print("Content-Type: text/plain\n")
 
-if request_method == "POST" then
+-- os.execute("echo \"aihelper cgi called\" >> /tmp/aihelper.log")
 
+if request_method == "POST" then
+    -- os.execute("echo POST >> /tmp/aihelper.log")
     local content_length = tonumber(os.getenv("CONTENT_LENGTH") or 0)
     local post_data = io.read(content_length)
-    aihelper.prompt(post_data)
+    -- os.execute("echo " .. content_length .. " >> /tmp/aihelper.log")
+    -- os.execute("echo " .. post_data.message .. " >> /tmp/aihelper.log")
+
+    local json_tbl = jsonc.parse(post_data)
+
+    -- for k, v in pairs(json_tbl) do
+    --     os.execute("key:" .. k .. ", value = " .. v .. " >> /tmp/aihelper.log")
+    -- end
+
+    if not json_tbl then
+        io.write("Message Format Error.")
+        return
+    end
+
+    aihelper.output(json_tbl)
+
+    -- if (not post_data.id) or (#post_data.id == 0) then
+    -- end
 else
     io.write("This script only handles POST requests.")
 end
