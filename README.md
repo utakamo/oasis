@@ -1,9 +1,9 @@
 # OpenWrt AI Support Application - aihelper
 This application is currently under development...
+<img width="854" alt="aihelper_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
 
 # LuCI Plugin - luci-app-aihelper
 This application is currently under development...
-<img width="854" alt="aihelper_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
 
 ## How to install luci-app-aihelper
 ```
