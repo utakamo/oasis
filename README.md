@@ -1,7 +1,7 @@
 # OpenWrt AI Support Application - aihelper (Beta)
 > [!IMPORTANT]
 > This application is currently under development...  
-> Currently, this software only implements the ability to chat with the AI.
+> Currently, this software only implements the ability to chat with AI.
 > 
 > **Support AI Service**
 > - OpenAI
