@@ -263,6 +263,28 @@ local communicate = function(basic, chat, format)
             push_chat_data_for_record(chat, ai)
             record_chat_data(basic, chat)
         end
+    elseif format == "output" then
+        if (ai.role ~= "unknown") and (#ai.message > 0) then
+            os.execute("echo basic.id = " .. basic.id .. " >> /tmp/aihelper.log")
+            os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/aihelper.log")
+            if (not basic.id) then
+                os.execute("echo not basic.id >> /tmp/aihelper.log")
+            else
+                os.execute("echo basic.id exist >> /tmp/aihelper.log")
+            end
+            if (#basic.id == 0) then
+                push_chat_data_for_record(chat, ai)
+                local chat_info = {}
+                chat_info.id = create_chat_file(basic, chat)
+                local result = call("aihelper.title", "auto_set", {id = chat_info.id})
+                chat_info.title = result.title
+                local target = jsonc.stringify(chat_info, false)
+                print(target)
+            else
+                push_chat_data_for_record(chat, ai)
+                append_chat_data(basic, chat)
+            end
+        end
     end
 end
 
