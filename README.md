@@ -80,7 +80,7 @@ API KEY (leave blank if none)  >>
 LLM MODEL                      >> gemma2:2b
 ``````
 > [!NOTE]
-> If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.> Ollama と OpenWrt を連携させたい場合は、Ollama パラメータ (OLLAMA_HOST および OLLAMA_ORIGINS) を以下に示す値に設定する必要があります。
+> If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.>
 > ```
 > OLLAMA_HOST=0.0.0.0
 > OLLAMA_ORIGINS=*
