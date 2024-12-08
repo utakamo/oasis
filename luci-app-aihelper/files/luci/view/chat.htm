@@ -11,7 +11,7 @@
 </div>
 
 <script>
-
+    let chat_id = "";
     const resourcePath = '<%= resource %>';
     const iconPath = `${resourcePath}/luci-app-aihelper/openwrt.png`;
 
@@ -64,7 +64,6 @@
         console.log('Resource Path:', resourcePath);
         console.log('Icon Path:', iconPath);
 
-        let chat_id = "";
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
 
         console.log('baseUrl:', baseUrl);
@@ -100,6 +99,10 @@
                             fullMessage += jsonResponse.message.content;
                             receivedMessageTextContainer.textContent += jsonResponse.message.content;
                             chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+
+                        if (jsonResponse.id) {
+                            chat_id = jsonResponse.id;
                         }
                     } catch (e) {
                         // Ignore JSON parsing errors and continue buffering
