@@ -519,7 +519,6 @@ local chat = function(opt, arg)
         until (#your_message > 0) and (your_message ~= "show")
 
         if your_message == "exit" then
-            print("The chat is over.")
             break;
         end
 
