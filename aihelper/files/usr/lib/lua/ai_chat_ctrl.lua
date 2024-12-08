@@ -200,6 +200,7 @@ local communicate = function(basic, chat, format)
 
         local chunk_json
 
+        -- [OpenAI Case]
         chunk_all = chunk_all .. chunk
         chunk_json = jsonc.parse(chunk_all)
         local content = ""
@@ -207,8 +208,6 @@ local communicate = function(basic, chat, format)
         if not chunk_json then
             return
         end
-
-        chunk_all = ""
 
         if (chunk_json) and (type(chunk_json) == "table") then
 
@@ -226,9 +225,19 @@ local communicate = function(basic, chat, format)
         end
 
         if #content > 0 then
-            io.write(content)
+            local ai_message = ""
+
+            if (format == "chat") or (format == "call") then
+                ai_message = content
+            elseif format == "output" then
+                ai_message = chunk_all
+            end
+
+            io.write(ai_message)
             io.flush()
         end
+
+        chunk_all = ""
     end)
 
     if format == "chat" then
@@ -491,11 +500,11 @@ local chat = function(opt, arg)
     print("-----------------------------------")
     print(string.format("%-14s :\27[33m %s \27[0m", "Target Service", uci:get_first("aihelper", "service", "name", "Unknown")))
     print(string.format("%-14s :\27[33m %s \27[0m", "Model", chat.model))
-    print("-----------------------------------\n")
+    print("-----------------------------------")
 
     while true do
         repeat
-            io.write("\27[32mYou :\27[0m")
+            io.write("\27[32m\nYou :\27[0m")
             io.flush()
             your_message = io.read()
 
