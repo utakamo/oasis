@@ -12,6 +12,9 @@
 
 <script>
 
+    const resourcePath = '<%= resource %>';
+    const iconPath = `${resourcePath}/luci-app-aihelper/openwrt.png`;
+
     document.getElementById('send-button').addEventListener('click', async function() {
         const messageInput = document.getElementById('message-input');
         const messageText = messageInput.value.trim();
@@ -41,7 +44,7 @@
 
         const receivedIconContainer = document.createElement('div');
         receivedIconContainer.className = 'icon';
-        receivedIconContainer.style.backgroundImage = 'url(./operator-icon.png)';
+        receivedIconContainer.style.backgroundImage = `url(${iconPath})`;
 
         const receivedMessageTextContainer = document.createElement('div');
         receivedMessageTextContainer.className = 'message-text';
@@ -57,14 +60,14 @@
     });
 
     async function send_message(receivedMessageTextContainer, messageText) {
-        const resourcePath = '<%= resource %>';
-        const iconPath = `${resourcePath}/luci-app-aihelper/operator.png`;
 
         console.log('Resource Path:', resourcePath);
         console.log('Icon Path:', iconPath);
 
         let chat_id = "";
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
+
+        console.log('baseUrl:', baseUrl);
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/aihelper`, {
@@ -88,8 +91,19 @@
                     if (done) break;
 
                     const chunk = decoder.decode(value, { stream: true });
-                    fullMessage += chunk;
-                    console.log(chunk.trim());
+                    console.log(chunk)
+
+                    try {
+                        const jsonResponse = JSON.parse(chunk.trim());
+
+                        if (jsonResponse.message && jsonResponse.message.content) {
+                            fullMessage += jsonResponse.message.content;
+                            receivedMessageTextContainer.textContent += jsonResponse.message.content;
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    } catch (e) {
+                        // Ignore JSON parsing errors and continue buffering
+                    }
                 }
 
                 receivedMessageTextContainer.textContent = fullMessage.trim();
