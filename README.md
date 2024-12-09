@@ -29,6 +29,10 @@ root@OpenWrt:~# service rpcd reload
 <img width="849" alt="aihelper_openwrt_chat_setting" src="https://github.com/user-attachments/assets/360fd2f2-37e2-498a-82e2-3dbc7ab6a56e">
 
 > [!NOTE]
+> If you want to use OpenAI, you need to set the Endpoint to the following URL.>
+> https://api.openai.com/v1/chat/completions
+
+> [!NOTE]
 > If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.>
 > ```
 > OLLAMA_HOST=0.0.0.0
@@ -88,9 +92,7 @@ Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
 API KEY (leave blank if none)  >> <your_api-key>
 LLM MODEL                      >> gpt-3.5-turbo
 ```
-> [!NOTE]
-> If you want to use OpenAI, you need to set the Endpoint to the following URL.
-> https://api.openai.com/v1/chat/completions
+
 - Example of local ai service (Ollama) 
 ```
 root@OpenWrt:~# aihelper add
