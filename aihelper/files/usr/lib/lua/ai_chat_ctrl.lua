@@ -187,14 +187,12 @@ local communicate = function(basic, chat, format)
 
     if format == "chat" then
         print("\n\27[34m" .. chat.model .. "\27[0m")
-    --[[
     elseif format == "prompt" then
         table.insert(chat.messages, 1, {
             role = "system",
             content = "Please respond to the user's questions in short sentences,"
             .. "and only provide command examples for questions about Linux commands, etc."
         })
-    ]]
     elseif format == "call" then
         table.insert(chat.messages, 1, {
             role = "system",
@@ -202,12 +200,6 @@ local communicate = function(basic, chat, format)
             .. " If you cannot do so, please respond to that."
         })
     end
-    --[[
-    else
-        print("Error! Unknown format. The format is \"chat\" or \"prompt\" or \"call\").")
-        return
-    end
-    ]]
 
     local chat_json = jsonc.stringify(chat, false)
 
@@ -248,7 +240,7 @@ local communicate = function(basic, chat, format)
         if #plain_text > 0 then
             local message = ""
 
-            if (format == "chat") or (format == "call") then
+            if (format == "chat") or (format == "prompt") or (format == "call") then
                 message = plain_text
             elseif format == "output" then
                 message = chunk_all
@@ -608,32 +600,15 @@ local delchat = function(arg)
 end
 
 local prompt = function(arg)
-
-    if (not arg.message) then
-        return
-    end
-
-    local is_exist = false
-
-    uci:foreach("aihelper", "service", function()
-        is_exist = true
-    end)
-
-    if not is_exist then
-        print("Error!\n\tOne of the service settings exist!")
-        print("\tPlease add the service configuration with the add command.")
-        return
-    end
-
-    local basic, chat = init(arg, "chat")
+    local basic, prompt = init(nil)
 
     local user = {}
     user.role = role.user
     user.message = arg.message
 
-    push_chat_data_for_record(chat, user)
-    record_chat_data(basic, chat)
-    communicate(basic, chat, "prompt")
+    push_chat_data_for_record(prompt, user)
+    communicate(basic, prompt, "prompt")
+    print()
 end
 
 local output = function(arg)
