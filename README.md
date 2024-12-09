@@ -24,8 +24,6 @@ root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
 root@OpenWrt:~# opkg install luci-app-aihelper_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
-> [!NOTE]
-> This software can be installed on all OpenWrt target devices. However, the dependent package lua-curl-v3 must be pre-installed or available for download and installation from the repository for the target device.
 
 ## AI Setting
 <img width="849" alt="aihelper_openwrt_chat_setting" src="https://github.com/user-attachments/assets/360fd2f2-37e2-498a-82e2-3dbc7ab6a56e">
@@ -45,7 +43,7 @@ root@OpenWrt:~# service rpcd reload
 <img width="854" alt="aihelper_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
 
 ## How to install only aihelper
-``````
+```
 root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipkroot@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
