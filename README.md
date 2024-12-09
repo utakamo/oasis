@@ -44,7 +44,7 @@ root@OpenWrt:~# service rpcd reload
 
 ## How to install only aihelper
 ```
-root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipkroot@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
+root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 
