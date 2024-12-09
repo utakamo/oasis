@@ -5,6 +5,39 @@ local aihelper = require("ai_chat_ctrl")
 
 local request_method = os.getenv("REQUEST_METHOD")
 
+local extract_code_blocks = function(text)
+    local code_blocks = {}
+    local pattern = "```(.-)```"
+
+    for code in text:gmatch(pattern) do
+        table.insert(code_blocks, code)
+    end
+
+    return code_blocks
+end
+
+local split_lines = function(code_block)
+    local lines = {}
+    for line in code_block:gmatch("[^\r\n]+") do
+        table.insert(lines, line)
+    end
+
+    return lines
+end
+
+local extract_uci_cmds = function(lines)
+    local valid_cmds = {}
+    local pattern = "^uci (set|add|add_list|delete|commit)"
+
+    for _, line in ipairs(lines) do
+        if line:match(pattern) then
+            table.insert(valid_cmds, line)
+        end
+    end
+
+    return valid_cmds
+end
+
 print("Content-Type: text/plain\n")
 
 -- os.execute("echo \"aihelper cgi called\" >> /tmp/aihelper.log")
