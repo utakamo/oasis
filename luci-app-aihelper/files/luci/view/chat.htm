@@ -81,6 +81,7 @@
             });
 
             if (response.ok) {
+                const chatMessages = document.querySelector('.chat-messages');
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let fullMessage = '';
