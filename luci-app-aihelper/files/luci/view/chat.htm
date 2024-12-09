@@ -37,10 +37,18 @@
     }
 
     let chat_id = "";
+    let message_outputing = false;
     const resourcePath = '<%= resource %>';
     const iconPath = `${resourcePath}/luci-app-aihelper/openwrt.png`;
 
     document.getElementById('send-button').addEventListener('click', async function() {
+
+        if (message_outputing) {
+            return;
+        }
+
+        message_outputing = true;
+
         const messageInput = document.getElementById('message-input');
         const messageText = messageInput.value.trim();
 
@@ -128,6 +136,7 @@
                         }
 
                         if (jsonResponse.id) {
+                            message_outputing = false;
                             chat_id = jsonResponse.id;
                             showTitlePopup(jsonResponse.title);
                         }
@@ -135,7 +144,7 @@
                         // Ignore JSON parsing errors and continue buffering
                     }
                 }
-
+                message_outputing = false;
                 receivedMessageTextContainer.textContent = fullMessage.trim();
             } else {
                 console.error('Error:', response.statusText);
