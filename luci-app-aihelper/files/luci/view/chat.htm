@@ -11,6 +11,31 @@
 </div>
 
 <script>
+
+    function showTitlePopup(title) {
+        if (title) {
+            const popup = document.createElement('div');
+            popup.textContent = title;
+            popup.classList.add('popup');
+
+            document.body.appendChild(popup);
+
+            setTimeout(() => {
+                popup.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                popup.classList.remove('show');
+                popup.classList.add('hide');
+                setTimeout(() => {
+                    popup.remove();
+                }, 500);
+            }, 5000);
+        } else {
+            console.error('Title not found in JSON data.');
+        }
+    }
+
     let chat_id = "";
     const resourcePath = '<%= resource %>';
     const iconPath = `${resourcePath}/luci-app-aihelper/openwrt.png`;
@@ -61,8 +86,8 @@
 
     async function send_message(receivedMessageTextContainer, messageText) {
 
-        console.log('Resource Path:', resourcePath);
-        console.log('Icon Path:', iconPath);
+        //console.log('Resource Path:', resourcePath);
+        //console.log('Icon Path:', iconPath);
 
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
 
@@ -104,6 +129,7 @@
 
                         if (jsonResponse.id) {
                             chat_id = jsonResponse.id;
+                            showTitlePopup(jsonResponse.title);
                         }
                     } catch (e) {
                         // Ignore JSON parsing errors and continue buffering
