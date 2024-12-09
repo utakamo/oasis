@@ -9,7 +9,7 @@
 
 This software provides the ability to link OpenWrt and AI. Based on user input, the AI provides the optimal settings for OpenWrt; the OpenWrt device itself analyzes the information provided by the AI, verifies the validity of that information, and then notifies the user.
 
-|  Application  |         description       ||  アプリケーション |         説明 |
+|  Application  |         description       |
 | :---: | :---  |
 |   aihelper    |   AI chat core software (provides stand-alone CUI-based chat functionality)   |
 |  luci-app-aihelper |   This is a plugin to use AI chat from within LuCI's WebUI. (base software is aihelper)  |
