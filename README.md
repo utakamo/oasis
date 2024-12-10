@@ -26,6 +26,7 @@ root@OpenWrt:~# service rpcd reload
 ```
 
 ## AI Setting
+[Main] ---> [Network] ---> [Oasis] ---> [Setting]
 <img width="849" alt="oasis_openwrt_chat_setting" src="https://github.com/user-attachments/assets/360fd2f2-37e2-498a-82e2-3dbc7ab6a56e">
 
 > [!NOTE]
