@@ -1,0 +1,158 @@
+<%+header%>
+
+<link rel="stylesheet" type="text/css" href="<%= resource %>/luci-app-oasis/chat.css">
+
+<div class="chat-container">
+    <div class="chat-messages"></div>
+    <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Your Message">
+        <button id="send-button">Send</button>
+    </div>
+</div>
+
+<script>
+
+    function showTitlePopup(title) {
+        if (title) {
+            const popup = document.createElement('div');
+            popup.textContent = title;
+            popup.classList.add('popup');
+
+            document.body.appendChild(popup);
+
+            setTimeout(() => {
+                popup.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                popup.classList.remove('show');
+                popup.classList.add('hide');
+                setTimeout(() => {
+                    popup.remove();
+                }, 500);
+            }, 5000);
+        } else {
+            console.error('Title not found in JSON data.');
+        }
+    }
+
+    let chat_id = "";
+    let message_outputing = false;
+    const resourcePath = '<%= resource %>';
+    const iconPath = `${resourcePath}/luci-app-oasis/openwrt.png`;
+
+    document.getElementById('send-button').addEventListener('click', async function() {
+
+        if (message_outputing) {
+            return;
+        }
+
+        message_outputing = true;
+
+        const messageInput = document.getElementById('message-input');
+        const messageText = messageInput.value.trim();
+
+        if (!messageText) {
+            return;
+        }
+
+        const messageContainer = document.createElement('div');
+        messageContainer.className = 'message sent';
+
+        const messageTextContainer = document.createElement('div');
+        messageTextContainer.className = 'message-text';
+        messageTextContainer.textContent = messageText;
+
+        messageContainer.appendChild(messageTextContainer);
+
+        document.querySelector('.chat-messages').appendChild(messageContainer);
+        messageInput.value = '';
+        messageInput.focus();
+
+        const chatMessages = document.querySelector('.chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        const receivedMessageContainer = document.createElement('div');
+        receivedMessageContainer.className = 'message received';
+
+        const receivedIconContainer = document.createElement('div');
+        receivedIconContainer.className = 'icon';
+        receivedIconContainer.style.backgroundImage = `url(${iconPath})`;
+
+        const receivedMessageTextContainer = document.createElement('div');
+        receivedMessageTextContainer.className = 'message-text';
+
+        receivedMessageContainer.appendChild(receivedIconContainer);
+        receivedMessageContainer.appendChild(receivedMessageTextContainer);
+
+        document.querySelector('.chat-messages').appendChild(receivedMessageContainer);
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        send_message(receivedMessageTextContainer, messageText);
+    });
+
+    async function send_message(receivedMessageTextContainer, messageText) {
+
+        //console.log('Resource Path:', resourcePath);
+        //console.log('Icon Path:', iconPath);
+
+        const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
+
+        //console.log('baseUrl:', baseUrl);
+
+        try {
+            const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: chat_id,
+                    message: messageText,
+                })
+            });
+
+            if (response.ok) {
+                const chatMessages = document.querySelector('.chat-messages');
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullMessage = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    //console.log(chunk)
+
+                    try {
+                        const jsonResponse = JSON.parse(chunk.trim());
+
+                        if (jsonResponse.message && jsonResponse.message.content) {
+                            fullMessage += jsonResponse.message.content;
+                            receivedMessageTextContainer.textContent += jsonResponse.message.content;
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+
+                        if (jsonResponse.id) {
+                            message_outputing = false;
+                            chat_id = jsonResponse.id;
+                            showTitlePopup(jsonResponse.title);
+                        }
+                    } catch (e) {
+                        // Ignore JSON parsing errors and continue buffering
+                    }
+                }
+                message_outputing = false;
+                receivedMessageTextContainer.textContent = fullMessage.trim();
+            } else {
+                console.error('Error:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Request failed', error);
+        }
+    }
+</script>
+
+<%+footer%>

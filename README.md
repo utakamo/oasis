@@ -1,4 +1,4 @@
-# OpenWrt AI Support Application - aihelper (Beta)
+# OpenWrt AI Support Application - oasis (Beta)
 > [!IMPORTANT]
 > This application is currently under development...  
 > Currently, this software only implements the ability to chat with AI.
@@ -11,22 +11,22 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 
 |  Application  |         description       |
 | :---: | :---  |
-|   aihelper    |   AI chat core software (provides stand-alone CUI-based chat functionality)   |
-|  luci-app-aihelper |   This is a plugin to use AI chat from within LuCI's WebUI. (base software is aihelper)  |
-<img width="854" alt="aihelper_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
+|   oasis    |   AI chat core software (provides stand-alone CUI-based chat functionality)   |
+|  luci-app-oasis |   This is a plugin to use AI chat from within LuCI's WebUI. (base software is oasis)  |
+<img width="854" alt="oasis_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
 
 > [!NOTE]
 > This software can be installed on all OpenWrt target devices. However, the dependent package lua-curl-v3 must be pre-installed or available for download and installation from the repository for the target device.
 
-## How to install luci-app-aihelper (dependency: aihelper, lua-curl-v3)
+## How to install luci-app-oasis (dependency: oasis, lua-curl-v3)
 ```
-root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
-root@OpenWrt:~# opkg install luci-app-aihelper_1.0-r1_all.ipk
+root@OpenWrt:~# opkg install oasis_1.0-r1_all.ipk
+root@OpenWrt:~# opkg install luci-app-oasis_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 
 ## AI Setting
-<img width="849" alt="aihelper_openwrt_chat_setting" src="https://github.com/user-attachments/assets/360fd2f2-37e2-498a-82e2-3dbc7ab6a56e">
+<img width="849" alt="oasis_openwrt_chat_setting" src="https://github.com/user-attachments/assets/360fd2f2-37e2-498a-82e2-3dbc7ab6a56e">
 
 > [!NOTE]
 > If you want to use OpenAI, you need to set the Endpoint to the following URL.>
@@ -44,11 +44,11 @@ root@OpenWrt:~# service rpcd reload
 > Ollama Endpoint Format: ```http://<Your Ollama PC Address>:11434/api/chat ```
 
 ## Chat with AI
-<img width="854" alt="aihelper_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
+<img width="854" alt="oasis_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
 
-## How to install only aihelper (dependency: lua-curl-v3)
+## How to install only oasis (dependency: lua-curl-v3)
 ```
-root@OpenWrt:~# opkg install aihelper_1.0-r1_all.ipk
+root@OpenWrt:~# opkg install oasis_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 
@@ -57,8 +57,8 @@ root@OpenWrt:~# service rpcd reload
 > Some commands may not be available.
 
 ```
-root@OpenWrt:~# aihelper
-Usage: aihelper <command> [[<options>] arguments]...
+root@OpenWrt:~# oasis
+Usage: oasis <command> [[<options>] arguments]...
 
 Options:
  -n <service>           Set the service name
@@ -86,7 +86,7 @@ Docs
 ### Step1: Setting up ai service  
 - Example of OpenAI
 ```
-root@OpenWrt:~# aihelper add
+root@OpenWrt:~# oasis add
 Service Name                   >> my-chatgpt
 Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
 API KEY (leave blank if none)  >> <your_api-key>
@@ -95,7 +95,7 @@ LLM MODEL                      >> gpt-3.5-turbo
 
 - Example of local ai service (Ollama) 
 ```
-root@OpenWrt:~# aihelper add
+root@OpenWrt:~# oasis add
 Service Name                   >> my-ollama
 Endpoint(url)                  >> http://192.168.3.16:11434/api/chat       
 API KEY (leave blank if none)  >>
@@ -103,15 +103,15 @@ LLM MODEL                      >> gemma2:2b
 ``````
 
 ### Step2: Select AI Service
-- The first service registered with the aihelper add command is selected.　
-<img width="416" alt="aihelper_select_service01" src="https://github.com/user-attachments/assets/03eec7e6-491e-4320-b08f-b61b0d04bbaa">  
+- The first service registered with the oasis add command is selected.　
+<img width="416" alt="oasis_select_service01" src="https://github.com/user-attachments/assets/03eec7e6-491e-4320-b08f-b61b0d04bbaa">  
 
-- To switch to another AI service, run aihelper select <service-name>. The following is an example of switching the service in use to my-ollama.
-<img width="416" alt="aihelper_select_service02" src="https://github.com/user-attachments/assets/e3b4acea-f4dd-4e4f-b120-83aeb215d8d1">  
+- To switch to another AI service, run oasis select <service-name>. The following is an example of switching the service in use to my-ollama.
+<img width="416" alt="oasis_select_service02" src="https://github.com/user-attachments/assets/e3b4acea-f4dd-4e4f-b120-83aeb215d8d1">  
 
 ### Step3: Example of chat with ai
 ```
-root@OpenWrt:~# aihelper chat
+root@OpenWrt:~# oasis chat
 You :Hello!
 
 gemma2:2b
@@ -133,7 +133,7 @@ You :exit
 ### Step4: Load past chats and resume conversation.
 Confirm Chat ID
 ```
-root@OpenWrt:~# aihelper list
+root@OpenWrt:~# oasis list
 -----------------------------------------------------
  No. | title                          | id
 -----------------------------------------------------
@@ -142,7 +142,7 @@ root@OpenWrt:~# aihelper list
 ```
 Resume conversation with the AI by specifying the chat ID.
 ```
-root@OpenWrt:~# aihelper chat id=7772532380
+root@OpenWrt:~# oasis chat id=7772532380
 You :Hello!
 
 gemma2:2b
@@ -152,23 +152,23 @@ You :
 ```
 ### Step5: How to send prompt to AI
 ```
-root@OpenWrt:~# aihelper prompt "Hello!!"
+root@OpenWrt:~# oasis prompt "Hello!!"
 Hello! 👋  What can I do for you today? 😊 
 
 root@OpenWrt:~# 
 ```
-# aihelper ubus objects and methods
+# oasis ubus objects and methods
 ```
 root@OpenWrt:~# ubus -v list
-'aihelper' @5a0d497e
+'oasis' @5a0d497e
         "config":{}
-'aihelper.chat' @bd30aea7
+'oasis.chat' @bd30aea7
         "delete":{"id":"String"}
         "list":{}
         "append":{"content2":"String","id":"String","role2":"String","role1":"String","content1":"String"}
         "load":{"id":"String"}
         "create":{"content1":"String","role2":"String","role1":"String","content2":"String"}
-'aihelper.title' @57866132
+'oasis.title' @57866132
         "auto_set":{"id":"String"}
         "manual_set":{"id":"String","title":"String"}
 ```
