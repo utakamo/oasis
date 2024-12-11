@@ -2,13 +2,34 @@
 
 <link rel="stylesheet" type="text/css" href="<%= resource %>/luci-app-oasis/chat.css">
 
-<div class="chat-container">
-    <div class="chat-messages"></div>
-    <div class="chat-input">
-        <input type="text" id="message-input" placeholder="Your Message">
-        <button id="send-button">Send</button>
+<div class="oasis-container">
+    <div class="chat-list-container">
+        <ul id="chat-list">
+            <li data-id="3481702957">
+                <span>Chat 1</span>
+                <!-- <button class="delete-btn" onclick="confirmDelete(this)">Delete</button> -->
+            </li>
+            <li data-id="0130452524">
+                <span>Chat 2</span>
+                <!-- <button class="delete-btn" onclick="confirmDelete(this)">Delete</button> -->
+            </li>
+            <li data-id="4771969632">
+                <span>Chat 3</span>
+                <!-- <button class="delete-btn" onclick="confirmDelete(this)">Delete</button> -->
+            </li>
+        </ul>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages"></div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Your Message">
+            <button id="send-button">Send</button>
+        </div>
     </div>
 </div>
+
+
 
 <script>
 
@@ -108,6 +129,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    cmd: "chat",
                     id: chat_id,
                     message: messageText,
                 })
