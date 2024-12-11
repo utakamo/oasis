@@ -1,4 +1,4 @@
-# OpenWrt AI Assistant Application - oasis (Beta)
+# OpenWrt AI Assistant Application - Oasis (Beta)
 > [!IMPORTANT]
 > This application is currently under development...  
 > Currently, this software only implements the ability to chat with AI.
