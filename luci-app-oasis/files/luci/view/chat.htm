@@ -4,20 +4,7 @@
 
 <div class="oasis-container">
     <div class="chat-list-container">
-        <ul id="chat-list">
-            <li data-id="3481702957">
-                <span>Chat 1</span>
-                <!-- <button class="delete-btn" onclick="confirmDelete(this)">Delete</button> -->
-            </li>
-            <li data-id="0130452524">
-                <span>Chat 2</span>
-                <!-- <button class="delete-btn" onclick="confirmDelete(this)">Delete</button> -->
-            </li>
-            <li data-id="4771969632">
-                <span>Chat 3</span>
-                <!-- <button class="delete-btn" onclick="confirmDelete(this)">Delete</button> -->
-            </li>
-        </ul>
+        <ul id="chat-list"></ul>
     </div>
 
     <div class="chat-container">
@@ -29,9 +16,42 @@
     </div>
 </div>
 
-
-
 <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const chatListContainer = document.getElementById("chat-list");
+
+        fetch('<%=build_url("admin", "network", "oasis", "chat-list")%>', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            if (data.item && Array.isArray(data.item)) {
+                data.item.forEach(chat => {
+                    const li = document.createElement("li");
+                    li.setAttribute("data-id", chat.id);
+
+                    const span = document.createElement("span");
+                    span.textContent = chat.title;
+
+                    li.appendChild(span);
+                    chatListContainer.appendChild(li);
+                });
+            } else {
+                console.error("Unexpected data format:", data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = 'Error: ' + error;
+        });
+    });
 
     function showTitlePopup(title) {
         if (title) {
