@@ -12,6 +12,7 @@
         <div class="chat-input">
             <input type="text" id="message-input" placeholder="Your Message">
             <button id="send-button">Send</button>
+            <button id="new-button">New</button>
         </div>
     </div>
 
@@ -448,6 +449,26 @@
         });
         targetChatId = chatId;
     }
+
+    document.getElementById('new-button').addEventListener('click', async function() {
+
+        if (activeConversation) {
+            return;
+        }
+
+        if (message_outputing) {
+            return;
+        }
+
+        targetChatId = "";
+
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+
+        if (chatMessagesContainer) {
+            const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
+            messages.forEach(message => message.remove());
+        }
+    });
 
 </script>
 

@@ -217,6 +217,16 @@
     cursor: pointer;
 }
 
+#new-button {
+    padding: 10px 20px;
+    margin-left: 10px;
+    background-color: #00cc06;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
 #send-button:hover {
     background-color: #0056b3;
 }
