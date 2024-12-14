@@ -21,8 +21,8 @@
 }
 
 .chat-list-container li {
+    position: relative;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 10px;
     border-bottom: 1px solid #ddd;
@@ -47,6 +47,61 @@
 
 .chat-list-container li .delete-btn:hover {
     background-color: #ff1a1a;
+}
+
+.oasis-hamburger-menu {
+    position: absolute; /* 親要素（li）の右端に固定 */
+    right: 10px; /* liの右端から10pxの余白 */
+    top: 50%; /* 垂直方向の中央に配置 */
+    transform: translateY(-50%); /* 完全に中央揃えにする */
+    display: flex;
+    align-items: center;
+}
+
+.oasis-menu-btn {
+    background: none;
+    color: #555555;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s ease;
+}
+
+.oasis-menu-btn:hover {
+    color: #007bff;
+}
+
+.oasis-dropdown {
+    display: none;
+    position: absolute;
+    top: 30px;
+    right: 0;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.oasis-dropdown .oasis-menu-item {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.oasis-dropdown .oais-menu-item:hover {
+    background-color: #222222;
+}
+
+.oasis-hamburger-menu:hover .oasis-dropdown {
+    display: block;
 }
 
 .chat-config-container {
