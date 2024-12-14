@@ -42,7 +42,7 @@
                 return;
             }
 
-            if (data.item && Array.isArray(data.item)) {
+            if ((data.item) && (data.item.length > 0) &&  Array.isArray(data.item)) {
                 data.item.forEach(chat => {
                     const li = document.createElement("li");
                     li.setAttribute("data-id", chat.id);
@@ -84,8 +84,6 @@
                         handleChatItemClick(chatId);
                     });
                 });
-            } else {
-                console.error("Unexpected data format:", data);
             }
         })
         .catch(error => {
@@ -114,7 +112,11 @@
 
         function handleDeleteAction(button) {
 
-            //console.log("Deleting chat with ID:", targetChatItemId);
+            console.log("Deleting chat with ID:", targetChatItemId);
+
+            if (activeConversation) {
+                return;
+            }
 
             fetch('<%=build_url("admin", "network", "oasis", "delete-chat-data")%>', {
                 method: "POST",
@@ -127,7 +129,19 @@
             .then((data) => {
                 if (data.status === "OK") {
                     console.log(`Chat ID ${targetChatItemId} deleted successfully.`);
-                    button.closest("li").remove();
+                    const listItem = document.querySelector(`#chat-list li[data-id='${targetChatItemId}']`);
+                    if (listItem) {
+                        listItem.remove();
+
+                        const chatMessagesContainer = document.querySelector('.chat-messages');
+
+                        if (chatMessagesContainer) {
+                            const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
+                            messages.forEach(message => message.remove());
+                        }
+                    } else {
+                        console.error("Could not find the list item with ID:", targetChatItemId);
+                    }
                 } else {
                     console.error("Error deleting chat:", data.error);
                     alert("Failed to delete chat. Please try again.");
@@ -351,6 +365,7 @@
                             chatListContainer.appendChild(li);
 
                             menuButton.addEventListener("click", function (event) {
+                                targetChatItemId = event.target.closest("li").getAttribute("data-id");
                                 event.stopPropagation();
                                 const rect = this.getBoundingClientRect();
                                 dropdown.style.top = `${rect.bottom + window.scrollY}px`;
