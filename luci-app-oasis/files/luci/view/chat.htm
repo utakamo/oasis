@@ -14,6 +14,12 @@
             <button id="send-button">Send</button>
         </div>
     </div>
+
+    <div class="oasis-dropdown" id="oasis-dropdown">
+        <button class="oasis-menu-item" data-action="delete">Delete</button>
+        <button class="oasis-menu-item" data-action="rename">Rename</button>
+        <button class="oasis-menu-item" data-action="export">Export</button>
+    </div>
 </div>
 
 <script>
@@ -23,6 +29,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const chatListContainer = document.getElementById("chat-list");
+        const dropdown = document.getElementById("oasis-dropdown");
 
         fetch('<%=build_url("admin", "network", "oasis", "chat-list")%>', {
             method: 'POST'
@@ -41,51 +48,36 @@
 
                     const span = document.createElement("span");
                     span.textContent = chat.title;
-
                     li.appendChild(span);
 
                     const menuContainer = document.createElement("div");
                     menuContainer.classList.add("oasis-hamburger-menu");
 
-                    // menu button
                     const menuButton = document.createElement("button");
                     menuButton.classList.add("oasis-menu-btn");
                     menuButton.textContent = "⋮";
 
-                    // drop button menu
-                    const dropdown = document.createElement("div");
-                    dropdown.classList.add("oasis-dropdown");
-
-                    const deleteButton = document.createElement("button");
-                    deleteButton.classList.add("oasis-menu-item");
-                    deleteButton.setAttribute("data-action", "delete");
-                    deleteButton.textContent = "Delete";
-
-                    const renameButton = document.createElement("button");
-                    renameButton.classList.add("oasis-menu-item");
-                    renameButton.setAttribute("data-action", "rename");
-                    renameButton.textContent = "Rename";
-
-                    const exportButton = document.createElement("button");
-                    exportButton.classList.add("oasis-menu-item");
-                    exportButton.setAttribute("data-action", "export");
-                    exportButton.textContent = "Export";
-
-                    dropdown.appendChild(deleteButton);
-                    dropdown.appendChild(renameButton);
-                    dropdown.appendChild(exportButton);
+                    menuButton.addEventListener("click", function (event) {
+                        event.stopPropagation();
+                        const rect = this.getBoundingClientRect();
+                        dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+                        dropdown.style.left = `${rect.left + window.scrollX}px`;
+                        dropdown.style.display = "block";
+                    });
 
                     menuContainer.appendChild(menuButton);
-                    menuContainer.appendChild(dropdown);
-
                     li.appendChild(menuContainer);
-
                     chatListContainer.appendChild(li);
                 });
 
                 const chatItems = document.querySelectorAll('#chat-list li');
                 chatItems.forEach(item => {
-                    item.addEventListener('click', function () {
+                    item.addEventListener('click', function (event) {
+
+                        if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
+                            return;
+                        }
+
                         const chatId = this.getAttribute('data-id');
                         handleChatItemClick(chatId);
                     });
@@ -96,7 +88,10 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            resultDiv.innerHTML = 'Error: ' + error;
+        });
+
+        document.addEventListener("click", function () {
+            dropdown.style.display = 'none';
         });
     });
 
