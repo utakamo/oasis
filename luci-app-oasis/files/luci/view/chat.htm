@@ -18,8 +18,10 @@
 
 <script>
 
-    document.addEventListener('DOMContentLoaded', function() {
+    const chatItems = null;
+    let activeConversation = false;
 
+    document.addEventListener('DOMContentLoaded', function () {
         const chatListContainer = document.getElementById("chat-list");
 
         fetch('<%=build_url("admin", "network", "oasis", "chat-list")%>', {
@@ -42,6 +44,14 @@
 
                     li.appendChild(span);
                     chatListContainer.appendChild(li);
+                });
+
+                const chatItems = document.querySelectorAll('#chat-list li');
+                chatItems.forEach(item => {
+                    item.addEventListener('click', function () {
+                        const chatId = this.getAttribute('data-id');
+                        handleChatItemClick(chatId);
+                    });
                 });
             } else {
                 console.error("Unexpected data format:", data);
@@ -77,7 +87,7 @@
         }
     }
 
-    let chat_id = "";
+    let targetChatId = "";
     let message_outputing = false;
     const resourcePath = '<%= resource %>';
     const iconPath = `${resourcePath}/luci-app-oasis/openwrt.png`;
@@ -137,7 +147,7 @@
 
         //console.log('Resource Path:', resourcePath);
         //console.log('Icon Path:', iconPath);
-
+        activeConversation = true;
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
 
         //console.log('baseUrl:', baseUrl);
@@ -150,7 +160,7 @@
                 },
                 body: JSON.stringify({
                     cmd: "chat",
-                    id: chat_id,
+                    id: targetChatId,
                     message: messageText,
                 })
             });
@@ -179,8 +189,19 @@
 
                         if (jsonResponse.id) {
                             message_outputing = false;
-                            chat_id = jsonResponse.id;
+                            targetChatId = jsonResponse.id;
                             showTitlePopup(jsonResponse.title);
+                            
+                            // New Chat List Item
+                            const chatListContainer = document.getElementById("chat-list");
+                            const li = document.createElement("li");
+                            li.setAttribute("data-id", jsonResponse.id);
+
+                            const span = document.createElement("span");
+                            span.textContent = jsonResponse.title;
+
+                            li.appendChild(span);
+                            chatListContainer.appendChild(li);
                         }
                     } catch (e) {
                         // Ignore JSON parsing errors and continue buffering
@@ -194,7 +215,70 @@
         } catch (error) {
             console.error('Request failed', error);
         }
+        activeConversation = false;
     }
+
+    function handleChatItemClick(chatId) {
+
+        if (activeConversation) {
+            return;
+        }
+
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+
+        if (chatMessagesContainer) {
+            const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
+            messages.forEach(message => message.remove());
+        }
+
+        fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ params: chatId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            if (data.messages && Array.isArray(data.messages)) {
+                data.messages.forEach(message => {
+                    const messageDiv = document.createElement('div');
+                    const messageTextDiv = document.createElement('div');
+
+                    if (message.role === 'user') {
+                        messageDiv.className = 'message sent';
+                    } else if (message.role === 'assistant') {
+                        messageDiv.className = 'message received';
+
+                        const iconDiv = document.createElement('div');
+                        iconDiv.className = 'icon';
+                        iconDiv.style.backgroundImage = 'url("/luci-static/resources/luci-app-oasis/openwrt.png")';
+
+                        messageDiv.appendChild(iconDiv);
+                    }
+
+                    messageTextDiv.className = 'message-text';
+                    messageTextDiv.textContent = message.content;
+
+                    messageDiv.appendChild(messageTextDiv);
+
+                    chatMessagesContainer.appendChild(messageDiv);
+                });
+            } else {
+                console.error("Unexpected data format:", data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        targetChatId = chatId;
+    }
+
 </script>
 
 <%+footer%>

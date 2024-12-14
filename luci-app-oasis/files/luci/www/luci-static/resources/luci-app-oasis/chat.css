@@ -10,6 +10,8 @@
     border-right: 1px solid #ddd;
     border-radius: 8px 0 0 8px;
     overflow-y: auto;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 }
 
 .chat-list-container ul {
