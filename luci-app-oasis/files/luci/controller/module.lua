@@ -8,6 +8,7 @@ function index()
     entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 30).dependent=false
     entry({"admin", "network", "oasis", "chat-list"}, call("retrive_chat_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "delete-chat-data"}, call("delete_chat_data"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -32,6 +33,25 @@ function load_chat_data()
     local json_param = { id = params }
 
     local result = util.ubus("oasis.chat", "load", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function delete_chat_data()
+
+    local params = luci_http.formvalue("params")
+
+    if not params then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    -- Create a parameter table for ubus call
+    local json_param = { id = params }
+
+    local result = util.ubus("oasis.chat", "delete", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)

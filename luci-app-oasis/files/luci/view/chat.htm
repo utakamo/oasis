@@ -26,6 +26,7 @@
 
     const chatItems = null;
     let activeConversation = false;
+    let targetChatItemId = null;
 
     document.addEventListener('DOMContentLoaded', function () {
         const chatListContainer = document.getElementById("chat-list");
@@ -58,6 +59,7 @@
                     menuButton.textContent = "⋮";
 
                     menuButton.addEventListener("click", function (event) {
+                        targetChatItemId = event.target.closest("li").getAttribute("data-id");
                         event.stopPropagation();
                         const rect = this.getBoundingClientRect();
                         dropdown.style.top = `${rect.bottom + window.scrollY}px`;
@@ -93,6 +95,109 @@
         document.addEventListener("click", function () {
             dropdown.style.display = 'none';
         });
+
+        document.addEventListener("click", function (event) {
+            const target = event.target;
+
+            if (target.classList.contains("oasis-menu-item")) {
+                const action = target.getAttribute("data-action");
+
+                if (action === "delete") {
+                    handleDeleteAction(target);
+                } else if (action === "rename") {
+                    handleRenameAction(target);
+                } else if (action === "export") {
+                    handleExportAction(target);
+                }
+            }
+        });
+
+        function handleDeleteAction(button) {
+
+            //console.log("Deleting chat with ID:", targetChatItemId);
+
+            fetch('<%=build_url("admin", "network", "oasis", "delete-chat-data")%>', {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ params: targetChatItemId }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === "OK") {
+                    console.log(`Chat ID ${targetChatItemId} deleted successfully.`);
+                    button.closest("li").remove();
+                } else {
+                    console.error("Error deleting chat:", data.error);
+                    alert("Failed to delete chat. Please try again.");
+                }
+            })
+            .catch((error) => {
+                console.error("Request failed:", error);
+                alert("Failed to delete chat. Please try again.");
+            });
+        }
+
+        function handleRenameAction(button) {
+
+            console.log("Renaming chat with ID:", targetChatItemId);
+            const newName = prompt("Enter new name for the chat:", "");
+
+            if (newName) {
+                fetch('<%=build_url("admin", "network", "oasis", "rename-chat")%>', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ id: targetChatItemId, new_name: newName }),
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        console.log(`Chat ID ${targetChatItemId} renamed successfully.`);
+                        const chatTitle = button.closest("li").querySelector("span");
+                        chatTitle.textContent = newName;
+                    } else {
+                        console.error("Error renaming chat:", data.error);
+                        alert("Failed to rename chat. Please try again.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Request failed:", error);
+                    alert("Failed to rename chat. Please try again.");
+                });
+            }
+        }
+
+        function handleExportAction(button) {
+            console.log("Exporting chat with ID:", targetChatItemId);
+
+            fetch('<%=build_url("admin", "network", "oasis", "export-chat")%>', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ id: targetChatItemId }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success && data.exported_url) {
+                    console.log(`Chat ID ${targetChatItemId} exported successfully.`);
+                    const link = document.createElement("a");
+                    link.href = data.exported_url;
+                    link.download = `chat_${targetChatItemId}.json`;
+                    link.click();
+                } else {
+                    console.error("Error exporting chat:", data.error);
+                    alert("Failed to export chat. Please try again.");
+                }
+            })
+            .catch((error) => {
+                console.error("Request failed:", error);
+                alert("Failed to export chat. Please try again.");
+            });
+        }
     });
 
     function showTitlePopup(title) {
@@ -181,6 +286,7 @@
         //console.log('Icon Path:', iconPath);
         activeConversation = true;
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
+        const dropdown = document.getElementById("oasis-dropdown");
 
         //console.log('baseUrl:', baseUrl);
 
@@ -232,8 +338,25 @@
                             const span = document.createElement("span");
                             span.textContent = jsonResponse.title;
 
+                            const menuContainer = document.createElement("div");
+
+                            menuContainer.classList.add("oasis-hamburger-menu");
+
+                            const menuButton = document.createElement("button");
+                            menuButton.classList.add("oasis-menu-btn");
+                            menuButton.textContent = "⋮";
+                            menuContainer.appendChild(menuButton);
                             li.appendChild(span);
+                            li.appendChild(menuContainer);
                             chatListContainer.appendChild(li);
+
+                            menuButton.addEventListener("click", function (event) {
+                                event.stopPropagation();
+                                const rect = this.getBoundingClientRect();
+                                dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+                                dropdown.style.left = `${rect.left + window.scrollX}px`;
+                                dropdown.style.display = "block";
+                            });
                         }
                     } catch (e) {
                         // Ignore JSON parsing errors and continue buffering
