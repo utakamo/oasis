@@ -10,7 +10,7 @@
     <div class="chat-container">
         <div class="chat-messages"></div>
         <div class="chat-input">
-            <input type="text" id="message-input" placeholder="Your Message">
+            <textarea id="message-input" placeholder="Your Message" rows="1"></textarea>
             <button id="send-button">Send</button>
             <button id="new-button">New</button>
         </div>
@@ -523,6 +523,22 @@
             const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
             messages.forEach(message => message.remove());
         }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const messageInput = document.getElementById('message-input');
+
+        messageInput.addEventListener('input', function () {
+            const lineBreaks = (this.value.match(/\n/g) || []).length;
+            const lineHeight = parseInt(window.getComputedStyle(this).lineHeight);
+            const newHeight = Math.min(Math.max((lineBreaks + 1), 3) * lineHeight, lineHeight * 5);
+            this.style.height = `${newHeight}rem`;
+            if (newHeight === lineHeight * 5) {
+                this.style.overflowY = 'auto';
+            } else {
+                this.style.overflowY = 'hidden';
+            }
+        });
     });
 
 </script>
