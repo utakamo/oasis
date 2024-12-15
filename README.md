@@ -82,6 +82,7 @@ Commands:
  - chat [id=<chat-id>]
  - prompt <message>
  - delchat id=<chat-id>
+ - sysrole [[<chat|prompt|call> [<options>] [<system message>]]
  - rename id=<chat-id> <title> 
  - list
  - call <script> <messsage>
