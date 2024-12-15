@@ -51,10 +51,10 @@
 }
 
 .oasis-hamburger-menu {
-    position: absolute; /* 親要素（li）の右端に固定 */
-    right: 10px; /* liの右端から10pxの余白 */
-    top: 50%; /* 垂直方向の中央に配置 */
-    transform: translateY(-50%); /* 完全に中央揃えにする */
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
 }
