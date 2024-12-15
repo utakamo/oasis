@@ -375,6 +375,7 @@
                         const jsonResponse = JSON.parse(chunk.trim());
 
                         if (jsonResponse.message && jsonResponse.message.content) {
+                            // console.log(jsonResponse.message.content)
                             fullMessage += jsonResponse.message.content;
                             receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
                             //receivedMessageTextContainer.textContent = convertStaticCodeBlocks(receivedMessageTextContainer.textContent);
@@ -429,7 +430,6 @@
                         // Ignore JSON parsing errors and continue buffering
                     }
                 }
-                message_outputing = false;
                 receivedMessageTextContainer.InnerHtml = convertMarkdownToHTML(fullMessage.trim());
             } else {
                 console.error('Error:', response.statusText);
@@ -437,6 +437,7 @@
         } catch (error) {
             console.error('Request failed', error);
         }
+        message_outputing = false;
         activeConversation = false;
     }
 
@@ -507,11 +508,7 @@
 
     document.getElementById('new-button').addEventListener('click', async function() {
 
-        if (activeConversation) {
-            return;
-        }
-
-        if (message_outputing) {
+        if (activeConversation || message_outputing) {
             return;
         }
 
@@ -524,27 +521,6 @@
             messages.forEach(message => message.remove());
         }
     });
-
-    /*
-    document.addEventListener('DOMContentLoaded', function () {
-        const messageInput = document.getElementById('message-input');
-
-        messageInput.addEventListener('input', function () {
-            const lineBreaks = (this.value.match(/\n/g) || []).length;
-            const lineHeight = parseInt(window.getComputedStyle(this).lineHeight);
-
-            console.log("lineBreaks :" + lineBreaks);
-            const newHeight = (lineBreaks + 1) * lineHeight;
-            this.style.height = `${newHeight}rem`;
-            if (newHeight >= lineHeight * 5) {
-                this.style.overflowY = 'auto';
-            } else {
-                this.style.overflowY = 'hidden';
-            }
-        });
-    });
-    */
-
 </script>
 
 <%+footer%>
