@@ -430,7 +430,7 @@
                     }
                 }
                 message_outputing = false;
-                receivedMessageTextContainer.textContent = fullMessage.trim();
+                receivedMessageTextContainer.InnerHtml = convertMarkdownToHTML(fullMessage.trim());
             } else {
                 console.error('Error:', response.statusText);
             }

@@ -263,8 +263,7 @@
 }
 
 pre {
-    width: 100%;
+    display: block;
     line-height: 1.4;
     border-radius: 3px;
-    display: block;
 }
