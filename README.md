@@ -49,7 +49,7 @@ root@OpenWrt:~# service rpcd reload
 
 ## Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
-<img width="854" alt="oasis_openwrt_chat_window" src="https://github.com/user-attachments/assets/d70ff6e2-313d-48af-96d5-84c193e74ff4">
+<img width="875" alt="image" src="https://github.com/user-attachments/assets/f80a4eea-2fd9-4ab8-b367-07b6c00bd721" />
 
 ## How to install only oasis
 Dependency: lua-curl-v3
