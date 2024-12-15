@@ -5,7 +5,12 @@ local oasis = require("ai_chat_ctrl")
 
 local request_method = os.getenv("REQUEST_METHOD")
 
-local function classify_param(classified_param_tbl, param_chunk) 
+function classify_param(classified_param_tbl, param_chunk)
+
+    if type(param_chunk) ~= "string" then
+        return
+    end
+
     local config, section, option, value = param_chunk:match("([^%.]+)%.([^%.]+)%.([^=]+)=(.+)")
 
     if config and section and option and value then
@@ -84,10 +89,10 @@ function check_uci_cmd_candidate(lines)
 	return uci_list
 end
 
--- local code_blocks = extract_code_blocks(text)
-function uci_cmd_filter(code_blocks)
+function uci_cmd_filter(message)
 
 	local uci_list = nil
+	local code_blocks = extract_code_blocks(message)
 
 	for i, code in ipairs(code_blocks) do
 		local lines = split_lines(code)
@@ -126,7 +131,8 @@ if request_method == "POST" then
         return
     end
 
-    oasis.output(json_tbl)
+    local total_message = oasis.output(json_tbl)
+	
 else
     io.write("This script only handles POST requests.")
 end
