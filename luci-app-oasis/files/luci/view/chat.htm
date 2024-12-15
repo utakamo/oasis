@@ -348,7 +348,7 @@
                             // New Chat List Item
                             const chatListContainer = document.getElementById("chat-list");
                             const li = document.createElement("li");
-                            li.setAttribute("data-id", jsonResponse.id);
+                            li.setAttribute("data-id", targetChatId);
 
                             const span = document.createElement("span");
                             span.textContent = jsonResponse.title;
@@ -364,6 +364,16 @@
                             li.appendChild(span);
                             li.appendChild(menuContainer);
                             chatListContainer.appendChild(li);
+
+                            li.addEventListener('click', function (event) {
+                                targetChatItemId = event.target.closest("li").getAttribute("data-id");
+
+                                if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
+                                    return;
+                                }
+
+                                handleChatItemClick(targetChatItemId);
+                            });
 
                             menuButton.addEventListener("click", function (event) {
                                 targetChatItemId = event.target.closest("li").getAttribute("data-id");
@@ -390,6 +400,8 @@
     }
 
     function handleChatItemClick(chatId) {
+
+        console.log("chat id = " + chatId);
 
         if (activeConversation) {
             return;
