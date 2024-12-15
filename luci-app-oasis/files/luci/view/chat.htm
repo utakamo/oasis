@@ -29,6 +29,46 @@
     let activeConversation = false;
     let targetChatItemId = null;
 
+    function convertMarkdownToHTML(input) {
+        let html = '';
+        let isCodeBlock = false;
+        const lines = input.split('\n');
+
+        for (let line of lines) {
+            if (line.startsWith('```')) {
+                if (!isCodeBlock) {
+                    html += '<pre class="console-command-color">';
+                    isCodeBlock = true;
+                } else {
+                    html += '</pre>';
+                    isCodeBlock = false;
+                }
+            } else if (isCodeBlock) {
+                html += escapeHTML(line) + '\n';
+            } else {
+                line = line.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
+                line = line.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
+                line = line.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+                line = line.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+                line = line.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+                line = line.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+                line = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+                line = line.replace(/\*(.+?)\*/g, '<i>$1</i>');
+                html += line + '<br>';
+            }
+        }
+
+        return html;
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const chatListContainer = document.getElementById("chat-list");
         const dropdown = document.getElementById("oasis-dropdown");
@@ -284,12 +324,12 @@
 
         const receivedMessageTextContainer = document.createElement('div');
         receivedMessageTextContainer.className = 'message-text';
-
+    
         receivedMessageContainer.appendChild(receivedIconContainer);
         receivedMessageContainer.appendChild(receivedMessageTextContainer);
 
         document.querySelector('.chat-messages').appendChild(receivedMessageContainer);
-
+        
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         send_message(receivedMessageTextContainer, messageText);
@@ -336,7 +376,8 @@
 
                         if (jsonResponse.message && jsonResponse.message.content) {
                             fullMessage += jsonResponse.message.content;
-                            receivedMessageTextContainer.textContent += jsonResponse.message.content;
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
+                            //receivedMessageTextContainer.textContent = convertStaticCodeBlocks(receivedMessageTextContainer.textContent);
                             chatMessages.scrollTop = chatMessages.scrollHeight;
                         }
 
@@ -446,7 +487,9 @@
                     }
 
                     messageTextDiv.className = 'message-text';
-                    messageTextDiv.textContent = message.content;
+                    message.content = convertMarkdownToHTML(message.content);
+                    messageTextDiv.innerHTML = message.content;
+                    //messageTextDiv.textContent = message.content;
 
                     messageDiv.appendChild(messageTextDiv);
 

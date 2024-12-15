@@ -21,6 +21,7 @@
 }
 
 .chat-list-container li {
+    color: #444444;
     position: relative;
     display: flex;
     align-items: center;
@@ -254,4 +255,16 @@
 
 .popup.hide {
     opacity: 0;
+}
+
+.console-command-color {
+    background-color:#333333;
+    color: #ffffff;
+}
+
+pre {
+    width: 100%;
+    line-height: 1.4;
+    border-radius: 3px;
+    display: block;
 }
