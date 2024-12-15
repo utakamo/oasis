@@ -48,7 +48,7 @@ function split_lines(code_block)
 	return lines
 end
 
-function check_uci_cmds(lines)
+function check_uci_cmd_candidate(lines)
 
 	local uci_list = {
 		set      = {},
@@ -77,6 +77,26 @@ function check_uci_cmds(lines)
 					param = param
 				}
 				break
+			end
+		end
+	end
+
+	return uci_list
+end
+
+-- local code_blocks = extract_code_blocks(text)
+function uci_cmd_filter(code_blocks)
+
+	local uci_list = nil
+
+	for i, code in ipairs(code_blocks) do
+		local lines = split_lines(code)
+		uci_list = check_uci_cmd_candidate(lines)
+		for _, target_cmd_list in pairs(uci_list) do
+			for _, target in ipairs(target_cmd_list) do
+				for key, param in pairs(target) do
+					classify_param(target, param)
+				end
 			end
 		end
 	end
