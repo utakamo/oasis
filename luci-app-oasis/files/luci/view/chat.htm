@@ -378,7 +378,6 @@
                             // console.log(jsonResponse.message.content)
                             fullMessage += jsonResponse.message.content;
                             receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
-                            //receivedMessageTextContainer.textContent = convertStaticCodeBlocks(receivedMessageTextContainer.textContent);
                             chatMessages.scrollTop = chatMessages.scrollHeight;
                         }
 
@@ -430,6 +429,8 @@
                         // Ignore JSON parsing errors and continue buffering
                     }
                 }
+                message_outputing = false;
+                activeConversation = false;
                 receivedMessageTextContainer.InnerHtml = convertMarkdownToHTML(fullMessage.trim());
             } else {
                 console.error('Error:', response.statusText);
