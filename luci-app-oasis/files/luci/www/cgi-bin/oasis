@@ -131,7 +131,7 @@ if request_method == "POST" then
         return
     end
 
-    local total_message = oasis.output(json_tbl)
+    oasis.output(json_tbl)
 	
 else
     io.write("This script only handles POST requests.")
