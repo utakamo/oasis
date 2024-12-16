@@ -253,6 +253,8 @@ local communicate = function(basic, chat, format)
         chunk_all = ""
     end)
 
+    -- os.execute("echo \"" .. ai.message .. "\" >> /tmp/oasis.log")
+
     if format == "chat" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
             push_chat_data_for_record(chat, ai)
@@ -281,6 +283,9 @@ local communicate = function(basic, chat, format)
             end
         end
     end
+
+    -- os.execute("echo \"" .. ai.message .. "\" >> /tmp/oasis.log")
+    return ai.message
 end
 
 local storage = function(args)
@@ -637,7 +642,8 @@ local output = function(arg)
 
     push_chat_data_for_record(chat, user)
     record_chat_data(basic, chat)
-    communicate(basic, chat, "output")
+    local plain_message = communicate(basic, chat, "output")
+    return plain_message
 end
 
 local rename = function(arg)
