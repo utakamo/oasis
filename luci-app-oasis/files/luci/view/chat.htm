@@ -21,6 +21,16 @@
         <button class="oasis-menu-item" data-action="rename">Rename</button>
         <button class="oasis-menu-item" data-action="export">Export</button>
     </div>
+
+    <div class="export-popup-overlay" id="export-popup-overlay"></div>
+    <div class="export-popup" id="export-popup">
+        <h3>Select Export Type</h3>
+        <div class="export-popup-buttons">
+            <button id="json-export">Raw(JSON)</button>
+            <button id="text-export">Text</button>
+            <button id="export-cancel" onclick="closeExportPopup()">Cancel</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -67,6 +77,13 @@
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+    }
+
+    function closeExportPopup() {
+        const popup = document.getElementById('export-popup');
+        const overlay = document.getElementById('export-popup-overlay');
+        popup.style.display = 'none';
+        overlay.style.display = 'none';
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -144,9 +161,9 @@
                 if (action === "delete") {
                     handleDeleteAction(target);
                 } else if (action === "rename") {
-                    handleRenameAction(target);
+                    handleRenameAction(target, targetChatItemId);
                 } else if (action === "export") {
-                    handleExportAction(target);
+                    handleExportAction(target, targetChatItemId);
                 }
             }
         });
@@ -225,32 +242,107 @@
             }
         }
 
-        function handleExportAction(button) {
-            console.log("Exporting chat with ID:", targetChatItemId);
+        function handleExportAction(button, id) {
+            const popup = document.getElementById('export-popup');
+            const overlay = document.getElementById('export-popup-overlay');
+            popup.style.display = 'block';
+            overlay.style.display = 'block';
 
-            fetch('<%=build_url("admin", "network", "oasis", "export-chat")%>', {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ id: targetChatItemId }),
-            })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success && data.exported_url) {
-                    console.log(`Chat ID ${targetChatItemId} exported successfully.`);
-                    const link = document.createElement("a");
-                    link.href = data.exported_url;
-                    link.download = `chat_${targetChatItemId}.json`;
-                    link.click();
-                } else {
-                    console.error("Error exporting chat:", data.error);
-                    alert("Failed to export chat. Please try again.");
-                }
-            })
-            .catch((error) => {
-                console.error("Request failed:", error);
-                alert("Failed to export chat. Please try again.");
+            //console.log("id = " + id);
+
+            const json_export = document.getElementById("json-export");
+            const text_export = document.getElementById("text-export");
+
+            json_export.addEventListener('click', function() {
+                console.log("Push JSON!!");
+
+                fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({ params: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+
+                    if (data.error) {
+                        console.error("Error from server:", data.error);
+                        return;
+                    }
+
+                    raw_data = JSON.stringify(data, null, 2);
+
+                    const blob = new Blob([raw_data], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `chat_data_${id}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+
+                closeExportPopup();
+            });
+
+            text_export.addEventListener('click', function() {
+
+                let chat_data = "";
+
+                fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({ params: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+
+                    if (data.error) {
+                        console.error("Error from server:", data.error);
+                        return;
+                    }
+
+                    data.messages.forEach(message => {
+                        if (message.role === 'user') {
+                            chat_data += ">>> You\n";
+                        } else if (message.role === 'assistant') {
+                            chat_data += ">>> AI\n";
+                        }
+
+                        chat_data += message.content + "\n\n";
+                    });
+
+                    const blob = new Blob([chat_data], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `chat_data_${id}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    console.log("Text file downloaded successfully.");
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+
+                closeExportPopup();
+            });
+
+            text_export.addEventListener('click', function() {
+                console.log("Push TEXT!!");
+                closeExportPopup();
             });
         }
     });
@@ -369,15 +461,14 @@
                     if (done) break;
 
                     const chunk = decoder.decode(value, { stream: true });
-                    //console.log(chunk)
 
                     try {
                         const jsonResponse = JSON.parse(chunk.trim());
 
                         if (jsonResponse.message && jsonResponse.message.content) {
-                            // console.log(jsonResponse.message.content)
+                            console.log(jsonResponse.message.content)
                             fullMessage += jsonResponse.message.content;
-                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
                             chatMessages.scrollTop = chatMessages.scrollHeight;
                         }
 
@@ -466,6 +557,7 @@
         })
         .then(response => response.json())
         .then(data => {
+
             if (data.error) {
                 console.error("Error from server:", data.error);
                 return;

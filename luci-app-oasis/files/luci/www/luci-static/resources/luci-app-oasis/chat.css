@@ -274,3 +274,65 @@ pre {
     line-height: 1.4;
     border-radius: 3px;
 }
+
+.export-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.export-popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.export-popup-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.export-popup .export-popup-buttons {
+    margin-top: 20px;
+}
+
+.export-popup button {
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+    white-space: nowrap;
+    width: 120px;
+    text-align: center;
+}
+
+#json-export, #text-export {
+    background-color: #007bff;
+    color: white;
+}
+
+#json-export:hover, #text-export:hover {
+    background-color: #0056b3;
+}
+
+#export-cancel {
+    background-color: #A9A9A9;
+}
+
+#export-cancel:hover {
+    background-color: #C0C0C0;
+}
