@@ -275,7 +275,7 @@ pre {
     border-radius: 3px;
 }
 
-.export-popup {
+.export-popup, .rename-popup {
     display: none;
     position: fixed;
     top: 50%;
@@ -288,7 +288,7 @@ pre {
     z-index: 1000;
 }
 
-.export-popup-overlay {
+.export-popup-overlay, .rename-popup-overlay {
     display: none;
     position: fixed;
     top: 0;
@@ -299,17 +299,17 @@ pre {
     z-index: 1000;
 }
 
-.export-popup-buttons {
+.export-popup-buttons, .rename-popup-buttons {
     display: flex;
     justify-content: center;
     gap: 10px;
 }
 
-.export-popup .export-popup-buttons {
+.export-popup .export-popup-buttons, .rename-popup .rename-popup-buttons {
     margin-top: 20px;
 }
 
-.export-popup button {
+.export-popup button, .rename-popup button {
     padding: 10px 20px;
     border: none;
     cursor: pointer;
@@ -320,19 +320,23 @@ pre {
     text-align: center;
 }
 
-#json-export, #text-export {
+#rename-line-box {
+    width: 100%;
+}
+
+#json-export, #text-export, #rename {
     background-color: #007bff;
     color: white;
 }
 
-#json-export:hover, #text-export:hover {
+#json-export:hover, #text-export:hover, #rename:hover {
     background-color: #0056b3;
 }
 
-#export-cancel {
+#export-cancel, #rename-cancel {
     background-color: #A9A9A9;
 }
 
-#export-cancel:hover {
+#export-cancel:hover, #rename-cancel:hover {
     background-color: #C0C0C0;
 }

@@ -10,6 +10,7 @@ function index()
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "export-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-chat-data"}, call("delete_chat_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "rename-chat"}, call("rename"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -53,6 +54,25 @@ function delete_chat_data()
     local json_param = { id = params }
 
     local result = util.ubus("oasis.chat", "delete", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function rename()
+
+    local id = luci_http.formvalue("id")
+    local title = luci_http.formvalue("title")
+
+    if (not id) or (not title) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local json_param = {id = id, title = title}
+
+    local result = util.ubus("oasis.title", "manual_set", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)

@@ -22,6 +22,16 @@
         <button class="oasis-menu-item" data-action="export">Export</button>
     </div>
 
+    <div class="rename-popup-overlay" id="rename-popup-overlay"></div>
+    <div class="rename-popup" id="rename-popup">
+        <h3>Rename chat name</h3>
+        <input type="text" id="rename-line-box" >
+        <div class="rename-popup-buttons">
+            <button id="rename">Rename</button>
+            <button id="rename-cancel" onclick="closeRenamePopup()">Cancel</button>
+        </div>
+    </div>
+
     <div class="export-popup-overlay" id="export-popup-overlay"></div>
     <div class="export-popup" id="export-popup">
         <h3>Select Export Type</h3>
@@ -38,6 +48,7 @@
     const chatItems = null;
     let activeConversation = false;
     let targetChatItemId = null;
+    let chatList = null;
 
     function convertMarkdownToHTML(input) {
         let html = '';
@@ -79,6 +90,13 @@
                 .replace(/'/g, "&#039;");
     }
 
+    function closeRenamePopup() {
+        const popup = document.getElementById('rename-popup');
+        const overlay = document.getElementById('rename-popup-overlay');
+        popup.style.display = 'none';
+        overlay.style.display = 'none';
+    }
+
     function closeExportPopup() {
         const popup = document.getElementById('export-popup');
         const overlay = document.getElementById('export-popup-overlay');
@@ -101,6 +119,9 @@
             }
 
             if ((data.item) && (data.item.length > 0) &&  Array.isArray(data.item)) {
+
+                chatList = data;
+
                 data.item.forEach(chat => {
                     const li = document.createElement("li");
                     li.setAttribute("data-id", chat.id);
@@ -170,7 +191,7 @@
 
         function handleDeleteAction(button) {
 
-            console.log("Deleting chat with ID:", targetChatItemId);
+            //console.log("Deleting chat with ID:", targetChatItemId);
 
             if (activeConversation) {
                 return;
@@ -186,7 +207,7 @@
             .then((response) => response.json())
             .then((data) => {
                 if (data.status === "OK") {
-                    console.log(`Chat ID ${targetChatItemId} deleted successfully.`);
+                    //console.log(`Chat ID ${targetChatItemId} deleted successfully.`);
                     const listItem = document.querySelector(`#chat-list li[data-id='${targetChatItemId}']`);
                     if (listItem) {
                         listItem.remove();
@@ -213,33 +234,64 @@
 
         function handleRenameAction(button) {
 
-            console.log("Renaming chat with ID:", targetChatItemId);
-            const newName = prompt("Enter new name for the chat:", "");
+            //console.log("Renaming chat with ID:", targetChatItemId);
+            //const newName = prompt("Enter new name for the chat:", "");
 
-            if (newName) {
+            const renameLineBox = document.getElementById('rename-line-box');
+            const popup = document.getElementById('rename-popup');
+            const overlay = document.getElementById('rename-popup-overlay');
+            popup.style.display = 'block';
+            overlay.style.display = 'block';
+
+            const rename = document.getElementById("rename");
+
+            chatList.item.forEach(chat => {
+                //console.log("chat.id = " + chat.id);
+                if (chat.id === targetChatItemId) {
+                    title = chat.title;
+                }
+            });
+
+            renameLineBox.setAttribute('placeholder', title);
+
+            rename.addEventListener('click', function() {
+
+                const rename_box = document.getElementById('rename-line-box');
+                let new_title = rename_box.value;
+
                 fetch('<%=build_url("admin", "network", "oasis", "rename-chat")%>', {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
+                        'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    body: JSON.stringify({ id: targetChatItemId, new_name: newName }),
+                    body: new URLSearchParams({ id: targetChatItemId, title: new_title })
                 })
                 .then((response) => response.json())
                 .then((data) => {
-                    if (data.success) {
-                        console.log(`Chat ID ${targetChatItemId} renamed successfully.`);
-                        const chatTitle = button.closest("li").querySelector("span");
-                        chatTitle.textContent = newName;
-                    } else {
+                    if (data.error) {
                         console.error("Error renaming chat:", data.error);
-                        alert("Failed to rename chat. Please try again.");
+                        return;
                     }
                 })
                 .catch((error) => {
                     console.error("Request failed:", error);
-                    alert("Failed to rename chat. Please try again.");
+                    //alert("Failed to rename chat. Please try again.");
                 });
-            }
+
+                const listItem = document.querySelector(`li[data-id="${targetChatItemId}"]`);
+                const spanElement = listItem.querySelector("span");
+                spanElement.textContent = new_title
+                rename_box.value = "";
+
+                chatList.item.forEach(chat => {
+                    if (chat.id === targetChatItemId) {
+                        chat.title = new_title;
+                        //console.log("chat.title = " + chat.title);
+                    }
+                });
+
+                closeRenamePopup();
+            }, { once: true })
         }
 
         function handleExportAction(button, id) {
@@ -466,7 +518,7 @@
                         const jsonResponse = JSON.parse(chunk.trim());
 
                         if (jsonResponse.message && jsonResponse.message.content) {
-                            console.log(jsonResponse.message.content)
+                            //console.log(jsonResponse.message.content)
                             fullMessage += jsonResponse.message.content;
                             receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
                             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -499,7 +551,6 @@
 
                             li.addEventListener('click', function (event) {
                                 targetChatItemId = event.target.closest("li").getAttribute("data-id");
-
                                 if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
                                     return;
                                 }
@@ -535,7 +586,7 @@
 
     function handleChatItemClick(chatId) {
 
-        console.log("chat id = " + chatId);
+        //console.log("chat id = " + chatId);
 
         if (activeConversation) {
             return;
