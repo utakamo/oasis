@@ -185,19 +185,53 @@ local communicate = function(basic, chat, format)
     ai.role = "unknown"
     ai.message = ""
 
+    local path = uci:get_first("oasis", "conf", "path", "")
+    local conf_data = common.load_conf_file(path)
+
+    local custom = {}
+    custom.chat = uci:get_first("oasis", "chat", "custom", "0")
+    custom.prompt = uci:get_first("oasis", "prompt", "custom", "0")
+    custom.call = uci:get_first("oasis", "call", "custom", "0")
+
     if format == "chat" then
+
+        if custom.chat == "1" then
+            local content = conf_data.custom.chat
+            os.execute("echo " .. content .. " >> /tmp/oasis.log")
+            table.insert(chat.messages, 1, {
+                role = role.system,
+                content = content
+            })
+        end
+
         print("\n\27[34m" .. chat.model .. "\27[0m")
     elseif format == "prompt" then
+
+        local content = conf_data.default.prompt
+
+        if custom.prompt == "1" then
+            content = conf_data.custom.prompt
+        end
+
+        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
+
         table.insert(chat.messages, 1, {
-            role = "system",
-            content = "Please respond to the user's questions in short sentences,"
-            .. "and only provide command examples for questions about Linux commands, etc."
+            role = role.system,
+            content = content
         })
     elseif format == "call" then
+
+        local content = conf_data.default.call
+
+        if custom.call == "1" then
+            content = conf_data.custom.call
+        end
+
+        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
+
         table.insert(chat.messages, 1, {
-            role = "system",
-            content = "Please use the commands presented by the user to respond to the user's request."
-            .. " If you cannot do so, please respond to that."
+            role = role.system,
+            content = content
         })
     end
 

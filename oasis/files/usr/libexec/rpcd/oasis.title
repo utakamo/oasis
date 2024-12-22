@@ -68,7 +68,7 @@ local methods = {
 
             chat_json_tbl.model = conf.model or "unknown"
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {
-                role = "user",
+                role = "system",
                 content = "Please title the conversation so far."
                         .. " Please use only the title name in your response."
                         .. " Do not include any text not related to the title."

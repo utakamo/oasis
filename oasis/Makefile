@@ -8,7 +8,8 @@ APP_DIR = /usr/bin
 LIBRARY_DIR = /usr/lib/lua
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
 UCI_CONFIG_DIR = /etc/config
-STORAGE_DIR = /etc/oasis/chat_data
+OASIS_DIR = /etc/oasis
+STORAGE_DIR = $(OASIS_DIR)/chat_data
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,6 +38,7 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.chat $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.title $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_DATA) ./files/etc/config/oasis.config $(1)$(UCI_CONFIG_DIR)/oasis
+	$(INSTALL_DATA) ./files/etc/oasis/oasis.conf $(1)$(OASIS_DIR)
 endef
 
 $(eval $(call BuildPackage,oasis))
