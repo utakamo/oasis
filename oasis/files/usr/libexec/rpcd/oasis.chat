@@ -3,7 +3,7 @@
 local sys = require("luci.sys")
 local jsonc = require("luci.jsonc")
 local uci = require("luci.model.uci").cursor()
-local common = require("oasis_common")
+local common = require("oasis.common")
 
 local debug_log = function(log)
     sys.exec("echo " .. log .. " >> /tmp/oasis.log")

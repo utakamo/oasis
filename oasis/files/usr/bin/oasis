@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local ai = require("ai_chat_ctrl")
+local ai = require("oasis.chat.ctrl")
 
 local help = function()
     print("Usage: oasis <command> [[<options>] arguments]...")

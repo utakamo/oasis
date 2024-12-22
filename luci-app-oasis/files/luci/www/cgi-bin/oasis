@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 local jsonc = require("luci.jsonc")
 local uci = require("luci.model.uci").cursor()
-local oasis = require("ai_chat_ctrl")
+local oasis = require("oasis.chat.ctrl")
 
 local request_method = os.getenv("REQUEST_METHOD")
 
@@ -132,7 +132,6 @@ if request_method == "POST" then
     end
 
     oasis.output(json_tbl)
-	
 else
     io.write("This script only handles POST requests.")
 end

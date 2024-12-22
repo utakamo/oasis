@@ -3,8 +3,8 @@ local ubus = require("ubus")
 local sys = require("luci.sys")
 local uci = require("luci.model.uci").cursor()
 local jsonc = require("luci.jsonc")
-local transfer = require("ai_chat_transfer")
-local common = require("oasis_common")
+local transfer = require("oasis.chat.transfer")
+local common = require("oasis.common")
 
 local role = {
     system = "system",

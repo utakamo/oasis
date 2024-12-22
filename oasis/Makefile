@@ -26,14 +26,14 @@ endef
 
 define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(APP_DIR)
-	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)
+	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_DIR) $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(UCI_CONFIG_DIR)
 	$(INSTALL_DIR) $(1)$(STORAGE_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
-	$(INSTALL_BIN) ./files/usr/lib/lua/ai_chat_ctrl.lua $(1)$(LIBRARY_DIR)
-	$(INSTALL_BIN) ./files/usr/lib/lua/ai_chat_transfer.lua $(1)$(LIBRARY_DIR)
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis_common.lua $(1)$(LIBRARY_DIR)
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/ctrl.lua $(1)$(LIBRARY_DIR)/oasis/chat
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/transfer.lua $(1)$(LIBRARY_DIR)/oasis/chat
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/common.lua $(1)$(LIBRARY_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.chat $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.title $(1)$(UBUS_SERVER_APP_DIR)
