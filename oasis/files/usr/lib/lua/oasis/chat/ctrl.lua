@@ -300,13 +300,18 @@ local communicate = function(basic, chat, format)
         end
     elseif format == "output" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
+
+            --[[
             os.execute("echo basic.id = " .. basic.id .. " >> /tmp/oasis.log")
             os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/oasis.log")
+            os.execute("echo ai.message = " .. ai.message .. " >> /tmp/oasis.log")
             if (not basic.id) then
                 os.execute("echo not basic.id >> /tmp/oasis.log")
             else
                 os.execute("echo basic.id exist >> /tmp/oasis.log")
             end
+            ]]
+
             if (#basic.id == 0) then
                 push_chat_data_for_record(chat, ai)
                 local chat_info = {}
