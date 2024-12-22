@@ -185,18 +185,22 @@ local communicate = function(basic, chat, format)
     ai.role = "unknown"
     ai.message = ""
 
-    local path = uci:get_first("oasis", "conf", "path", "")
-    local conf_data = common.load_conf_file(path)
+    local spath = uci:get("oasis", "role", "path")
+    local sysrole = common.load_conf_file(spath)
 
-    local custom = {}
-    custom.chat = uci:get_first("oasis", "chat", "custom", "0")
-    custom.prompt = uci:get_first("oasis", "prompt", "custom", "0")
-    custom.call = uci:get_first("oasis", "call", "custom", "0")
+    if sysrole and (sysrole.custom) then
+        sysrole.custom.flg = {}
+        sysrole.custom.flg.chat = uci:get_bool("oasis", "role", "chat")
+        sysrole.custom.flg.prompt = uci:get_bool("oasis", "role", "prompt")
+        sysrole.custom.flg.call = uci:get_bool("oasis", "role", "call")
+    else
+        sysrole = {custom = {flg = {chat = false, prompt = false, call = false}}}
+    end
 
     if format == "chat" then
 
-        if custom.chat == "1" then
-            local content = conf_data.custom.chat
+        if sysrole.custom.flg.chat then
+            local content = sysrole.custom.chat
             os.execute("echo " .. content .. " >> /tmp/oasis.log")
             table.insert(chat.messages, 1, {
                 role = role.system,
@@ -207,10 +211,10 @@ local communicate = function(basic, chat, format)
         print("\n\27[34m" .. chat.model .. "\27[0m")
     elseif format == "prompt" then
 
-        local content = conf_data.default.prompt
+        local content = sysrole.default.prompt
 
-        if custom.prompt == "1" then
-            content = conf_data.custom.prompt
+        if sysrole.custom.flg.prompt then
+            content = sysrole.custom.prompt
         end
 
         -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
@@ -221,10 +225,10 @@ local communicate = function(basic, chat, format)
         })
     elseif format == "call" then
 
-        local content = conf_data.default.call
+        local content = sysrole.default.call
 
-        if custom.call == "1" then
-            content = conf_data.custom.call
+        if sysrole.custom.flg.call then
+            content = sysrole.custom.call
         end
 
         -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
@@ -572,8 +576,10 @@ local chat = function(opt, arg)
     local basic, chat = init(arg, "chat")
     local your_message
 
+    local service_name = uci:get_first("oasis", "service", "name", "Unknown")
+
     print("-----------------------------------")
-    print(string.format("%-14s :\27[33m %s \27[0m", "Target Service", uci:get_first("oasis", "service", "name", "Unknown")))
+    print(string.format("%-14s :\27[33m %s \27[0m", "Target Service", service_name))
     print(string.format("%-14s :\27[33m %s \27[0m", "Model", chat.model))
     print("-----------------------------------")
 
