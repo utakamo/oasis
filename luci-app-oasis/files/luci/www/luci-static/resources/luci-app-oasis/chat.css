@@ -213,9 +213,15 @@
     cursor: pointer;
 }
 
+.chat-buttons button {
+    display: block;
+    margin-bottom: 10px;
+}
+
 #send-button {
     padding: 10px 20px;
     margin-left: 10px;
+    width: 5rem;
     height: 3rem;
     background-color: #007bff;
     color: white;
@@ -227,6 +233,7 @@
 #new-button {
     padding: 10px 20px;
     margin-left: 10px;
+    width: 5rem;
     height: 3rem;
     background-color: #00cc06;
     color: white;

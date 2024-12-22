@@ -11,8 +11,10 @@
         <div class="chat-messages"></div>
         <div class="chat-input">
             <textarea id="message-input" placeholder="Your Message"></textarea>
-            <button id="send-button">Send</button>
-            <button id="new-button">New</button>
+            <div class="chat-buttons">
+                <button id="send-button">Send</button>
+                <button id="new-button">New</button>
+            </div>
         </div>
     </div>
 
@@ -520,7 +522,7 @@
                         if (jsonResponse.message && jsonResponse.message.content) {
                             //console.log(jsonResponse.message.content)
                             fullMessage += jsonResponse.message.content;
-                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
                             chatMessages.scrollTop = chatMessages.scrollHeight;
                         }
 
