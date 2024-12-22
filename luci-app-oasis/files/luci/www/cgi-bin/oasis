@@ -28,10 +28,7 @@ if request_method == "POST" then
         return
     end
 
-    local result = oasis.output(json_tbl)
-
-	os.execute("echo test >> /tmp/oasis.log")
-	os.execute("echo " .. result .. " >> /tmp/oasis.log")
+    oasis.output(json_tbl)
 else
     io.write("This script only handles POST requests.")
 end
