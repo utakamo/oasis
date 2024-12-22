@@ -54,6 +54,9 @@ local methods = {
             local file_name = conf.prefix .. args.id
             local file_path = common.normalize_path(conf.path) .. file_name
 
+            local cpath = uci:get_first("oasis", "conf", "path", "")
+            local conf_data = common.load_conf_file(cpath)
+
             debug_log(file_name)
             local is_search = common.search_chat_id(args.id)
 
@@ -69,9 +72,7 @@ local methods = {
             chat_json_tbl.model = conf.model or "unknown"
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {
                 role = "system",
-                content = "Please title the conversation so far."
-                        .. " Please use only the title name in your response."
-                        .. " Do not include any text not related to the title."
+                content = conf_data.general.auto_title
             }
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
