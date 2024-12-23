@@ -92,9 +92,12 @@ local uci_cmd_filter = function(message)
 	for _, code in ipairs(code_blocks) do
 		local lines = split_lines(code)
 		uci_list = check_uci_cmd_candidate(lines)
-		for _, target_cmd_list in pairs(uci_list) do
-			for _, target in ipairs(target_cmd_list) do
-				for _, param in pairs(target) do
+		for k1, target_cmd_list in pairs(uci_list) do
+			os.execute("echo " .. k1 .. " >> /tmp/oasis-filter.log")
+			for k2, target in ipairs(target_cmd_list) do
+				os.execute("echo " .. k2 .. " >> /tmp/oasis-filter.log")
+				for k3, param in pairs(target) do
+					os.execute("echo " .. k3 .. " >> /tmp/oasis-filter.log")
 					classify_param(target, param)
 				end
 			end

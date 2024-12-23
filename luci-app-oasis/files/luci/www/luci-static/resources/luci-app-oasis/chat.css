@@ -97,6 +97,7 @@
     font-size: 14px;
     transition: background-color 0.2s ease;
     box-sizing: border-box;
+    color: #fff;
     background-color: #333333;
 }
 
@@ -176,6 +177,15 @@
 .message.received .message-text {
     background-color: #f1f1f1;
     align-self: flex-start;
+}
+
+.message.oasis-system .message-text {
+    background-color: #f1f1f1;
+    align-self: center;
+    margin: auto;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .chat-input {
@@ -306,17 +316,17 @@ pre {
     z-index: 1000;
 }
 
-.export-popup-buttons, .rename-popup-buttons {
+.export-popup-buttons, .rename-popup-buttons, .uci-popup-buttons {
     display: flex;
     justify-content: center;
     gap: 10px;
 }
 
-.export-popup .export-popup-buttons, .rename-popup .rename-popup-buttons {
+.export-popup .export-popup-buttons, .rename-popup .rename-popup-buttons, .uci-popup-buttons {
     margin-top: 20px;
 }
 
-.export-popup button, .rename-popup button {
+.export-popup button, .rename-popup button, .uci-popup button {
     padding: 10px 20px;
     border: none;
     cursor: pointer;
@@ -331,19 +341,29 @@ pre {
     width: 100%;
 }
 
-#json-export, #text-export, #rename {
-    background-color: #007bff;
+#json-export, #text-export, #rename, #ask {
+    background-color: #0056b3;
     color: white;
 }
 
-#json-export:hover, #text-export:hover, #rename:hover {
-    background-color: #0056b3;
+#apply {
+    background-color: #ff1493;
+    color: white; 
 }
 
-#export-cancel, #rename-cancel {
+#json-export:hover, #text-export:hover, #rename:hover, #ask:hover {
+    background-color: #007bff;
+}
+
+#apply:hover {
+    background-color: #ff69b4;
+}
+
+#export-cancel, #rename-cancel, #uci-cancel {
     background-color: #A9A9A9;
+    color: white;
 }
 
-#export-cancel:hover, #rename-cancel:hover {
+#export-cancel:hover, #rename-cancel:hover, #uci-cancel:hover {
     background-color: #C0C0C0;
 }

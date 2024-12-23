@@ -5,6 +5,7 @@ local uci = require("luci.model.uci").cursor()
 local jsonc = require("luci.jsonc")
 local transfer = require("oasis.chat.transfer")
 local common = require("oasis.common")
+local filter = require("oasis.chat.filter")
 
 local role = {
     system = "system",
@@ -291,8 +292,6 @@ local communicate = function(basic, chat, format)
         chunk_all = ""
     end)
 
-    -- os.execute("echo \"" .. ai.message .. "\" >> /tmp/oasis.log")
-
     if format == "chat" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
             push_chat_data_for_record(chat, ai)
@@ -327,7 +326,6 @@ local communicate = function(basic, chat, format)
         end
     end
 
-    -- os.execute("echo \"" .. ai.message .. "\" >> /tmp/oasis.log")
     return ai.message
 end
 
