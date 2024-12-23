@@ -21,7 +21,7 @@ define Package/luci-app-oasis
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= AI Support Application
-    DEPENDS:=+oasis
+    DEPENDS:=+oasis +luci-compat
     PKGARCH:=all
 endef
 
