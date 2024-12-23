@@ -28,7 +28,17 @@ if request_method == "POST" then
         return
     end
 
-    oasis.output(json_tbl)
+    local text = oasis.output(json_tbl)
+    local json = {}
+    json.uci_list = filter.uci_cmd_filter(text)
+    -- json.uci_list.exist = filter.check_uci_cmd_item(json.uci_list)
+    json.uci_list = jsonc.stringify(json, false)
+    if json.uci_list then
+        os.execute("echo \"" .. json.uci_list .. "\" >> /tmp/oasis.log")
+        -- io.write(json.uci_list)
+    else
+        os.execute("echo \"no uci list\" >> /tmp/oasis.log")
+    end
 else
     io.write("This script only handles POST requests.")
 end

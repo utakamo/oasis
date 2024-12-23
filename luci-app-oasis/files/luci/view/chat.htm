@@ -541,7 +541,7 @@ uci set network.lan.proto=static
                         if (jsonResponse.message && jsonResponse.message.content) {
                             //console.log(jsonResponse.message.content)
                             fullMessage += jsonResponse.message.content;
-                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
                             chatMessages.scrollTop = chatMessages.scrollHeight;
                         }
 

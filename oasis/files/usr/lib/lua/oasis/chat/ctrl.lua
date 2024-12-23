@@ -202,7 +202,7 @@ local communicate = function(basic, chat, format)
 
         if sysrole.custom.flg.chat then
             local content = sysrole.custom.chat
-            os.execute("echo " .. content .. " >> /tmp/oasis.log")
+            -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
             table.insert(chat.messages, 1, {
                 role = role.system,
                 content = content
@@ -685,8 +685,8 @@ local output = function(arg)
 
     push_chat_data_for_record(chat, user)
     record_chat_data(basic, chat)
-    local plain_message = communicate(basic, chat, "output")
-    return plain_message
+    local message = communicate(basic, chat, "output")
+    return message
 end
 
 local rename = function(arg)
