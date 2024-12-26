@@ -58,6 +58,9 @@ local load_conf_file = function(filename)
 
     local data = {}
     local currentSection = nil
+    local currentKey = nil
+    local isMultilineValue = false
+    local multilineBuffer = ""
 
     for line in iniFile:lines() do
         local trimmedLine = line:match("^%s*(.-)%s*$")
@@ -66,10 +69,28 @@ local load_conf_file = function(filename)
             if section then
                 currentSection = section
                 data[currentSection] = {}
+            elseif isMultilineValue then
+                if trimmedLine:match('".-$') then
+                    multilineBuffer = multilineBuffer .. "\n" .. trimmedLine:match("^(.-)\"$")
+                    data[currentSection][currentKey] = multilineBuffer
+                    isMultilineValue = false
+                    multilineBuffer = ""
+                    currentKey = nil
+                else
+                    multilineBuffer = multilineBuffer .. "\n" .. trimmedLine
+                end
             else
                 local key, value = trimmedLine:match("^(.-)%s*=%s*(.-)$")
                 if key and value and currentSection then
-                    data[currentSection][key] = value
+                    if value:match("^\".*\"$") then
+                        data[currentSection][key] = value:match("^\"(.-)\"$")
+                    elseif value:match("^\".*$") then
+                        isMultilineValue = true
+                        currentKey = key
+                        multilineBuffer = value:match("^\"(.-)$")
+                    else
+                        data[currentSection][key] = value
+                    end
                 end
             end
         end
