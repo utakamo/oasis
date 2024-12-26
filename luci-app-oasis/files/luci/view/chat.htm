@@ -390,7 +390,9 @@ uci set network.lan.proto=static
                             chat_data += ">>> AI\n";
                         }
 
-                        chat_data += message.content + "\n\n";
+                        if ((message.role === 'user') || (message.role === 'assistant')) {
+                            chat_data += message.content + "\n\n";
+                        }
                     });
 
                     const blob = new Blob([chat_data], { type: "text/plain" });
