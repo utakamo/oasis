@@ -327,7 +327,7 @@ uci set network.lan.proto=static
             const text_export = document.getElementById("text-export");
 
             json_export.addEventListener('click', function() {
-                console.log("Push JSON!!");
+                //console.log("Push JSON!!");
 
                 fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
                     method: 'POST',
@@ -510,7 +510,7 @@ uci set network.lan.proto=static
 
         //console.log('baseUrl:', baseUrl);
 
-        console.log("Current targetChatId = " + targetChatId);
+        //console.log("Current targetChatId = " + targetChatId);
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
@@ -550,7 +550,7 @@ uci set network.lan.proto=static
                         if (jsonResponse.id) {
                             message_outputing = false;
                             targetChatId = jsonResponse.id;
-                            console.log("targetChatId = " + targetChatId);
+                            //console.log("targetChatId = " + targetChatId);
                             showTitlePopup(jsonResponse.title);
                             
                             // New Chat List Item

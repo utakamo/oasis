@@ -165,7 +165,7 @@ end
 
 local record_chat_data = function(service, chat)
 
-    os.execute("echo " .. #chat.messages .. " >> /tmp/oasis-message.log")
+    -- os.execute("echo " .. #chat.messages .. " >> /tmp/oasis-message.log")
 
     -- First Conversation!!
     if #chat.messages == 3 then
@@ -335,7 +335,7 @@ local communicate = function(basic, chat, format)
             ]]
 
             if (#basic.id == 0) then
-                os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id.log")
+                -- os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id.log")
                 push_chat_data_for_record(chat, ai)
                 local chat_info = {}
                 chat_info.id = create_chat_file(basic, chat)
