@@ -164,11 +164,11 @@ end
 local record_chat_data = function(service, chat)
 
     -- First Conversation!!
-    if #chat.messages == 2 then
+    if #chat.messages == 3 then
         local chat_id = create_chat_file(service, chat)
         set_chat_title(chat_id)
     -- Conversation after the second
-    elseif (#chat.messages % 2) == 0 then
+    elseif (#chat.messages % 3) == 0 then
         append_chat_data(service, chat)
     end
 end
@@ -200,14 +200,17 @@ local communicate = function(basic, chat, format)
 
     if format == "chat" then
 
+        local content = sysrole.default.chat
+
         if sysrole.custom.flg.chat then
-            local content = sysrole.custom.chat
-            -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
-            table.insert(chat.messages, 1, {
-                role = role.system,
-                content = content
-            })
+            content = sysrole.custom.chat
         end
+
+        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
+        table.insert(chat.messages, 1, {
+            role = role.system,
+            content = content
+        })
 
         print("\n\27[34m" .. chat.model .. "\27[0m")
     elseif format == "prompt" then
