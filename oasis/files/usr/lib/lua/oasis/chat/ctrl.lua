@@ -203,7 +203,7 @@ local communicate = function(basic, chat, format)
     end
 
     -- chat ..... chat mode for cui
-    if (format == "chat") and (not basic.id) then
+    if (format == "chat") and ((not basic.id) or (#basic.id == 0)) then
 
         local content = sysrole.default.chat
 
@@ -220,7 +220,9 @@ local communicate = function(basic, chat, format)
         print("\n\27[34m" .. chat.model .. "\27[0m")
 
     -- output ... chat mode for luci
-    elseif (format == "output") and (not basic.id) then
+    elseif (format == "output") and ((not basic.id) or (#basic.id == 0)) then
+
+        -- os.execute("echo outputcalled >> /tmp/oasis-output.log")
 
         local content = sysrole.default.chat
 
