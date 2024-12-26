@@ -130,6 +130,8 @@ local push_chat_data_for_record = function(chat, speaker)
 end
 
 local create_chat_file = function(service, chat)
+    -- TODO:
+    -- Update to allow chat files to be created even when role:system is not present.
     local message = {}
     message.role1 = chat.messages[#chat.messages - 2].role
     message.content1 = chat.messages[#chat.messages - 2].content
