@@ -131,10 +131,12 @@ end
 
 local create_chat_file = function(service, chat)
     local message = {}
-    message.role1 = chat.messages[#chat.messages - 1].role
-    message.content1 = chat.messages[#chat.messages - 1].content
-    message.role2 = chat.messages[#chat.messages].role
-    message.content2 = chat.messages[#chat.messages].content
+    message.role1 = chat.messages[#chat.messages - 2].role
+    message.content1 = chat.messages[#chat.messages - 2].content
+    message.role2 = chat.messages[#chat.messages - 1].role
+    message.content2 = chat.messages[#chat.messages - 1].content
+    message.role3 = chat.messages[#chat.messages].role
+    message.content3 = chat.messages[#chat.messages].content
     local result = call("oasis.chat", "create", message)
     service.id = result.id
     return result.id
@@ -162,6 +164,8 @@ local append_chat_data = function(service, chat)
 end
 
 local record_chat_data = function(service, chat)
+
+    os.execute("echo " .. #chat.messages .. " >> /tmp/oasis-message.log")
 
     -- First Conversation!!
     if #chat.messages == 3 then
@@ -198,7 +202,8 @@ local communicate = function(basic, chat, format)
         sysrole = {custom = {flg = {chat = false, prompt = false, call = false}}}
     end
 
-    if format == "chat" then
+    -- chat ..... chat mode for cui
+    if (format == "chat") and (not basic.id) then
 
         local content = sysrole.default.chat
 
@@ -213,6 +218,21 @@ local communicate = function(basic, chat, format)
         })
 
         print("\n\27[34m" .. chat.model .. "\27[0m")
+
+    -- output ... chat mode for luci
+    elseif (format == "output") and (not basic.id) then
+
+        local content = sysrole.default.chat
+
+        if sysrole.custom.flg.chat then
+            content = sysrole.custom.chat
+        end
+
+        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
+        table.insert(chat.messages, 1, {
+            role = role.system,
+            content = content
+        })
     elseif format == "prompt" then
 
         local content = sysrole.default.prompt
@@ -315,6 +335,7 @@ local communicate = function(basic, chat, format)
             ]]
 
             if (#basic.id == 0) then
+                os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id.log")
                 push_chat_data_for_record(chat, ai)
                 local chat_info = {}
                 chat_info.id = create_chat_file(basic, chat)

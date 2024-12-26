@@ -510,6 +510,8 @@ uci set network.lan.proto=static
 
         //console.log('baseUrl:', baseUrl);
 
+        console.log("Current targetChatId = " + targetChatId);
+
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
                 method: 'POST',
@@ -548,6 +550,7 @@ uci set network.lan.proto=static
                         if (jsonResponse.id) {
                             message_outputing = false;
                             targetChatId = jsonResponse.id;
+                            console.log("targetChatId = " + targetChatId);
                             showTitlePopup(jsonResponse.title);
                             
                             // New Chat List Item
@@ -652,14 +655,16 @@ uci set network.lan.proto=static
                         messageDiv.appendChild(iconDiv);
                     }
 
-                    messageTextDiv.className = 'message-text';
-                    message.content = convertMarkdownToHTML(message.content);
-                    messageTextDiv.innerHTML = message.content;
-                    //messageTextDiv.textContent = message.content;
+                    if (message.role === 'user' || message.role === 'assistant') {
+                        messageTextDiv.className = 'message-text';
+                        message.content = convertMarkdownToHTML(message.content);
+                        messageTextDiv.innerHTML = message.content;
+                        //messageTextDiv.textContent = message.content;
 
-                    messageDiv.appendChild(messageTextDiv);
+                        messageDiv.appendChild(messageTextDiv);
 
-                    chatMessagesContainer.appendChild(messageDiv);
+                        chatMessagesContainer.appendChild(messageDiv);
+                    }
                 });
             } else {
                 console.error("Unexpected data format:", data);

@@ -142,7 +142,7 @@ local methods = {
     },
 
     create = {
-        args = { role1 = "a_string", content1 = "a_string", role2 = "a_string", content2 = "a_string" },
+        args = { role1 = "a_string", content1 = "a_string", role2 = "a_string", content2 = "a_string", role3 = "a_string", content3 = "a_string" },
 
         call = function(args)
             local r = {}
@@ -170,6 +170,7 @@ local methods = {
             chat_json_tbl.messages = {}
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role1, content = args.content1}
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role2, content = args.content2}
+            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role3, content = args.content3}
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
