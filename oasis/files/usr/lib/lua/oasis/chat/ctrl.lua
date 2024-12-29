@@ -319,6 +319,8 @@ local communicate = function(basic, chat, format)
         chunk_all = ""
     end)
 
+    local new_chat_info = nil
+
     if format == "chat" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
             push_chat_data_for_record(chat, ai)
@@ -345,8 +347,7 @@ local communicate = function(basic, chat, format)
                 chat_info.id = create_chat_file(basic, chat)
                 local result = call("oasis.title", "auto_set", {id = chat_info.id})
                 chat_info.title = result.title
-                local target = jsonc.stringify(chat_info, false)
-                print(target)
+                new_chat_info = jsonc.stringify(chat_info, false)
             else
                 push_chat_data_for_record(chat, ai)
                 append_chat_data(basic, chat)
@@ -354,7 +355,7 @@ local communicate = function(basic, chat, format)
         end
     end
 
-    return ai.message
+    return new_chat_info, ai.message
 end
 
 local storage = function(args)

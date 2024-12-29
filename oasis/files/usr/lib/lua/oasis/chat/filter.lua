@@ -92,12 +92,12 @@ local uci_cmd_filter = function(message)
 	for _, code in ipairs(code_blocks) do
 		local lines = split_lines(code)
 		uci_list = check_uci_cmd_candidate(lines)
-		for k1, target_cmd_list in pairs(uci_list) do
-			os.execute("echo " .. k1 .. " >> /tmp/oasis-filter.log")
-			for k2, target in ipairs(target_cmd_list) do
-				os.execute("echo " .. k2 .. " >> /tmp/oasis-filter.log")
-				for k3, param in pairs(target) do
-					os.execute("echo " .. k3 .. " >> /tmp/oasis-filter.log")
+		for _, target_cmd_list in pairs(uci_list) do
+			-- os.execute("echo " .. k1 .. " >> /tmp/oasis-filter.log")
+			for _, target in ipairs(target_cmd_list) do
+				-- os.execute("echo " .. k2 .. " >> /tmp/oasis-filter.log")
+				for _, param in pairs(target) do
+					-- os.execute("echo " .. k3 .. " >> /tmp/oasis-filter.log")
 					classify_param(target, param)
 				end
 			end
@@ -107,6 +107,21 @@ local uci_cmd_filter = function(message)
 	return uci_list
 end
 
+local function check_uci_list_exist(data)
+
+	if not data.uci_list then
+		return false
+	end
+
+	for _, value in pairs(data.uci_list) do
+	  if type(value) == "table" and #value > 0 then
+		return true -- exist
+	  end
+	end
+	return false -- empty
+  end
+
 return {
     uci_cmd_filter = uci_cmd_filter,
+	check_uci_list_exist = check_uci_list_exist,
 }

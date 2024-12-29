@@ -28,16 +28,22 @@ if request_method == "POST" then
         return
     end
 
-    local text = oasis.output(json_tbl)
-    local json = {}
-    json.uci_list = filter.uci_cmd_filter(text)
-    -- json.uci_list.exist = filter.check_uci_cmd_item(json.uci_list)
-    json.uci_list = jsonc.stringify(json, false)
-    if json.uci_list then
-        os.execute("echo \"" .. json.uci_list .. "\" >> /tmp/oasis.log")
-        -- io.write(json.uci_list)
+    local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
+    local uci_cmd_notification = {}
+    -- uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
+    -- os.execute("echo \"" .. uci_cmd_notification .. "\" >> /tmp/oasis.log")
+    -- uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification)
+    -- uci_cmd_notification = jsonc.stringify(uci_cmd_notification, false)
+    if uci_cmd_notification.uci_notify then
+        os.execute("echo \"" .. uci_cmd_notification .. "\" >> /tmp/oasis.log")
+        print(uci_cmd_notification)
     else
         os.execute("echo \"no uci list\" >> /tmp/oasis.log")
+    end
+
+    if #new_chat_info > 0 then
+        os.execute("echo \"" .. new_chat_info .. "\" >> /tmp/oasis.log")
+        print(new_chat_info)
     end
 else
     io.write("This script only handles POST requests.")
