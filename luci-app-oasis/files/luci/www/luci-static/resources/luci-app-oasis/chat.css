@@ -281,6 +281,115 @@
     opacity: 0;
 }
 
+.smp-chat-hamburger-menu {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .smp-chat-hamburger-menu {
+        display: block;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+    }
+
+    .smp-chat-hamburger-menu > li {
+        cursor: pointer;
+        background-color: #333;
+        color: #fff;
+        padding: 10px 20px;
+        text-align: center;
+    }
+
+    #smp-chat-item-dropdown {
+        display: none;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #444;
+        width: 100%;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #smp-chat-item-dropdown  li {
+        padding: 10px 20px;
+        color: #fff;
+    }
+
+    #smp-chat-item-dropdown  li:hover {
+        background-color: #555;
+    }
+
+    .chat-container {
+        border-radius: 0px;
+    }
+
+    .oasis-container {
+        display: block;
+        border-radius: 0px;
+        height: 80vh;
+        margin: 0;
+    }
+
+    .chat-list-container {
+        display: none;
+    }
+
+    .chat-input {
+        display: block;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+    }
+
+    #message-input {
+        display: block;
+        height: 7.0rem;
+        width : 100%;
+        padding: 5px;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .chat-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .chat-buttons button {
+        margin-bottom: 10px;
+    }
+    
+    #send-button {
+        padding: 10px 20px;
+        margin: 10px;
+        width: 50%;
+        height: 3rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    #new-button {
+        padding: 10px 20px;
+        margin: 10px;
+        width: 50%;
+        height: 3rem;
+        background-color: #00cc06;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+}
+
 .console-command-color {
     background-color:#333333;
     color: #ffffff;
@@ -367,3 +476,4 @@ pre {
 #export-cancel:hover, #rename-cancel:hover, #uci-cancel:hover {
     background-color: #C0C0C0;
 }
+
