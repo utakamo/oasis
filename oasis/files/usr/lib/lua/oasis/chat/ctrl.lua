@@ -329,10 +329,10 @@ local communicate = function(basic, chat, format)
     elseif format == "output" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
 
+            -- os.execute("echo basic.id = " .. basic.id .. " >> /tmp/oasis.log")
+            -- os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/oasis.log")
+            os.execute("echo \"ai.message = " .. ai.message .. "\" >> /tmp/oasis-ai.log")
             --[[
-            os.execute("echo basic.id = " .. basic.id .. " >> /tmp/oasis.log")
-            os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/oasis.log")
-            os.execute("echo ai.message = " .. ai.message .. " >> /tmp/oasis.log")
             if (not basic.id) then
                 os.execute("echo not basic.id >> /tmp/oasis.log")
             else
@@ -714,8 +714,8 @@ local output = function(arg)
 
     push_chat_data_for_record(chat, user)
     record_chat_data(basic, chat)
-    local message = communicate(basic, chat, "output")
-    return message
+    local new_chat_info, message = communicate(basic, chat, "output")
+    return new_chat_info, message
 end
 
 local rename = function(arg)

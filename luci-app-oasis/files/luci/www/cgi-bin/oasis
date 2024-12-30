@@ -30,20 +30,23 @@ if request_method == "POST" then
 
     local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
     local uci_cmd_notification = {}
-    -- uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
-    -- os.execute("echo \"" .. uci_cmd_notification .. "\" >> /tmp/oasis.log")
-    -- uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification)
-    -- uci_cmd_notification = jsonc.stringify(uci_cmd_notification, false)
-    if uci_cmd_notification.uci_notify then
-        os.execute("echo \"" .. uci_cmd_notification .. "\" >> /tmp/oasis.log")
-        print(uci_cmd_notification)
-    else
-        os.execute("echo \"no uci list\" >> /tmp/oasis.log")
+    if plain_text_ai_message then
+        uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
+        uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification)
+        if uci_cmd_notification.uci_notify then
+            uci_cmd_notification = jsonc.stringify(uci_cmd_notification, false)
+            -- os.execute("echo \"" .. uci_cmd_notification .. "\" >> /tmp/oasis-notify.log")
+            io.write(uci_cmd_notification)
+            io.flush()
+            os.execute("sleep 1")
+        else
+            os.execute("echo \"no uci list\" >> /tmp/oasis.log")
+        end
     end
 
     if #new_chat_info > 0 then
-        os.execute("echo \"" .. new_chat_info .. "\" >> /tmp/oasis.log")
-        print(new_chat_info)
+        --os.execute("echo \"" .. new_chat_info .. "\" >> /tmp/oasis.log")
+        io.write(new_chat_info)
     end
 else
     io.write("This script only handles POST requests.")
