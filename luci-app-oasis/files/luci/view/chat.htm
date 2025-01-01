@@ -87,12 +87,18 @@ uci set network.lan.proto=static
     function convertMarkdownToHTML(input) {
         let html = '';
         let isCodeBlock = false;
+        let currentLanguage = '';
         const lines = input.split('\n');
 
         for (let line of lines) {
-            if (line.startsWith('```')) {
+
+            const trimmedLine = line.trim()
+
+            if (trimmedLine.startsWith('```')) {
                 if (!isCodeBlock) {
-                    html += '<pre class="console-command-color">';
+                    currentLanguage = trimmedLine.slice(3).trim();
+                    const languageClass = currentLanguage ? ` language-${escapeHTML(currentLanguage)}` : '';
+                    html += `<pre class="console-command-color${languageClass}">`;
                     isCodeBlock = true;
                 } else {
                     html += '</pre>';
@@ -111,6 +117,10 @@ uci set network.lan.proto=static
                 line = line.replace(/\*(.+?)\*/g, '<i>$1</i>');
                 html += line + '<br>';
             }
+        }
+
+        if (isCodeBlock) {
+            html += '</pre>';
         }
 
         return html;
@@ -673,7 +683,7 @@ uci set network.lan.proto=static
         popupButtonsDiv.appendChild(popupDiv);
         messageTextDiv.appendChild(popupButtonsDiv);
         systemMessage.appendChild(messageTextDiv);
-        chatMessages.appendChild(systemMessage);
+        //chatMessages.appendChild(systemMessage);
     }
 
     async function send_message(receivedMessageTextContainer, messageText) {
@@ -681,6 +691,7 @@ uci set network.lan.proto=static
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
         const dropdown = document.getElementById("oasis-dropdown");
         let fullMessage = '';
+        let finalResponse = '';
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
@@ -707,6 +718,7 @@ uci set network.lan.proto=static
 
                     const chunk = decoder.decode(value, { stream: true });
                     buffer += chunk;
+                    console.log(chunk.trim());
 
                     const parts = buffer.split(/(?<=})\s*(?={)/g);
                     buffer = parts.pop();
@@ -734,18 +746,31 @@ uci set network.lan.proto=static
                         }
                     }
 
-                    // 最後のバッファを処理
                     if (buffer.trim()) {
                         try {
-                            const finalResponse = JSON.parse(buffer.trim());
+                            //console.log("final = " + buffer.trim());
+                            finalResponse = JSON.parse(buffer.trim());
+
                             if (finalResponse.id) {
                                 show_chat_popup(finalResponse);
+                            }
+
+                            if (finalResponse.uci_notify) {
+                                show_notify_popup();
                             }
                         } catch (e) {
                             console.error('Final JSON Parse Error:', e, buffer.trim());
                         }
                     }
                 }
+
+                if (finalResponse.message && finalResponse.message.content) {
+                    //console.log("final message = " + finalResponse.message.content);
+                    fullMessage += finalResponse.message.content;
+                    receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+
                 message_outputing = false;
                 activeConversation = false;
                 receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
