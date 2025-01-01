@@ -167,14 +167,25 @@ end
 
 local record_chat_data = function(service, chat)
 
-    -- os.execute("echo " .. #chat.messages .. " >> /tmp/oasis-message.log")
+    -- print("#chat.messages = " .. #chat.messages)
 
-    -- First Conversation!!
+    -- First Conversation (#chat.messages == 3)
+    -- chat.messages[1] ... system message
+    -- chat.messages[2] ... user message
+    -- chat.messages[3] ... ai message <---- Save chat data
+
+    -- Conversation after the second (#chat.messages >= 5) and ((#chat.messages % 2) == 1)
+    -- chat.messages[4] ... user message
+    -- chat.messages[5] ... ai message <---- Save chat data
+    -- chat.messages[6] ... user message
+    -- chat.messages[7] ... ai message <---- Save chat data
+
+    -- First Conversation
     if #chat.messages == 3 then
         local chat_id = create_chat_file(service, chat)
         set_chat_title(chat_id)
     -- Conversation after the second
-    elseif (#chat.messages % 3) == 0 then
+    elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
         append_chat_data(service, chat)
     end
 end
@@ -218,8 +229,6 @@ local communicate = function(basic, chat, format)
             role = role.system,
             content = content
         })
-
-        print("\n\27[34m" .. chat.model .. "\27[0m")
 
     -- output ... chat mode for luci
     elseif (format == "output") and ((not basic.id) or (#basic.id == 0)) then
@@ -265,6 +274,10 @@ local communicate = function(basic, chat, format)
             role = role.system,
             content = content
         })
+    end
+
+    if format == "chat" then
+        print("\n\27[34m" .. chat.model .. "\27[0m")
     end
 
     local chat_json = jsonc.stringify(chat, false)
@@ -322,6 +335,8 @@ local communicate = function(basic, chat, format)
     local new_chat_info = nil
 
     if format == "chat" then
+        -- print("#ai.message = " .. #ai.message)
+        -- print("ai.message = " .. ai.message)
         if (ai.role ~= "unknown") and (#ai.message > 0) then
             push_chat_data_for_record(chat, ai)
             record_chat_data(basic, chat)
