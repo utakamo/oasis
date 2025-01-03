@@ -31,6 +31,13 @@
     transition: background-color 0.2s ease;
 }
 
+.chat-list-container li span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 80%;
+}
+
 .chat-list-container li:hover {
     background-color: #d0d0d0;
 }
