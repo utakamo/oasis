@@ -349,6 +349,10 @@ uci set network.lan.proto=static
                 const rename_box = document.getElementById('rename-line-box');
                 let new_title = rename_box.value;
 
+                if (new_title.length > 0) {
+                    return;
+                }
+
                 fetch('<%=build_url("admin", "network", "oasis", "rename-chat")%>', {
                     method: "POST",
                     headers: {
@@ -585,7 +589,9 @@ uci set network.lan.proto=static
         const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
         const li = document.createElement("li");
         const smp_li = document.createElement("li")
+
         li.setAttribute("data-id", targetChatId);
+
         smp_li.setAttribute("data-id-for-smp", targetChatId);
         smp_li.classList.add("smp-dropdown-item");
 
@@ -605,6 +611,7 @@ uci set network.lan.proto=static
         menuButton.classList.add("oasis-menu-btn");
         menuButton.textContent = "⋮";
         menuContainer.appendChild(menuButton);
+
         li.appendChild(span);
         li.appendChild(menuContainer);
         chatListContainer.appendChild(li);
@@ -618,6 +625,7 @@ uci set network.lan.proto=static
         smpChatListContainer.appendChild(smp_li);
 
         li.addEventListener('click', function (event) {
+            //console.log("click 1");
             targetChatItemId = event.target.closest("li").getAttribute("data-id");
             if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
                 return;
@@ -627,6 +635,7 @@ uci set network.lan.proto=static
         });
 
         smp_li.addEventListener('click', function (event) {
+            //console.log("click 2");
             targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
 
             handleChatItemClick(targetChatItemId);
@@ -635,11 +644,21 @@ uci set network.lan.proto=static
         });
 
         menuButton.addEventListener("click", function (event) {
+            //console.log("click 3");
+            const dropdown = document.getElementById("oasis-dropdown");
             targetChatItemId = event.target.closest("li").getAttribute("data-id");
             event.stopPropagation();
             const rect = this.getBoundingClientRect();
             dropdown.style.top = `${rect.bottom + window.scrollY}px`;
             dropdown.style.left = `${rect.left + window.scrollX}px`;
+            dropdown.style.display = "block";
+        });
+
+        smp_menuButton.addEventListener("click", function (event) {
+            //console.log("click 4");
+            const dropdown = document.getElementById("oasis-dropdown");
+            targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
+            event.stopPropagation();
             dropdown.style.display = "block";
         });
     }
