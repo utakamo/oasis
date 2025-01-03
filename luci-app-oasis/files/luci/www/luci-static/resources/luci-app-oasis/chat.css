@@ -516,7 +516,7 @@ pre {
     gap: 10px;
 }
 
-.export-popup .export-popup-buttons, .rename-popup .rename-popup-buttons, .uci-popup-buttons {
+.export-popup .export-popup-buttons, .rename-popup .rename-popup-buttons, .uci-popup .uci-popup-buttons {
     margin-top: 20px;
 }
 

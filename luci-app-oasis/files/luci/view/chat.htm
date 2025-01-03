@@ -152,6 +152,7 @@ uci set network.lan.proto=static
 
     document.addEventListener('DOMContentLoaded', function () {
 
+        const chatMessagesContainer = document.querySelector('.chat-messages');
         const chatListContainer = document.getElementById("chat-list");
         const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
         const dropdown = document.getElementById("oasis-dropdown");
@@ -220,6 +221,13 @@ uci set network.lan.proto=static
                     });
 
                     smp_li.addEventListener('click', function (event) {
+
+                        const systemMessage = document.getElementById("oasis-system");
+
+                        if (systemMessage !== null) {
+                            chatMessagesContainer.removeChild(systemMessage);
+                        }
+
                         targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
                         if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
                             return;
@@ -244,6 +252,12 @@ uci set network.lan.proto=static
                 const chatItems = document.querySelectorAll('#chat-list li');
                 chatItems.forEach(item => {
                     item.addEventListener('click', function (event) {
+
+                        const systemMessage = document.getElementById("oasis-system");
+
+                        if (systemMessage !== null) {
+                            chatMessagesContainer.removeChild(systemMessage);
+                        }
 
                         if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
                             return;
@@ -537,7 +551,7 @@ uci set network.lan.proto=static
         }
 
         message_outputing = true;
-
+        const systemMessage = document.getElementById("oasis-system");
         const messageInput = document.getElementById('message-input');
         const messageText = messageInput.value.trim();
 
@@ -555,6 +569,10 @@ uci set network.lan.proto=static
         messageContainer.appendChild(messageTextContainer);
 
         document.querySelector('.chat-messages').appendChild(messageContainer);
+        if (systemMessage !== null) {
+            document.querySelector('.chat-messages').removeChild(systemMessage);
+        }
+    
         messageInput.value = '';
         messageInput.focus();
 
@@ -588,6 +606,7 @@ uci set network.lan.proto=static
         showTitlePopup(jsonResponse.title);
         
         // New Chat List Item
+        const chatMessagesContainer = document.querySelector('.chat-messages');
         const chatListContainer = document.getElementById("chat-list");
         const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
         const li = document.createElement("li");
@@ -628,7 +647,12 @@ uci set network.lan.proto=static
         smpChatListContainer.appendChild(smp_li);
 
         li.addEventListener('click', function (event) {
-            //console.log("click 1");
+            const systemMessage = document.getElementById("oasis-system");
+
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
+
             targetChatItemId = event.target.closest("li").getAttribute("data-id");
             if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
                 return;
@@ -638,6 +662,12 @@ uci set network.lan.proto=static
         });
 
         smp_li.addEventListener('click', function (event) {
+            const systemMessage = document.getElementById("oasis-system");
+
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
+
             //console.log("click 2");
             targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
 
@@ -666,9 +696,12 @@ uci set network.lan.proto=static
         });
     }
 
-    function show_notify_popup() {
+    function show_notify_popup(jsonResponse) {
+        const chatMessagesContainer = document.querySelector('.chat-messages');
         const systemMessage = document.createElement("div");
+
         systemMessage.classList.add("message", "oasis-system");
+        systemMessage.id = "oasis-system";
 
         const messageTextDiv = document.createElement("div");
         messageTextDiv.className = "message-text";
@@ -678,7 +711,24 @@ uci set network.lan.proto=static
 
         const preElement = document.createElement("pre");
         preElement.className = "console-command-color";
-        preElement.textContent = `uci set network.lan.ipaddr=192.168.1.1\nuci set network.lan.proto=static`;
+
+        Object.keys(jsonResponse.uci_list).forEach(key => {
+            const items = jsonResponse.uci_list[key];
+
+            if (Array.isArray(items) && items.length > 0) {
+                //console.log(`Processing items under '${key}':`);
+                items.forEach(item => {
+                    if (item.class && item.param) {
+                        //const { option, config, value, section } = item.class;
+                        const param = item.param;
+                        //const output = `Key: ${key}, Config: ${config}, Section: ${section}, Option: ${option}, Value: ${value}, Param: ${param}`;
+                        preElement.textContent += `uci ${key} ${param}\n`;
+                    }
+                });
+            }
+        });
+
+        //preElement.textContent = `uci set network.lan.ipaddr=192.168.1.1\nuci set network.lan.proto=static`;
         messageTextDiv.appendChild(preElement);
 
         const popupButtonsDiv = document.createElement("div");
@@ -700,12 +750,17 @@ uci set network.lan.proto=static
         const cancelButton = document.createElement("button");
         cancelButton.id = "uci-cancel";
         cancelButton.textContent = "Cancel";
+        cancelButton.addEventListener('click', function (event) {
+            const systemMessage = document.getElementById("oasis-system");
+            chatMessagesContainer.removeChild(systemMessage);
+        });
+
         popupDiv.appendChild(cancelButton);
 
         popupButtonsDiv.appendChild(popupDiv);
         messageTextDiv.appendChild(popupButtonsDiv);
         systemMessage.appendChild(messageTextDiv);
-        //chatMessages.appendChild(systemMessage);
+        chatMessagesContainer.appendChild(systemMessage);
     }
 
     async function send_message(receivedMessageTextContainer, messageText) {
@@ -760,8 +815,9 @@ uci set network.lan.proto=static
                                 show_chat_popup(jsonResponse);
                             }
 
-                            if (jsonResponse.uci_notify) {
-                                show_notify_popup();
+                            else if (jsonResponse.uci_notify) {
+                                show_notify_popup(jsonResponse);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
                             }
                         } catch (e) {
                             console.error('JSON Parse Error:', e, part.trim());
@@ -777,9 +833,11 @@ uci set network.lan.proto=static
                                 show_chat_popup(finalResponse);
                             }
 
-                            if (finalResponse.uci_notify) {
-                                show_notify_popup();
+                            else if (finalResponse.uci_notify) {
+                                show_notify_popup(finalResponse);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
                             }
+
                         } catch (e) {
                             console.error('Final JSON Parse Error:', e, buffer.trim());
                         }
