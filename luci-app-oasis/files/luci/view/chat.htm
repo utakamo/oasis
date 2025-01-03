@@ -482,7 +482,7 @@ uci set network.lan.proto=static
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
 
-                    console.log("Text file downloaded successfully.");
+                    //console.log("Text file downloaded successfully.");
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -492,7 +492,7 @@ uci set network.lan.proto=static
             });
 
             text_export.addEventListener('click', function() {
-                console.log("Push TEXT!!");
+                //console.log("Push TEXT!!");
                 closeExportPopup();
             });
         }
@@ -737,7 +737,7 @@ uci set network.lan.proto=static
 
                     const chunk = decoder.decode(value, { stream: true });
                     buffer += chunk;
-                    console.log(chunk.trim());
+                    //console.log(chunk.trim());
 
                     const parts = buffer.split(/(?<=})\s*(?={)/g);
                     buffer = parts.pop();
