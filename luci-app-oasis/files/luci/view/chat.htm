@@ -349,7 +349,7 @@ uci set network.lan.proto=static
                 const rename_box = document.getElementById('rename-line-box');
                 let new_title = rename_box.value;
 
-                if (new_title.length > 0) {
+                if (new_title.length === 0) {
                     return;
                 }
 
