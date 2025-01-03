@@ -495,6 +495,10 @@ pre {
     z-index: 1000;
 }
 
+.export-popup h3, .rename-popup h3 {
+    color:#333333;
+}
+
 .export-popup-overlay, .rename-popup-overlay {
     display: none;
     position: fixed;
@@ -529,6 +533,8 @@ pre {
 
 #rename-line-box {
     width: 100%;
+    background-color: #333333;
+    color:white;
 }
 
 #json-export, #text-export, #rename, #ask {

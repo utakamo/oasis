@@ -137,6 +137,8 @@ uci set network.lan.proto=static
     function closeRenamePopup() {
         const popup = document.getElementById('rename-popup');
         const overlay = document.getElementById('rename-popup-overlay');
+        const rename_box = document.getElementById('rename-line-box');
+        rename_box.value = '';
         popup.style.display = 'none';
         overlay.style.display = 'none';
     }
@@ -343,6 +345,7 @@ uci set network.lan.proto=static
             });
 
             renameLineBox.setAttribute('placeholder', title);
+            renameLineBox.setAttribute('autocomplete', 'off');
 
             rename.addEventListener('click', function() {
 
