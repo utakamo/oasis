@@ -769,6 +769,7 @@ uci set network.lan.proto=static
         const dropdown = document.getElementById("oasis-dropdown");
         let fullMessage = '';
         let finalResponse = '';
+        let is_notify = false;
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
@@ -795,7 +796,7 @@ uci set network.lan.proto=static
 
                     const chunk = decoder.decode(value, { stream: true });
                     buffer += chunk;
-                    //console.log(chunk.trim());
+                    console.log(chunk.trim());
 
                     const parts = buffer.split(/(?<=})\s*(?={)/g);
                     buffer = parts.pop();
@@ -815,9 +816,10 @@ uci set network.lan.proto=static
                                 show_chat_popup(jsonResponse);
                             }
 
-                            else if (jsonResponse.uci_notify) {
+                            if (jsonResponse.uci_notify && (is_notify === false)) {
                                 show_notify_popup(jsonResponse);
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
+                                is_notify = true;
                             }
                         } catch (e) {
                             console.error('JSON Parse Error:', e, part.trim());
@@ -833,9 +835,10 @@ uci set network.lan.proto=static
                                 show_chat_popup(finalResponse);
                             }
 
-                            else if (finalResponse.uci_notify) {
+                            if (finalResponse.uci_notify && (is_notify === false)) {
                                 show_notify_popup(finalResponse);
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
+                                is_notify = true;
                             }
 
                         } catch (e) {
@@ -943,6 +946,10 @@ uci set network.lan.proto=static
         const chatMessagesContainer = document.querySelector('.chat-messages');
 
         if (chatMessagesContainer) {
+            const systemMessage = document.getElementById("oasis-system");
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
             const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
             messages.forEach(message => message.remove());
         }
