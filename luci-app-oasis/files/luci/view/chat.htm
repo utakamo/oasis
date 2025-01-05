@@ -797,7 +797,7 @@ uci set network.lan.proto=static
 
                     const chunk = decoder.decode(value, { stream: true });
                     buffer += chunk;
-                    console.log(chunk.trim());
+                    //console.log(chunk.trim());
 
                     const parts = buffer.split(/(?<=})\s*(?={)/g);
                     buffer = parts.pop();
