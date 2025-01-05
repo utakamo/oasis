@@ -468,7 +468,6 @@
         padding: 5px;
         transition: color 0.2s ease;
     }
-    
 }
 
 .console-command-color {
@@ -545,6 +544,7 @@ pre {
 #apply {
     background-color: #ff1493;
     color: white; 
+    margin: 10px;
 }
 
 #json-export:hover, #text-export:hover, #rename:hover, #ask:hover {
