@@ -29,20 +29,31 @@ local classify_param = function(classified_param_tbl, param_chunk)
 end
 
 local extract_code_blocks = function(text)
-	local code_blocks = {}
-	local pattern = "```(.-)```"
+    local code_blocks = {}
+    local pattern = "```(.-)```"
 
-	for code in text:gmatch(pattern) do
+    for code in text:gmatch(pattern) do
+        --table.insert(code_blocks, code:match("^%s*(.-)%s*$"))
 		table.insert(code_blocks, code)
+    end
+
+	-- debug log
+	for idx, code_block in ipairs(code_blocks) do
+		os.execute("echo \"[" .. idx .. "] " .. code_block .. "\" >> /tmp/oasis-code.log")
 	end
 
-	return code_blocks
+    return code_blocks
 end
 
 local split_lines = function(code_block)
 	local lines = {}
 	for line in code_block:gmatch("[^\r\n]+") do
 		table.insert(lines, line)
+	end
+
+	-- debug long
+	for idx, line in ipairs(lines) do
+		os.execute("echo \"[" .. idx .. "] " .. line .. "\" >> /tmp/oasis-split.log")
 	end
 
 	return lines
@@ -84,22 +95,54 @@ local check_uci_cmd_candidate = function(lines)
 	return uci_list
 end
 
+local trim_line = function(line)
+    local spaceCount = 0
+    local pos = 1
+
+	line = line:gsub("^%s+", "")
+
+    while spaceCount < 3 do
+        local start, finish = line:find("%s", pos)
+        if not start then
+            return line
+        end
+        spaceCount = spaceCount + 1
+        pos = finish + 1
+    end
+
+    local trimmed = line:sub(1, pos - 2)
+
+    return trimmed
+end
+
+
 local uci_cmd_filter = function(message)
 
-	local uci_list = nil
 	local code_blocks = extract_code_blocks(message)
+	local all_lines = {}
 
 	for _, code in ipairs(code_blocks) do
 		local lines = split_lines(code)
-		uci_list = check_uci_cmd_candidate(lines)
-		for _, target_cmd_list in pairs(uci_list) do
-			-- os.execute("echo " .. k1 .. " >> /tmp/oasis-filter.log")
-			for _, target in ipairs(target_cmd_list) do
-				-- os.execute("echo " .. k2 .. " >> /tmp/oasis-filter.log")
-				for _, param in pairs(target) do
-					-- os.execute("echo " .. k3 .. " >> /tmp/oasis-filter.log")
-					classify_param(target, param)
-				end
+		for _, line in ipairs(lines) do
+			--os.execute("echo \"" .. line:gsub("^%s+", "") .. "\" >> /tmp/oasis-filter2.log")
+			local trimmed_line = trim_line(line)
+			table.insert(all_lines, trimmed_line)
+		end
+	end
+
+	-- debug log
+	for idx, line in ipairs(all_lines) do
+		os.execute("echo \"[" .. idx .. "] " .. line .. "\" >> /tmp/oasis-filter.log")
+	end
+
+	local uci_list = check_uci_cmd_candidate(all_lines)
+	for _, target_cmd_list in pairs(uci_list) do
+		-- os.execute("echo " .. k1 .. " >> /tmp/oasis-filter.log")
+		for _, target in ipairs(target_cmd_list) do
+			-- os.execute("echo " .. k2 .. " >> /tmp/oasis-filter.log")
+			for _, param in pairs(target) do
+				-- os.execute("echo " .. k3 .. " >> /tmp/oasis-filter.log")
+				classify_param(target, param)
 			end
 		end
 	end
