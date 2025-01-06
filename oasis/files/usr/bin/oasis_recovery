@@ -1,0 +1,5 @@
+#!/usr/bin/env lua
+
+local oasis = require("oasis.chat.apply")
+
+oasis.recovery()

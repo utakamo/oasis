@@ -1,0 +1,45 @@
+#!/bin/sh
+
+is_enable=$(uci -q get oasis.backup.enable)
+
+if [ $is_enable = "1" ];then
+    return 0
+fi
+
+initial_uptime=$(uci -q get oasis.backup.uptime)
+
+if [ $2 = "boot" ];then
+    # TODO: Check uptime command sequence
+    initial_uptime=$(uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n')
+fi
+
+initial_minutes=$(echo $initial_uptime | awk -F':' '{print ($1 * 60) + $2}')
+
+while true
+do
+    final_uptime=$(uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n')
+    final_minutes=$(echo $final_uptime | awk -F':' '{print ($1 * 60) + $2}')
+
+    elapsed_minutes=$((final_minutes - initial_minutes))
+
+    # monitoring confirm answer
+    if [ -e /tmp/oasis/apply/complete ]; then
+        uci set oasis.backup.enable=0
+        uci commit oasis
+        return 0
+    elif [ -e /tmp/oasis/apply/cancel ]; then
+        uci set oasis.backup.enable=0
+        uci commit oasis
+        lua /usr/bin/oasis_recovery
+        return 0
+    fi
+
+    if [ $elapsed_minutes -ge 5 ]; then
+        lua /usr/bin/oasis_recovery
+        return 0
+    fi
+
+    echo loop
+
+    sleep 3
+done
