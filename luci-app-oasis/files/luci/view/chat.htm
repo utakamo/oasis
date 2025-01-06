@@ -746,6 +746,34 @@ uci set network.lan.proto=static
         const applyButton = document.createElement("button");
         applyButton.id = "apply";
         applyButton.textContent = "Apply";
+        applyButton.addEventListener('click', function (event) {
+
+            let uci_list_json = JSON.stringify(jsonResponse.uci_list);
+
+            fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({uci_list : uci_list_json, id : targetChatId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error("Error from server:", data.error);
+                    return;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            const systemMessage = document.getElementById("oasis-system");
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
+        });
+
         popupDiv.appendChild(applyButton);
 
         const cancelButton = document.createElement("button");
