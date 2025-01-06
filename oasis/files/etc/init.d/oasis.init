@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+is_backup=$(uci -q get oasis.backup.enable)
+
+start() {
+
+    mkdir -p /tmp/oasis/apply
+
+    if [ $is_backup = "1" ];then
+        /usr/bin/oasis_recovery_timer boot &
+    fi
+}
