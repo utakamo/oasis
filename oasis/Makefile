@@ -9,7 +9,9 @@ LIBRARY_DIR = /usr/lib/lua
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
 UCI_CONFIG_DIR = /etc/config
 OASIS_DIR = /etc/oasis
+INIT_DIR = /etc/init.d
 STORAGE_DIR = $(OASIS_DIR)/chat_data
+BACKUP_DIR = $(OASIS_DIR)/backup
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -25,15 +27,21 @@ define Build/Compile
 endef
 
 define Package/oasis/install
+	$(INSTALL_DIR) $(1)$(INIT_DIR)
 	$(INSTALL_DIR) $(1)$(APP_DIR)
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_DIR) $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(UCI_CONFIG_DIR)
 	$(INSTALL_DIR) $(1)$(STORAGE_DIR)
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)
+	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
+	$(INSTALL_BIN) ./files/usr/bin/oasis_recovery $(1)$(APP_DIR)
+	$(INSTALL_BIN) ./files/usr/bin/oasis_recovery_timer $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/ctrl.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/transfer.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/filter.lua $(1)$(LIBRARY_DIR)/oasis/chat
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/apply.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/common.lua $(1)$(LIBRARY_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.chat $(1)$(UBUS_SERVER_APP_DIR)
