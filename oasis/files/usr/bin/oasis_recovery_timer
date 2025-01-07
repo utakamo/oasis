@@ -1,24 +1,37 @@
 #!/bin/sh
 
+convert_uptime() {
+  local uptime=$1
+
+  # Check if the input contains a colon
+  if [[ "$uptime" == *:* ]]; then
+    # Convert hours and minutes to total minutes
+    echo $uptime | awk -F':' '{print ($1 * 60) + $2}'
+  else
+    # Input is less than an hour, so just print it as is
+    echo $uptime
+  fi
+}
+
 is_enable=$(uci -q get oasis.backup.enable)
 
-if [ $is_enable = "1" ];then
+if [ $is_enable = "0" ];then
     return 0
 fi
 
 initial_uptime=$(uci -q get oasis.backup.uptime)
 
-if [ $2 = "boot" ];then
+if [ -n "$2" ] && [ "$2" = "boot" ];then
     # TODO: Check uptime command sequence
     initial_uptime=$(uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n')
 fi
 
-initial_minutes=$(echo $initial_uptime | awk -F':' '{print ($1 * 60) + $2}')
+initial_minutes=$(convert_uptime "$initial_uptime")
 
 while true
 do
-    final_uptime=$(uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n')
-    final_minutes=$(echo $final_uptime | awk -F':' '{print ($1 * 60) + $2}')
+    final_uptime=$(uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n') 
+    final_minutes=$(convert_uptime "$final_uptime")
 
     elapsed_minutes=$((final_minutes - initial_minutes))
 
