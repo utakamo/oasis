@@ -29,6 +29,7 @@ if request_method == "POST" then
     end
 
     local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
+    --[[
     local uci_cmd_notification = {}
     if plain_text_ai_message then
         uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
@@ -43,6 +44,7 @@ if request_method == "POST" then
             os.execute("echo \"no uci list\" >> /tmp/oasis.log")
         end
     end
+    ]]
 
     if #new_chat_info > 0 then
         --os.execute("echo \"" .. new_chat_info .. "\" >> /tmp/oasis.log")
