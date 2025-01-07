@@ -19,6 +19,9 @@ function index()
 end
 
 function retrive_chat_list()
+
+    -- os.execute("echo retrive_chat_list called >> /tmp/oasis-retrieve.log")
+
     -- ubus call
     local result = util.ubus("oasis.chat", "list", {})
 
@@ -27,6 +30,8 @@ function retrive_chat_list()
 end
 
 function load_chat_data()
+
+    -- os.execute("echo load_chat_data called >> /tmp/oasis-load.log")
 
     local params = luci_http.formvalue("params")
 
@@ -47,6 +52,8 @@ end
 
 function delete_chat_data()
 
+    -- os.execute("echo delete_chat_data called >> /tmp/oasis-delete.log")
+
     local params = luci_http.formvalue("params")
 
     if not params then
@@ -65,6 +72,8 @@ function delete_chat_data()
 end
 
 function rename()
+
+    -- os.execute("echo rename called >> /tmp/oasis-rename.log")
 
     local id = luci_http.formvalue("id")
     local title = luci_http.formvalue("title")
@@ -85,6 +94,8 @@ end
 
 function apply_uci_cmd()
 
+    -- os.execute("echo apply_uci_cmd called >> /tmp/oasis-apply.log")
+
     local uci_list_json = luci_http.formvalue("uci_list")
     local chat_id = luci_http.formvalue("id")
 
@@ -102,7 +113,13 @@ function apply_uci_cmd()
 
     local uci_list = jsonc.parse(uci_list_json)
 
-    oasis.apply(uci_list, chat_id)
+    -- initialize flag file for oasis_recovery_timer
+    os.remove("/tmp/oasis/apply/complete")
+    os.remove("/tmp/oasis/apply/cancell")
+
+    -- for debug
+    oasis.backup(uci_list, chat_id, "normal")
+    oasis.apply(uci_list)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json("OK")
