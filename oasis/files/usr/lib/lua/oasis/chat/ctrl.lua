@@ -346,7 +346,7 @@ local communicate = function(basic, chat, format)
 
             -- os.execute("echo basic.id = " .. basic.id .. " >> /tmp/oasis.log")
             -- os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/oasis.log")
-            os.execute("echo \"ai.message = " .. ai.message .. "\" >> /tmp/oasis-ai.log")
+            -- os.execute("echo \"ai.message = " .. ai.message .. "\" >> /tmp/oasis-ai.log")
             --[[
             if (not basic.id) then
                 os.execute("echo not basic.id >> /tmp/oasis.log")
