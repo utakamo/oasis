@@ -59,6 +59,10 @@ local backup = function(uci_list, id, backup_type)
             uci:commit(config)
         end
 
+        local uptime = sys.exec("uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n'")
+        uci:set("oasis", "backup", "uptime", uptime)
+        uci:commit("oasis")
+
         return true
     end
 
@@ -117,18 +121,7 @@ local confirm = function(answer)
     return false
 end
 
-local apply = function(uci_list, id)
-
-    -- initialize flag file for oasis_recovery_timer
-    os.remove("/tmp/oasis/apply/complete")
-    os.remove("/tmp/oasis/apply/cancell")
-
-    -- for debug
-    if backup(uci_list, id, "normal") then
-        sys.exec("echo \"backup success\" >> /tmp/oasis-apply.log")
-    else
-        sys.exec("echo \"backup none\" >> /tmp/oasis-apply.log")
-    end
+local apply = function(uci_list)
 
     for key, target_cmd_tbl in pairs(uci_list) do
         -- sys.exec("echo \"" .. key .. "\" >> /tmp/oasis-apply.log")
@@ -147,15 +140,12 @@ local apply = function(uci_list, id)
         end
     end
 
-    local uptime = sys.exec("echo uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n'")
-    uci:set("oasis", "backup", "uptime", uptime)
-    uci:commit("oasis")
-
     sys.exec("sh /usr/bin/oasis_recovery_timer &")
     sys.exec("/etc/init.d/network restart")
 end
 
 return {
+    backup = backup,
     apply = apply,
     recovery = recovery,
     confirm = confirm,
