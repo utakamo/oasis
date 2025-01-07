@@ -57,7 +57,7 @@ local methods = {
             local rpath = uci:get("oasis", "role", "path")
             local sysrole = common.load_conf_file(rpath)
 
-            debug_log(file_name)
+            -- debug_log(file_name)
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
@@ -77,9 +77,9 @@ local methods = {
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
-            debug_log(chat_json_str)
-            debug_log(conf.url)
-            debug_log(conf.api_key)
+            -- debug_log(chat_json_str)
+            -- debug_log(conf.url)
+            -- debug_log(conf.api_key)
 
             -- Post
             transfer.post_to_server(conf.url, conf.api_key, chat_json_str, function(chunk)
@@ -99,7 +99,7 @@ local methods = {
 
             local is_set = false
 
-            debug_log(title)
+            -- debug_log(title)
 
             if #title ~= 0 then
                 is_set = set_chat_title(args.id, title)

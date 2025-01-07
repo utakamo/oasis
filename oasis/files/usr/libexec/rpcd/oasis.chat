@@ -37,14 +37,14 @@ local generate_chat_id = function()
 
     local is_exist
 
-    debug_log("generate_chat_id")
+    -- debug_log("generate_chat_id")
 
     repeat
         retry = retry - 1
 
         id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
 
-        debug_log(id)
+        -- debug_log(id)
 
         is_exist = common.search_chat_id(id)
 
@@ -54,7 +54,7 @@ local generate_chat_id = function()
         id = ""
     end
 
-   debug_log("new = " .. id)
+    -- debug_log("new = " .. id)
 
     return id
 end
@@ -121,7 +121,7 @@ local methods = {
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
-                debug_log("not found")
+                -- debug_log("not found")
                 r.result = jsonc.stringify({ status = common.status.not_found })
                 return r
             end
@@ -130,7 +130,7 @@ local methods = {
             local chat_data = read_chat_data(full_file_path)
 
             if #chat_data == 0 then
-                debug_log("error")
+                -- debug_log("error")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -153,18 +153,18 @@ local methods = {
             local id = generate_chat_id()
 
             if #id == 0 then
-                debug_log("hello")
+                -- debug_log("hello")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
 
             local conf = common.get_oasis_conf()
-            debug_log("get_oasis_conf")
+            -- debug_log("get_oasis_conf")
             local file_name = conf.prefix .. id
             local full_file_path = common.normalize_path(conf.path) .. file_name
             touch(full_file_path)
 
-            debug_log("hello")
+            -- debug_log("hello")
 
             local chat_json_tbl = {}
             chat_json_tbl.messages = {}
