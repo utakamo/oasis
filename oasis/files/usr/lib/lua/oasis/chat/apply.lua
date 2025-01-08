@@ -121,7 +121,7 @@ local confirm = function(answer)
     return false
 end
 
-local apply = function(uci_list)
+local apply = function(uci_list, commit)
 
     for key, target_cmd_tbl in pairs(uci_list) do
         -- sys.exec("echo \"" .. key .. "\" >> /tmp/oasis-apply.log")
@@ -135,7 +135,10 @@ local apply = function(uci_list)
                 sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
 
                 uci:set(cmd.class.config, cmd.class.section, cmd.class.option, cmd.class.value)
-                uci:commit(cmd.class.config)
+
+                if commit then
+                    uci:commit(cmd.class.config)
+                end
             end
         end
     end

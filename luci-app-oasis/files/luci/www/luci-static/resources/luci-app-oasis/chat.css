@@ -292,6 +292,58 @@
     display: none;
 }
 
+.applying-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    text-align: center;
+    padding: 20px;
+}
+
+.applying-popup h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.applying-progress {
+    margin: 20px 0;
+    height: 10px;
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background-color: #28a745;
+    transition: width 10s ease;
+}
+
+.close-applying-popup {
+    margin-top: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.close-applying-popup:hover {
+    background-color: #007bff;
+}
+
 @media (max-width: 768px) {
     .smp-chat-hamburger-menu {
         display: block;

@@ -98,6 +98,7 @@ function apply_uci_cmd()
 
     local uci_list_json = luci_http.formvalue("uci_list")
     local chat_id = luci_http.formvalue("id")
+    local apply_type = luci_http.formvalue("type")
 
     if (not uci_list_json) or (not chat_id) then
         -- for debug
@@ -117,9 +118,12 @@ function apply_uci_cmd()
     os.remove("/tmp/oasis/apply/complete")
     os.remove("/tmp/oasis/apply/cancell")
 
-    -- for debug
-    oasis.backup(uci_list, chat_id, "normal")
-    oasis.apply(uci_list)
+    if apply_type == "commit" then
+        oasis.backup(uci_list, chat_id, "normal")
+        oasis.apply(uci_list, true) -- true: commit uci config (/etc/config/~)
+    else
+        oasis.apply(uci_list, false) -- false: save uci config (/tmp/.uci/~)
+    end
 
     luci_http.prepare_content("application/json")
     luci_http.write_json("OK")

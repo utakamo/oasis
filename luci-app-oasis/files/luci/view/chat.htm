@@ -67,6 +67,14 @@ uci set network.lan.proto=static
             <button id="export-cancel" onclick="closeExportPopup()">Cancel</button>
         </div>
     </div>
+
+    <div class="applying-popup" id="applying-popup">
+        <h2>Applying the settings...</h2>
+        <div class="applying-progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <!-- <button class="close-applying-popup" id="close-applying-popup">Reload</button> -->
+    </div>
 </div>
 
 <script>
@@ -696,6 +704,54 @@ uci set network.lan.proto=static
         });
     }
 
+    function save_apply_proc(jsonResponse, type) {
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+        const popup = document.getElementById('applying-popup');
+        const progressBar = document.getElementById('progressBar');
+        const closePopupButton = document.getElementById('close-applying-popup');
+
+        let uci_list_json = JSON.stringify(jsonResponse.uci_list);
+
+        fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({uci_list : uci_list_json, id : targetChatId, type : type})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+        const systemMessage = document.getElementById("oasis-system");
+        if (systemMessage !== null) {
+            chatMessagesContainer.removeChild(systemMessage);
+        }
+
+        popup.style.display = 'block';
+        progressBar.style.width = '0';
+
+        setTimeout(() => {
+            progressBar.style.width = '100%';
+        }, 100);
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 10000);
+
+        closePopupButton.addEventListener('click', () => {
+            //popup.style.display = 'none';
+            window.location.reload();
+        });
+    }
+
     function show_notify_popup(jsonResponse) {
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const systemMessage = document.createElement("div");
@@ -747,31 +803,7 @@ uci set network.lan.proto=static
         applyButton.id = "apply";
         applyButton.textContent = "Apply";
         applyButton.addEventListener('click', function (event) {
-
-            let uci_list_json = JSON.stringify(jsonResponse.uci_list);
-
-            fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({uci_list : uci_list_json, id : targetChatId})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    console.error("Error from server:", data.error);
-                    return;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-
-            const systemMessage = document.getElementById("oasis-system");
-            if (systemMessage !== null) {
-                chatMessagesContainer.removeChild(systemMessage);
-            }
+            save_apply_proc(jsonResponse, "commit");
         });
 
         popupDiv.appendChild(applyButton);
