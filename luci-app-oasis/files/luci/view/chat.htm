@@ -158,12 +158,39 @@ uci set network.lan.proto=static
         overlay.style.display = 'none';
     }
 
+    function check_temporary_setting() {
+
+        fetch('<%=build_url("admin", "network", "oasis", "confirm")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            if (data.status === "OK") {
+                console.log(data.uci_list);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
 
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const chatListContainer = document.getElementById("chat-list");
         const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
         const dropdown = document.getElementById("oasis-dropdown");
+
+        check_temporary_setting();
 
         fetch('<%=build_url("admin", "network", "oasis", "chat-list")%>', {
             method: 'POST'
@@ -391,6 +418,8 @@ uci set network.lan.proto=static
                         console.error("Error renaming chat:", data.error);
                         return;
                     }
+
+
                 })
                 .catch((error) => {
                     console.error("Request failed:", error);
@@ -708,7 +737,7 @@ uci set network.lan.proto=static
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const popup = document.getElementById('applying-popup');
         const progressBar = document.getElementById('progressBar');
-        const closePopupButton = document.getElementById('close-applying-popup');
+        //const closePopupButton = document.getElementById('close-applying-popup');
 
         let uci_list_json = JSON.stringify(jsonResponse.uci_list);
 
@@ -746,10 +775,12 @@ uci set network.lan.proto=static
             window.location.reload();
         }, 10000);
 
+        /*
         closePopupButton.addEventListener('click', () => {
             //popup.style.display = 'none';
             window.location.reload();
         });
+        */
     }
 
     function show_notify_popup(jsonResponse) {
