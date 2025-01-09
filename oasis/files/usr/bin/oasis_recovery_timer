@@ -21,7 +21,7 @@ fi
 
 initial_uptime=$(uci -q get oasis.backup.uptime)
 
-if [ -n "$2" ] && [ "$2" = "boot" ];then
+if [ -n "$1" ] && [ "$1" = "boot" ];then
     # TODO: Check uptime command sequence
     initial_uptime=$(uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n')
 fi
