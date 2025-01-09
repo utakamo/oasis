@@ -16,6 +16,7 @@ function index()
     entry({"admin", "network", "oasis", "rename-chat"}, call("rename"), nil).leaf = true
     entry({"admin", "network", "oasis", "apply-uci-cmd"}, call("apply_uci_cmd"), nil).leaf = true
     entry({"admin", "network", "oasis", "confirm"}, call("confirm"), nil).leaf = true
+    entry({"admin", "network", "oasis", "finalize-settings"}, call("finalize_settings"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -130,6 +131,12 @@ function apply_uci_cmd()
 end
 
 function confirm()
+    local result = util.ubus("oasis.chat", "confirm")
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function finalize_settings()
     local answer = luci_http.formvalue("answer")
 
     if not answer then
