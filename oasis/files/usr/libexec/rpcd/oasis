@@ -2,6 +2,7 @@
 
 local jsonc = require("luci.jsonc")
 local uci = require("luci.model.uci").cursor()
+local common = require("oasis.common")
 
 local methods = {
 
@@ -10,6 +11,31 @@ local methods = {
             local r = {}
             local storage = uci:get_all("oasis", "storage")
             r.result = jsonc.stringify(storage)
+            return r
+        end
+    },
+
+    -- confirm temporary setting
+    confirm = {
+        call = function()
+            local r = {}
+            local is_temporary_setting = uci:get("oasis", "backup", "enable")
+
+            if not is_temporary_setting then
+                r.result = jsonc.stringify({ status = common.status.not_found })
+                return r
+            end
+
+            local file = io.open("/etc/oasis/backup/uci_list.json", "r")
+            local uci_list_json = file:read("a")
+            file:close()
+
+            if not uci_list_json then
+                r.result = jsonc.stringify({ status = common.status.not_found })
+                return r
+            end
+
+            r.result = jsonc.stringify({ status = common.status.ok, uci_list = uci_list_json})
             return r
         end
     },
