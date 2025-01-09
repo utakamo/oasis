@@ -50,7 +50,11 @@ local backup = function(uci_list, id, backup_type)
 
     if #list > 0 then
         local uci_list_json = jsonc.stringify(uci_list)
-        sys.exec("echo " .. uci_list_json .. " /etc/oasis/backup/uci_list.json")
+        --sys.exec("echo " .. uci_list_json .. " /etc/oasis/backup/uci_list.json")
+        local file = io.open("/etc/oasis/backup/uci_list.json", "w")
+        file:write(uci_list_json)
+        file:close()
+
         uci:set("oasis", "backup", "enable", "1")
         uci:set("oasis", "backup", "src_id", id)
         uci:set_list("oasis", "backup", "targets", list)
