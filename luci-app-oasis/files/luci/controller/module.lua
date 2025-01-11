@@ -1,3 +1,4 @@
+local sys = require("luci.sys")
 local util = require("luci.util")
 local luci_http = require("luci.http")
 local jsonc = require("luci.jsonc")
@@ -16,7 +17,8 @@ function index()
     entry({"admin", "network", "oasis", "rename-chat"}, call("rename"), nil).leaf = true
     entry({"admin", "network", "oasis", "apply-uci-cmd"}, call("apply_uci_cmd"), nil).leaf = true
     entry({"admin", "network", "oasis", "confirm"}, call("confirm"), nil).leaf = true
-    entry({"admin", "network", "oasis", "finalize-settings"}, call("finalize_settings"), nil).leaf = true
+    entry({"admin", "network", "oasis", "finalize"}, call("finalize"), nil).leaf = true
+    entry({"admin", "network", "oasis", "rollback"}, call("rollback"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -117,7 +119,7 @@ function apply_uci_cmd()
 
     -- initialize flag file for oasis_recovery_timer
     os.remove("/tmp/oasis/apply/complete")
-    os.remove("/tmp/oasis/apply/cancell")
+    os.remove("/tmp/oasis/apply/rollback")
 
     if apply_type == "commit" then
         oasis.backup(uci_list, chat_id, "normal")
@@ -131,23 +133,33 @@ function apply_uci_cmd()
 end
 
 function confirm()
-    local result = util.ubus("oasis.chat", "confirm")
+    os.execute("echo \"finalize_settings error\" >> /tmp/oasis-confirm.log")
+    local result = util.ubus("oasis", "confirm")
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
 end
 
-function finalize_settings()
-    local answer = luci_http.formvalue("answer")
+function finalize()
 
-    if not answer then
-        os.execute("echo \"confirm error\" >> /tmp/oasis-confirm.log")
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Missing params" })
-        return
-    end
-
-    local result = oasis.confirm(answer)
+    local result = sys.exec("touch /tmp/oasis/apply/complete;echo $?")
 
     luci_http.prepare_content("application/json")
-    luci_http.write_json("OK")
+
+    if result == 0 then
+        luci_http.write_json("ERROR")
+    else
+        luci_http.write_json("OK")
+    end
+end
+
+function rollback()
+    local result = sys.exec("touch /tmp/oasis/apply/rollback;echo $?")
+
+    luci_http.prepare_content("application/json")
+
+    if result == 0 then
+        luci_http.write_json("ERROR")
+    else
+        luci_http.write_json("OK")
+    end
 end
