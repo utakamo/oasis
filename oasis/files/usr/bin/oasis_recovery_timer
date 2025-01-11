@@ -40,9 +40,7 @@ do
         uci set oasis.backup.enable=0
         uci commit oasis
         return 0
-    elif [ -e /tmp/oasis/apply/cancel ]; then
-        uci set oasis.backup.enable=0
-        uci commit oasis
+    elif [ -e /tmp/oasis/apply/rollback ]; then
         lua /usr/bin/oasis_recovery
         return 0
     fi
@@ -51,8 +49,6 @@ do
         lua /usr/bin/oasis_recovery
         return 0
     fi
-
-    echo loop
 
     sleep 3
 done
