@@ -74,6 +74,7 @@ local backup = function(uci_list, id, backup_type)
 end
 
 local recovery = function()
+
     local is_enable = uci:get("oasis", "backup", "enable")
 
     if not is_enable then
@@ -92,9 +93,9 @@ local recovery = function()
 
     for _, config in ipairs(backup_list) do
         -- if config == "full_backup" then
-        --     sys.exec("uci import -f /etc/oasis/backup/" .. config)
+        --     sys.exec("uci -f /etc/oasis/backup/full_backup import")
         -- else
-        sys.exec("uci import -f /etc/oasis/backup/" .. config .. " " .. config)
+        sys.exec("uci -f /etc/oasis/backup/" .. config .. " import " .. config)
         -- end
     end
 
@@ -108,15 +109,20 @@ local recovery = function()
     sys.exec("reboot")
 end
 
-local confirm = function(answer)
+local finalize = function()
 
-    local result = 0
+    local result = sys.exec("touch /tmp/oasis/apply/complete;echo $?")
 
-    if answer == "ok" then
-        result = sys.exec("touch /tmp/oasis/apply/complete")
-    elseif answer == "cancel" then
-        result = sys.exec("touch /tmp/oasis/apply/cancel")
+    if result == 0 then
+        return true
     end
+
+    return false
+end
+
+local rollback = function()
+
+    local result = sys.exec("touch /tmp/oasis/apply/rollback;echo $?")
 
     if result == 0 then
         return true
@@ -132,11 +138,11 @@ local apply = function(uci_list, commit)
         if (key == "set") and (type(target_cmd_tbl) == "table") then
             for _, cmd in ipairs(target_cmd_tbl) do
                 -- for debug
-                local param_log = cmd.class.config
-                param_log = param_log .. " " .. cmd.class.section
-                param_log = param_log .. " ".. cmd.class.option
-                param_log = param_log .. " " .. cmd.class.value
-                sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+                -- local param_log = cmd.class.config
+                -- param_log = param_log .. " " .. cmd.class.section
+                -- param_log = param_log .. " ".. cmd.class.option
+                -- param_log = param_log .. " " .. cmd.class.value
+                -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
 
                 uci:set(cmd.class.config, cmd.class.section, cmd.class.option, cmd.class.value)
 
@@ -155,5 +161,6 @@ return {
     backup = backup,
     apply = apply,
     recovery = recovery,
-    confirm = confirm,
+    finalize = finalize,
+    rollback = rollback,
 }
