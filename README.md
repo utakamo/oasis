@@ -48,7 +48,7 @@ root@OpenWrt:~# service rpcd reload
 ## Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
 <img width="895" alt="image" src="https://github.com/user-attachments/assets/fd6c788e-47ba-4385-acce-0e6a3e3cd367" />
-<img width="875" alt="image" src="https://github.com/user-attachments/assets/2b6253ad-8059-4dfd-9084-c3019212e4d2" />
+<img width="887" alt="image" src="https://github.com/user-attachments/assets/9f7b4839-de38-44d9-a0ce-4c4780d1bf82" />
 <img width="875" alt="image" src="https://github.com/user-attachments/assets/0cde3655-647e-4812-93cb-4004bb4c07bb" />
 
 ## Ask OpenWrt Setting
