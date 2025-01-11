@@ -1,6 +1,5 @@
-# OpenWrt AI Assistant Application - Oasis (Beta3)
+# OpenWrt AI Assistant Application - Oasis (ver 1.0)
 > [!IMPORTANT]
-> This application is currently under development...  
 > 
 > **Support AI Service**
 > - OpenAI
