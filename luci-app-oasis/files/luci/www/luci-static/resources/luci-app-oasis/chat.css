@@ -307,7 +307,22 @@
     padding: 20px;
 }
 
-.applying-popup h2 {
+.confirm-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    text-align: center;
+    padding: 20px;
+}
+
+.applying-popup h2, .confirm-popup h2 {
     margin: 0;
     font-size: 18px;
 }
@@ -531,6 +546,10 @@ pre {
     display: block;
     line-height: 1.4;
     border-radius: 3px;
+    text-align: left;
+    padding-left: 5px;
+    white-space: pre; 
+    overflow-x: auto;
 }
 
 .export-popup, .rename-popup {
@@ -561,7 +580,7 @@ pre {
     z-index: 1000;
 }
 
-.export-popup-buttons, .rename-popup-buttons, .uci-popup-buttons {
+.export-popup-buttons, .rename-popup-buttons, .uci-popup-buttons, .confirm-popup-buttons {
     display: flex;
     justify-content: center;
     gap: 10px;
@@ -571,7 +590,7 @@ pre {
     margin-top: 20px;
 }
 
-.export-popup button, .rename-popup button, .uci-popup button {
+.export-popup button, .rename-popup button, .uci-popup button, .confirm-popup-buttons button {
     padding: 10px 20px;
     border: none;
     cursor: pointer;
@@ -588,7 +607,12 @@ pre {
     color:white;
 }
 
-#json-export, #text-export, #rename, #ask {
+#finalize {
+    background-color: #00cc06;
+    color: white;
+}
+
+#json-export, #text-export, #rename, #ask, #rollback {
     background-color: #0056b3;
     color: white;
 }
@@ -599,7 +623,11 @@ pre {
     margin: 10px;
 }
 
-#json-export:hover, #text-export:hover, #rename:hover, #ask:hover {
+#finalize:hover {
+    background-color: #00e608;
+}
+
+#json-export:hover, #text-export:hover, #rename:hover, #ask:hover, #rollback:hover {
     background-color: #007bff;
 }
 
