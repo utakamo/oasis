@@ -50,6 +50,11 @@ root@OpenWrt:~# service rpcd reload
 <img width="875" alt="image" src="https://github.com/user-attachments/assets/f80a4eea-2fd9-4ab8-b367-07b6c00bd721" />
 <img width="875" alt="image" src="https://github.com/user-attachments/assets/2b6253ad-8059-4dfd-9084-c3019212e4d2" />
 <img width="875" alt="image" src="https://github.com/user-attachments/assets/0cde3655-647e-4812-93cb-4004bb4c07bb" />
+
+## Ask OpenWrt Setting
+<img width="884" alt="image" src="https://github.com/user-attachments/assets/90ffddee-4d09-4897-b163-b6eb5c244296" />
+<img width="886" alt="image" src="https://github.com/user-attachments/assets/bd1ff33d-36e8-49c2-b64e-3be78a2d2ce9" />
+
 ## How to install only oasis
 Dependency: lua-curl-v3
 ```
