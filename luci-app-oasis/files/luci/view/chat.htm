@@ -69,11 +69,21 @@ uci set network.lan.proto=static
     </div>
 
     <div class="applying-popup" id="applying-popup">
-        <h2>Applying the settings...</h2>
+        <h2 id="applying-popup-title"></h2>
         <div class="applying-progress">
             <div class="progress-bar" id="progressBar"></div>
         </div>
+        <div id="reboot_announce" style="display: none; color: #00cc06">Executed reboot system!!</div>
         <!-- <button class="close-applying-popup" id="close-applying-popup">Reload</button> -->
+    </div>
+
+    <div class="confirm-popup" id="confirm-popup">
+        <h2>Finalize this settings?</h2>
+        <pre class="console-command-color" id="confirm-popup-pre"></pre>
+        <div class="confirm-popup-buttons">
+            <button id="finalize">Finalize</button>
+            <button id="rollback">Rollback</button>
+        </div>
     </div>
 </div>
 
@@ -176,6 +186,93 @@ uci set network.lan.proto=static
 
             if (data.status === "OK") {
                 console.log(data.uci_list);
+                const preElement = document.getElementById("confirm-popup-pre");
+                const popup = document.getElementById("confirm-popup");
+                const finalizeButton = document.getElementById("finalize");
+                const rollbackButton = document.getElementById("rollback");
+                popup.style.display = 'block';
+
+                const uci_list = JSON.parse(data.uci_list);
+
+                Object.keys(uci_list).forEach(key => {
+                    const items = uci_list[key];
+
+                    if (Array.isArray(items) && items.length > 0) {
+                        console.log(`Processing items under '${key}':`);
+                        items.forEach(item => {
+                            if (item.class && item.param) {
+                                //const { option, config, value, section } = item.class;
+                                const param = item.param;
+                                //const output = `Key: ${key}, Config: ${config}, Section: ${section}, Option: ${option}, Value: ${value}, Param: ${param}`;
+                                preElement.textContent += `uci ${key} ${param}\n`;
+                            }
+                        });
+                    }
+                });
+
+                finalizeButton.addEventListener("click", function (event) {
+                    //console.log("finalize click");
+
+                    fetch('<%=build_url("admin", "network", "oasis", "finalize")%>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+
+                        if (data.error) {
+                            console.error("Error from server:", data.error);
+                            return;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+
+                    popup.style.display = "none";
+                });
+
+                rollbackButton.addEventListener("click", function (event) {
+                    console.log("rollback click");
+
+                    fetch('<%=build_url("admin", "network", "oasis", "rollback")%>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+
+                        if (data.error) {
+                            console.error("Error from server:", data.error);
+                            return;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+
+                    popup.style.display = "none";
+
+                    const applying_popup = document.getElementById('applying-popup');
+                    const title = document.getElementById('applying-popup-title');
+                    const progressBar = document.getElementById('progressBar');
+
+                    title.textContent = "Rollback..."
+                    applying_popup.style.display = 'block';
+                    progressBar.style.width = '0';
+
+                    setTimeout(() => {
+                        progressBar.style.width = '100%';
+                    }, 100);
+
+                    setTimeout(() => {
+                        reboot_announce.style.display = 'block';
+                    }, 10100);
+                });
             }
         })
         .catch(error => {
@@ -736,6 +833,7 @@ uci set network.lan.proto=static
     function save_apply_proc(jsonResponse, type) {
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const popup = document.getElementById('applying-popup');
+        const title = document.getElementById('applying-popup-title');
         const progressBar = document.getElementById('progressBar');
         //const closePopupButton = document.getElementById('close-applying-popup');
 
@@ -764,6 +862,7 @@ uci set network.lan.proto=static
             chatMessagesContainer.removeChild(systemMessage);
         }
 
+        title.textContent = "Applying the settings...";
         popup.style.display = 'block';
         progressBar.style.width = '0';
 
