@@ -54,7 +54,7 @@ root@OpenWrt:~# service rpcd reload
 ## Ask OpenWrt Setting
 <img width="884" alt="image" src="https://github.com/user-attachments/assets/90ffddee-4d09-4897-b163-b6eb5c244296" />
 <img width="886" alt="image" src="https://github.com/user-attachments/assets/bd1ff33d-36e8-49c2-b64e-3be78a2d2ce9" />
-
+<img width="882" alt="image" src="https://github.com/user-attachments/assets/758edf02-43f8-4c10-9e6c-55d07be94652" />
 <img width="865" alt="image" src="https://github.com/user-attachments/assets/0f24a905-40b3-43ce-925e-20cc2aba0d58" />
 
 ## How to install only oasis
