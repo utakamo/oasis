@@ -17,7 +17,7 @@
             <div class="message oasis-system">
                 <div class="message-text">
                     OpenWrt UCI Commands
-<pre class="console-command-color">
+<pre class="console-command-color" id="uci-popup-pre">
 uci set network.lan.ipaddr=192.168.1.1
 uci set network.lan.proto=static
 </pre>
@@ -897,6 +897,7 @@ uci set network.lan.proto=static
 
         const preElement = document.createElement("pre");
         preElement.className = "console-command-color";
+        preElement.id = "uci-popup-pre";
 
         Object.keys(jsonResponse.uci_list).forEach(key => {
             const items = jsonResponse.uci_list[key];
