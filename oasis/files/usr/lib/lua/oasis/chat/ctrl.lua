@@ -88,7 +88,7 @@ local init = function(arg, format)
 
     local chat = {}
 
-    if arg and arg.id then
+    if arg and arg.id and (#arg.id ~= 0) then
         basic.id = arg.id
         chat = call("oasis.chat", "load", {id = basic.id})
     end
@@ -322,6 +322,13 @@ local communicate = function(basic, chat, format)
             if (format == "chat") or (format == "prompt") or (format == "call") then
                 message = plain_text
             elseif format == "output" then
+
+                -- for ChatGPT
+                -- A choices array exists in the response data of chatgpt.
+                if chunk_json.choices then
+                    chunk_all = jsonc.stringify(chunk_json, false)
+                end
+
                 message = chunk_all
             end
 
