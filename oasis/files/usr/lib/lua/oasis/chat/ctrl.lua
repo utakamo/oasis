@@ -351,7 +351,7 @@ local communicate = function(basic, chat, format)
     elseif format == "output" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
 
-            -- os.execute("echo basic.id = " .. basic.id .. " >> /tmp/oasis.log")
+            -- os.execute("echo " .. basic.id .. " >> /tmp/oasis-id1.log")
             -- os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/oasis.log")
             -- os.execute("echo \"ai.message = " .. ai.message .. "\" >> /tmp/oasis-ai.log")
             --[[
@@ -362,8 +362,8 @@ local communicate = function(basic, chat, format)
             end
             ]]
 
-            if (#basic.id == 0) then
-                -- os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id.log")
+            if (not basic.id) or (#basic.id == 0) then
+                -- os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id2.log")
                 push_chat_data_for_record(chat, ai)
                 local chat_info = {}
                 chat_info.id = create_chat_file(basic, chat)
@@ -371,6 +371,7 @@ local communicate = function(basic, chat, format)
                 chat_info.title = result.title
                 new_chat_info = jsonc.stringify(chat_info, false)
             else
+                -- os.execute("echo " .. basic.id  .. " >> /tmp/oasis-id3.log")
                 push_chat_data_for_record(chat, ai)
                 append_chat_data(basic, chat)
             end
