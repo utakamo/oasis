@@ -61,7 +61,7 @@ When a configuration change is suggested by the AI using UCI commands, the inter
 After applying the settings, if the user can access the WebUI, they will be notified in the Oasis chat screen to finalize the configuration change suggested by the AI. The user can press the Finalize button to approve the configuration change, or press the Rollback button to reject it.  
 <img width="865" alt="image" src="https://github.com/user-attachments/assets/0f24a905-40b3-43ce-925e-20cc2aba0d58" />  
 > [!IMPORTANT]
-> After a configuration change, if the user does not press the Finalize or Rollback button within 5 minutes (default), the configuration will automatically roll back. This ensures that even if there was a configuration error that caused a brick, the system will return to the original, normal settings. Note: If the OpenWrt device is powered off during the rollback monitoring period, the rollback monitoring will resume upon restart. 
+> After a configuration change, if the user does not press the Finalize or Rollback button within 5 minutes (default), the configuration will automatically rollback (Rollback monitoring). This ensures that even if there was a configuration error that caused a brick, the system will return to the original, normal settings. Note: If the OpenWrt device is powered off during the rollback monitoring period, the rollback monitoring will resume upon restart. 
 
 ## How to install only oasis
 Dependency: lua-curl-v3
