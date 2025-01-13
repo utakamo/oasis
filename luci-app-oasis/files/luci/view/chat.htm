@@ -955,6 +955,13 @@ uci set network.lan.proto=static
         chatMessagesContainer.appendChild(systemMessage);
     }
 
+
+    // TODO: Temporary Fix
+    // This function will be removed later.
+    function isNumeric(str) {
+        return /^\d+$/.test(str);
+    }
+
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
@@ -1004,7 +1011,7 @@ uci set network.lan.proto=static
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                             }
 
-                            if (jsonResponse.id) {
+                            if (jsonResponse.id && isNumeric(jsonResponse.id)) {
                                 show_chat_popup(jsonResponse);
                             }
 
@@ -1023,7 +1030,7 @@ uci set network.lan.proto=static
                             //console.log("final = " + buffer.trim());
                             finalResponse = JSON.parse(buffer.trim());
 
-                            if (finalResponse.id) {
+                            if (finalResponse.id && isNumeric(finalResponse.id)) {
                                 show_chat_popup(finalResponse);
                             }
 
