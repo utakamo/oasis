@@ -178,16 +178,19 @@ root@OpenWrt:~#
 ```
 # oasis ubus objects and methods
 ```
-root@OpenWrt:~# ubus -v list
-'oasis' @5a0d497e
+root@OpenWrt:~# ubus -v list oasis
+'oasis' @389d3561
+        "confirm":{}
         "config":{}
-'oasis.chat' @bd30aea7
+root@OpenWrt:~# ubus -v list oasis.chat
+'oasis.chat' @960d4912
         "delete":{"id":"String"}
         "list":{}
         "append":{"content2":"String","id":"String","role2":"String","role1":"String","content1":"String"}
         "load":{"id":"String"}
-        "create":{"content1":"String","role2":"String","role1":"String","content2":"String"}
-'oasis.title' @57866132
+        "create":{"content3":"String","content2":"String","content1":"String","role2":"String","role1":"String","role3":"String"}
+root@OpenWrt:~# ubus -v list oasis.title
+'oasis.title' @621446c9
         "auto_set":{"id":"String"}
         "manual_set":{"id":"String","title":"String"}
 ```
