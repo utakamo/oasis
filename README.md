@@ -57,8 +57,8 @@ Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt u
 <img width="884" alt="image" src="https://github.com/user-attachments/assets/90ffddee-4d09-4897-b163-b6eb5c244296" />  
 When a configuration change is suggested by the AI using UCI commands, the internal system of OpenWrt recognizes that a configuration change has been proposed by the AI. It then notifies the user via a popup to apply the configuration change to the current runtime. The user can accept the configuration change by pressing the Apply button.  
 <img width="886" alt="image" src="https://github.com/user-attachments/assets/bd1ff33d-36e8-49c2-b64e-3be78a2d2ce9" />  
-After applying the settings, if the user can access the WebUI, they will be notified in the Oasis chat screen to finalize the configuration change suggested by the AI. The user can press the Finalize button to approve the configuration change, or press the Rollback button to reject it.  
 <img width="882" alt="image" src="https://github.com/user-attachments/assets/758edf02-43f8-4c10-9e6c-55d07be94652" />  
+After applying the settings, if the user can access the WebUI, they will be notified in the Oasis chat screen to finalize the configuration change suggested by the AI. The user can press the Finalize button to approve the configuration change, or press the Rollback button to reject it.  
 <img width="865" alt="image" src="https://github.com/user-attachments/assets/0f24a905-40b3-43ce-925e-20cc2aba0d58" />  
 
 ## How to install only oasis
