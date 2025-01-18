@@ -1,5 +1,6 @@
 #!/usr/bin/env lua
 
+local util = require("luci.util")
 local uci = require("luci.model.uci").cursor()
 
 local status = {
@@ -116,6 +117,21 @@ local update_conf_file = function(filename, data)
     return true
 end
 
+local get_uptime = function()
+    local system_info = util.ubus("system", "info", {})
+    return system_info.uptime
+end
+
+local check_file_exist = function(file)
+    local f = io.open(file, "r")
+    if f then
+        f:close()
+        return true
+    else
+        return false
+    end
+end
+
 return {
     status = status,
     get_oasis_conf = get_oasis_conf,
@@ -124,4 +140,6 @@ return {
     search_chat_id = search_chat_id,
     load_conf_file = load_conf_file,
     update_conf_file = update_conf_file,
+    get_uptime = get_uptime,
+    check_file_exist = check_file_exist,
 }
