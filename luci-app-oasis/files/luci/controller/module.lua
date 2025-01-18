@@ -117,7 +117,7 @@ function apply_uci_cmd()
 
     local uci_list = jsonc.parse(uci_list_json)
 
-    -- initialize flag file for oasis_recovery_timer
+    -- initialize flag file for oasis_rollback
     os.remove("/tmp/oasis/apply/complete")
     os.remove("/tmp/oasis/apply/rollback")
 

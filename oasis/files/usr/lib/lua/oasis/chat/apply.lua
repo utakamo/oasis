@@ -1,6 +1,7 @@
 #!/usr/bin/env lua
 
 local jsonc = require("luci.jsonc")
+local util = require("luci.util")
 local uci = require("luci.model.uci").cursor()
 local sys = require("luci.sys")
 
@@ -63,7 +64,8 @@ local backup = function(uci_list, id, backup_type)
             uci:commit(config)
         end
 
-        local uptime = sys.exec("uptime | awk -F'( up | min,)' '{print $2}' | tr -d '\n'")
+        local system_info = util.ubus("system", "info", {})
+        local uptime = system_info.uptime
         uci:set("oasis", "backup", "uptime", uptime)
         uci:commit("oasis")
 
@@ -153,7 +155,7 @@ local apply = function(uci_list, commit)
         end
     end
 
-    sys.exec("sh /usr/bin/oasis_recovery_timer &")
+    sys.exec("lua /usr/bin/oasis_rollback &")
     sys.exec("/etc/init.d/network restart")
 end
 

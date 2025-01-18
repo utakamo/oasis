@@ -36,8 +36,7 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
-	$(INSTALL_BIN) ./files/usr/bin/oasis_recovery $(1)$(APP_DIR)
-	$(INSTALL_BIN) ./files/usr/bin/oasis_recovery_timer $(1)$(APP_DIR)
+	$(INSTALL_BIN) ./files/usr/bin/oasis_rollback $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/ctrl.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/transfer.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/filter.lua $(1)$(LIBRARY_DIR)/oasis/chat
