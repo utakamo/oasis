@@ -738,6 +738,14 @@ uci set network.lan.proto=static
         targetChatId = jsonResponse.id;
         //console.log("targetChatId = " + targetChatId);
         showTitlePopup(jsonResponse.title);
+
+        const itemCount = (chatList !== null) ? chatList.item.length : 0;
+        
+        if (itemCount === 0) {
+            chatList = { item:[] };  
+        }
+
+        chatList.item.push({id: jsonResponse.id, title:jsonResponse.title})
         
         // New Chat List Item
         const chatMessagesContainer = document.querySelector('.chat-messages');
