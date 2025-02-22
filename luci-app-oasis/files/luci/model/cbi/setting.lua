@@ -1,5 +1,10 @@
 m = Map("oasis", nil)
 
+assist = m:section(TypedSection, "basic")
+enable = assist:option(Flag, "enable", "Enable", "Enable setting change suggestions by AI")
+enable.enabled = "1"
+enable.disabled = "0"
+
 storage = m:section(TypedSection, "storage")
 storage.addremove = false
 storage.removable = false

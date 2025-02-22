@@ -28,9 +28,10 @@ if request_method == "POST" then
         return
     end
 
+    local enable = uci:get_bool("oasis", "assist", "enable")
     local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
     local uci_cmd_notification = {}
-    if plain_text_ai_message then
+    if enable and plain_text_ai_message then
         uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
         uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification)
         if uci_cmd_notification.uci_notify then
