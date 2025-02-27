@@ -140,8 +140,9 @@
                                 return;
                             }
 
-                            /* Something Process */
-
+                            updateButton.disabled = true;
+                            updateButton.style.backgroundColor = "#FFBF00";
+                            updateButton.textContent = "Done";
                         })
                         .catch(error => {
                             console.error('Error:', error);
