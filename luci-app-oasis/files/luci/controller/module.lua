@@ -8,8 +8,10 @@ module("luci.controller.luci-app-oasis.module", package.seeall)
 
 function index()
     entry({"admin", "network", "oasis"}, firstchild(), "Oasis", 30).dependent=false
-    entry({"admin", "network", "oasis", "setting"}, cbi("luci-app-oasis/setting"), "Setting", 30).dependent=false
-    entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 30).dependent=false
+    entry({"admin", "network", "oasis", "icons"}, template("luci-app-oasis/icons"), "Icons", 40).dependent=false
+    entry({"admin", "network", "oasis", "sysmsg"}, template("luci-app-oasis/sysmsg"), "System Messages", 30).dependent=false
+    entry({"admin", "network", "oasis", "setting"}, cbi("luci-app-oasis/setting"), "General Setting", 20).dependent=false
+    entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 10).dependent=false
     entry({"admin", "network", "oasis", "chat-list"}, call("retrive_chat_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "export-chat-data"}, call("load_chat_data"), nil).leaf = true
@@ -19,6 +21,8 @@ function index()
     entry({"admin", "network", "oasis", "confirm"}, call("confirm"), nil).leaf = true
     entry({"admin", "network", "oasis", "finalize"}, call("finalize"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback"}, call("rollback"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-sysmsg"}, call("load_sysmsg"), nil).leaf = true
+    entry({"admin", "network", "oasis", "update-sysmsg"}, call("update_sysmsg"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -162,4 +166,38 @@ function rollback()
     else
         luci_http.write_json("OK")
     end
+end
+
+function load_sysmsg()
+
+    local json_param = {
+        path = "/etc/oasis/oasis.conf"
+    }
+
+    local result = util.ubus("oasis", "load_sysmsg", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function update_sysmsg()
+
+    -- os.execute("echo rename called >> /tmp/oasis-rename.log")
+
+    local target = luci_http.formvalue("target")
+    local title = luci_http.formvalue("title")
+    local message = luci_http.formvalue("message")
+
+    if (not target) or (not title) or (not message) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local json_param = {path = "/etc/oasis/oasis.conf", target = target, title = title, message = message}
+
+    local result = util.ubus("oasis", "update_sysmsg", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
 end

@@ -34,6 +34,8 @@ define Package/luci-app-oasis/install
 	$(INSTALL_DIR) $(1)$(LUCI_MODELDIR)/luci-app-oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/model/cbi/setting.lua $(1)$(LUCI_MODELDIR)/luci-app-oasis
 	$(INSTALL_DIR) $(1)$(LUCI_VIEWDIR)/luci-app-oasis
+	$(INSTALL_DATA) $(SOURCE_DIR)/view/icons.htm $(1)$(LUCI_VIEWDIR)/luci-app-oasis
+	$(INSTALL_DATA) $(SOURCE_DIR)/view/sysmsg.htm $(1)$(LUCI_VIEWDIR)/luci-app-oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/chat.htm $(1)$(LUCI_VIEWDIR)/luci-app-oasis
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/luci-app-oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-oasis/chat.css $(1)$(LUCI_RESOURCES_DIR)/luci-app-oasis

@@ -15,6 +15,92 @@ local methods = {
         end
     },
 
+    load_sysmsg = {
+        args = { path = "a_string"},
+
+        call = function(args)
+            local r = {}
+
+            local sysrole = common.load_conf_file(args.path)
+
+            if not sysrole then
+                r.result = jsonc.stringify({ status = common.status.not_found })
+                return r
+            end
+
+            r.result = jsonc.stringify(sysrole)
+            return r
+        end
+    },
+
+    add_sysmsg = {
+        args = { name = "a_string" },
+
+        call = function(args)
+            local r = {}
+
+            r.result = common.load_conf_file(args.name)
+
+            return r
+        end
+    },
+
+    update_sysmsg = {
+        args = { path = "a_string", target = "a_string", title = "a_string", message = "a_string"},
+
+        call = function(args)
+            local r = {}
+
+            local data = common.load_conf_file(args.path)
+
+            if not data then
+                r.result = jsonc.stringify({ status = common.status.not_found })
+                return r
+            end
+
+            data[args.target].title = args.title
+            data[args.target].chat = args.message
+
+            local is_update = common.update_conf_file(args.path, data)
+
+            if not is_update then
+                r.result = jsonc.stringify({ status = common.status.error })
+            end
+
+            r.result = jsonc.stringify({ status = common.status.ok })
+
+            return r
+        end
+    },
+
+    delete_sysmsg = {
+        args = { path = "a_string", target = "a_string" },
+
+        call = function(args)
+            local r = {}
+
+            local data = common.load_conf_file(args.path)
+
+            if not data then
+                r.result = jsonc.stringify({ status = common.status.not_found })
+                return r
+            end
+
+            data[args.target].title = nil
+            data[args.target].chat = nil
+
+            local is_update = common.update_conf_file(args.path, data)
+
+            if not is_update then
+                r.result = jsonc.stringify({ status = common.status.error })
+            end
+
+            r.result = jsonc.stringify({ status = common.status.ok })
+
+            return r
+        end
+    },
+
     -- confirm temporary setting
     confirm = {
         call = function()

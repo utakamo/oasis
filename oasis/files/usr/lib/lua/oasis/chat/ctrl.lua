@@ -206,6 +206,7 @@ local communicate = function(basic, chat, format)
     local spath = uci:get("oasis", "role", "path")
     local sysrole = common.load_conf_file(spath)
 
+    --[[
     if sysrole and (sysrole.custom) then
         sysrole.custom.flg = {}
         sysrole.custom.flg.chat = uci:get_bool("oasis", "role", "chat")
@@ -214,15 +215,16 @@ local communicate = function(basic, chat, format)
     else
         sysrole = {custom = {flg = {chat = false, prompt = false, call = false}}}
     end
+    ]]
 
     -- chat ..... chat mode for cui
     if (format == "chat") and ((not basic.id) or (#basic.id == 0)) then
 
         local content = sysrole.default.chat
 
-        if sysrole.custom.flg.chat then
-            content = sysrole.custom.chat
-        end
+        -- if sysrole.custom.flg.chat then
+        --     content = sysrole.custom.chat
+        -- end
 
         -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
         table.insert(chat.messages, 1, {
@@ -237,9 +239,9 @@ local communicate = function(basic, chat, format)
 
         local content = sysrole.default.chat
 
-        if sysrole.custom.flg.chat then
-            content = sysrole.custom.chat
-        end
+        -- if sysrole.custom.flg.chat then
+        --     content = sysrole.custom.chat
+        -- end
 
         -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
         table.insert(chat.messages, 1, {
@@ -250,9 +252,9 @@ local communicate = function(basic, chat, format)
 
         local content = sysrole.default.prompt
 
-        if sysrole.custom.flg.prompt then
-            content = sysrole.custom.prompt
-        end
+        -- if sysrole.custom.flg.prompt then
+        --     content = sysrole.custom.prompt
+        -- end
 
         -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
 
@@ -264,9 +266,9 @@ local communicate = function(basic, chat, format)
 
         local content = sysrole.default.call
 
-        if sysrole.custom.flg.call then
-            content = sysrole.custom.call
-        end
+        -- if sysrole.custom.flg.call then
+        --     content = sysrole.custom.call
+        -- end
 
         -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
 

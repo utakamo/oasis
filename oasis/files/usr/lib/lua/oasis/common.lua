@@ -108,7 +108,7 @@ local update_conf_file = function(filename, data)
     for section, sectionData in pairs(data) do
         iniFile:write("[" .. section .. "]\n")
         for key, value in pairs(sectionData) do
-            iniFile:write(key .. " = " .. value .. "\n")
+            iniFile:write(key .. " = \"" .. value .. "\"\n")
         end
         iniFile:write("\n")
     end

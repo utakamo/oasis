@@ -1,0 +1,203 @@
+<%+header%>
+
+<style>
+    .add-button {
+        display: inline-block;
+        padding: 10px 20px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #0056b3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .update-button {
+        display: inline-block;
+        padding: 10px 20px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #ff1493;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .delete-button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 10px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #8e8e8e8e;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+
+<p>
+    You can register and modify system messages for AI.
+</p>
+
+<h2>Create New System Message</h2>
+
+<div style="margin-top: 5px; border-bottom: 1px solid #bbbbbb;">
+    <span>Name:&nbsp;</span><input type="text" size="15">
+    <textarea id="create-message" rows="10" style="margin-top:10px; width:100%; resize:none;">This function is under development...</textarea>
+    <div style="margin: 10px;">
+        <button class="add-button" type="button">Add</button>
+    </div>
+</div>
+
+<h2 style="margin-top: 20px;">System Message List</h2>
+<div id="system-message-list"></div>
+
+<!--
+<div style="margin-top: 5px; border-bottom: 1px solid #bbbbbb;">
+    <span>#1 Name:&nbsp;</span><input type="text" size="15">
+    <textarea id="system-message-01" rows="10" style="margin-top:10px; width:100%; resize:none;"></textarea>
+    <div style="margin-top: 10px;">
+        <button type="button">Update</button>
+        <button type="button">Delete</button>
+    </div>
+</div>
+-->
+
+<script>
+    let name_cnt = 1;
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            Object.entries(data).forEach(([key, value]) => {
+                if (value && typeof value === 'object' && 'chat' in value) {
+
+                    // Create the container div
+                    const container = document.createElement('div');
+                    container.style.marginTop = '5px';
+                    container.style.borderBottom = '1px solid #bbbbbb';
+
+                    // Create the span element
+                    const span = document.createElement('span');
+                    span.textContent = '#' + name_cnt + ' Name: ';
+                    name_cnt += 1;
+
+                    // Create the input element
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = value.title;
+                    input.size = 15;
+
+                    // Create the textarea element
+                    const textarea = document.createElement('textarea');
+                    textarea.id = 'system-message-01';
+                    textarea.rows = 10;
+                    textarea.style.width = '100%';
+                    textarea.style.resize = 'none';
+                    textarea.value = value.chat;
+
+                    // Create the buttons container
+                    const buttonsContainer = document.createElement('div');
+                    buttonsContainer.id = key;
+                    buttonsContainer.style.margin = '10px';
+
+                    // Create the Update button
+                    const updateButton = document.createElement('button');
+                    updateButton.type = 'button';
+                    updateButton.className = 'update-button'
+                    updateButton.textContent = 'Update';
+
+                    updateButton.addEventListener('click', function() {
+                        console.log(textarea.value);
+                        fetch('<%=build_url("admin", "network", "oasis", "update-sysmsg")%>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: new URLSearchParams({ target: key, title: input.value, message: textarea.value }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+
+                            if (data.error) {
+                                console.error("Error from server:", data.error);
+                                return;
+                            }
+
+                            /* Something Process */
+
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                    });
+
+                    // Create the Delete button
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'delete-button'
+                    deleteButton.textContent = 'Delete';
+
+                    deleteButton.addEventListener('click', function() {
+                        fetch('<%=build_url("admin", "network", "oasis", "delete-sysmsg")%>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: new URLSearchParams({ target: key }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+
+                            if (data.error) {
+                                console.error("Error from server:", data.error);
+                                return;
+                            }
+
+                            /* Something Process */
+
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                    });
+
+                    // Append the elements to the container
+                    container.appendChild(span);
+                    container.appendChild(input);
+                    container.appendChild(textarea);
+                    buttonsContainer.appendChild(updateButton);
+
+                    if (key !== "default") {
+                        buttonsContainer.appendChild(deleteButton);
+                    }
+
+                    container.appendChild(buttonsContainer);
+
+                    // Get the parent element by id and append the container to it
+                    const parentElement = document.getElementById('system-message-list');
+                    parentElement.appendChild(container);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+</script>
+
+<%+footer%>
