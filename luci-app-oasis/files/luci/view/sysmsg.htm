@@ -28,7 +28,7 @@
     .delete-button {
         display: inline-block;
         padding: 10px 20px;
-        margin: 10px;
+        margin-left: 10px;
         width: 7rem;
         height: 2rem;
         background-color: #8e8e8e8e;
@@ -75,12 +75,11 @@
     function create_sysmsg_info(key, value) {
         // Create the container div
         const container = document.createElement('div');
-        container.style.margin = '10px';
         container.style.borderBottom = '1px solid #bbbbbb';
 
         // Create the span element
         const span = document.createElement('span');
-        span.textContent = '#' + name_cnt + ' Title: ';
+        span.textContent = '#' + name_cnt + ' TITLE: ';
         name_cnt += 1;
 
         // Create the input element
@@ -93,7 +92,7 @@
         const textarea = document.createElement('textarea');
         textarea.id = 'system-message-01';
         textarea.rows = 10;
-        textarea.style.margin = '10px';
+        textarea.style.marginTop = '10px';
         textarea.style.width = '100%';
         textarea.style.resize = 'none';
         textarea.value = value.chat;
