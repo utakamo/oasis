@@ -34,12 +34,37 @@ local methods = {
     },
 
     add_sysmsg = {
-        args = { name = "a_string" },
+        args = { path = "a_string", title = "a_string", message = "a_string"},
 
         call = function(args)
             local r = {}
 
-            r.result = common.load_conf_file(args.name)
+            local data = common.load_conf_file(args.path)
+
+            local sysmsg_key_suffix
+            for sysmsg_key, _ in pairs(data) do
+                sysmsg_key_suffix = sysmsg_key:match("custom_(%d+)")
+            end
+
+            if not sysmsg_key_suffix then
+                sysmsg_key_suffix = 0
+            end
+
+            local new_sysmsg_key = "custom_" .. (sysmsg_key_suffix + 1)
+
+            os.execute("echo " .. new_sysmsg_key .. " >> /tmp/oasis-rpcd.log")
+
+            data[new_sysmsg_key] = {}
+            data[new_sysmsg_key].title = args.title
+            data[new_sysmsg_key].chat = args.message
+
+            local is_update = common.update_conf_file(args.path, data)
+
+            if not is_update then
+                r.result = jsonc.stringify({ status = common.status.error })
+            end
+
+            r.result = jsonc.stringify({ status = common.status.ok, new_sysmsg_key = new_sysmsg_key })
 
             return r
         end
