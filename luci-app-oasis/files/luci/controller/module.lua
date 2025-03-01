@@ -24,6 +24,7 @@ function index()
     entry({"admin", "network", "oasis", "load-sysmsg"}, call("load_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "update-sysmsg"}, call("update_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-sysmsg"}, call("add_sysmsg"), nil).leaf = true
+    entry({"admin", "network", "oasis", "delete-sysmsg"}, call("delete_sysmsg"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -205,8 +206,6 @@ end
 
 function add_sysmsg()
 
-    -- os.execute("echo rename called >> /tmp/oasis-rename.log")
-
     local title = luci_http.formvalue("title")
     local message = luci_http.formvalue("message")
 
@@ -219,6 +218,24 @@ function add_sysmsg()
     local json_param = {path = "/etc/oasis/oasis.conf", title = title, message = message}
 
     local result = util.ubus("oasis", "add_sysmsg", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function delete_sysmsg()
+
+    local target = luci_http.formvalue("target")
+
+    if not target then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local json_param = {path = "/etc/oasis/oasis.conf", target = target}
+
+    local result = util.ubus("oasis", "delete_sysmsg", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)

@@ -46,7 +46,7 @@
 <h2>Create New System Message</h2>
 
 <div style="margin-top: 5px; border-bottom: 1px solid #bbbbbb;">
-    <span>Title:&nbsp;</span><input id="new-sysmsg-title" type="text" size="15">
+    <span>TITLE:&nbsp;</span><input id="new-sysmsg-title" type="text" size="15">
     <textarea id="new-sysmsg-data" rows="10" style="margin-top:10px; width:100%; resize:none;">This function is under development...</textarea>
     <div style="margin: 10px;">
         <button id="add-button" class="add-button" type="button">Add</button>
@@ -75,12 +75,12 @@
     function create_sysmsg_info(key, value) {
         // Create the container div
         const container = document.createElement('div');
+        container.id = key;
         container.style.borderBottom = '1px solid #bbbbbb';
 
         // Create the span element
         const span = document.createElement('span');
         span.textContent = '#' + name_cnt + ' TITLE: ';
-        name_cnt += 1;
 
         // Create the input element
         const input = document.createElement('input');
@@ -90,16 +90,17 @@
 
         // Create the textarea element
         const textarea = document.createElement('textarea');
-        textarea.id = 'system-message-01';
+        textarea.id = 'system-message-' + name_cnt;
         textarea.rows = 10;
         textarea.style.marginTop = '10px';
         textarea.style.width = '100%';
         textarea.style.resize = 'none';
         textarea.value = value.chat;
+        name_cnt += 1;
 
         // Create the buttons container
         const buttonsContainer = document.createElement('div');
-        buttonsContainer.id = key;
+        //buttonsContainer.id = key;
         buttonsContainer.style.margin = '10px';
 
         // Create the Update button
@@ -169,8 +170,9 @@
                     return;
                 }
 
-                /* Something Process */
-
+                const parent = document.getElementById("system-message-list");
+                const child = document.getElementById(key);
+                parent.removeChild(child);
             })
             .catch(error => {
                 console.error('Error:', error);

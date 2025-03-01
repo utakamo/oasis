@@ -52,7 +52,7 @@ local methods = {
 
             local new_sysmsg_key = "custom_" .. (sysmsg_key_suffix + 1)
 
-            os.execute("echo " .. new_sysmsg_key .. " >> /tmp/oasis-rpcd.log")
+            --os.execute("echo " .. new_sysmsg_key .. " >> /tmp/oasis-rpcd.log")
 
             data[new_sysmsg_key] = {}
             data[new_sysmsg_key].title = args.title
@@ -83,6 +83,7 @@ local methods = {
                 return r
             end
 
+            data[args.target] = {}
             data[args.target].title = args.title
             data[args.target].chat = args.message
 
@@ -111,8 +112,7 @@ local methods = {
                 return r
             end
 
-            data[args.target].title = nil
-            data[args.target].chat = nil
+            data[args.target] = nil
 
             local is_update = common.update_conf_file(args.path, data)
 
