@@ -2,8 +2,136 @@
 
 <h1>Select AI Icon</h1>
 
-<p>
-    This page is under development ...
-</p>
+<style>
+
+    #save-button {
+        display: inline-block;
+        padding: 10px 20px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #0056b3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .icon-container {
+      display: flex;
+      gap: 10px;
+    }
+  
+    .icon-label {
+      cursor: pointer;
+      text-align: center;
+      margin-right: 15px;
+    }
+  
+    .icon-label img {
+      width: 80px; /* 画像サイズ調整 */
+      height: 80px;
+      border-radius: 10px;
+      border: 3px solid transparent;
+      transition: 0.3s;
+    }
+  
+    /* 選択時のスタイル */
+    input[type="radio"]:checked + img {
+      border-color: #007bff; /* 選択時の枠色 */
+    }
+  
+    /* ラジオボタンを非表示 */
+    .icon-label input {
+      display: none;
+    }
+</style>
+
+<div id="oasis-icon-container"></div>
+
+<div style="margin-top: 10px;">
+    <button type="button" id="save-button">SAVE</button>
+</div>
+
+<script>
+    function create_icon_info(path, key, icon_name, is_using) {
+        const resourcePath = '<%= resource %>';
+        const iconPath = `${resourcePath}/luci-app-oasis/`;
+        const container = document.getElementById('oasis-icon-container');
+
+        const label = document.createElement('label');
+        label.classList.add('icon-label');
+
+        const input = document.createElement('input');
+        input.type = 'radio';
+
+        if (is_using) {
+            input.checked = true;
+        }
+
+        input.name = 'icon';
+        input.value = key;
+
+        const img = document.createElement('img');
+        img.src = iconPath + icon_name;
+        img.alt = icon_name;
+
+        label.appendChild(input);
+        label.appendChild(img);
+        container.appendChild(label);
+    }
+
+    const save_button = document.getElementById('save-button');
+
+    save_button.addEventListener('click', function() {
+        const selected_icon = document.querySelector('input[name="icon"]:checked');
+        //console.log(selected_icon.value);
+
+        fetch('<%=build_url("admin", "network", "oasis", "select-icon")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ using: selected_icon.value }),
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            save_button.disabled = true;
+            save_button.style.backgroundColor = "#FFBF00";
+            save_button.textContent = "Done";
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('<%=build_url("admin", "network", "oasis", "load-icon-info")%>', {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            Object.entries(data.list).forEach(([key, value]) => {
+                let is_using = (data.ctrl.using == key) ? true : false;
+                create_icon_info(data.ctrl.path, key, value, is_using);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+</script>
 
 <%+footer%>

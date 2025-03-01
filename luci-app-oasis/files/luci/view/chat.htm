@@ -93,6 +93,7 @@ uci set network.lan.proto=static
     let activeConversation = false;
     let targetChatItemId = null;
     let chatList = null;
+    let icon_name = null;
 
     /* chat data list for smartphone */
     document.getElementById("menu-trigger").addEventListener("click", function () {
@@ -405,6 +406,25 @@ uci set network.lan.proto=static
             console.error('Error:', error);
         });
 
+        fetch('<%=build_url("admin", "network", "oasis", "load-icon-info")%>', {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            let using_icon = data.ctrl.using
+            icon_name = data.list[using_icon];
+            console.log(icon_name);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
         document.addEventListener("click", function () {
             dropdown.style.display = 'none';
         });
@@ -676,7 +696,6 @@ uci set network.lan.proto=static
     let targetChatId = "";
     let message_outputing = false;
     const resourcePath = '<%= resource %>';
-    const iconPath = `${resourcePath}/luci-app-oasis/openwrt.png`;
 
     document.getElementById('send-button').addEventListener('click', async function() {
 
@@ -716,6 +735,7 @@ uci set network.lan.proto=static
         const receivedMessageContainer = document.createElement('div');
         receivedMessageContainer.className = 'message received';
 
+        const iconPath = `${resourcePath}/luci-app-oasis/${icon_name}`;
         const receivedIconContainer = document.createElement('div');
         receivedIconContainer.className = 'icon';
         receivedIconContainer.style.backgroundImage = `url(${iconPath})`;

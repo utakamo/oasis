@@ -8,8 +8,8 @@ module("luci.controller.luci-app-oasis.module", package.seeall)
 
 function index()
     entry({"admin", "network", "oasis"}, firstchild(), "Oasis", 30).dependent=false
-    entry({"admin", "network", "oasis", "icons"}, template("luci-app-oasis/icons"), "Icons", 40).dependent=false
-    entry({"admin", "network", "oasis", "sysmsg"}, template("luci-app-oasis/sysmsg"), "System Messages", 30).dependent=false
+    entry({"admin", "network", "oasis", "icons"}, template("luci-app-oasis/icons"), "Icon", 40).dependent=false
+    entry({"admin", "network", "oasis", "sysmsg"}, template("luci-app-oasis/sysmsg"), "System Message", 30).dependent=false
     entry({"admin", "network", "oasis", "setting"}, cbi("luci-app-oasis/setting"), "General Setting", 20).dependent=false
     entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 10).dependent=false
     entry({"admin", "network", "oasis", "chat-list"}, call("retrive_chat_list"), nil).leaf = true
@@ -25,6 +25,8 @@ function index()
     entry({"admin", "network", "oasis", "update-sysmsg"}, call("update_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-sysmsg"}, call("add_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-sysmsg"}, call("delete_sysmsg"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-icon-info"}, call("load_icon_info"), nil).leaf = true
+    entry({"admin", "network", "oasis", "select-icon"}, call("select_icon"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -236,6 +238,33 @@ function delete_sysmsg()
     local json_param = {path = "/etc/oasis/oasis.conf", target = target}
 
     local result = util.ubus("oasis", "delete_sysmsg", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function load_icon_info()
+    local json_param = {path = "/etc/oasis/oasis.conf"}
+
+    local result = util.ubus("oasis", "load_icon_info", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function select_icon()
+
+    local using = luci_http.formvalue("using")
+
+    if not using then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local json_param = {path = "/etc/oasis/oasis.conf", using = using}
+
+    local result = util.ubus("oasis", "select_icon", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
