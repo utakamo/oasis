@@ -535,8 +535,6 @@ uci set network.lan.proto=static
                         console.error("Error renaming chat:", data.error);
                         return;
                     }
-
-
                 })
                 .catch((error) => {
                     console.error("Request failed:", error);
@@ -736,6 +734,7 @@ uci set network.lan.proto=static
         receivedMessageContainer.className = 'message received';
 
         const iconPath = `${resourcePath}/luci-app-oasis/${icon_name}`;
+        //console.log(iconPath);
         const receivedIconContainer = document.createElement('div');
         receivedIconContainer.className = 'icon';
         receivedIconContainer.style.backgroundImage = `url(${iconPath})`;
@@ -1134,9 +1133,10 @@ uci set network.lan.proto=static
                     } else if (message.role === 'assistant') {
                         messageDiv.className = 'message received';
 
+                        const iconPath = `${resourcePath}/luci-app-oasis/${icon_name}`;
                         const iconDiv = document.createElement('div');
                         iconDiv.className = 'icon';
-                        iconDiv.style.backgroundImage = 'url("/luci-static/resources/luci-app-oasis/openwrt.png")';
+                        iconDiv.style.backgroundImage = `url(${iconPath})`;
 
                         messageDiv.appendChild(iconDiv);
                     }
