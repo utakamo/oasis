@@ -259,6 +259,17 @@
     cursor: pointer;
 }
 
+.sysmsg-select-button {
+    padding: 10px 20px;
+    width: 50%;
+    height: 3rem;
+    background-color: #ffffff;
+    border: 1px solid #000000;
+    color: #333333;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
 #send-button:hover {
     background-color: #0056b3;
 }
@@ -320,6 +331,34 @@
     width: 400px;
     text-align: center;
     padding: 20px;
+}
+
+.sysmsg-list-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    text-align: center;
+    padding: 20px;
+}
+
+#sysmsg-list-popup-buttons {
+    /*
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .applying-popup h2, .confirm-popup h2 {
@@ -510,6 +549,17 @@
         background-color: #007bff;
         color: white;
         border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .sysmsg-select-button {
+        padding: 10px 20px;
+        width: 50%;
+        height: 3rem;
+        background-color: #ffffff;
+        border: 1px solid #000000;
+        color: #333333;
         border-radius: 4px;
         cursor: pointer;
     }

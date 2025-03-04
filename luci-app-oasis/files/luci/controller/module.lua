@@ -22,6 +22,7 @@ function index()
     entry({"admin", "network", "oasis", "finalize"}, call("finalize"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback"}, call("rollback"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-sysmsg"}, call("load_sysmsg"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-sysmsg-info"}, call("load_sysmsg_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "update-sysmsg"}, call("update_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-sysmsg"}, call("add_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-sysmsg"}, call("delete_sysmsg"), nil).leaf = true
@@ -179,6 +180,18 @@ function load_sysmsg()
     }
 
     local result = util.ubus("oasis", "load_sysmsg", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function load_sysmsg_info()
+
+    local json_param = {
+        path = "/etc/oasis/oasis.conf"
+    }
+
+    local result = util.ubus("oasis", "load_sysmsg_info", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)

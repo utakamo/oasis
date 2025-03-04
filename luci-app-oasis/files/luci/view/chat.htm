@@ -85,6 +85,11 @@ uci set network.lan.proto=static
             <button id="rollback">Rollback</button>
         </div>
     </div>
+
+    <div class="sysmsg-list-popup" id="sysmsg-list-popup">
+        <h2>Select AI System Message<h2>
+        <div id="sysmsg-list-popup-buttons"></div>
+    </div>
 </div>
 
 <script>
@@ -94,6 +99,11 @@ uci set network.lan.proto=static
     let targetChatItemId = null;
     let chatList = null;
     let icon_name = null;
+    let sysmsg_list = null;
+    let sysmsg_key = "";
+    let targetChatId = "";
+    let message_outputing = false;
+    const resourcePath = '<%= resource %>';
 
     /* chat data list for smartphone */
     document.getElementById("menu-trigger").addEventListener("click", function () {
@@ -186,7 +196,7 @@ uci set network.lan.proto=static
             }
 
             if (data.status === "OK") {
-                console.log(data.uci_list);
+                //console.log(data.uci_list);
                 const preElement = document.getElementById("confirm-popup-pre");
                 const popup = document.getElementById("confirm-popup");
                 const finalizeButton = document.getElementById("finalize");
@@ -199,7 +209,7 @@ uci set network.lan.proto=static
                     const items = uci_list[key];
 
                     if (Array.isArray(items) && items.length > 0) {
-                        console.log(`Processing items under '${key}':`);
+                        //console.log(`Processing items under '${key}':`);
                         items.forEach(item => {
                             if (item.class && item.param) {
                                 //const { option, config, value, section } = item.class;
@@ -236,7 +246,7 @@ uci set network.lan.proto=static
                 });
 
                 rollbackButton.addEventListener("click", function (event) {
-                    console.log("rollback click");
+                    //console.log("rollback click");
 
                     fetch('<%=build_url("admin", "network", "oasis", "rollback")%>', {
                         method: 'POST',
@@ -419,7 +429,76 @@ uci set network.lan.proto=static
 
             let using_icon = data.ctrl.using
             icon_name = data.list[using_icon];
-            console.log(icon_name);
+            //console.log(icon_name);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+        fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg-info")%>', {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            const sysmsg_button_container = document.getElementById('sysmsg-list-popup-buttons');
+
+            const sysmsg_select_button = document.createElement('input');
+            sysmsg_select_button.type = 'button';
+            sysmsg_select_button.value = 'Casual Conversation';
+            sysmsg_select_button.className = 'sysmsg-select-button';
+
+            sysmsg_select_button.addEventListener('click', function() {
+                sysmsg_key = 'casual'
+                //console.log(sysmsg_key);
+                const sysmsg_list_popup = document.getElementById('sysmsg-list-popup');
+                sysmsg_list_popup.style.display = 'none';
+
+                const systemMessage = document.getElementById("oasis-system");
+                const messageInput = document.getElementById('message-input');
+                const messageText = messageInput.value.trim();
+
+                if (!messageText) {
+                    return;
+                }
+
+                send_chat_data(systemMessage, messageInput, messageText);
+            });
+
+            sysmsg_button_container.appendChild(sysmsg_select_button);
+
+            //console.log(data);
+            sysmsg_list = data;
+            for (let i = 0; i < sysmsg_list.title.length; i++) {
+                const sysmsg_select_button = document.createElement('input');
+                sysmsg_select_button.type = 'button';
+                sysmsg_select_button.value = sysmsg_list.title[i];
+                sysmsg_select_button.className = 'sysmsg-select-button';
+
+                sysmsg_select_button.addEventListener('click', function() {
+                    sysmsg_key = sysmsg_list.key[i];
+                    //console.log(sysmsg_key);
+                    const sysmsg_list_popup = document.getElementById('sysmsg-list-popup');
+                    sysmsg_list_popup.style.display = 'none';
+
+                    const systemMessage = document.getElementById("oasis-system");
+                    const messageInput = document.getElementById('message-input');
+                    const messageText = messageInput.value.trim();
+
+                    if (!messageText) {
+                        return;
+                    }
+
+                    send_chat_data(systemMessage, messageInput, messageText);
+                });
+
+                sysmsg_button_container.appendChild(sysmsg_select_button);
+            }
         })
         .catch(error => {
             console.error('Error:', error);
@@ -691,24 +770,7 @@ uci set network.lan.proto=static
         }
     }
 
-    let targetChatId = "";
-    let message_outputing = false;
-    const resourcePath = '<%= resource %>';
-
-    document.getElementById('send-button').addEventListener('click', async function() {
-
-        if (message_outputing) {
-            return;
-        }
-
-        message_outputing = true;
-        const systemMessage = document.getElementById("oasis-system");
-        const messageInput = document.getElementById('message-input');
-        const messageText = messageInput.value.trim();
-
-        if (!messageText) {
-            return;
-        }
+    function send_chat_data(systemMessage, messageInput, messageText) {
 
         const messageContainer = document.createElement('div');
         messageContainer.className = 'message sent';
@@ -750,6 +812,31 @@ uci set network.lan.proto=static
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         send_message(receivedMessageTextContainer, messageText);
+    }
+
+    document.getElementById('send-button').addEventListener('click', async function() {
+
+        const systemMessage = document.getElementById("oasis-system");
+        const messageInput = document.getElementById('message-input');
+        const messageText = messageInput.value.trim();
+
+        if (!messageText) {
+            return;
+        }
+
+        if (message_outputing) {
+            return;
+        }
+
+        message_outputing = true;
+
+        if (targetChatId.length === 0) {
+            const sysmsg_list_popup = document.getElementById("sysmsg-list-popup");
+            sysmsg_list_popup.style.display = "block";
+            return;
+        }
+
+        send_chat_data(systemMessage, messageInput, messageText);
     });
 
     function show_chat_popup(jsonResponse) {
@@ -997,6 +1084,8 @@ uci set network.lan.proto=static
         let finalResponse = '';
         let is_notify = false;
 
+        console.log(sysmsg_key);
+
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
                 method: 'POST',
@@ -1007,6 +1096,7 @@ uci set network.lan.proto=static
                     cmd: "chat",
                     id: targetChatId,
                     message: messageText,
+                    sysmsg_key: sysmsg_key, 
                 })
             });
 

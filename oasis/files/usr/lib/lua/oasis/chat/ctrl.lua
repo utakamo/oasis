@@ -115,6 +115,13 @@ local init = function(arg, format)
         end
     end
 
+    if format == "output" then
+        if (arg.sysmsg_key and (#arg.sysmsg_key > 0)) then
+            basic.sysmsg_key = arg.sysmsg_key
+            -- os.execute("echo " .. basic.sysmsg_key .. " >> /tmp/sysmsg.log")
+        end
+    end
+
     return basic, chat
 end
 
@@ -133,12 +140,24 @@ local create_chat_file = function(service, chat)
     -- TODO:
     -- Update to allow chat files to be created even when role:system is not present.
     local message = {}
-    message.role1 = chat.messages[#chat.messages - 2].role
-    message.content1 = chat.messages[#chat.messages - 2].content
-    message.role2 = chat.messages[#chat.messages - 1].role
-    message.content2 = chat.messages[#chat.messages - 1].content
-    message.role3 = chat.messages[#chat.messages].role
-    message.content3 = chat.messages[#chat.messages].content
+    if (service.sysmsg_key) and (#service.sysmsg_key > 0) and (service.sysmsg_key == "casual") then
+        os.execute("echo \"no system message\" >> /tmp/oasis-create-chat-file.log")
+        message.role1 = chat.messages[#chat.messages - 1].role
+        message.content1 = chat.messages[#chat.messages - 1].content
+        message.role2 = chat.messages[#chat.messages].role
+        message.content2 = chat.messages[#chat.messages].content
+        message.role3 = ""
+        message.content3 = ""
+    else
+        os.execute("echo \"system message\" >> /tmp/oasis-create-chat-file.log")
+        message.role1 = chat.messages[#chat.messages - 2].role
+        message.content1 = chat.messages[#chat.messages - 2].content
+        message.role2 = chat.messages[#chat.messages - 1].role
+        message.content2 = chat.messages[#chat.messages - 1].content
+        message.role3 = chat.messages[#chat.messages].role
+        message.content3 = chat.messages[#chat.messages].content
+    end
+
     local result = call("oasis.chat", "create", message)
     service.id = result.id
     return result.id
@@ -219,62 +238,29 @@ local communicate = function(basic, chat, format)
 
     -- chat ..... chat mode for cui
     if (format == "chat") and ((not basic.id) or (#basic.id == 0)) then
-
-        local content = sysrole.default.chat
-
-        -- if sysrole.custom.flg.chat then
-        --     content = sysrole.custom.chat
-        -- end
-
-        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
         table.insert(chat.messages, 1, {
             role = role.system,
-            content = content
+            content = sysrole.default.chat
         })
-
     -- output ... chat mode for luci
     elseif (format == "output") and ((not basic.id) or (#basic.id == 0)) then
-
-        -- os.execute("echo outputcalled >> /tmp/oasis-output.log")
-
-        local content = sysrole.default.chat
-
-        -- if sysrole.custom.flg.chat then
-        --     content = sysrole.custom.chat
-        -- end
-
-        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
-        table.insert(chat.messages, 1, {
-            role = role.system,
-            content = content
-        })
+        if (basic.sysmsg_key) and (#basic.sysmsg_key > 0) and (basic.sysmsg_key ~= "casual") then
+            table.insert(chat.messages, 1, {
+                role = role.system,
+                content = sysrole[basic.sysmsg_key].chat
+            })
+        end
+    -- prompt ... prompt mode for cui
     elseif format == "prompt" then
-
-        local content = sysrole.default.prompt
-
-        -- if sysrole.custom.flg.prompt then
-        --     content = sysrole.custom.prompt
-        -- end
-
-        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
-
         table.insert(chat.messages, 1, {
             role = role.system,
-            content = content
+            content = sysrole.default.prompt
         })
+    -- call ... script call mode for cui
     elseif format == "call" then
-
-        local content = sysrole.default.call
-
-        -- if sysrole.custom.flg.call then
-        --     content = sysrole.custom.call
-        -- end
-
-        -- os.execute("echo " .. content .. " >> /tmp/oasis.log")
-
         table.insert(chat.messages, 1, {
             role = role.system,
-            content = content
+            content = sysrole.default.call
         })
     end
 
@@ -353,19 +339,22 @@ local communicate = function(basic, chat, format)
     elseif format == "output" then
         if (ai.role ~= "unknown") and (#ai.message > 0) then
 
-            -- os.execute("echo " .. basic.id .. " >> /tmp/oasis-id1.log")
-            -- os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/oasis.log")
-            -- os.execute("echo \"ai.message = " .. ai.message .. "\" >> /tmp/oasis-ai.log")
+            -- debug start
             --[[
+            os.execute("echo " .. basic.id .. " >> /tmp/oasis-id1.log")
+            os.execute("echo #basic.id = " .. #basic.id .. " >> /tmp/oasis.log")
+            os.execute("echo \"ai.message = " .. ai.message .. "\" >> /tmp/oasis-ai.log")
+
             if (not basic.id) then
                 os.execute("echo not basic.id >> /tmp/oasis.log")
             else
                 os.execute("echo basic.id exist >> /tmp/oasis.log")
             end
             ]]
+            -- debug end
 
             if (not basic.id) or (#basic.id == 0) then
-                -- os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id2.log")
+                os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id2.log")
                 push_chat_data_for_record(chat, ai)
                 local chat_info = {}
                 chat_info.id = create_chat_file(basic, chat)
@@ -373,7 +362,7 @@ local communicate = function(basic, chat, format)
                 chat_info.title = result.title
                 new_chat_info = jsonc.stringify(chat_info, false)
             else
-                -- os.execute("echo " .. basic.id  .. " >> /tmp/oasis-id3.log")
+                os.execute("echo " .. basic.id  .. " >> /tmp/oasis-id3.log")
                 push_chat_data_for_record(chat, ai)
                 append_chat_data(basic, chat)
             end
