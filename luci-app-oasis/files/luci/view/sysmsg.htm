@@ -73,6 +73,10 @@
     let name_cnt = 1;
 
     function create_sysmsg_info(key, value) {
+
+        let is_error = false;
+        let is_update = false;
+
         // Create the container div
         const container = document.createElement('div');
         container.id = key;
@@ -87,16 +91,6 @@
         input.type = 'text';
         input.value = value.title;
         input.size = 15;
-
-        // Create the textarea element
-        const textarea = document.createElement('textarea');
-        textarea.id = 'system-message-' + name_cnt;
-        textarea.rows = 10;
-        textarea.style.marginTop = '10px';
-        textarea.style.width = '100%';
-        textarea.style.resize = 'none';
-        textarea.value = value.chat;
-        name_cnt += 1;
 
         // Create the buttons container
         const buttonsContainer = document.createElement('div');
@@ -122,6 +116,10 @@
                 return;
             }
 
+            if (is_error || is_update) {
+                return;
+            }
+
             fetch('<%=build_url("admin", "network", "oasis", "update-sysmsg")%>', {
                 method: 'POST',
                 headers: {
@@ -133,13 +131,13 @@
             .then(data => {
 
                 if (data.error) {
-                    updateButton.disabled = true;
+                    is_error = true;
                     updateButton.style.backgroundColor = "#FF0000";
                     updateButton.textContent = "ERROR";
                     return;
                 }
 
-                updateButton.disabled = true;
+                is_update = true;
                 updateButton.style.backgroundColor = "#FFBF00";
                 updateButton.textContent = "Done";
             })
@@ -147,6 +145,24 @@
                 console.error('Error:', error);
             });
         });
+
+        // Create the textarea element
+        const textarea = document.createElement('textarea');
+        textarea.id = 'system-message-' + name_cnt;
+        textarea.rows = 10;
+        textarea.style.marginTop = '10px';
+        textarea.style.width = '100%';
+        textarea.style.resize = 'none';
+        textarea.value = value.chat;
+        textarea.addEventListener('input', function() {
+            // After entering something, activate the update button.
+            if (is_update) {
+                is_update = false;
+                updateButton.style.backgroundColor = "#FF1493";
+                updateButton.textContent = "Update";
+            }
+        });
+        name_cnt += 1;
 
         // Create the Delete button
         const deleteButton = document.createElement('button');
