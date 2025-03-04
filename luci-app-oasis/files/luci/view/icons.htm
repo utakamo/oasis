@@ -14,6 +14,10 @@
         cursor: pointer;
     }
 
+    .custom-button:disabled {
+        background-color: #4CAF50;
+    }
+
     .icon-container {
       display: flex;
       gap: 10px;
@@ -59,6 +63,12 @@
 </p>
 
 <script>
+
+    let is_save = false;
+    let using_icon_key = ""
+
+    const save_button = document.getElementById('save-button');
+
     function create_icon_info(path, key, icon_name, is_using) {
         const resourcePath = '<%= resource %>';
         const iconPath = `${resourcePath}/luci-app-oasis/`;
@@ -72,10 +82,18 @@
 
         if (is_using) {
             input.checked = true;
+            using_icon_key = key;
         }
 
         input.name = 'icon';
         input.value = key;
+        input.addEventListener('click', function() {
+            if (using_icon_key !== key) {
+                is_save = false;
+                save_button.style.backgroundColor = "#0056b3";
+                save_button.textContent = "SAVE";
+            }
+        });
 
         const img = document.createElement('img');
         img.src = iconPath + icon_name;
@@ -86,9 +104,12 @@
         container.appendChild(label);
     }
 
-    const save_button = document.getElementById('save-button');
-
     save_button.addEventListener('click', function() {
+
+        if (is_save) {
+            return;
+        }
+
         const selected_icon = document.querySelector('input[name="icon"]:checked');
         //console.log(selected_icon.value);
 
@@ -107,7 +128,7 @@
                 return;
             }
 
-            save_button.disabled = true;
+            using_icon_key = selected_icon.value;
             save_button.style.backgroundColor = "#FFBF00";
             save_button.textContent = "Done";
         })
