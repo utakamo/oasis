@@ -15,6 +15,55 @@
         margin-bottom: 20px;
     }
 
+    #upload-button {
+        display: block;
+        padding: 10px 20px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #ff1493;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    #cancel-button {
+        display: block;
+        padding: 10px 20px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #A9A9A9;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .preview-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    #upload-image-container {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        background-color: white;
+        border: 1px solid #aaa;
+        transform: translate(-50%, -50%);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        width: 400px;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    #upload-image-container h3 {
+        color: #696969;
+    }
+
     .custom-button:disabled {
         background-color: #4CAF50;
     }
@@ -84,9 +133,15 @@
 </p>
 
 <div id="dropArea">Drag and Drop Image Upload</div>
+<input type="file" id="imageInput" accept="image/*" style="display: none;">
 
-<div>
-    <img id="previewImage" class="preview">
+<div id="upload-image-container">
+    <h3>Upload this image?</h3>
+    <div id="oasis-preview-container"></div>
+    <div class="preview-buttons">
+        <button type="button" id="upload-button">Upload</button>
+        <button type="button" id="cancel-button">Cancel</button>
+    </div>
 </div>
 
 <script>
@@ -162,6 +217,95 @@
         .catch(error => {
             console.error('Error:', error);
         });
+    });
+
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('imageInput');
+    let selectedFile = null;
+
+    dropArea.addEventListener('click', () => fileInput.click());
+
+    dropArea.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropArea.classList.add('highlight');
+    });
+
+    dropArea.addEventListener('dragleave', () => {
+        dropArea.classList.remove('highlight');
+    });
+
+    dropArea.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropArea.classList.remove('highlight');
+
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    });
+
+    function handleFile(file) {
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            return;
+        }
+
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const container = document.getElementById('upload-image-container');
+            const preview_container = document.getElementById('oasis-preview-container');
+            const label = document.createElement('label');
+            label.id = "icon-label";
+            label.classList.add('icon-label');
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            label.appendChild(img);
+            preview_container.appendChild(label);
+            container.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    document.getElementById('upload-button').addEventListener('click', function() {
+
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+
+        fetch('<%=build_url("admin", "network", "oasis", "upload_img")%>', {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            /* Upload Success */
+        })
+        .catch(error => {
+            /* Upload Failure */
+            alert("Upload failed");
+        });
+
+        const container = document.getElementById('upload-image-container');
+        const preview_container = document.getElementById('oasis-preview-container');
+        const image_label = document.getElementById('icon-label');
+        preview_container.removeChild(image_label);
+        container.style.display = 'none';
+    });
+
+    document.getElementById('cancel-button').addEventListener('click', function() {
+        const container = document.getElementById('upload-image-container');
+        const preview_container = document.getElementById('oasis-preview-container');
+        const image_label = document.getElementById('icon-label');
+        preview_container.removeChild(image_label);
+        container.style.display = 'none';
     });
 
     document.addEventListener('DOMContentLoaded', function () {
