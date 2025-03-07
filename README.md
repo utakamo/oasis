@@ -53,6 +53,7 @@ When chatting with AI for the first time, you can choose what topics to talk abo
 When a chat with AI begins, it is given a title and displayed in the chat list on the left side.
 "Users can continue chatting with AI, and if there is chat data from the past, they can select it to resume the conversation.
 <img width="947" alt="Image" src="https://github.com/user-attachments/assets/9542aa1a-98f8-4d76-b466-533d99d3c560" />
+Chat data can be renamed, exported, or deleted.
 <img width="942" alt="Image" src="https://github.com/user-attachments/assets/10d013bc-cc9d-4f9c-bcc4-2cedd0466a8d" />
 
 ## Ask OpenWrt Setting
