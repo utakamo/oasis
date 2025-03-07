@@ -13,9 +13,6 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 |  luci-app-oasis |   This is a plugin to use AI chat from within LuCI's WebUI. (base software is oasis)  |
 <img width="943" alt="Image" src="https://github.com/user-attachments/assets/1c11fb13-2c44-4d23-818c-27fd17da9693" />
 
-> [!NOTE]
-> This software can be installed on all OpenWrt target devices. However, the dependent package lua-curl-v3 must be pre-installed or available for download and installation from the repository for the target device.
-
 ## How to install luci-app-oasis
 Dependency: oasis, lua-curl-v3, luci-compat  
   
@@ -30,6 +27,7 @@ root@OpenWrt:~# service rpcd reload
 Rebooting the system after installation is also fine.
 > [!NOTE]
 > This software uses LuCI's CBI (Configuration Bind Inteface). Therefore, it also depends on the luci-compat package. However, most OpenWrt device environments come pre-installed from the start.
+> lua-curl-v3 must be pre-installed or available for download and installation from the repository for the target device.
 
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
