@@ -72,7 +72,7 @@ After applying the settings, if the user can access the WebUI, they will be noti
 > [!IMPORTANT]
 > After a configuration change, if the user does not press the Finalize or Rollback button within 5 minutes (default), the configuration will automatically rollback (Rollback monitoring). This ensures that even if there was a configuration error that caused a brick, the system will return to the original, normal settings. Note: If the OpenWrt device is powered off during the rollback monitoring period, the rollback monitoring will resume upon restart.
 
-## System Message List
+## System Message
 In Oasis, users can create and save system messages to use when starting a chat with AI. System messages are preloaded data used by AI to respond to the user.
 For example, add a message like the following as a system message to instruct the AI to interpret English and Japanese.
 <img width="947" alt="Image" src="https://github.com/user-attachments/assets/6b3e41a7-d31c-47d7-9521-56c5a5a1e578" />  
