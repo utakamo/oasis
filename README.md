@@ -73,8 +73,8 @@ For example, add a message like the following as a system message to instruct th
 <img width="947" alt="Image" src="https://github.com/user-attachments/assets/6b3e41a7-d31c-47d7-9521-56c5a5a1e578" />  
 Enter the instructions for the AI into the text area of 'Create System Message' and press the Add button to add it to the System Message List. This will register a new System Message called 'Translator.'
 <img width="945" alt="Image" src="https://github.com/user-attachments/assets/f89b1b46-4bd4-432c-a5b0-fcb8d52ae8b7" />  
-"When you return to the Chat with AI tab and start a new chat with the AI, 'Translator' will appear as a topic option.
-
+When you return to the Chat with AI tab and start a new chat with the AI, 'Translator' will appear as a topic option.
+<img width="947" alt="Image" src="https://github.com/user-attachments/assets/0a9210e2-261d-4417-91bd-2f206b473fd3" />
 
 ## How to install only oasis
 Dependency: lua-curl-v3
