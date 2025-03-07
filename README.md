@@ -27,8 +27,8 @@ root@OpenWrt:~# service rpcd reload
 > This software uses LuCI's CBI (Configuration Bind Inteface). Therefore, it also depends on the luci-compat package. However, most OpenWrt device environments come pre-installed from the start.
 
 ## AI Setting
-[Main] ---> [Network] ---> [Oasis] ---> [Setting]
-<img width="849" alt="oasis_openwrt_chat_setting" src="https://github.com/user-attachments/assets/360fd2f2-37e2-498a-82e2-3dbc7ab6a56e">
+[Main] ---> [Network] ---> [Oasis] ---> [General Setting]
+<img width="944" alt="Image" src="https://github.com/user-attachments/assets/6b5a7f07-0855-4199-918e-6fc09e1557bc" />
 
 > [!NOTE]
 > If you want to use OpenAI, you need to set the Endpoint to the following URL.>
