@@ -2,12 +2,25 @@
 
 <style>
 
-    #save-button {
+    #select-button {
         display: inline-block;
         padding: 10px 20px;
         width: 7rem;
         height: 2rem;
         background-color: #0056b3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-bottom: 20px;
+    }
+
+    #delete-button {
+        display: inline-block;
+        padding: 10px 20px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #A9A9A9;
         color: white;
         border: none;
         border-radius: 4px;
@@ -85,6 +98,7 @@
       border-radius: 10px;
       border: 3px solid transparent;
       transition: 0.3s;
+      background-color: #FFFFFF;
     }
   
     input[type="radio"]:checked + img {
@@ -123,14 +137,11 @@
 <div id="oasis-icon-container"></div>
 
 <div style="margin-top: 10px;">
-    <button type="button" id="save-button">Save</button>
+    <button type="button" id="select-button">Select</button>
+    <button type="button" id="delete-button">Delete</button>
 </div>
 
-<h2>Import AI Icon</h2>
-
-<p>
-    This function is under development ...
-</p>
+<h2>Upload AI Icon</h2>
 
 <div id="dropArea">Drag and Drop Image Upload</div>
 <input type="file" id="imageInput" accept="image/*" style="display: none;">
@@ -146,18 +157,19 @@
 
 <script>
 
-    let is_save = false;
+    let is_select = false;
     let using_icon_key = ""
 
-    const save_button = document.getElementById('save-button');
+    const select_button = document.getElementById('select-button');
 
-    function create_icon_info(path, key, icon_name, is_using) {
+    function create_icon_info(key, icon_name, is_using) {
         const resourcePath = '<%= resource %>';
         const iconPath = `${resourcePath}/luci-app-oasis/`;
         const container = document.getElementById('oasis-icon-container');
 
         const label = document.createElement('label');
         label.classList.add('icon-label');
+        label.id = key;
 
         const input = document.createElement('input');
         input.type = 'radio';
@@ -171,14 +183,16 @@
         input.value = key;
         input.addEventListener('click', function() {
             if (using_icon_key !== key) {
-                is_save = false;
-                save_button.style.backgroundColor = "#0056b3";
-                save_button.textContent = "Save";
+                is_select = false;
+                select_button.style.backgroundColor = "#0056b3";
+                select_button.textContent = "Select";
             }
         });
 
         const img = document.createElement('img');
-        img.src = iconPath + icon_name;
+        let decodedIconPath = decodeURIComponent(iconPath + icon_name);
+        //img.src = iconPath + icon_name;
+        img.src = decodedIconPath;
         img.alt = icon_name;
 
         label.appendChild(input);
@@ -186,14 +200,13 @@
         container.appendChild(label);
     }
 
-    save_button.addEventListener('click', function() {
+    select_button.addEventListener('click', function() {
 
-        if (is_save) {
+        if (is_select) {
             return;
         }
 
         const selected_icon = document.querySelector('input[name="icon"]:checked');
-        //console.log(selected_icon.value);
 
         fetch('<%=build_url("admin", "network", "oasis", "select-icon")%>', {
             method: 'POST',
@@ -211,8 +224,42 @@
             }
 
             using_icon_key = selected_icon.value;
-            save_button.style.backgroundColor = "#FFBF00";
-            save_button.textContent = "Done";
+            select_button.style.backgroundColor = "#FFBF00";
+            select_button.textContent = "Done";
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    document.getElementById('delete-button').addEventListener('click', function() {
+
+        if (is_select) {
+            return;
+        }
+
+        const selected_icon = document.querySelector('input[name="icon"]:checked');
+        //console.log(selected_icon.value);
+
+        fetch('<%=build_url("admin", "network", "oasis", "delete-icon-data")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ key: selected_icon.value }),
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            const container = document.getElementById('oasis-icon-container');
+            const label = document.getElementById(selected_icon.value);
+            container.removeChild(label);
+
         })
         .catch(error => {
             console.error('Error:', error);
@@ -277,22 +324,37 @@
 
     document.getElementById('upload-button').addEventListener('click', function() {
 
-        const formData = new FormData();
-        formData.append("image", selectedFile);
+        const reader = new FileReader();
 
-        fetch('<%=build_url("admin", "network", "oasis", "upload_img")%>', {
-            method: "POST",
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            /* Upload Success */
-        })
-        .catch(error => {
-            /* Upload Failure */
-            alert("Upload failed");
-        });
+        reader.onload = function(event) {
 
+            const base64Data = event.target.result.split(",")[1];
+
+            fetch('<%=build_url("admin", "network", "oasis", "upload-icon-data")%>', {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ filename : selectedFile.name, image : base64Data }),
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (data.error) {
+                    console.error("Error from server:", data.error);
+                    return;
+                }
+
+                /* Upload Success */
+                create_icon_info(data.key, selectedFile.name, false);
+            })
+            .catch(error => {
+                /* Upload Failure */
+                alert("Upload failed");
+            });
+        };
+
+        reader.readAsDataURL(selectedFile);
         const container = document.getElementById('upload-image-container');
         const preview_container = document.getElementById('oasis-preview-container');
         const image_label = document.getElementById('icon-label');
@@ -322,7 +384,7 @@
 
             Object.entries(data.list).forEach(([key, value]) => {
                 let is_using = (data.ctrl.using == key) ? true : false;
-                create_icon_info(data.ctrl.path, key, value, is_using);
+                create_icon_info(key, value, is_using);
             });
         })
         .catch(error => {

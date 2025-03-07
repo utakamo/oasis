@@ -3,6 +3,8 @@ local util = require("luci.util")
 local luci_http = require("luci.http")
 local jsonc = require("luci.jsonc")
 local oasis = require("oasis.chat.apply")
+local common = require("oasis.common")
+local nixio = require("nixio")
 
 module("luci.controller.luci-app-oasis.module", package.seeall)
 
@@ -28,6 +30,8 @@ function index()
     entry({"admin", "network", "oasis", "delete-sysmsg"}, call("delete_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-icon-info"}, call("load_icon_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "select-icon"}, call("select_icon"), nil).leaf = true
+    entry({"admin", "network", "oasis", "upload-icon-data"}, call("upload_icon_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "delete-icon-data"}, call("delete_icon_data"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -281,4 +285,92 @@ function select_icon()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
+end
+
+function upload_icon_data()
+
+    local filename = luci_http.formvalue("filename")
+    local image = luci_http.formvalue("image")
+
+    if (not filename) or (not image) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local data = common.load_conf_file("/etc/oasis/oasis.conf")
+
+    local icon_key_suffix
+    for icon_key, name in pairs(data.icons) do
+        icon_key_suffix = icon_key:match("icon_(%d+)")
+
+        if icon_key_suffix then
+            if name == filename then
+                luci_http.prepare_content("application/json")
+                luci_http.write_json({ error = "An image file with the same name already exists" })
+            end
+        end
+    end
+
+    if not icon_key_suffix then
+        icon_key_suffix = 0
+    end
+
+    local new_icon_key = "icon_" .. (icon_key_suffix + 1)
+
+    data.icons[new_icon_key] = filename
+
+    if not common.update_conf_file("/etc/oasis/oasis.conf", data) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Upload Error" })
+        return
+    end
+
+    local decoded_icon_img = nixio.bin.b64decode(image)
+
+    local file = io.open(data.icons.path .. filename, "wb")
+
+    if file then
+        file:write(decoded_icon_img)
+        file:close()
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ key = new_icon_key })
+        return
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ error = "Upload Error" })
+end
+
+function delete_icon_data()
+    local icon_key = luci_http.formvalue("key")
+
+    if not icon_key then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local data = common.load_conf_file("/etc/oasis/oasis.conf")
+
+    if (not data.icons[icon_key]) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "No icon data" })
+        return
+    end
+
+    local filename = data.icons[icon_key]
+
+    os.remove(data.icons.path .. filename)
+
+    data.icons[icon_key] = nil
+
+    if not common.update_conf_file("/etc/oasis/oasis.conf", data) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Failed to delete icon info" })
+        return
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json("OK")
 end
