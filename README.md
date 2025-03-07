@@ -79,6 +79,14 @@ When 'Translator' is selected, the user's English message will be translated int
 <img width="941" alt="image" src="https://github.com/user-attachments/assets/e2a35ad2-b307-41e9-a5b3-1abb6e00538d" />  
 In this way, by including instructions or specific knowledge for the AI as system messages, it is possible to modify the AI's behavior toward users.
 
+## Select Icon
+In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
+<img width="947" alt="oasis-icon01" src="https://github.com/user-attachments/assets/bc44f9d7-eaf0-4a55-b41b-379add9d9a26" />
+Click your preferred icon image and press the Select button to apply the setting. 
+<img width="945" alt="oasis-icon02" src="https://github.com/user-attachments/assets/0f54cb9f-4d66-46f4-b2fe-18baa8e0a0cd" />
+To add your favorite icon image (e.g., png), drag and drop it or click under Upload Icon.
+<img width="946" alt="oasis-icon03" src="https://github.com/user-attachments/assets/b0bab318-f423-489b-9b6c-b21212ba777e" />
+
 ## How to install only oasis
 Dependency: lua-curl-v3
 ```
