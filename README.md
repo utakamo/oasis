@@ -54,7 +54,7 @@ root@OpenWrt:~# service rpcd reload
 
 ## Ask OpenWrt Setting
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
-<img width="884" alt="image" src="https://github.com/user-attachments/assets/90ffddee-4d09-4897-b163-b6eb5c244296" />  
+<img width="944" alt="Image" src="https://github.com/user-attachments/assets/7ce13aff-b7f3-4594-80f7-a04d8a1bf012" />
 When a configuration change is suggested by the AI using UCI commands, the internal system of OpenWrt recognizes that a configuration change has been proposed by the AI. It then notifies the user via a popup to apply the configuration change to the current runtime. The user can accept the configuration change by pressing the Apply button.  
 <img width="886" alt="image" src="https://github.com/user-attachments/assets/bd1ff33d-36e8-49c2-b64e-3be78a2d2ce9" />  
 <img width="882" alt="image" src="https://github.com/user-attachments/assets/758edf02-43f8-4c10-9e6c-55d07be94652" />  
