@@ -47,21 +47,21 @@ root@OpenWrt:~# service rpcd reload
 
 ## Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
-<img width="943" alt="Image" src="https://github.com/user-attachments/assets/1c11fb13-2c44-4d23-818c-27fd17da9693" />
+<img width="943" alt="Image" src="https://github.com/user-attachments/assets/1c11fb13-2c44-4d23-818c-27fd17da9693" />  
 When chatting with AI for the first time, you can choose what topics to talk about. These options can be freely added or removed by the user in the System Message tab.
-<img width="950" alt="Image" src="https://github.com/user-attachments/assets/3f585550-03fa-48ca-9b8c-644d2221bce8" />
+<img width="950" alt="Image" src="https://github.com/user-attachments/assets/3f585550-03fa-48ca-9b8c-644d2221bce8" />  
 When a chat with AI begins, it is given a title and displayed in the chat list on the left side.
 "Users can continue chatting with AI, and if there is chat data from the past, they can select it to resume the conversation.
-<img width="947" alt="Image" src="https://github.com/user-attachments/assets/9542aa1a-98f8-4d76-b466-533d99d3c560" />
+<img width="947" alt="Image" src="https://github.com/user-attachments/assets/9542aa1a-98f8-4d76-b466-533d99d3c560" />  
 Chat data can be renamed, exported, or deleted.
 <img width="942" alt="Image" src="https://github.com/user-attachments/assets/10d013bc-cc9d-4f9c-bcc4-2cedd0466a8d" />
 
 ## Ask OpenWrt Setting
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
-<img width="944" alt="Image" src="https://github.com/user-attachments/assets/7ce13aff-b7f3-4594-80f7-a04d8a1bf012" />
+<img width="944" alt="Image" src="https://github.com/user-attachments/assets/7ce13aff-b7f3-4594-80f7-a04d8a1bf012" />  
 When a configuration change is suggested by the AI using UCI commands, the internal system of OpenWrt recognizes that a configuration change has been proposed by the AI. It then notifies the user via a popup to apply the configuration change to the current runtime. The user can accept the configuration change by pressing the Apply button.  
 <img width="946" alt="Image" src="https://github.com/user-attachments/assets/e1b7f41e-7b7a-4355-9438-4e621e9a2944" />
-<img width="940" alt="Image" src="https://github.com/user-attachments/assets/6310c703-b2c3-49d5-b38a-ebab82c61896" /> 
+<img width="940" alt="Image" src="https://github.com/user-attachments/assets/6310c703-b2c3-49d5-b38a-ebab82c61896" />  
 After applying the settings, if the user can access the WebUI, they will be notified in the Oasis chat screen to finalize the configuration change suggested by the AI. The user can press the Finalize button to approve the configuration change, or press the Rollback button to reject it.  
 <img width="946" alt="Image" src="https://github.com/user-attachments/assets/081313e4-e3ad-405f-a75b-ff4a46c83684" />
 > [!IMPORTANT]
