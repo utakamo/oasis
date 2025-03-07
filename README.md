@@ -23,6 +23,7 @@ root@OpenWrt:~# opkg install oasis_1.0-r1_all.ipk
 root@OpenWrt:~# opkg install luci-app-oasis_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
+Rebooting the system after installation is also fine.
 > [!IMPORTANT]
 > This software uses LuCI's CBI (Configuration Bind Inteface). Therefore, it also depends on the luci-compat package. However, most OpenWrt device environments come pre-installed from the start.
 
