@@ -47,8 +47,6 @@ local backup = function(uci_list, id, backup_type)
         return false
     end
 
-    -- sys.exec("echo #list=" .. #list .. " >> /tmp/oasis-backup.log")
-
     if #list > 0 then
         local uci_list_json = jsonc.stringify(uci_list)
         --sys.exec("echo " .. uci_list_json .. " /etc/oasis/backup/uci_list.json")

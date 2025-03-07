@@ -77,10 +77,6 @@ local methods = {
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
-            -- debug_log(chat_json_str)
-            -- debug_log(conf.url)
-            -- debug_log(conf.api_key)
-
             -- Post
             transfer.post_to_server(conf.url, conf.api_key, chat_json_str, function(chunk)
 

@@ -44,7 +44,6 @@ local search_chat_id = function(id)
     local is_search = false
 
     uci:foreach("oasis", "chat", function(info)
-        -- debug_log("file: " .. info.id)
         if id == info.id then
             is_search = true
         end

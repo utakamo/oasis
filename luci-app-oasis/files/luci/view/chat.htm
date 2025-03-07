@@ -542,7 +542,6 @@ uci set network.lan.proto=static
             .then((response) => response.json())
             .then((data) => {
                 if (data.status === "OK") {
-                    //console.log(`Chat ID ${targetChatItemId} deleted successfully.`);
                     const listItem = document.querySelector(`#chat-list li[data-id='${targetChatItemId}']`);
                     const smp_listItem = document.querySelector(`#smp-chat-item-dropdown li[data-id-for-smp='${targetChatItemId}']`);
                     if (listItem && smp_listItem) {

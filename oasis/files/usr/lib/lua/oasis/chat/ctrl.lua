@@ -225,17 +225,6 @@ local communicate = function(basic, chat, format)
     local spath = uci:get("oasis", "role", "path")
     local sysrole = common.load_conf_file(spath)
 
-    --[[
-    if sysrole and (sysrole.custom) then
-        sysrole.custom.flg = {}
-        sysrole.custom.flg.chat = uci:get_bool("oasis", "role", "chat")
-        sysrole.custom.flg.prompt = uci:get_bool("oasis", "role", "prompt")
-        sysrole.custom.flg.call = uci:get_bool("oasis", "role", "call")
-    else
-        sysrole = {custom = {flg = {chat = false, prompt = false, call = false}}}
-    end
-    ]]
-
     -- chat ..... chat mode for cui
     if (format == "chat") and ((not basic.id) or (#basic.id == 0)) then
         table.insert(chat.messages, 1, {

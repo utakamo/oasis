@@ -164,8 +164,6 @@ local methods = {
             local full_file_path = common.normalize_path(conf.path) .. file_name
             touch(full_file_path)
 
-            -- debug_log("hello")
-
             local chat_json_tbl = {}
             chat_json_tbl.messages = {}
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role1, content = args.content1}
