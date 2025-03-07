@@ -76,7 +76,8 @@ Enter the instructions for the AI into the text area of 'Create System Message' 
 When you return to the Chat with AI tab and start a new chat with the AI, 'Translator' will appear as a topic option.
 <img width="947" alt="Image" src="https://github.com/user-attachments/assets/0a9210e2-261d-4417-91bd-2f206b473fd3" />  
 When 'Translator' is selected, the user's English message will be translated into Japanese by the AI.
-<img width="941" alt="image" src="https://github.com/user-attachments/assets/e2a35ad2-b307-41e9-a5b3-1abb6e00538d" />
+<img width="941" alt="image" src="https://github.com/user-attachments/assets/e2a35ad2-b307-41e9-a5b3-1abb6e00538d" />  
+In this way, by including instructions or specific knowledge for the AI as system messages, it is possible to modify the AI's behavior toward users.
 
 ## How to install only oasis
 Dependency: lua-curl-v3
