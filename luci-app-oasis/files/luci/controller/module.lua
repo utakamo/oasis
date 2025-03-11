@@ -1,5 +1,6 @@
 local sys = require("luci.sys")
 local util = require("luci.util")
+local uci = require("luci.model.uci").cursor()
 local luci_http = require("luci.http")
 local jsonc = require("luci.jsonc")
 local oasis = require("oasis.chat.apply")
@@ -17,6 +18,7 @@ function index()
     entry({"admin", "network", "oasis", "chat-list"}, call("retrive_chat_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "export-chat-data"}, call("load_chat_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "import-chat-data"}, call("import_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-chat-data"}, call("delete_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "rename-chat"}, call("rename"), nil).leaf = true
     entry({"admin", "network", "oasis", "apply-uci-cmd"}, call("apply_uci_cmd"), nil).leaf = true
@@ -61,6 +63,50 @@ function load_chat_data()
     local json_param = { id = params }
 
     local result = util.ubus("oasis.chat", "load", json_param)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function import_chat_data()
+
+    local chat_data = luci_http.formvalue("chat_data")
+
+    if not chat_data then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local decoded_chat_data = nixio.bin.b64decode(chat_data)
+
+    local id = common.generate_chat_id()
+
+    local conf = common.get_oasis_conf()
+    local file_name = conf.prefix .. id
+    local full_file_path = common.normalize_path(conf.path) .. file_name
+    common.touch(full_file_path)
+
+    local file = io.open(full_file_path, "wb")
+
+    if file then
+        file:write(decoded_chat_data)
+        file:close()
+    else
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "import error"})
+        return
+    end
+
+    local result = {}
+    result.id = id
+    result.title = "--"
+
+    local unnamed_section = uci:add("oasis", "chat")
+
+    uci:set("oasis", unnamed_section, "id", result.id)
+    uci:set("oasis", unnamed_section, "title", result.title)
+    uci:commit("oasis")
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
