@@ -9,56 +9,6 @@ local debug_log = function(log)
     sys.exec("echo " .. log .. " >> /tmp/oasis.log")
 end
 
-local file_exist = function(file_name)
-    local f = io.open(file_name, "r")
-    if f then f:close() end
-    return f ~= nil
-end
-
-local touch = function(filename)
-
-    local result = false
-
-    if not file_exist(filename) then
-        local file = io.open(filename, "w")
-        if file then
-            file:close()
-            result = true
-        end
-    end
-
-    return result
-end
-
-local generate_chat_id = function()
-
-    local id
-    local retry = 5
-
-    local is_exist
-
-    -- debug_log("generate_chat_id")
-
-    repeat
-        retry = retry - 1
-
-        id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
-
-        -- debug_log(id)
-
-        is_exist = common.search_chat_id(id)
-
-    until (not is_exist) or (retry <= 0)
-
-    if is_exist then
-        id = ""
-    end
-
-    -- debug_log("new = " .. id)
-
-    return id
-end
-
 local read_chat_data = function(file_path)
 
     -- debug_log(file_path)
@@ -150,7 +100,7 @@ local methods = {
             -- debug_log(conf.path)
             -- sys.exec("mkdir -p " .. conf.path)
 
-            local id = generate_chat_id()
+            local id = common.generate_chat_id()
 
             if #id == 0 then
                 -- debug_log("hello")
@@ -162,7 +112,7 @@ local methods = {
             -- debug_log("get_oasis_conf")
             local file_name = conf.prefix .. id
             local full_file_path = common.normalize_path(conf.path) .. file_name
-            touch(full_file_path)
+            common.touch(full_file_path)
 
             local chat_json_tbl = {}
             chat_json_tbl.messages = {}

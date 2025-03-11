@@ -2,6 +2,7 @@
 
 local util = require("luci.util")
 local uci = require("luci.model.uci").cursor()
+local sys = require("luci.sys")
 
 local status = {
     ok = "OK",
@@ -131,6 +132,56 @@ local check_file_exist = function(file)
     end
 end
 
+local file_exist = function(file_name)
+    local f = io.open(file_name, "r")
+    if f then f:close() end
+    return f ~= nil
+end
+
+local touch = function(filename)
+
+    local result = false
+
+    if not file_exist(filename) then
+        local file = io.open(filename, "w")
+        if file then
+            file:close()
+            result = true
+        end
+    end
+
+    return result
+end
+
+local generate_chat_id = function()
+
+    local id
+    local retry = 5
+
+    local is_exist
+
+    -- debug_log("generate_chat_id")
+
+    repeat
+        retry = retry - 1
+
+        id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
+
+        -- debug_log(id)
+
+        is_exist = search_chat_id(id)
+
+    until (not is_exist) or (retry <= 0)
+
+    if is_exist then
+        id = ""
+    end
+
+    -- debug_log("new = " .. id)
+
+    return id
+end
+
 return {
     status = status,
     get_oasis_conf = get_oasis_conf,
@@ -141,4 +192,7 @@ return {
     update_conf_file = update_conf_file,
     get_uptime = get_uptime,
     check_file_exist = check_file_exist,
+    file_exist = file_exist,
+    touch = touch,
+    generate_chat_id = generate_chat_id,
 }

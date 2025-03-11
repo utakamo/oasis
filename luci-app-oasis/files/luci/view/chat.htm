@@ -13,7 +13,12 @@
     <div class="chat-container">
         <ul class="smp-chat-hamburger-menu">
             <li id="menu-trigger">☰</li>
-            <ul id="smp-chat-item-dropdown"></ul>
+            <ul id="smp-chat-item-dropdown">
+                <li>
+                    <label for="smp-import-chat-data" id="smp-import-button" style="width:100%;">Import Chat Data +</label>
+                    <input type="file" id="smp-import-chat-data" accept=".json" style="display: none;">
+                </li>
+            </ul>
         </ul>
         <div class="chat-messages">
             <!--
@@ -1277,6 +1282,137 @@ uci set network.lan.proto=static
     });
 
     document.getElementById('import-chat-data').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+
+                const base64Data = e.target.result.split(",")[1];
+ 
+                fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({ chat_data: base64Data })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    //console.log('Success:', data);
+                    const chatMessagesContainer = document.querySelector('.chat-messages');
+                    const chatListContainer = document.getElementById("chat-list");
+                    const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
+                    const dropdown = document.getElementById("oasis-dropdown");
+
+                    const li = document.createElement("li");
+                    const smp_li = document.createElement("li");
+
+                    li.setAttribute("data-id", data.id);
+                    smp_li.setAttribute("data-id-for-smp", data.id);
+
+                    const span = document.createElement("span");
+                    span.textContent = data.title;
+                    li.appendChild(span);
+
+                    const smp_span = document.createElement("span");
+                    smp_span.textContent = data.title;
+                    smp_li.appendChild(smp_span);
+
+                    smp_li.classList.add("smp-dropdown-item");
+
+                    const menuContainer = document.createElement("div");
+                    menuContainer.classList.add("oasis-hamburger-menu");
+
+                    const smp_menuContainer = document.createElement("div");
+                    smp_menuContainer.classList.add("oasis-hamburger-menu");
+
+                    const menuButton = document.createElement("button");
+                    menuButton.classList.add("oasis-menu-btn");
+                    menuButton.textContent = "⋮";
+
+                    const smp_menuButton = document.createElement("button");
+                    smp_menuButton.classList.add("oasis-menu-btn");
+                    smp_menuButton.textContent = "⋮";
+
+                    menuButton.addEventListener("click", function (event) {
+                        targetChatItemId = event.target.closest("li").getAttribute("data-id");
+                        event.stopPropagation();
+                        const rect = this.getBoundingClientRect();
+                        dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+                        dropdown.style.left = `${rect.left + window.scrollX}px`;
+                        dropdown.style.display = "block";
+                    });
+
+                    smp_menuButton.addEventListener("click", function (event) {
+                        targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
+                        event.stopPropagation();
+                        //const rect = this.getBoundingClientRect();
+                        //dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+                        //dropdown.style.left = `${rect.left + window.scrollX}px`;
+                        dropdown.style.display = "block";
+                    });
+
+                    li.addEventListener('click', function (event) {
+                        const systemMessage = document.getElementById("oasis-system");
+
+                        if (systemMessage !== null) {
+                            chatMessagesContainer.removeChild(systemMessage);
+                        }
+
+                        targetChatItemId = event.target.closest("li").getAttribute("data-id");
+                        if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
+                            return;
+                        }
+
+                        handleChatItemClick(targetChatItemId);
+                    });
+
+                    smp_li.addEventListener('click', function (event) {
+
+                        const systemMessage = document.getElementById("oasis-system");
+
+                        if (systemMessage !== null) {
+                            chatMessagesContainer.removeChild(systemMessage);
+                        }
+
+                        targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
+                        if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
+                            return;
+                        }
+
+                        handleChatItemClick(targetChatItemId);
+
+                        //console.log("smp = " + targetChatItemId);
+
+                        smpChatListContainer.style.display = "none";
+                    });
+
+                    menuContainer.appendChild(menuButton);
+                    li.appendChild(menuContainer);
+                    chatListContainer.appendChild(li);
+
+                    smp_menuContainer.appendChild(smp_menuButton);
+                    smp_li.appendChild(smp_menuContainer)
+                    smpChatListContainer.appendChild(smp_li);
+
+                    const itemCount = (chatList !== null) ? chatList.item.length : 0;
+        
+                    if (itemCount === 0) {
+                        chatList = { item:[] };  
+                    }
+
+                    chatList.item.push({id: data.id, title: data.title})
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+
+    document.getElementById('smp-import-chat-data').addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
