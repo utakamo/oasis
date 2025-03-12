@@ -1092,8 +1092,7 @@ uci set network.lan.proto=static
         let fullMessage = '';
         let finalResponse = '';
         let is_notify = false;
-
-        console.log(sysmsg_key);
+        //console.log(sysmsg_key);
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
@@ -1147,7 +1146,9 @@ uci set network.lan.proto=static
                                 is_notify = true;
                             }
                         } catch (e) {
-                            console.error('JSON Parse Error:', e, part.trim());
+                            fulllMessage = "Json Parse Error";
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+                            receivedMessageTextContainer.style.color = "red";
                         }
                     }
 
@@ -1167,7 +1168,21 @@ uci set network.lan.proto=static
                             }
 
                         } catch (e) {
-                            console.error('Final JSON Parse Error:', e, buffer.trim());
+                            fullMessage = "Error!\n";
+                            fullMessage += "The network might be disconnected, or the AI service settings might be incorrect.\n\n";
+                            fullMessage += "[OpenAI]\n"
+                            fullMessage += "If you want to use OpenAI, you need to set the Endpoint to the following Endpoint.\n\n";
+                            fullMessage += "Endpoint:\n";
+                            fullMessage += "```\nhttps://api.openai.com/v1/chat/completions\n```\n\n"
+                            fullMessage += "[Ollama]\n"
+                            fullMessage += "If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.\n";
+                            fullMessage += "```\nOLLAMA_HOST=0.0.0.0\nOLLAMA_ORIGINS=*\n```\n";
+                            fullMessage += "Endpoint:\n";
+                            fullMessage += "```\nhttp://[Your Ollama PC Address]:11434/api/chat\n```\n";
+                            fullMessage += "When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.";
+
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+                            receivedMessageTextContainer.style.color = "red";
                         }
                     }
                 }
