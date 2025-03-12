@@ -48,7 +48,7 @@ Rebooting the system after installation is also fine.
 >
 > Ollama Endpoint Format: ```http://<Your Ollama PC Address>:11434/api/chat ```
 > 
-> When using Ollama, an APK key is typically not required, so nothing needs to be entered in the API Key field on this settings page.
+> When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.
 
 ## Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
