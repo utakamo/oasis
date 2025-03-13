@@ -811,7 +811,18 @@ uci set network.lan.proto=static
         receivedIconContainer.style.backgroundImage = `url(${iconPath})`;
 
         const receivedMessageTextContainer = document.createElement('div');
-        receivedMessageTextContainer.className = 'message-text';
+        receivedMessageTextContainer.className = 'message-text chat-bubble';
+
+        const typingDots = document.createElement("span");
+        typingDots.classList.add("typing-dots");
+
+        // 内側の3つの <span> を作成して追加
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement("span");
+            typingDots.appendChild(dot);
+        }
+
+        receivedMessageTextContainer.appendChild(typingDots);
     
         receivedMessageContainer.appendChild(receivedIconContainer);
         receivedMessageContainer.appendChild(receivedMessageTextContainer);
