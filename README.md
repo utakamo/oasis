@@ -31,7 +31,7 @@ Rebooting the system after installation is also fine.
 
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
-<img width="944" alt="image" src="https://github.com/user-attachments/assets/a9ec9673-c8ce-4afc-8173-c803ea02ef07" />
+<img width="842" alt="image" src="https://github.com/user-attachments/assets/3485c62a-16b7-4c13-9a47-6069e4d500ed" />
 
 > [!NOTE]
 > If you want to use OpenAI, you need to set the Endpoint to the following URL.>
