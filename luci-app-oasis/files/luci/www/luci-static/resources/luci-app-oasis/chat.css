@@ -418,8 +418,8 @@
 }
 
 .typing-dots span {
-    width: 8px;
-    height: 8px;
+    width: 4px;
+    height: 4px;
     background-color: #888;
     border-radius: 50%;
     animation: wave 1.5s infinite ease-in-out;
