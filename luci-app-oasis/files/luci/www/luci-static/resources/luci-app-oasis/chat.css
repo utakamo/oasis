@@ -266,11 +266,15 @@
     margin-left: 10px;
     width: 5rem;
     height: 3rem;
-    background-color: #00cc06;
+    background-color: #00e608;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+}
+
+#new-button:hover {
+    background-color: #00cc06;
 }
 
 .sysmsg-select-button {
@@ -360,6 +364,10 @@
     width: 400px;
     text-align: center;
     padding: 20px;
+}
+
+.sysmsg-list-popup h2 {
+    color: #6e6e6e6e;
 }
 
 #sysmsg-list-popup-buttons {
@@ -617,11 +625,15 @@
         margin: 10px;
         width: 50%;
         height: 3rem;
-        background-color: #00cc06;
+        background-color: #00e608;
         color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
+    }
+
+    #new-button:hover {
+        background-color: #00cc06;
     }
 
     .oasis-menu-btn {
@@ -710,12 +722,12 @@ pre {
 }
 
 #finalize {
-    background-color: #00cc06;
+    background-color: #00e608;
     color: white;
 }
 
 #json-export, #text-export, #rename, #ask, #rollback {
-    background-color: #0056b3;
+    background-color: #007bff;
     color: white;
 }
 
@@ -726,11 +738,11 @@ pre {
 }
 
 #finalize:hover {
-    background-color: #00e608;
+    background-color: #00cc06;
 }
 
 #json-export:hover, #text-export:hover, #rename:hover, #ask:hover, #rollback:hover {
-    background-color: #007bff;
+    background-color: #0056b3;
 }
 
 #apply:hover {
@@ -738,11 +750,11 @@ pre {
 }
 
 #export-cancel, #rename-cancel, #uci-cancel {
-    background-color: #8e8e8e8e;
+    background-color: #9099A2;
     color: white;
 }
 
 #export-cancel:hover, #rename-cancel:hover, #uci-cancel:hover {
-    background-color: #C0C0C0;
+    background-color: #7A828C;
 }
 
