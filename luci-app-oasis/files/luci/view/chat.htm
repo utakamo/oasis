@@ -1184,9 +1184,11 @@ uci set network.lan.proto=static
                             fullMessage += "[OpenAI]\n"
                             fullMessage += "If you want to use OpenAI, you need to set the Endpoint to the following Endpoint.\n\n";
                             fullMessage += "Endpoint:\n";
-                            fullMessage += "```\nhttps://api.openai.com/v1/chat/completions\n```\n\n"
+                            fullMessage += "```\nhttps://api.openai.com/v1/chat/completions\n```\n";
+                            fullMessage += "You can create an API Key from your OpenAI account page. Please use that.\n\n";
                             fullMessage += "[Ollama]\n"
-                            fullMessage += "If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.\n";
+                            fullMessage += "If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below. ";
+                            fullMessage += "These parameter settings need to be configured on the PC where Ollama is installed. For more details, please refer to Ollama's documentation.\n"
                             fullMessage += "```\nOLLAMA_HOST=0.0.0.0\nOLLAMA_ORIGINS=*\n```\n";
                             fullMessage += "Endpoint:\n";
                             fullMessage += "```\nhttp://[Your Ollama PC Address]:11434/api/chat\n```\n";
