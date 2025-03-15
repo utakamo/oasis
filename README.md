@@ -34,10 +34,10 @@ Rebooting the system after installation is also fine.
 <img width="842" alt="image" src="https://github.com/user-attachments/assets/3485c62a-16b7-4c13-9a47-6069e4d500ed" />
 
 > [!NOTE]
-> If you want to use OpenAI, you need to set the Endpoint to the following URL.
+> If you want to use OpenAI, you need to set the Endpoint to the following URL.  
 > https://api.openai.com/v1/chat/completions
 >
-> Please create an API Key on your OpenAI account page.
+> Please create an API Key on your OpenAI account page.  
 > For details, please refer to the OpenAI website.
 
 > [!NOTE]
