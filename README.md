@@ -41,11 +41,13 @@ Rebooting the system after installation is also fine.
 > For details, please refer to the OpenAI website.
 
 > [!NOTE]
-> If you want Ollama and OpenWrt to work together, you must set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.>
+> If you want to use Ollama, you need to set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.  
 > ```
 > OLLAMA_HOST=0.0.0.0
 > OLLAMA_ORIGINS=*
 > ```
+> Change the Ollama parameter configuration file (Linux) or environment variables (Windows) that exist on the PC where Ollama is installed to the above values.
+>   
 > My technical blog has an introductory page on the above Ollama setup, which describes the setup on Windows and Linux (Japanese Page).
 > https://utakamo.com/article/ai/llm/ollama/setup/index.html#network-support
 >
