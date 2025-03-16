@@ -104,6 +104,7 @@ Pressing the Upload button stores the icon in the OpenWrt device.
 ## How to install only oasis
 Dependency: lua-curl-v3
 ```
+root@OpenWrt:~# opkg update
 root@OpenWrt:~# opkg install oasis_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
