@@ -90,7 +90,7 @@ When 'Translator' is selected, the user's English message will be translated int
 <img width="941" alt="image" src="https://github.com/user-attachments/assets/e2a35ad2-b307-41e9-a5b3-1abb6e00538d" />  
 In this way, by including instructions or specific knowledge for the AI as system messages, it is possible to modify the AI's behavior toward users.
 
-## Select Icon
+## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
 <img width="947" alt="oasis-icon01" src="https://github.com/user-attachments/assets/bc44f9d7-eaf0-4a55-b41b-379add9d9a26" />
 Click your preferred icon image and press the Select button to apply the setting. 
