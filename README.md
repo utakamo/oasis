@@ -16,7 +16,7 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 ## How to install luci-app-oasis
 Dependency: oasis, lua-curl-v3, luci-compat  
   
-The Oasis package can be found under "oasis-v1.0" in the Releases section of this GitHub page. It is a device-independent package, but it requires dependency packages such as lua-curl-v3 and luci-compat. Typically, if you install Oasis on an OpenWrt device with an active internet connection, these dependency packages will be downloaded and installed automatically.  
+The Oasis package can be found under "oasis-v1.2" in the Releases section of this GitHub page. It is a device-independent package, but it requires dependency packages such as lua-curl-v3 and luci-compat. Typically, if you install Oasis on an OpenWrt device with an active internet connection, these dependency packages will be downloaded and installed automatically.  
   
 If the repository corresponding to the device being used as an OpenWrt device does not include lua-curl-v3 or luci-compat, users will need to build the dependency packages themselves using the OpenWrt Buildroot and install them on the OpenWrt device.
 ```
@@ -26,9 +26,6 @@ root@OpenWrt:~# opkg install luci-app-oasis_1.0-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 Rebooting the system after installation is also fine.
-> [!NOTE]
-> This software uses LuCI's CBI (Configuration Bind Inteface). Therefore, it also depends on the luci-compat package. However, most OpenWrt device environments come pre-installed from the start.
-> lua-curl-v3 must be pre-installed or available for download and installation from the repository for the target device.
 
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
