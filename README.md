@@ -86,6 +86,9 @@ When you return to the Chat with AI tab and start a new chat with the AI, 'Trans
 When 'Translator' is selected, the user's English message will be translated into Japanese by the AI.
 <img width="941" alt="image" src="https://github.com/user-attachments/assets/e2a35ad2-b307-41e9-a5b3-1abb6e00538d" />  
 In this way, by including instructions or specific knowledge for the AI as system messages, it is possible to modify the AI's behavior toward users.
+Currently, Oasis adjusts responses related to OpenWrt solely through system messages.
+As a result, by storing information about OpenWrt settings as knowledge in existing or new system messages, it will become specialized in modifying OpenWrt settings.
+In particular, Oasis analyzes whether content related to modifying OpenWrt settings (UCI command sequences) found within AI responses can be executed. Then, it notifies the user with a popup.
 
 ## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
