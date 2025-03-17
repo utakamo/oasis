@@ -55,7 +55,7 @@ Rebooting the system after installation is also fine.
 
 ## Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
-<img width="943" alt="Image" src="https://github.com/user-attachments/assets/1c11fb13-2c44-4d23-818c-27fd17da9693" />  
+<img width="944" alt="image" src="https://github.com/user-attachments/assets/a9ec9673-c8ce-4afc-8173-c803ea02ef07" />
 When chatting with AI for the first time, you can choose what topics to talk about. These options can be freely added or removed by the user in the System Message tab.
 <img width="950" alt="Image" src="https://github.com/user-attachments/assets/3f585550-03fa-48ca-9b8c-644d2221bce8" />  
 When a chat with AI begins, it is given a title and displayed in the chat list on the left side.
