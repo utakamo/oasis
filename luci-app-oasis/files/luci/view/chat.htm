@@ -786,7 +786,8 @@ uci set network.lan.proto=static
 
         const messageTextContainer = document.createElement('div');
         messageTextContainer.className = 'message-text';
-        messageTextContainer.textContent = messageText;
+        //messageTextContainer.textContent = messageText;
+        messageTextContainer.innerHTML = convertMarkdownToHTML(messageText);
 
         messageContainer.appendChild(messageTextContainer);
 
@@ -805,7 +806,6 @@ uci set network.lan.proto=static
         receivedMessageContainer.className = 'message received';
 
         const iconPath = `${resourcePath}/luci-app-oasis/${icon_name}`;
-        //console.log(iconPath);
         const receivedIconContainer = document.createElement('div');
         receivedIconContainer.className = 'icon';
         receivedIconContainer.style.backgroundImage = `url(${iconPath})`;
@@ -816,7 +816,6 @@ uci set network.lan.proto=static
         const typingDots = document.createElement("span");
         typingDots.classList.add("typing-dots");
 
-        // 内側の3つの <span> を作成して追加
         for (let i = 0; i < 3; i++) {
             const dot = document.createElement("span");
             typingDots.appendChild(dot);
