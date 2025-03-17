@@ -80,6 +80,14 @@ function import_chat_data()
 
     local decoded_chat_data = nixio.bin.b64decode(chat_data)
 
+    local chat_tbl = jsonc.parse(decoded_chat_data)
+
+    if common.check_chat_format(chat_tbl) == false then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "import format error"})
+        return
+    end
+
     local id = common.generate_chat_id()
 
     local conf = common.get_oasis_conf()

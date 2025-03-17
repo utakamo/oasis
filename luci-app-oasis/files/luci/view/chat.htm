@@ -1326,6 +1326,12 @@ uci set network.lan.proto=static
                 })
                 .then(response => response.json())
                 .then(data => {
+
+                    if (data.error) {
+                        alert("Unexpected data format");
+                        return;
+                    }
+
                     //console.log('Success:', data);
                     const chatMessagesContainer = document.querySelector('.chat-messages');
                     const chatListContainer = document.getElementById("chat-list");
@@ -1457,6 +1463,12 @@ uci set network.lan.proto=static
                 })
                 .then(response => response.json())
                 .then(data => {
+
+                    if (data.error) {
+                        alert("Unexpected data format");
+                        return;
+                    }
+
                     //console.log('Success:', data);
                     const chatMessagesContainer = document.querySelector('.chat-messages');
                     const chatListContainer = document.getElementById("chat-list");

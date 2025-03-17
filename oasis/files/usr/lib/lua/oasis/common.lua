@@ -182,6 +182,29 @@ local generate_chat_id = function()
     return id
 end
 
+local check_chat_format = function(chat)
+
+    if type(chat) ~= "table" then
+        return false
+    end
+
+    if type(chat.messages) ~= "table" then
+        return false
+    end
+
+    for _, msg in ipairs(chat.messages) do
+        if type(msg) ~= "table" then
+            return false
+        end
+
+        if type(msg.content) ~= "string" or type(msg.role) ~= "string" then
+            return false
+        end
+    end
+
+    return true
+end
+
 return {
     status = status,
     get_oasis_conf = get_oasis_conf,
@@ -195,4 +218,5 @@ return {
     file_exist = file_exist,
     touch = touch,
     generate_chat_id = generate_chat_id,
+    check_chat_format = check_chat_format,
 }
