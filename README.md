@@ -21,8 +21,8 @@ The Oasis package can be found under "oasis-v1.2" in the Releases section of thi
 If the repository corresponding to the device being used as an OpenWrt device does not include lua-curl-v3 or luci-compat, users will need to build the dependency packages themselves using the OpenWrt Buildroot and install them on the OpenWrt device.
 ```
 root@OpenWrt:~# opkg update
-root@OpenWrt:~# opkg install oasis_1.0-r1_all.ipk
-root@OpenWrt:~# opkg install luci-app-oasis_1.0-r1_all.ipk
+root@OpenWrt:~# opkg install oasis_1.2-r1_all.ipk
+root@OpenWrt:~# opkg install luci-app-oasis_1.2-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 Rebooting the system after installation is also fine.
@@ -102,7 +102,7 @@ Pressing the Upload button stores the icon in the OpenWrt device.
 Dependency: lua-curl-v3
 ```
 root@OpenWrt:~# opkg update
-root@OpenWrt:~# opkg install oasis_1.0-r1_all.ipk
+root@OpenWrt:~# opkg install oasis_1.2-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 
