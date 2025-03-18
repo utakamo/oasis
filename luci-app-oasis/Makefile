@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-oasis
-PKG_VERSION:=1.2
+PKG_VERSION:=1.3
 PKG_RELEASE:=1
 
 SOURCE_DIR:=./files/luci
