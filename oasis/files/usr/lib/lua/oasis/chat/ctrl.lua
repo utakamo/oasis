@@ -229,27 +229,27 @@ local communicate = function(basic, chat, format)
     if (format == "chat") and ((not basic.id) or (#basic.id == 0)) then
         table.insert(chat.messages, 1, {
             role = role.system,
-            content = sysrole.default.chat
+            content = string.gsub(sysrole.default.chat, "\\n", "\n")
         })
     -- output ... chat mode for luci
     elseif (format == "output") and ((not basic.id) or (#basic.id == 0)) then
         if (basic.sysmsg_key) and (#basic.sysmsg_key > 0) and (basic.sysmsg_key ~= "casual") then
             table.insert(chat.messages, 1, {
                 role = role.system,
-                content = sysrole[basic.sysmsg_key].chat
+                content = string.gsub(sysrole[basic.sysmsg_key].chat, "\\n", "\n")
             })
         end
     -- prompt ... prompt mode for cui
     elseif format == "prompt" then
         table.insert(chat.messages, 1, {
             role = role.system,
-            content = sysrole.default.prompt
+            content = string.gsub(sysrole.default.prompt, "\\n", "\n")
         })
     -- call ... script call mode for cui
     elseif format == "call" then
         table.insert(chat.messages, 1, {
             role = role.system,
-            content = sysrole.default.call
+            content = string.gsub(sysrole.default.call, "\\n", "\n")
         })
     end
 

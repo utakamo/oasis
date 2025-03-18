@@ -71,7 +71,7 @@ local load_conf_file = function(filename)
                 currentSection = section
                 data[currentSection] = {}
             elseif isMultilineValue then
-                if trimmedLine:match('".-$') then
+                if trimmedLine:match('".-$') and (not trimmedLine:match('\\"')) then
                     multilineBuffer = multilineBuffer .. "\n" .. trimmedLine:match("^(.-)\"$")
                     data[currentSection][currentKey] = multilineBuffer
                     isMultilineValue = false
@@ -90,7 +90,7 @@ local load_conf_file = function(filename)
                         currentKey = key
                         multilineBuffer = value:match("^\"(.-)$")
                     else
-                        data[currentSection][key] = value
+                        data[currentSection][key] = value:gsub("\\n", "\n")
                     end
                 end
             end
@@ -108,7 +108,7 @@ local update_conf_file = function(filename, data)
     for section, sectionData in pairs(data) do
         iniFile:write("[" .. section .. "]\n")
         for key, value in pairs(sectionData) do
-            iniFile:write(key .. " = \"" .. value .. "\"\n")
+            iniFile:write(key .. " = \"" .. value:gsub("\n", "\\n") .. "\"\n")
         end
         iniFile:write("\n")
     end

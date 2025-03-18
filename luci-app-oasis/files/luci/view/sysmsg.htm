@@ -119,12 +119,15 @@
                 return;
             }
 
+            let update_sysmsg = textarea.value;
+            update_sysmsg = update_sysmsg.replace(/"/g, '\\"');
+
             fetch('<%=build_url("admin", "network", "oasis", "update-sysmsg")%>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: new URLSearchParams({ target: key, title: input.value, message: textarea.value }),
+                body: new URLSearchParams({ target: key, title: input.value, message: update_sysmsg }),
             })
             .then(response => response.json())
             .then(data => {
@@ -151,8 +154,9 @@
         textarea.rows = 10;
         textarea.style.marginTop = '10px';
         textarea.style.width = '100%';
-        textarea.style.resize = 'none';
-        textarea.value = value.chat;
+        textarea.style.resize = 'none';     
+        textarea.value = value.chat.replace(/\\"/g, '"').replace(/\\n/g, '\n');   
+         
         textarea.addEventListener('input', function() {
             // After entering something, activate the update button.
             if (is_update) {
@@ -231,12 +235,16 @@
             return;
         }
 
+
+        let add_sysmsg =  new_sysmsg_data.value;
+        add_sysmsg = add_sysmsg.replace(/"/g, '\\"');
+
         fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({ title: new_sysmsg_title.value, message: new_sysmsg_data.value }),
+            body: new URLSearchParams({ title: new_sysmsg_title.value, message: add_sysmsg }),
         })
         .then(response => response.json())
         .then(data => {
@@ -256,6 +264,8 @@
                 top: document.body.scrollHeight,
                 behavior: 'smooth'
             });
+
+            new_sysmsg_data.value = '';
         });
     });
 

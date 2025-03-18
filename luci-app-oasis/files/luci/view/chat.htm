@@ -498,7 +498,7 @@ uci set network.lan.proto=static
 
                     const systemMessage = document.getElementById("oasis-system");
                     const messageInput = document.getElementById('message-input');
-                    const messageText = messageInput.value.trim();
+                    const messageText = messageInput.value.trim().replace(/\\n/g, '\n');;
 
                     if (!messageText) {
                         return;
@@ -792,6 +792,7 @@ uci set network.lan.proto=static
         messageContainer.appendChild(messageTextContainer);
 
         document.querySelector('.chat-messages').appendChild(messageContainer);
+
         if (systemMessage !== null) {
             document.querySelector('.chat-messages').removeChild(systemMessage);
         }
