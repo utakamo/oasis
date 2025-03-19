@@ -143,8 +143,11 @@ local apply = function(uci_list, commit)
                 -- param_log = param_log .. " ".. cmd.class.option
                 -- param_log = param_log .. " " .. cmd.class.value
                 -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
-
-                uci:set(cmd.class.config, cmd.class.section, cmd.class.option, cmd.class.value)
+                local safe_value = cmd.class.value
+                safe_value = safe_value:gsub("'", "")
+                -- Double quotation marks \" in the string are treated as allowable by commenting them out.
+                --safe_value = safe_value:gsub('\"', "")
+                uci:set(cmd.class.config, cmd.class.section, cmd.class.option, safe_value)
 
                 if commit then
                     uci:commit(cmd.class.config)
