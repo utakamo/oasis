@@ -564,6 +564,7 @@ uci set network.lan.proto=static
                             const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
                             messages.forEach(message => message.remove());
                         }
+                        targetChatId = ""; // clear target id
                     } else {
                         console.error("Could not find the list item with ID:", targetChatItemId);
                     }
