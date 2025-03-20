@@ -1,4 +1,4 @@
-# OpenWrt AI Assistant Application - Oasis (v1.3)
+# OpenWrt AI Assistant Application - Oasis (v1.3.1)
 > [!IMPORTANT]
 > >
 > **Support AI Service**
@@ -16,13 +16,13 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 ## How to install luci-app-oasis
 Dependency: oasis, lua-curl-v3, luci-compat  
   
-The Oasis package can be found under "oasis-v1.3" in the Releases section of this GitHub page. It is a device-independent package, but it requires dependency packages such as lua-curl-v3 and luci-compat. Typically, if you install Oasis on an OpenWrt device with an active internet connection, these dependency packages will be downloaded and installed automatically.  
+The Oasis package can be found under "oasis-v1.3.1" in the Releases section of this GitHub page. It is a device-independent package, but it requires dependency packages such as lua-curl-v3 and luci-compat. Typically, if you install Oasis on an OpenWrt device with an active internet connection, these dependency packages will be downloaded and installed automatically.  
   
 If the repository corresponding to the device being used as an OpenWrt device does not include lua-curl-v3 or luci-compat, users will need to build the dependency packages themselves using the OpenWrt Buildroot and install them on the OpenWrt device.
 ```
 root@OpenWrt:~# opkg update
-root@OpenWrt:~# opkg install oasis_1.3-r1_all.ipk
-root@OpenWrt:~# opkg install luci-app-oasis_1.3-r1_all.ipk
+root@OpenWrt:~# opkg install oasis_1.3.1-r1_all.ipk
+root@OpenWrt:~# opkg install luci-app-oasis_1.3.1-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 Rebooting the system after installation is also fine.
@@ -105,7 +105,7 @@ Pressing the Upload button stores the icon in the OpenWrt device.
 Dependency: lua-curl-v3
 ```
 root@OpenWrt:~# opkg update
-root@OpenWrt:~# opkg install oasis_1.3-r1_all.ipk
+root@OpenWrt:~# opkg install oasis_1.3.1-r1_all.ipk
 root@OpenWrt:~# service rpcd reload
 ```
 
