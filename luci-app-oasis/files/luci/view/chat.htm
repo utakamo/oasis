@@ -1100,11 +1100,9 @@ uci set network.lan.proto=static
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
-        const dropdown = document.getElementById("oasis-dropdown");
         let fullMessage = '';
-        let finalResponse = '';
+        let finalResponse = null;
         let is_notify = false;
-        //console.log(sysmsg_key);
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
@@ -1120,105 +1118,98 @@ uci set network.lan.proto=static
                 })
             });
 
-            if (response.ok) {
-                const chatMessages = document.querySelector('.chat-messages');
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    buffer += chunk;
-                    //console.log(chunk.trim());
-
-                    const parts = buffer.split(/(?<=})\s*(?={)/g);
-                    buffer = parts.pop();
-
-                    for (const part of parts) {
-                        try {
-
-                            const jsonResponse = JSON.parse(part.trim());
-
-                            if (jsonResponse.message && jsonResponse.message.content) {
-                                fullMessage += jsonResponse.message.content;
-                                receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                            }
-
-                            if (jsonResponse.id && isNumeric(jsonResponse.id)) {
-                                show_chat_popup(jsonResponse);
-                            }
-
-                            if (jsonResponse.uci_notify && (is_notify === false)) {
-                                show_notify_popup(jsonResponse);
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                                is_notify = true;
-                            }
-                        } catch (e) {
-                            fulllMessage = "Json Parse Error";
-                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
-                            receivedMessageTextContainer.style.color = "red";
-                        }
-                    }
-
-                    if (buffer.trim()) {
-                        try {
-                            //console.log("final = " + buffer.trim());
-                            finalResponse = JSON.parse(buffer.trim());
-
-                            if (finalResponse.id && isNumeric(finalResponse.id)) {
-                                show_chat_popup(finalResponse);
-                            }
-
-                            if (finalResponse.uci_notify && (is_notify === false)) {
-                                show_notify_popup(finalResponse);
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                                is_notify = true;
-                            }
-
-                        } catch (e) {
-                            fullMessage = "Error!\n";
-                            fullMessage += "The network might be disconnected, or the AI service settings might be incorrect.\n\n";
-                            fullMessage += "[OpenAI]\n"
-                            fullMessage += "If you want to use OpenAI, you need to set the Endpoint to the following Endpoint.\n\n";
-                            fullMessage += "Endpoint:\n";
-                            fullMessage += "```\nhttps://api.openai.com/v1/chat/completions\n```\n";
-                            fullMessage += "You can create an API Key from your OpenAI account page. Please use that.\n\n";
-                            fullMessage += "[Ollama]\n"
-                            fullMessage += "If you want to use Ollama, you need to set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below. \n";
-                            fullMessage += "```\nOLLAMA_HOST=0.0.0.0\nOLLAMA_ORIGINS=*\n```\n";
-                            fullMessage += "Change the Ollama parameter configuratiion file (Linux) or environment variables (Windows) that exist on the PC where Ollama is installed to the above values.\n\n";
-                            fullMessage += "Endpoint:\n";
-                            fullMessage += "```\nhttp://[Your Ollama PC Address]:11434/api/chat\n```\n";
-                            fullMessage += "When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.";
-
-                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
-                            receivedMessageTextContainer.style.color = "red";
-                        }
-                    }
-                }
-
-                if (finalResponse.message && finalResponse.message.content) {
-                    //console.log("final message = " + finalResponse.message.content);
-                    fullMessage += finalResponse.message.content;
-                    receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
-
-                message_outputing = false;
-                activeConversation = false;
-                receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
-            } else {
+            if (!response.ok) {
                 console.error('Error:', response.statusText);
+                return;
             }
+
+            const chatMessages = document.querySelector('.chat-messages');
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+
+                const parts = buffer.split(/(?<=})\s*(?={)/g);
+                buffer = parts.pop() || '';
+
+                for (const part of parts) {
+                    try {
+                        const jsonResponse = JSON.parse(part.trim());
+
+                        if (jsonResponse.message?.content) {
+                            fullMessage += jsonResponse.message.content;
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+
+                        if (jsonResponse.id && isNumeric(jsonResponse.id)) {
+                            show_chat_popup(jsonResponse);
+                        }
+
+                        if (jsonResponse.uci_notify && !is_notify) {
+                            show_notify_popup(jsonResponse);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                            is_notify = true;
+                        }
+                    } catch (e) {
+                        fullMessage = "Json Parse Error";
+                        receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+                        receivedMessageTextContainer.style.color = "red";
+                    }
+                }
+            }
+
+            if (buffer.trim()) {
+                try {
+                    finalResponse = JSON.parse(buffer.trim());
+
+                    if (finalResponse.id && isNumeric(finalResponse.id)) {
+                        show_chat_popup(finalResponse);
+                    }
+
+                    if (finalResponse.uci_notify && !is_notify) {
+                        show_notify_popup(finalResponse);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        is_notify = true;
+                    }
+
+                    if (finalResponse.message?.content) {
+                        fullMessage += finalResponse.message.content;
+                    }
+                } catch (e) {
+                    console.error('JSON Parse Error', e);
+                    console.error(buffer.trim());
+                    fullMessage = "Error!\n";
+                    fullMessage += "The network might be disconnected, or the AI service settings might be incorrect.\n\n";
+                    fullMessage += "[OpenAI]\n";
+                    fullMessage += "If you want to use OpenAI, you need to set the Endpoint to the following Endpoint.\n\n";
+                    fullMessage += "Endpoint:\n";
+                    fullMessage += "```\nhttps://api.openai.com/v1/chat/completions\n```\n";
+                    fullMessage += "You can create an API Key from your OpenAI account page. Please use that.\n\n";
+                    fullMessage += "[Ollama]\n";
+                    fullMessage += "If you want to use Ollama, you need to set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.\n";
+                    fullMessage += "```\nOLLAMA_HOST=0.0.0.0\nOLLAMA_ORIGINS=*\n```\n";
+                    fullMessage += "Change the Ollama parameter configuration file (Linux) or environment variables (Windows) that exist on the PC where Ollama is installed to the above values.\n\n";
+                    fullMessage += "Endpoint:\n";
+                    fullMessage += "```\nhttp://[Your Ollama PC Address]:11434/api/chat\n```\n";
+                    fullMessage += "When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.";
+                }
+            }
+
+            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         } catch (error) {
             console.error('Request failed', error);
+        } finally {
+            message_outputing = false;
+            activeConversation = false;
         }
-        message_outputing = false;
-        activeConversation = false;
     }
 
     function handleChatItemClick(chatId) {
