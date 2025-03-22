@@ -155,16 +155,15 @@ local methods = {
 
             local data = common.load_conf_file(args.path)
 
-            local sysmsg_key_suffix
+            local max_suffix = 0
             for sysmsg_key, _ in pairs(data) do
-                sysmsg_key_suffix = sysmsg_key:match("custom_(%d+)")
+                local suffix = tonumber(sysmsg_key:match("custom_(%d+)"))
+                if suffix and (suffix > max_suffix) then
+                    max_suffix = suffix
+                end
             end
 
-            if not sysmsg_key_suffix then
-                sysmsg_key_suffix = 0
-            end
-
-            local new_sysmsg_key = "custom_" .. (sysmsg_key_suffix + 1)
+            local new_sysmsg_key = "custom_" .. (max_suffix + 1)
 
             data[new_sysmsg_key] = {}
             data[new_sysmsg_key].title = args.title
@@ -174,10 +173,10 @@ local methods = {
 
             if not is_update then
                 r.result = jsonc.stringify({ status = common.status.error })
+                return r
             end
 
             r.result = jsonc.stringify({ status = common.status.ok, new_sysmsg_key = new_sysmsg_key })
-
             return r
         end
     },
