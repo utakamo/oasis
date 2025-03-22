@@ -484,7 +484,7 @@ uci set network.lan.proto=static
 
             sysmsg_list = data;
 
-            console.log(sysmsg_list);
+            //console.log(sysmsg_list);
 
             const sortedSysmsgList = sysmsg_list.key
                 .map((key, index) => {
@@ -510,7 +510,7 @@ uci set network.lan.proto=static
                 .filter(item => item !== null)
                 .sort((a, b) => a.number - b.number);
 
-            console.log("sortedSysmsgList:", sortedSysmsgList);
+            //console.log("sortedSysmsgList:", sortedSysmsgList);
 
             sortedSysmsgList.forEach(item => {
                 const sysmsg_select_button = document.createElement('input');
@@ -520,7 +520,7 @@ uci set network.lan.proto=static
 
                 sysmsg_select_button.addEventListener('click', function() {
                     sysmsg_key = item.key;
-                    console.log("Selected sysmsg_key:", sysmsg_key);
+                    //console.log("Selected sysmsg_key:", sysmsg_key);
                     const sysmsg_list_popup = document.getElementById('sysmsg-list-popup');
                     sysmsg_list_popup.style.display = 'none';
 
@@ -537,6 +537,23 @@ uci set network.lan.proto=static
 
                 sysmsg_button_container.appendChild(sysmsg_select_button);
             });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+        fetch('<%=build_url("admin", "network", "oasis", "uci-config-list")%>', {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                return;
+            }
+
+            //console.log(data);
         })
         .catch(error => {
             console.error('Error:', error);

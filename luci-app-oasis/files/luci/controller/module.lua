@@ -34,6 +34,7 @@ function index()
     entry({"admin", "network", "oasis", "select-icon"}, call("select_icon"), nil).leaf = true
     entry({"admin", "network", "oasis", "upload-icon-data"}, call("upload_icon_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-icon-data"}, call("delete_icon_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "uci-config-list"}, call("uci_config_list"), nil).leaf = true
 end
 
 function retrive_chat_list()
@@ -427,4 +428,34 @@ function delete_icon_data()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json("OK")
+end
+
+function uci_config_list()
+
+    -- Currently, the only removal target in the uci config list is oasis and rpcd.
+    -- Add the names of uci configs that you don't want to teach AI here.
+    local black_list = {
+        "oasis",
+        "rpcd",
+    }
+
+    local list = util.ubus("uci", "configs", {})
+
+    if (not list) or (not list.configs) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "No uci list" })
+        return
+    end
+
+    for index = #list.configs, 1, -1 do
+        for _, exclude_item in ipairs(black_list) do
+            if list.configs[index] == exclude_item then
+                table.remove(list.configs, index)
+                break
+            end
+        end
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(list)
 end
