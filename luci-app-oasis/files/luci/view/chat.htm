@@ -1601,6 +1601,16 @@ uci set network.lan.proto=static
             reader.readAsDataURL(file);
         }
     });
+
+    function adjustChatHeight() {
+        if (window.visualViewport) {
+            const viewportHeight = window.visualViewport.height;
+            document.body.style.height = viewportHeight + "px";
+        }
+    }
+
+    window.visualViewport.addEventListener("resize", adjustChatHeight);
+    window.addEventListener("load", adjustChatHeight);
 </script>
 
 <%+footer%>
