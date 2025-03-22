@@ -482,17 +482,45 @@ uci set network.lan.proto=static
             // Temporarily commenting out the code due to the presence of a bug.
             //sysmsg_button_container.appendChild(sysmsg_select_button);
 
-            //console.log(data);
             sysmsg_list = data;
-            for (let i = 0; i < sysmsg_list.title.length; i++) {
+
+            console.log(sysmsg_list);
+
+            const sortedSysmsgList = sysmsg_list.key
+                .map((key, index) => {
+                    if (!key || typeof key !== "string") return null;
+
+                    if (key === "default") {
+                        return {
+                            key,
+                            title: sysmsg_list.title && sysmsg_list.title[index] ? sysmsg_list.title[index] : "Default",
+                            number: -1
+                        };
+                    }
+
+                    const match = key.match(/^custom_(\d+)$/);
+                    if (!match) return null;
+
+                    return {
+                        key,
+                        title: sysmsg_list.title && sysmsg_list.title[index] ? sysmsg_list.title[index] : "No Title",
+                        number: parseInt(match[1], 10)
+                    };
+                })
+                .filter(item => item !== null)
+                .sort((a, b) => a.number - b.number);
+
+            console.log("sortedSysmsgList:", sortedSysmsgList);
+
+            sortedSysmsgList.forEach(item => {
                 const sysmsg_select_button = document.createElement('input');
                 sysmsg_select_button.type = 'button';
-                sysmsg_select_button.value = sysmsg_list.title[i];
+                sysmsg_select_button.value = item.title;
                 sysmsg_select_button.className = 'sysmsg-select-button';
 
                 sysmsg_select_button.addEventListener('click', function() {
-                    sysmsg_key = sysmsg_list.key[i];
-                    //console.log(sysmsg_key);
+                    sysmsg_key = item.key;
+                    console.log("Selected sysmsg_key:", sysmsg_key);
                     const sysmsg_list_popup = document.getElementById('sysmsg-list-popup');
                     sysmsg_list_popup.style.display = 'none';
 
@@ -508,7 +536,7 @@ uci set network.lan.proto=static
                 });
 
                 sysmsg_button_container.appendChild(sysmsg_select_button);
-            }
+            });
         })
         .catch(error => {
             console.error('Error:', error);
