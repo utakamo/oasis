@@ -40,9 +40,11 @@ if request_method == "POST" then
             io.write(uci_cmd_notification)
             io.flush()
             os.execute("sleep 1")
-        else
-            os.execute("echo \"no uci list\" >> /tmp/oasis.log")
         end
+        -- for debug
+        -- else
+        --     os.execute("echo \"no uci list\" >> /tmp/oasis.log")
+        -- end
     end
 
     if #new_chat_info > 0 then

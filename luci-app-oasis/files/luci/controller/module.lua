@@ -172,15 +172,15 @@ function apply_uci_cmd()
 
     if (not uci_list_json) or (not chat_id) then
         -- for debug
-        os.execute("echo \"apply_uci_cmd argument error\" >> /tmp/oasis-apply.log")
+        -- os.execute("echo \"apply_uci_cmd argument error\" >> /tmp/oasis-apply.log")
         luci_http.prepare_content("application/json")
         luci_http.write_json({ error = "Missing params" })
         return
     end
 
     -- for debug
-    os.execute("echo \"chat_id = " .. chat_id .. "\" >> /tmp/oasis-apply.log")
-    os.execute("echo \"uci_list_json" .. uci_list_json .. "\" >> /tmp/oasis-apply.log")
+    -- os.execute("echo \"chat_id = " .. chat_id .. "\" >> /tmp/oasis-apply.log")
+    -- os.execute("echo \"uci_list_json" .. uci_list_json .. "\" >> /tmp/oasis-apply.log")
 
     local uci_list = jsonc.parse(uci_list_json)
 
@@ -200,7 +200,7 @@ function apply_uci_cmd()
 end
 
 function confirm()
-    os.execute("echo \"finalize_settings error\" >> /tmp/oasis-confirm.log")
+    -- os.execute("echo \"finalize_settings error\" >> /tmp/oasis-confirm.log")
     local result = util.ubus("oasis", "confirm")
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)

@@ -9,8 +9,6 @@ local backup = function(uci_list, id, backup_type)
 
     local list = {}
 
-    sys.exec("echo hello >> /tmp/oasis-backup.log")
-
     if backup_type == "normal" then
         local backup_target_cfg = {}
         for _, target_cmd_tbl in pairs(uci_list) do
@@ -23,7 +21,7 @@ local backup = function(uci_list, id, backup_type)
                 for _, cmd in ipairs(target_cmd_tbl) do
                     local is_exist = false
                     for _, config in ipairs(backup_target_cfg) do
-                        sys.exec("echo " .. cmd.class.config .. " >> /tmp/oasis-backup.log")
+                        -- sys.exec("echo " .. cmd.class.config .. " >> /tmp/oasis-backup.log")
                         if cmd.class.config == config then
                             is_exist = true
                         end

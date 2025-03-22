@@ -141,7 +141,7 @@ local create_chat_file = function(service, chat)
     -- Update to allow chat files to be created even when role:system is not present.
     local message = {}
     if (service.sysmsg_key) and (#service.sysmsg_key > 0) and (service.sysmsg_key == "casual") then
-        os.execute("echo \"no system message\" >> /tmp/oasis-create-chat-file.log")
+        -- os.execute("echo \"no system message\" >> /tmp/oasis-create-chat-file.log")
         message.role1 = chat.messages[#chat.messages - 1].role
         message.content1 = chat.messages[#chat.messages - 1].content
         message.role2 = chat.messages[#chat.messages].role
@@ -149,7 +149,7 @@ local create_chat_file = function(service, chat)
         message.role3 = ""
         message.content3 = ""
     else
-        os.execute("echo \"system message\" >> /tmp/oasis-create-chat-file.log")
+        -- os.execute("echo \"system message\" >> /tmp/oasis-create-chat-file.log")
         message.role1 = chat.messages[#chat.messages - 2].role
         message.content1 = chat.messages[#chat.messages - 2].content
         message.role2 = chat.messages[#chat.messages - 1].role
@@ -343,7 +343,6 @@ local communicate = function(basic, chat, format)
             -- debug end
 
             if (not basic.id) or (#basic.id == 0) then
-                os.execute("echo \"basic.id == 0\" >> /tmp/oasis-id2.log")
                 push_chat_data_for_record(chat, ai)
                 local chat_info = {}
                 chat_info.id = create_chat_file(basic, chat)
@@ -351,7 +350,6 @@ local communicate = function(basic, chat, format)
                 chat_info.title = result.title
                 new_chat_info = jsonc.stringify(chat_info, false)
             else
-                os.execute("echo " .. basic.id  .. " >> /tmp/oasis-id3.log")
                 push_chat_data_for_record(chat, ai)
                 append_chat_data(basic, chat)
             end
