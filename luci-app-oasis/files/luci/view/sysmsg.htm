@@ -270,13 +270,11 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-
         fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
             method: 'POST',
         })
         .then(response => response.json())
         .then(data => {
-
             if (data.error) {
                 console.error("Error from server:", data.error);
                 return;
@@ -284,13 +282,16 @@
 
             create_sysmsg_info("default", data.default);
 
-            Object.entries(data).forEach(([key, value]) => {
-                if (value && typeof value === 'object' && 'chat' in value) {
-                    if (key !== "default") {
-                        create_sysmsg_info(key, value);
-                    }
-                }
-            });
+            Object.entries(data)
+                .filter(([key]) => key.startsWith("custom_") && key.match(/^custom_(\d+)$/))
+                .sort((a, b) => {
+                    const numA = parseInt(a[0].match(/^custom_(\d+)$/)[1], 10);
+                    const numB = parseInt(b[0].match(/^custom_(\d+)$/)[1], 10);
+                    return numA - numB;
+                })
+                .forEach(([key, value]) => {
+                    create_sysmsg_info(key, value);
+                });
         })
         .catch(error => {
             console.error('Error:', error);
