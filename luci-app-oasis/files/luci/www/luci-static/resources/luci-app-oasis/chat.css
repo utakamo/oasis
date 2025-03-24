@@ -140,7 +140,6 @@
 
 .chat-messages {
     flex: 1;
-    padding: 10px;
     overflow-y: auto;
     border-bottom: 1px solid #ddd;
 }
@@ -209,15 +208,20 @@
 }
 
 #message-input {
-    flex: 1;
-    height: 7.0rem;
+    display: block;
+    height: 5.0rem;
+    width: 100%;
     resize: none;
     overflow-y: auto;
-    padding: 5px;
     font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
+}
+
+#uci-config-list {
+    display: block;
+    width: 100%;
 }
 
 #apply-button {
@@ -579,13 +583,23 @@
 
     #message-input {
         display: block;
-        height: 7.0rem;
+        height: 5.0rem;
         width : 100%;
-        padding: 5px;
         font-size: 1rem;
         border: 1px solid #ccc;
         border-radius: 4px;
         box-sizing: border-box;
+    }
+
+    #uci-config-list {
+        display: block;
+        width: 100%;
+    }
+
+    .chat-messages {
+        flex: 1;
+        flex-direction: column;
+        gap: 10px;
     }
 
     .chat-buttons {

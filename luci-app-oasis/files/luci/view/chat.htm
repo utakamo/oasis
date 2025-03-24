@@ -41,7 +41,12 @@ uci set network.lan.proto=static
             -->
         </div>
         <div class="chat-input">
-            <textarea id="message-input" placeholder="Your Message"></textarea>
+            <div class="chat-messages">
+                <textarea id="message-input" placeholder="Your Message"></textarea>
+                <select id="uci-config-list" name="uci-config-list">
+                    <option value="---">---</option>
+                </select>
+            </div>
             <div class="chat-buttons">
                 <button id="send-button">Send</button>
                 <button id="new-button">New</button>
@@ -553,7 +558,17 @@ uci set network.lan.proto=static
                 return;
             }
 
-            //console.log(data);
+            console.log(data);
+
+            const select = document.getElementById("uci-config-list");
+            const option = document.createElement("option");
+
+            data.configs.forEach(config => {
+                const option = document.createElement("option");
+                option.value = config;
+                option.textContent = config;
+                select.appendChild(option);
+            });
         })
         .catch(error => {
             console.error('Error:', error);
