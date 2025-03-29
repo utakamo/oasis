@@ -35,6 +35,121 @@ function index()
     entry({"admin", "network", "oasis", "upload-icon-data"}, call("upload_icon_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-icon-data"}, call("delete_icon_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "uci-config-list"}, call("uci_config_list"), nil).leaf = true
+    entry({"admin", "network", "oasis", "uci-show"}, call("uci_show"), nil).leaf = true
+end
+
+function uci_show_config(target)
+    local params = uci:get_all(target) or {}
+
+    print("params:", params)
+    print("type:", type(params))
+
+    if type(params) ~= "table" then
+        print("not table")
+        return {}
+    end
+
+    local groups = {}
+    local non_anonymous = {}
+
+    for key, options in pairs(params) do
+        if options[".anonymous"] == true then
+            local t = options[".type"]
+            if not groups[t] then groups[t] = {} end
+            table.insert(groups[t], options)
+        else
+            non_anonymous[key] = options
+        end
+    end
+
+    for _, items in pairs(groups) do
+        table.sort(items, function(a, b)
+            local nameA = a[".name"] or ""
+            local nameB = b[".name"] or ""
+            local hexA, hexB = "", ""
+            if nameA:sub(1, 3) == "cfg" then
+                hexA = nameA:sub(4,5)
+            else
+                hexA = nameA
+            end
+            if nameB:sub(1, 3) == "cfg" then
+                hexB = nameB:sub(4,5)
+            else
+                hexB = nameB
+            end
+            return hexA < hexB
+        end)
+    end
+
+    local sorted_params = {}
+
+    local group_types = {}
+    for t in pairs(groups) do
+        table.insert(group_types, t)
+    end
+
+    table.sort(group_types)
+
+    for _, sect in ipairs(group_types) do
+        local items = groups[sect]
+        for i, opt in ipairs(items) do
+            for opt_name, value in pairs(opt) do
+
+                local opt_name_sub = opt_name
+                 if opt_name_sub:sub(1, 1) == "." then
+                    opt_name_sub = opt_name_sub:sub(2)
+                end
+
+                if (opt_name == ".type") then
+                    sorted_params[#sorted_params + 1]
+                    = string.format("%s.@%s[%d]=%s", target, sect, i-1, tostring(value))
+                elseif (opt_name ~= ".anonymous") and (opt_name ~= ".index") and (opt_name ~= ".name") then
+                    if type(value) == "string" then
+                        sorted_params[#sorted_params + 1]
+                        = string.format("%s.@%s[%d].%s=%s", target, sect, i-1, opt_name_sub, tostring(value))
+                    elseif type(value) == "table" then
+                        sorted_params[#sorted_params + 1]
+                        = string.format("%s.@%s[%d].%s=", target, sect, i-1, opt_name_sub)
+                        for _, list_v in ipairs(value) do
+                            sorted_params[#sorted_params]
+                            = sorted_params[#sorted_params] .. string.format("%s ", tostring(list_v))
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    local nonanon_keys = {}
+    for key in pairs(non_anonymous) do
+        table.insert(nonanon_keys, key)
+    end
+
+    table.sort(nonanon_keys)
+
+    for _, sect in ipairs(nonanon_keys) do
+        local opt = non_anonymous[sect]
+        for opt_name, value in pairs(opt) do
+            if opt_name == ".type" then
+                sorted_params[#sorted_params + 1]
+                = string.format("%s.%s=%s", target, sect, tostring(value))
+            elseif (opt_name ~= ".anonymous") and (opt_name ~= ".index") and (opt_name ~= ".name") then
+                if type(value) == "string" then
+                    sorted_params[#sorted_params + 1]
+                    = string.format("%s.%s.%s=%s", target, sect, opt_name, tostring(value))
+                elseif type(value) == "table" then
+                    sorted_params[#sorted_params + 1]
+                    = string.format("%s.%s.%s=", target, sect, opt_name)
+                    for _, list_v in ipairs(value) do
+                        sorted_params[#sorted_params]
+                        = sorted_params[#sorted_params] .. string.format("%s ", tostring(list_v))
+                    end
+                end
+            end
+        end
+    end
+
+    return sorted_params
 end
 
 function retrive_chat_list()
@@ -458,4 +573,37 @@ function uci_config_list()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(list)
+end
+
+function uci_show()
+    local target = luci_http.formvalue("target")
+
+    local list = util.ubus("uci", "configs", {})
+    local hit = false
+
+    -- validation of uci config name --
+    for _, config in ipairs(list.configs) do
+        if target == config then
+            hit = true
+            break
+        end
+    end
+
+    if not hit then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Not Found" })
+        return
+    end
+
+    -- uci show --
+    local result = uci_show_config(target)
+
+    if (#result == 0) or (result == nil) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Not Found" })
+        return
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
 end

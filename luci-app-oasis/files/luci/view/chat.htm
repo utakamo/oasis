@@ -558,7 +558,7 @@ uci set network.lan.proto=static
                 return;
             }
 
-            console.log(data);
+            //console.log(data);
 
             const select = document.getElementById("uci-config-list");
             const option = document.createElement("option");
@@ -840,7 +840,7 @@ uci set network.lan.proto=static
         }
     }
 
-    function send_chat_data(systemMessage, messageInput, messageText) {
+    async function send_chat_data(systemMessage, messageInput, messageText) {
 
         const messageContainer = document.createElement('div');
         messageContainer.className = 'message sent';
@@ -892,6 +892,8 @@ uci set network.lan.proto=static
         
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
+        let uci_info_message = await retrieve_uci_show(messageTextContainer);
+        messageText += uci_info_message;
         send_message(receivedMessageTextContainer, messageText);
     }
 
@@ -1157,12 +1159,59 @@ uci set network.lan.proto=static
         return /^\d+$/.test(str);
     }
 
+    async function retrieve_uci_show(messageTextContainer, messageText) {
+
+        const selectElement = document.getElementById("uci-config-list");
+        let target_uci_config = selectElement.value;
+        //console.log(target_uci_config);
+
+        if (target_uci_config === '---') {
+            return '';
+        }
+
+        let uci_info = '';
+
+        try {
+            const response = await fetch('<%=build_url("admin", "network", "oasis", "uci-show")%>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({ target: target_uci_config })
+            });
+
+            const data = await response.json();
+
+            uci_info = '\n\n### [User\'s ' + target_uci_config + ' config]\n';
+            uci_info += '```\n';
+
+            for (let i = 0; i < data.length; i++) {
+                uci_info += data[i] + '\n';
+            }
+
+            uci_info += '```\n';
+
+            messageText += uci_info;
+            messageTextContainer.innerHTML += convertMarkdownToHTML(uci_info);
+
+        } catch (error) {
+            console.error('Error:', error);
+            return '';
+        }
+
+        selectElement.value = '---';
+        return uci_info;
+    }
+
+
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
         let fullMessage = '';
         let finalResponse = null;
         let is_notify = false;
+
+        //console.log(messageText);
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
