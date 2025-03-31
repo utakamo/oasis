@@ -4,6 +4,7 @@ local jsonc = require("luci.jsonc")
 local util = require("luci.util")
 local uci = require("luci.model.uci").cursor()
 local sys = require("luci.sys")
+local common = require("oasis.common")
 
 local backup = function(uci_list, id, backup_type)
 
@@ -143,8 +144,7 @@ local apply = function(uci_list, commit)
                 -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
                 local safe_value = cmd.class.value
                 safe_value = safe_value:gsub("'", "")
-                -- Double quotation marks \" in the string are treated as allowable by commenting them out.
-                --safe_value = safe_value:gsub('\"', "")
+                safe_value = safe_value:gsub('\"', "")
                 uci:set(cmd.class.config, cmd.class.section, cmd.class.option, safe_value)
 
                 if commit then
@@ -155,7 +155,32 @@ local apply = function(uci_list, commit)
     end
 
     sys.exec("lua /usr/bin/oasis_rollback &")
-    sys.exec("/etc/init.d/network restart")
+
+    for key, target_cmd_tbl in pairs(uci_list) do
+        if (key == "set") and (type(target_cmd_tbl) == "table") then
+            for _, cmd in ipairs(target_cmd_tbl) do
+                if (cmd.class.config == "network") or (cmd.class.config == "wireless") then
+                    local is_file_exist = common.check_file_exist("/etc/init.d/network")
+                    if is_file_exist then
+                        -- sys.exec("echo /etc/init.d/network >> /tmp/oasis-apply2.log")
+                        sys.exec("/etc/init.d/network restart")
+                        break
+                    end
+                end
+            end
+
+            for _, cmd in ipairs(target_cmd_tbl) do
+                if (cmd.class.config ~= "network") and (cmd.class.config ~= "wireless") then
+                    local file_path = "/etc/init.d/" .. cmd.class.config
+                    local is_file_exist = common.check_file_exist(file_path)
+                    if is_file_exist then
+                        -- sys.exec("echo " .. file_path .. " >> /tmp/oasis-apply3.log")
+                        sys.exec(file_path .. " restart")
+                    end
+                end
+            end
+        end
+    end
 end
 
 return {
