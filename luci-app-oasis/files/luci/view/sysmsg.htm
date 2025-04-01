@@ -13,6 +13,18 @@
         cursor: pointer;
     }
 
+    .load-button {
+        display: inline-block;
+        padding: 10px 20px;
+        width: 7rem;
+        height: 2rem;
+        background-color: #00cc06;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
     .update-button {
         display: inline-block;
         padding: 10px 20px;
@@ -50,6 +62,22 @@
     <textarea id="new-sysmsg-data" rows="10" style="margin-top:10px; width:100%; resize:none;"></textarea>
     <div style="margin: 10px;">
         <button id="add-button" class="add-button" type="button">Add</button>
+    </div>
+</div>
+
+<h2>Load Extra System Message</h2>
+
+<div style="margin-top: 5px; border-bottom: 1px solid #bbbbbb;">
+    <span>URL:&nbsp;</span><input id="extra-sysmsg-url" name="extra-sysmsg-url" placeholder=" Please enter the server's url" type="text" style="width:80%;">
+    <div style="margin: 10px;">
+        <button id="load-button" class="load-button" type="button">Load</button>
+    </div>
+    <div id="extra-sysmsg" style="display: none;">
+        <span>TITLE:&nbsp;</span><input id="extra-sysmsg-title" type="text" size="15">
+        <textarea id="extra-sysmsg-data" rows="10" style="margin-top:10px; width:100%; resize:none;"></textarea>
+        <div style="margin: 10px;">
+            <button id="extra-add-button" class="add-button" type="button">Add</button>
+        </div>
     </div>
 </div>
 
@@ -215,9 +243,7 @@
         parentElement.appendChild(container);
     }
 
-    const add_button = document.getElementById('add-button');
-
-    add_button.addEventListener('click', function() {
+    document.getElementById('add-button').addEventListener('click', function() {
         
         const new_sysmsg_data = document.getElementById('new-sysmsg-data');
         const new_sysmsg_title = document.getElementById('new-sysmsg-title');
@@ -249,7 +275,7 @@
         .then(response => response.json())
         .then(data => {
 
-            console.log(data);
+            //console.log(data);
 
             if (data.error) {
                 add_button.disabled = true;
@@ -266,6 +292,85 @@
             });
 
             new_sysmsg_data.value = '';
+        });
+    });
+
+    document.getElementById('extra-add-button').addEventListener('click', function() {
+        
+        const extra_sysmsg_data = document.getElementById('extra-sysmsg-data');
+        const extra_sysmsg_title = document.getElementById('extra-sysmsg-title');
+
+        //console.log(extra_sysmsg_title.value);
+        //console.log(extra_sysmsg_data.value);
+
+        if (extra_sysmsg_title.value.length === 0) {
+            alert('Please input system message title');
+            return;
+        }
+
+        if (extra_sysmsg_data.value.length === 0) {
+            alert('Please input system message data');
+            return;
+        }
+
+
+        let add_sysmsg =  extra_sysmsg_data.value;
+        add_sysmsg = add_sysmsg.replace(/"/g, '\\"');
+
+        fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ title: extra_sysmsg_title.value, message: add_sysmsg }),
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            //console.log(data);
+
+            if (data.error) {
+                add_button.disabled = true;
+                add_button.style.backgroundColor = "#FF0000";
+                add_button.textContent = "ERROR";
+                return;
+            }
+
+            create_sysmsg_info(data.new_sysmsg_key, {title: extra_sysmsg_title.value, chat: extra_sysmsg_data.value});
+
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+
+            extra_sysmsg_data.value = '';
+        });
+    });
+
+    document.getElementById('load-button').addEventListener('click', function() {
+
+        const extra_sysmsg_url = document.getElementById('extra-sysmsg-url');
+        const extra_sysmsg_container = document.getElementById('extra-sysmsg');
+        const extra_sysmsg_textarea = document.getElementById('extra-sysmsg-data');
+        //console.log(extra_sysmsg_url.value);
+
+        if (extra_sysmsg_url.value.length === 0) {
+            alert('Please input system message server url');
+            return;
+        }
+
+        fetch('<%=build_url("admin", "network", "oasis", "load-extra-sysmsg")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ url: extra_sysmsg_url.value }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            extra_sysmsg_textarea.value = data.sysmsg;
+            extra_sysmsg_container.style.display = "block";
         });
     });
 

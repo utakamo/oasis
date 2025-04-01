@@ -5,6 +5,7 @@ local luci_http = require("luci.http")
 local jsonc = require("luci.jsonc")
 local oasis = require("oasis.chat.apply")
 local common = require("oasis.common")
+local transfer = require("oasis.chat.transfer")
 local nixio = require("nixio")
 
 module("luci.controller.luci-app-oasis.module", package.seeall)
@@ -36,6 +37,7 @@ function index()
     entry({"admin", "network", "oasis", "delete-icon-data"}, call("delete_icon_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "uci-config-list"}, call("uci_config_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "uci-show"}, call("uci_show"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-extra-sysmsg"}, call("load_extra_sysmsg"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -606,4 +608,22 @@ function uci_show()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
+end
+
+function load_extra_sysmsg()
+    local url = luci_http.formvalue("url")
+
+    if (#url == 0) or (url == nil) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Not Found" })
+        return
+    end
+
+    local contents = {}
+    transfer.get_to_server(url, function(chunk)
+        contents.sysmsg = chunk
+    end)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(contents)
 end

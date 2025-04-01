@@ -22,6 +22,15 @@ local post_to_server = function(url, api_key, json, callback)
     easy:close()
 end
 
+local get_to_server = function(url, callback)
+    local easy = curl.easy()
+    easy:setopt_url(url)
+    easy:setopt_writefunction(callback)
+    easy:perform()
+    easy:close()
+end
+
 return {
     post_to_server = post_to_server,
+    get_to_server = get_to_server,
 }
