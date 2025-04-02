@@ -661,6 +661,27 @@
     }
 }
 
+@media (max-width: 480px) {
+
+    #new-button {
+        display: none;
+    }
+
+    #send-button {
+        display: none;
+    }
+
+    #message-input {
+        display: block;
+        height: 5.0rem;
+        width : 100%;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+}
+
 .console-command-color {
     background-color:#333333;
     color: #ffffff;

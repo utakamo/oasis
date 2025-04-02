@@ -574,6 +574,30 @@ uci set network.lan.proto=static
             console.error('Error:', error);
         });
 
+        function isMobile() {
+            return (
+                /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                (navigator.maxTouchPoints > 0 && window.innerWidth <= 480)
+            );
+        }
+
+        if (isMobile()) {
+            document.getElementById("message-input").addEventListener("keydown", function(event) {
+                if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    document.getElementById("send-button").click();
+                }
+            });
+
+            document.getElementById("message-input").addEventListener("focus", function() {
+                if (window.innerWidth <= 480) {
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 300);
+                }
+            });
+        }
+
         document.addEventListener("click", function () {
             dropdown.style.display = 'none';
         });
@@ -1686,11 +1710,15 @@ uci set network.lan.proto=static
     function adjustChatHeight() {
         if (window.visualViewport) {
             const viewportHeight = window.visualViewport.height;
+            document.documentElement.style.height = viewportHeight + "px";
             document.body.style.height = viewportHeight + "px";
         }
     }
 
-    window.visualViewport.addEventListener("resize", adjustChatHeight);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", adjustChatHeight);
+    }
+
     window.addEventListener("load", adjustChatHeight);
 </script>
 
