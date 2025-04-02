@@ -65,6 +65,7 @@ local check_uci_cmd_candidate = function(lines)
 		set      = {},
 		add      = {},
 		add_list = {},
+		del_list = {},
 		commit   = {},
 		delete   = {},
 		reorder  = {},
@@ -75,9 +76,10 @@ local check_uci_cmd_candidate = function(lines)
 	patterns.set = "^uci set (.+)"
 	patterns.add = "^uci add (.+)"
 	patterns.add_list = "^uci add_list (.+)"
+	patterns.del_list = "^uci del_list (.+)"
 	patterns.commit = "^uci commit (.*)"
 	patterns.delete = "^uci delete (.+)"
-	patterns.delete = "^uci reorder (.+)"
+	patterns.reorder = "^uci reorder (.+)"
 
 	for _, line in ipairs(lines) do
 		for cmd, pattern in pairs(patterns) do
