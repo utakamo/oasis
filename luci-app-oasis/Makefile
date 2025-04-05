@@ -42,6 +42,8 @@ define Package/luci-app-oasis/install
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-oasis/operator.png $(1)$(LUCI_RESOURCES_DIR)/luci-app-oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-oasis/openwrt.png $(1)$(LUCI_RESOURCES_DIR)/luci-app-oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-oasis/chat.css $(1)$(LUCI_RESOURCES_DIR)/luci-app-oasis
+	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/luci-app-oasis/fonts
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/luci-app-oasis/fonts/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2 $(1)$(LUCI_RESOURCES_DIR)/luci-app-oasis/fonts
 	$(INSTALL_DIR) $(1)$(LUCI_CGI_BIN_DIR)
 	$(INSTALL_BIN) $(SOURCE_DIR)$(LUCI_CGI_BIN_DIR)/oasis $(1)$(LUCI_CGI_BIN_DIR)
 endef

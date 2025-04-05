@@ -15,31 +15,16 @@
             <li id="menu-trigger">☰</li>
             <ul id="smp-chat-item-dropdown">
                 <li>
-                    <label for="smp-import-chat-data" id="smp-import-button" style="width:100%;">Import Chat Data +</label>
+                    <label for="smp-import-chat-data" id="smp-import-button" style="width: 100%;">Import Chat Data +</label>
                     <input type="file" id="smp-import-chat-data" accept=".json" style="display: none;">
+                </li>
+                <li id="smp-new-button-item">
+                    <button id="smp-new-button">New Chat</button>
                 </li>
             </ul>
         </ul>
-        <div class="chat-messages">
-            <!--
-            <div class="message oasis-system">
-                <div class="message-text">
-                    OpenWrt UCI Commands
-<pre class="console-command-color" id="uci-popup-pre">
-uci set network.lan.ipaddr=192.168.1.1
-uci set network.lan.proto=static
-</pre>
-                    <div class="uci-popup-buttons">
-                        <div class="uci-popup">
-                            <button id="ask">Ask</button>
-                            <button id="apply">Apply</button>
-                            <button id="uci-cancel">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            -->
-        </div>
+        <div id="keyboard-padding"></div>
+        <div class="chat-messages"></div>
         <div class="chat-input">
             <div class="chat-messages">
                 <textarea id="message-input" placeholder="Your Message"></textarea>
@@ -50,6 +35,9 @@ uci set network.lan.proto=static
             <div class="chat-buttons">
                 <button id="send-button">Send</button>
                 <button id="new-button">New</button>
+                <button id="smp-send-button" style="border: none; background: none; cursor: pointer;">
+                    <span class="material-icons send-icon">send</span>
+                </button>
             </div>
         </div>
     </div>
@@ -117,6 +105,34 @@ uci set network.lan.proto=static
     let targetChatId = "";
     let message_outputing = false;
     const resourcePath = '<%= resource %>';
+
+    function loadPaperPlane() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @font-face {
+                font-family: 'Material Icons';
+                font-style: normal;
+                font-weight: 400;
+                src: url('${resourcePath}/luci-app-oasis/fonts/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2') format('woff2');
+            }
+            .material-icons {
+                font-family: 'Material Icons';
+                font-weight: normal;
+                font-style: normal;
+                font-size: 24px;
+                line-height: 1;
+                letter-spacing: normal;
+                text-transform: none;
+                display: inline-block;
+                white-space: nowrap;
+                word-wrap: normal;
+                direction: ltr;
+                -webkit-font-feature-settings: 'liga';
+                -webkit-font-smoothing: antialiased;
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     /* chat data list for smartphone */
     document.getElementById("menu-trigger").addEventListener("click", function () {
@@ -306,6 +322,7 @@ uci set network.lan.proto=static
 
     document.addEventListener('DOMContentLoaded', function () {
 
+        loadPaperPlane();
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const chatListContainer = document.getElementById("chat-list");
         const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
@@ -577,7 +594,7 @@ uci set network.lan.proto=static
         function isMobile() {
             return (
                 /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-                (navigator.maxTouchPoints > 0 && window.innerWidth <= 480)
+                (navigator.maxTouchPoints > 0 && window.innerWidth <= 500)
             );
         }
 
@@ -590,11 +607,9 @@ uci set network.lan.proto=static
             });
 
             document.getElementById("message-input").addEventListener("focus", function() {
-                if (window.innerWidth <= 480) {
-                    setTimeout(() => {
-                        this.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }, 300);
-                }
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 300);
             });
         }
 
@@ -920,6 +935,11 @@ uci set network.lan.proto=static
         messageText += uci_info_message;
         send_message(receivedMessageTextContainer, messageText);
     }
+
+    document.getElementById('smp-send-button').addEventListener('click', function(event) {
+        event.preventDefault();
+        document.getElementById("send-button").click();
+    });
 
     document.getElementById('send-button').addEventListener('click', async function() {
 
@@ -1414,8 +1434,50 @@ uci set network.lan.proto=static
         targetChatId = chatId;
     }
 
-    document.getElementById('new-button').addEventListener('click', async function() {
+    async function new_chat_action() {
+        if (activeConversation || message_outputing) {
+            return;
+        }
 
+        targetChatId = "";
+
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+
+        if (chatMessagesContainer) {
+            const systemMessage = document.getElementById("oasis-system");
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
+            const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
+            messages.forEach(message => message.remove());
+        }
+    }
+
+    document.getElementById('smp-new-button').addEventListener('click', async function() {
+        if (activeConversation || message_outputing) {
+            return;
+        }
+
+        targetChatId = "";
+
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+
+        if (chatMessagesContainer) {
+            const systemMessage = document.getElementById("oasis-system");
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
+            const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
+            messages.forEach(message => message.remove());
+        }
+
+        const dropdown = document.getElementById('menu-trigger').nextElementSibling;
+        const isVisible = dropdown.style.display === "block";
+
+        dropdown.style.display = isVisible ? "none" : "block";
+    });
+
+    document.getElementById('new-button').addEventListener('click', async function() {
         if (activeConversation || message_outputing) {
             return;
         }
@@ -1706,20 +1768,6 @@ uci set network.lan.proto=static
             reader.readAsDataURL(file);
         }
     });
-
-    function adjustChatHeight() {
-        if (window.visualViewport) {
-            const viewportHeight = window.visualViewport.height;
-            document.documentElement.style.height = viewportHeight + "px";
-            document.body.style.height = viewportHeight + "px";
-        }
-    }
-
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", adjustChatHeight);
-    }
-
-    window.addEventListener("load", adjustChatHeight);
 </script>
 
 <%+footer%>

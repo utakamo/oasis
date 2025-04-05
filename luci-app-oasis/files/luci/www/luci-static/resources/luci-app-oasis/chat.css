@@ -1,3 +1,26 @@
+@font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: url(https://fonts.gstatic.com/s/materialicons/v143/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+}
+  
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+
 .oasis-container {
     display: flex;
     height: 80vh;
@@ -138,6 +161,10 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+#keyboard-padding {
+    display: none;
+}
+
 .chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -249,6 +276,14 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+}
+
+#smp-send-button {
+    display: none;
+}
+
+.send-icon {
+    display: none;
 }
 
 #import-button {
@@ -375,11 +410,6 @@
 }
 
 #sysmsg-list-popup-buttons {
-    /*
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    */
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -447,6 +477,7 @@
 }
 
 @media (max-width: 768px) {
+
     .smp-chat-hamburger-menu {
         display: block;
         list-style-type: none;
@@ -482,7 +513,6 @@
         justify-content: space-between;
         align-items: center;
         padding: 10px;
-        /* border-bottom: 1px solid #ddd; */
         cursor: pointer;
     }
 
@@ -511,6 +541,14 @@
         border-radius: 0px;
         height: 80vh;
         margin: 0;
+    }
+
+    #keyboard-padding {
+        display: block;
+        height: 0px;
+        width: 100%;
+        margin: 0px;
+        padding: 0px;
     }
 
     .oasis-hamburger-menu {
@@ -575,12 +613,6 @@
         display: none;
     }
 
-    .chat-input {
-        display: block;
-        padding: 10px;
-        border-top: 1px solid #ddd;
-    }
-
     #message-input {
         display: block;
         height: 5.0rem;
@@ -596,33 +628,6 @@
         width: 100%;
     }
 
-    .chat-messages {
-        flex: 1;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .chat-buttons {
-        display: flex;
-        gap: 10px;
-    }
-
-    .chat-buttons button {
-        margin-bottom: 10px;
-    }
-    
-    #send-button {
-        padding: 10px 20px;
-        margin: 10px;
-        width: 50%;
-        height: 3rem;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
     .sysmsg-select-button {
         padding: 10px 20px;
         width: 50%;
@@ -633,21 +638,33 @@
         border-radius: 4px;
         cursor: pointer;
     }
-    
-    #new-button {
-        padding: 10px 20px;
-        margin: 10px;
-        width: 50%;
-        height: 3rem;
+
+    #smp-new-button {
+        width: 100%;
+        padding: 2px;
+        height: 2rem;
         background-color: #00e608;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
     }
 
-    #new-button:hover {
-        background-color: #00cc06;
+    #new-button {
+        display: none;
+    }
+
+    #send-button {
+        display: none;
+    }
+
+    #smp-send-button {
+        margin: 5px;
+        display: block;
+        outline: none;
+        box-shadow: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .send-icon {
+        display: inline;
+        color: #007bff;
     }
 
     .oasis-menu-btn {
@@ -658,27 +675,6 @@
         cursor: pointer;
         padding: 5px;
         transition: color 0.2s ease;
-    }
-}
-
-@media (max-width: 480px) {
-
-    #new-button {
-        display: none;
-    }
-
-    #send-button {
-        display: none;
-    }
-
-    #message-input {
-        display: block;
-        height: 5.0rem;
-        width : 100%;
-        font-size: 1rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-sizing: border-box;
     }
 }
 
