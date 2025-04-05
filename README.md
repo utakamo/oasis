@@ -245,3 +245,12 @@ root@OpenWrt:~# ubus -v list oasis.title
 # Dependency Package
 - lua-curl-v3
 - luci-compat
+
+## License
+
+This project is licensed under the MIT License.
+
+### Third-party licenses
+
+This project includes the [Material Icons](https://github.com/google/material-design-icons) font by Google,
+licensed under the Apache License, Version 2.0.
