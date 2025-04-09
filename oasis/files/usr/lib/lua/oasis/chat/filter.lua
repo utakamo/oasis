@@ -77,7 +77,9 @@ local check_uci_cmd_candidate = function(lines)
 	patterns.add = "^uci add (.+)"
 	patterns.add_list = "^uci add_list (.+)"
 	patterns.del_list = "^uci del_list (.+)"
-	patterns.commit = "^uci commit (.*)"
+	-- Since the execution of the uci commit command is mandatory as post-processing,
+	-- it does not need to be extracted from the AI's response.
+	-- patterns.commit = "^uci commit (.*)"
 	patterns.delete = "^uci delete (.+)"
 	patterns.reorder = "^uci reorder (.+)"
 
