@@ -145,7 +145,15 @@ local apply = function(uci_list, commit)
                 local safe_value = cmd.class.value
                 safe_value = safe_value:gsub("'", "")
                 safe_value = safe_value:gsub('\"', "")
-                uci:set(cmd.class.config, cmd.class.section, cmd.class.option, safe_value)
+
+                -- set command (create option)
+                if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
+                    uci:set(cmd.class.config, cmd.class.section, cmd.class.option, safe_value)
+                -- set command (create named section)
+                -- Note: safe_value ---> section-type
+                elseif (cmd.class.config) and (cmd.class.section) and (cmd.class.value) then
+                    uci:section(cmd.class.config, safe_value, cmd.class.section, nil)
+                end
 
                 if commit then
                     uci:commit(cmd.class.config)
