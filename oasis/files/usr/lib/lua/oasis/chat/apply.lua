@@ -132,32 +132,40 @@ end
 
 local apply = function(uci_list, commit)
 
-    for key, target_cmd_tbl in pairs(uci_list) do
-        -- sys.exec("echo \"" .. key .. "\" >> /tmp/oasis-apply.log")
-        if (key == "set") and (type(target_cmd_tbl) == "table") then
-            for _, cmd in ipairs(target_cmd_tbl) do
-                -- for debug
-                -- local param_log = cmd.class.config
-                -- param_log = param_log .. " " .. cmd.class.section
-                -- param_log = param_log .. " ".. cmd.class.option
-                -- param_log = param_log .. " " .. cmd.class.value
-                -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
-                local safe_value = cmd.class.value
-                safe_value = safe_value:gsub("'", "")
-                safe_value = safe_value:gsub('\"', "")
+    for _, cmd in ipairs(uci_list.add) do
+        if (cmd.class.config) and (cmd.class.section) then
+            uci:add(cmd.class.config, cmd.class.section)
 
-                -- set command (create option)
-                if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
-                    uci:set(cmd.class.config, cmd.class.section, cmd.class.option, safe_value)
-                -- set command (create named section)
-                -- Note: safe_value ---> section-type
-                elseif (cmd.class.config) and (cmd.class.section) and (cmd.class.value) then
-                    uci:section(cmd.class.config, safe_value, cmd.class.section, nil)
-                end
+            if commit then
+                uci:commit(cmd.class.config)
+            end
+        end
+    end
 
-                if commit then
-                    uci:commit(cmd.class.config)
-                end
+    for _, cmd in ipairs(uci_list.set) do
+        -- for debug
+        -- local param_log = cmd.class.config
+        -- param_log = param_log .. " " .. cmd.class.section
+        -- param_log = param_log .. " ".. cmd.class.option
+        -- param_log = param_log .. " " .. cmd.class.value
+        -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+        local safe_value = cmd.class.value
+        safe_value = safe_value:gsub("'", "")
+        safe_value = safe_value:gsub('\"', "")
+
+        -- set command (create option)
+        if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
+            uci:set(cmd.class.config, cmd.class.section, cmd.class.option, safe_value)
+            if commit then
+                uci:commit(cmd.class.config)
+            end
+
+        -- set command (create named section)
+        -- Note: safe_value ---> section-type
+        elseif (cmd.class.config) and (cmd.class.section) and (cmd.class.value) then
+            uci:section(cmd.class.config, safe_value, cmd.class.section, nil)
+            if commit then
+                uci:commit(cmd.class.config)
             end
         end
     end
