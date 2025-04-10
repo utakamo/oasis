@@ -1,5 +1,29 @@
 #!/usr/bin/env lua
 
+local uci_list = {
+	set      = {},
+	add      = {},
+	add_list = {},
+	del_list = {},
+	-- Since the execution of the uci commit command is mandatory as post-processing,
+	-- it does not need to be extracted from the AI's response.
+	-- commit   = {},
+	delete   = {},
+	reorder  = {},
+}
+
+--local pattern = "^uci (set|add|add_list|del_list|delete|reorder) .+"
+local patterns = {}
+patterns.set = "^uci set (.+)"
+patterns.add = "^uci add (.+)"
+patterns.add_list = "^uci add_list (.+)"
+patterns.del_list = "^uci del_list (.+)"
+-- Since the execution of the uci commit command is mandatory as post-processing,
+-- it does not need to be extracted from the AI's response.
+-- patterns.commit = "^uci commit (.*)"
+patterns.delete = "^uci delete (.+)"
+patterns.reorder = "^uci reorder (.+)"
+
 local classify_param = function(classified_param_tbl, param_chunk)
 
     if type(param_chunk) ~= "string" then
@@ -19,10 +43,16 @@ local classify_param = function(classified_param_tbl, param_chunk)
             if config and section then
                 classified_param_tbl.class = {config = config, section = section}
             else
-                config = param_chunk:match("([^%.]+)")
-                if config then
-                    classified_param_tbl.class = {config = config}
-                end
+				config, section = param_chunk:match("([^%.]+)%s+([^%.]+)")
+
+				if config and section then
+					classified_param_tbl.class = {config = config, section = section}
+				else
+					config = param_chunk:match("([^%.]+)")
+					if config then
+						classified_param_tbl.class = {config = config}
+					end
+				end
             end
         end
     end
@@ -48,6 +78,7 @@ end
 local split_lines = function(code_block)
 	local lines = {}
 	for line in code_block:gmatch("[^\r\n]+") do
+		os.execute("echo \"" .. line .. "\" >> /tmp/oasis-split.log")
 		table.insert(lines, line)
 	end
 
@@ -61,36 +92,17 @@ end
 
 local check_uci_cmd_candidate = function(lines)
 
-	local uci_list = {
-		set      = {},
-		add      = {},
-		add_list = {},
-		del_list = {},
-		commit   = {},
-		delete   = {},
-		reorder  = {},
-	}
-
-	--local pattern = "^uci (set|add|add_list|delete|commit) .+"
-	local patterns = {}
-	patterns.set = "^uci set (.+)"
-	patterns.add = "^uci add (.+)"
-	patterns.add_list = "^uci add_list (.+)"
-	patterns.del_list = "^uci del_list (.+)"
-	-- Since the execution of the uci commit command is mandatory as post-processing,
-	-- it does not need to be extracted from the AI's response.
-	-- patterns.commit = "^uci commit (.*)"
-	patterns.delete = "^uci delete (.+)"
-	patterns.reorder = "^uci reorder (.+)"
-
 	for _, line in ipairs(lines) do
 		for cmd, pattern in pairs(patterns) do
 			local param = line:match(pattern)
 			if param then
-				param:gsub("%s+", "")
+				if cmd ~= "add" then
+					param:gsub("%s+", "")
+				end
 				uci_list[cmd][#uci_list[cmd] + 1] = {
 					param = param
 				}
+				-- os.execute("echo \"" .. param .. "\" >> /tmp/oasis-check.log")
 				break
 			end
 		end
@@ -100,12 +112,17 @@ local check_uci_cmd_candidate = function(lines)
 end
 
 local trim_line = function(line)
+	local maxCount = 3
     local spaceCount = 0
     local pos = 1
 
 	line = line:gsub("^%s+", "")
 
-    while spaceCount < 3 do
+	if line:match(patterns.add) then
+		maxCount = 4
+	end
+
+    while spaceCount < maxCount do
         local start, finish = line:find("%s", pos)
         if not start then
             return line
@@ -139,8 +156,8 @@ local uci_cmd_filter = function(message)
 	-- 	os.execute("echo \"[" .. idx .. "] " .. line .. "\" >> /tmp/oasis-filter.log")
 	-- end
 
-	local uci_list = check_uci_cmd_candidate(all_lines)
-	for _, target_cmd_list in pairs(uci_list) do
+	local uci_cmd_candidate = check_uci_cmd_candidate(all_lines)
+	for _, target_cmd_list in pairs(uci_cmd_candidate) do
 		-- os.execute("echo " .. k1 .. " >> /tmp/oasis-filter.log")
 		for _, target in ipairs(target_cmd_list) do
 			-- os.execute("echo " .. k2 .. " >> /tmp/oasis-filter.log")
