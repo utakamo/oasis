@@ -250,15 +250,9 @@ local apply = function(uci_list, commit)
                 add_list[cmd.class.config][cmd.class.section] = {}
                 add_list[cmd.class.config][cmd.class.section][cmd.class.option] = {}
             end
-
+            -- os.execute("echo \"" .. safe_value ..  "\" >> /tmp/oasis-list.log")
             local items = #add_list[cmd.class.config][cmd.class.section][cmd.class.option] + 1
             add_list[cmd.class.config][cmd.class.section][cmd.class.option][items] = safe_value
-
-            -- uci:set_list(cmd.class.config, cmd.class.section, cmd.class.option, {safe_value})
-
-            -- if commit then
-            --     uci:commit(cmd.class.config)
-            -- end
         end
     end
 
@@ -266,13 +260,11 @@ local apply = function(uci_list, commit)
         for section, op_val_tbl in pairs(sect_op_val_tbl) do
             for option, val_tbl in pairs(op_val_tbl) do
                 uci:set_list(config, section, option, val_tbl)
-                -- for _, value in ipairs(val_tbl) do
-                --  print(value)
-                -- end
+
+                if commit then
+                    uci:commit(config)
+                end
             end
-        end
-        if commit then
-            uci:commit(config)
         end
     end
 
