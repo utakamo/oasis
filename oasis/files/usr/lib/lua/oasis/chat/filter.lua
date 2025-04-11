@@ -1,17 +1,5 @@
 #!/usr/bin/env lua
 
-local uci_list = {
-	set      = {},
-	add      = {},
-	add_list = {},
-	del_list = {},
-	-- Since the execution of the uci commit command is mandatory as post-processing,
-	-- it does not need to be extracted from the AI's response.
-	-- commit   = {},
-	delete   = {},
-	reorder  = {},
-}
-
 --local pattern = "^uci (set|add|add_list|del_list|delete|reorder) .+"
 local patterns = {}
 patterns.set = "^uci set (.+)"
@@ -24,38 +12,58 @@ patterns.del_list = "^uci del_list (.+)"
 patterns.delete = "^uci delete (.+)"
 patterns.reorder = "^uci reorder (.+)"
 
-local classify_param = function(classified_param_tbl, param_chunk)
+local classify_param = function(cmd, classified_param_tbl, param_chunk)
 
     if type(param_chunk) ~= "string" then
-        return
+        return false
     end
+
+	-- os.execute("echo " .. param_chunk .. " >> /tmp/oasis-classify.log")
+	-- os.execute("echo " .. cmd .. " >> /tmp/oasis-classify.log")
 
     local config, section, option, value = param_chunk:match("([^%.]+)%.([^%.]+)%.([^=]+)=(.+)")
 
-    if config and section and option and value then
+	-- uci [set|add_list|del_list] <config>.<section>.<option>=<value>
+    if (cmd == "set" or cmd == "add_list" or cmd == "del_list") and (config and section and option and value) then
         classified_param_tbl.class = {config = config, section = section, option = option, value = value}
-    else
-        config, section, value = param_chunk:match("([^%.]+)%.([^=]+)=(.+)")
-        if config and section and value then
-            classified_param_tbl.class = {config = config, section = section, value = value}
-        else
-            config, section = param_chunk:match("([^%.]+)%.([^%.]+)")
-            if config and section then
-                classified_param_tbl.class = {config = config, section = section}
-            else
-				config, section = param_chunk:match("([^%.]+)%s+([^%.]+)")
-
-				if config and section then
+		return true
+	else
+		config, section, option = param_chunk:match("([^%.]+)%.([^%.]+)%.([^%.]+)")
+		-- uci [delete] <config>.<section>.<option>
+		if (cmd == "delete") and (config and section and option) then
+			classified_param_tbl.class = {config = config, section = section, option = option}
+			return true
+		else
+			config, section, value = param_chunk:match("([^%.]+)%.([^=]+)=(.+)")
+			-- uci [set|reorder] <config>.<section>=<section-type>
+			if (cmd == "set" or cmd == "reorder") and (config and section and value) then
+				classified_param_tbl.class = {config = config, section = section, value = value}
+				return true
+			else
+				-- uci [delete] <config>.<section>
+				config, section = param_chunk:match("([^%.]+)%.([^%.]+)")
+				if (cmd == "delete") and (config and section) then
 					classified_param_tbl.class = {config = config, section = section}
+					return true
 				else
-					config = param_chunk:match("([^%.]+)")
-					if config then
-						classified_param_tbl.class = {config = config}
+					config, section = param_chunk:match("([^%.]+)%s+([^%.]+)")
+					-- uci [add] <config> <section-type>
+					if (cmd == "add") and (config and section) then
+						classified_param_tbl.class = {config = config, section = section}
+						return true
 					end
+					-- else
+						-- config = param_chunk:match("([^%.]+)")
+						-- if config then
+						-- 	classified_param_tbl.class = {config = config}
+						-- end
+					-- end
 				end
-            end
-        end
-    end
+			end
+		end
+	end
+
+	return false
 end
 
 local extract_code_blocks = function(text)
@@ -78,7 +86,7 @@ end
 local split_lines = function(code_block)
 	local lines = {}
 	for line in code_block:gmatch("[^\r\n]+") do
-		os.execute("echo \"" .. line .. "\" >> /tmp/oasis-split.log")
+		-- os.execute("echo \"" .. line .. "\" >> /tmp/oasis-split.log")
 		table.insert(lines, line)
 	end
 
@@ -91,6 +99,18 @@ local split_lines = function(code_block)
 end
 
 local check_uci_cmd_candidate = function(lines)
+
+	local uci_list = {
+		set      = {},
+		add      = {},
+		add_list = {},
+		del_list = {},
+		-- Since the execution of the uci commit command is mandatory as post-processing,
+		-- it does not need to be extracted from the AI's response.
+		-- commit   = {},
+		delete   = {},
+		reorder  = {},
+	}
 
 	for _, line in ipairs(lines) do
 		for cmd, pattern in pairs(patterns) do
@@ -156,14 +176,18 @@ local uci_cmd_filter = function(message)
 	-- 	os.execute("echo \"[" .. idx .. "] " .. line .. "\" >> /tmp/oasis-filter.log")
 	-- end
 
-	local uci_cmd_candidate = check_uci_cmd_candidate(all_lines)
-	for _, target_cmd_list in pairs(uci_cmd_candidate) do
-		-- os.execute("echo " .. k1 .. " >> /tmp/oasis-filter.log")
+	local uci_list = check_uci_cmd_candidate(all_lines)
+	for cmd, target_cmd_list in pairs(uci_list) do
+		-- os.execute("echo " .. cmd .. " >> /tmp/oasis-filter.log")
 		for _, target in ipairs(target_cmd_list) do
 			-- os.execute("echo " .. k2 .. " >> /tmp/oasis-filter.log")
 			for _, param in pairs(target) do
 				-- os.execute("echo " .. k3 .. " >> /tmp/oasis-filter.log")
-				classify_param(target, param)
+				local is_classify = classify_param(cmd, target, param)
+
+				if not is_classify then
+					target.param = nil
+				end
 			end
 		end
 	end
@@ -171,14 +195,16 @@ local uci_cmd_filter = function(message)
 	return uci_list
 end
 
-local function check_uci_list_exist(data)
+local function check_uci_list_exist(uci_list)
 
-	if not data.uci_list then
+	if not uci_list then
 		return false
 	end
 
-	for _, value in pairs(data.uci_list) do
-	  if type(value) == "table" and #value > 0 then
+	for _, params in pairs(uci_list) do
+		-- os.execute("echo " .. cmd .. " >> /tmp/oasis-check-list.log")
+		-- os.execute("echo " .. #params .. " >> /tmp/oasis-check-list.log")
+	  if type(params) == "table" and #params > 0 then
 		return true -- exist
 	  end
 	end
