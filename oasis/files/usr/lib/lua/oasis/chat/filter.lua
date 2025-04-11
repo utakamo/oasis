@@ -201,13 +201,20 @@ local function check_uci_list_exist(uci_list)
 		return false
 	end
 
-	for _, params in pairs(uci_list) do
+	for _, cmd_tbl in pairs(uci_list) do
 		-- os.execute("echo " .. cmd .. " >> /tmp/oasis-check-list.log")
-		-- os.execute("echo " .. #params .. " >> /tmp/oasis-check-list.log")
-	  if type(params) == "table" and #params > 0 then
-		return true -- exist
+		-- os.execute("echo " .. #cmd_tbl .. " >> /tmp/oasis-check-list.log")
+	  -- if type(params) == "table" and #params > 0 then
+		--return true -- exist
+	  --end
+
+	  for _, param_info in ipairs(cmd_tbl) do
+		if param_info.class then
+			return true
+		end
 	  end
 	end
+
 	return false -- empty
   end
 
