@@ -35,9 +35,15 @@ local backup = function(uci_list, id, backup_type)
             end
         end
 
+        local app = util.ubus("uci", "configs", {})
         for _, config in ipairs(backup_target_cfg) do
-            sys.exec("uci export " .. config .. " > /etc/oasis/backup/" .. config)
-            list[#list + 1] = config
+            for _, config_in_list in ipairs(app.configs) do
+                -- Verify whether the target config name matches the actual OpenWrt config name
+                if config_in_list == config then
+                    sys.exec("uci export " .. config .. " > /etc/oasis/backup/" .. config)
+                    list[#list + 1] = config
+                end
+            end
         end
     elseif backup_type == "full" then
         sys.exec("uci export > /etc/oasis/backup/full_backup")
@@ -132,7 +138,11 @@ end
 
 local apply = function(uci_list, commit)
 
+    -- uci add command
     for _, cmd in ipairs(uci_list.add) do
+        -- create unnamed section
+        -- uci add <config> <section-type>
+        -- Note: cmd.class.section ---> <section-type>
         if (cmd.class.config) and (cmd.class.section) then
             uci:add(cmd.class.config, cmd.class.section)
 
@@ -142,28 +152,202 @@ local apply = function(uci_list, commit)
         end
     end
 
+    -- set command
     for _, cmd in ipairs(uci_list.set) do
-        -- for debug
-        -- local param_log = cmd.class.config
-        -- param_log = param_log .. " " .. cmd.class.section
-        -- param_log = param_log .. " ".. cmd.class.option
-        -- param_log = param_log .. " " .. cmd.class.value
-        -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
-        local safe_value = cmd.class.value
-        safe_value = safe_value:gsub("'", "")
-        safe_value = safe_value:gsub('\"', "")
 
-        -- set command (create option)
+        -- create option
+        -- uci set <config>.<section>.<option>=<value>
         if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
+
+            -- for debug
+            -- local param_log = cmd.class.config
+            -- param_log = param_log .. " " .. cmd.class.section
+            -- param_log = param_log .. " ".. cmd.class.option
+            -- param_log = param_log .. " " .. cmd.class.value
+            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            local safe_value = cmd.class.value
+            safe_value = safe_value:gsub("'", "")
+            safe_value = safe_value:gsub('\"', "")
+
             uci:set(cmd.class.config, cmd.class.section, cmd.class.option, safe_value)
+
             if commit then
                 uci:commit(cmd.class.config)
             end
 
-        -- set command (create named section)
+        -- create named section
+        -- uci set <config>.<section>=<section-type>
         -- Note: safe_value ---> section-type
         elseif (cmd.class.config) and (cmd.class.section) and (cmd.class.value) then
+
+            -- for debug
+            -- local param_log = cmd.class.config
+            -- param_log = param_log .. " " .. cmd.class.section
+            -- param_log = param_log .. " ".. cmd.class.option
+            -- param_log = param_log .. " " .. cmd.class.value
+            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            local safe_value = cmd.class.value
+            safe_value = safe_value:gsub("'", "")
+            safe_value = safe_value:gsub('\"', "")
+
             uci:section(cmd.class.config, safe_value, cmd.class.section, nil)
+            if commit then
+                uci:commit(cmd.class.config)
+            end
+        end
+    end
+
+    -- uci add_list command
+    local add_list = {}
+    for _, cmd in ipairs(uci_list.add_list) do
+        -- create list value
+        -- uci add_list <config>.<section>.<option>=<value>
+        if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
+
+            -- for debug
+            -- local param_log = cmd.class.config
+            -- param_log = param_log .. " " .. cmd.class.section
+            -- param_log = param_log .. " ".. cmd.class.option
+            -- param_log = param_log .. " " .. cmd.class.value
+            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            local safe_value = cmd.class.value
+            safe_value = safe_value:gsub("'", "")
+            safe_value = safe_value:gsub('\"', "")
+
+            local is_config_search = false
+
+            for config, _ in pairs(add_list) do
+                if config == cmd.class.config then
+                    is_config_search = true
+                    break
+                end
+            end
+
+            local is_section_search = false
+
+            if is_config_search then
+                for section, _ in pairs(add_list[cmd.class.config]) do
+                    if section == cmd.class.section then
+                        is_section_search = true
+                        break
+                    end
+                end
+            end
+
+            local is_option_search = false
+
+            if is_section_search then
+                for option, _ in pairs(add_list[cmd.class.config][cmd.class.section]) do
+                    if option == cmd.class.option then
+                        is_option_search = true
+                        break
+                    end
+                end
+            end
+
+            if (not is_config_search) and (not is_section_search) and (not is_option_search) then
+                add_list[cmd.class.config] = {}
+                add_list[cmd.class.config][cmd.class.section] = {}
+                add_list[cmd.class.config][cmd.class.section][cmd.class.option] = {}
+            end
+
+            local items = #add_list[cmd.class.config][cmd.class.section][cmd.class.option] + 1
+            add_list[cmd.class.config][cmd.class.section][cmd.class.option][items] = safe_value
+
+            -- uci:set_list(cmd.class.config, cmd.class.section, cmd.class.option, {safe_value})
+
+            -- if commit then
+            --     uci:commit(cmd.class.config)
+            -- end
+        end
+    end
+
+    for config, sect_op_val_tbl in pairs(add_list) do
+        for section, op_val_tbl in pairs(sect_op_val_tbl) do
+            for option, val_tbl in pairs(op_val_tbl) do
+                uci:set_list(config, section, option, val_tbl)
+                -- for _, value in ipairs(val_tbl) do
+                --  print(value)
+                -- end
+            end
+        end
+        if commit then
+            uci:commit(config)
+        end
+    end
+
+    -- uci del_list command
+    for _, cmd in ipairs(uci_list.del_list) do
+        -- delete target list value
+        -- uci del_list <config>.<section>.<option>=<value>
+        if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
+
+            -- for debug
+            -- local param_log = cmd.class.config
+            -- param_log = param_log .. " " .. cmd.class.section
+            -- param_log = param_log .. " ".. cmd.class.option
+            -- param_log = param_log .. " " .. cmd.class.value
+            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            local safe_value = cmd.class.value
+            safe_value = safe_value:gsub("'", "")
+            safe_value = safe_value:gsub('\"', "")
+
+            local list = uci:get_list(cmd.class.config, cmd.class.section, cmd.class.option)
+
+            for index, value in ipairs(list) do
+                if value == safe_value then
+                    table.remove(list, index)
+                end
+            end
+
+            uci:set_list(cmd.class.config, cmd.class.section, cmd.class.option, {})
+            uci:set_list(cmd.class.config, cmd.class.section, cmd.class.option, list)
+
+            if commit then
+                uci:commit(cmd.class.config)
+            end
+        end
+    end
+
+    -- uci reorder command (create named section)
+    -- Note: safe_value ---> position index
+    for _, cmd in ipairs(uci_list.reorder) do
+        -- uci reorder <config>.<section>=<position index>
+        if (cmd.class.config) and (cmd.class.section) and (cmd.class.value) then
+
+            -- for debug
+            -- local param_log = cmd.class.config
+            -- param_log = param_log .. " " .. cmd.class.section
+            -- param_log = param_log .. " ".. cmd.class.option
+            -- param_log = param_log .. " " .. cmd.class.value
+            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            local safe_value = cmd.class.value
+            safe_value = safe_value:gsub("'", "")
+            safe_value = safe_value:gsub('\"', "")
+
+            if tonumber(safe_value) then
+                uci:reorder(cmd.class.config, cmd.class.section, safe_value)
+
+                if commit then
+                    uci:commit(cmd.class.config)
+                end
+            end
+        end
+    end
+
+    -- uci delete command
+    for _, cmd in ipairs(uci_list.delete) do
+        -- uci delete <config>.<section>.<option>
+        if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) then
+            uci:delete(cmd.class.config, cmd.class.section, cmd.class.option)
+
+            if commit then
+                uci:commit(cmd.class.config)
+            end
+        -- uci delete <config>.<section>
+        elseif (cmd.class.config) and (cmd.class.section) then
+            uci:delete(cmd.class.config, cmd.class.section)
+
             if commit then
                 uci:commit(cmd.class.config)
             end
