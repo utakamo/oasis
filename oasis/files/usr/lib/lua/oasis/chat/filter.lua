@@ -133,29 +133,51 @@ end
 
 local trim_line = function(line)
 	local maxCount = 3
-    local spaceCount = 0
-    local pos = 1
+	local spaceCount = 0
+	local pos = 1
 
 	line = line:gsub("^%s+", "")
 
-	if line:match(patterns.add) then
+	local is_add_cmd = line:match(patterns.add)
+
+	if is_add_cmd then
 		maxCount = 4
 	end
 
-    while spaceCount < maxCount do
-        local start, finish = line:find("%s", pos)
-        if not start then
-            return line
-        end
-        spaceCount = spaceCount + 1
-        pos = finish + 1
-    end
+	while spaceCount < maxCount do
+		local start, finish = line:find("%s", pos)
+		if not start then
+			return line
+		end
+		spaceCount = spaceCount + 1
+		pos = finish + 1
+	end
 
-    local trimmed = line:sub(1, pos - 2)
+	if is_add_cmd then
+		local trimmed = line:sub(1, pos - 2)
+		return trimmed
+	end
 
-    return trimmed
+	local quote_char = line:sub(pos, pos)
+	if quote_char == "'" or quote_char == '"' then
+		pos = pos + 1
+		while pos <= #line do
+			if line:sub(pos, pos) == quote_char then
+				pos = pos + 1
+				break
+			end
+			pos = pos + 1
+		end
+	else
+		while pos <= #line and not line:sub(pos, pos):match("%s") do
+			pos = pos + 1
+		end
+	end
+
+	local trimmed = line:sub(1, pos - 1):match("^(.-)%s*$")
+
+	return trimmed
 end
-
 
 local uci_cmd_filter = function(message)
 
