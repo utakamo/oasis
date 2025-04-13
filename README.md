@@ -1,4 +1,4 @@
-# OpenWrt AI Assistant Application - Oasis (v1.5.2)
+# OpenWrt AI Assistant Application - Oasis (v1.5.3)
 > [!IMPORTANT]
 > >
 > **Support AI Service**
