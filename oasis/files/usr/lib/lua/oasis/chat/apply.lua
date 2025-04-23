@@ -59,9 +59,9 @@ local backup = function(uci_list, id, backup_type)
         file:write(uci_list_json)
         file:close()
 
-        uci:set("oasis", "backup", "enable", "1")
-        uci:set("oasis", "backup", "src_id", id)
-        uci:set_list("oasis", "backup", "targets", list)
+        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "1")
+        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "src_id", id)
+        uci:set_list(common.db.uci.cfg, common.db.uci.sect.backup, "targets", list)
 
         for _, config in ipairs(list) do
             uci:commit(config)
@@ -69,8 +69,8 @@ local backup = function(uci_list, id, backup_type)
 
         local system_info = util.ubus("system", "info", {})
         local uptime = system_info.uptime
-        uci:set("oasis", "backup", "uptime", uptime)
-        uci:commit("oasis")
+        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "uptime", uptime)
+        uci:commit(common.db.uci.cfg)
 
         return true
     end
@@ -80,19 +80,19 @@ end
 
 local recovery = function()
 
-    local is_enable = uci:get("oasis", "backup", "enable")
+    local is_enable = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
 
     if not is_enable then
-        sys.exec("echo \"recovery invalid\" >> /tmp/oasis-recovery.log")
+        -- sys.exec("echo \"recovery invalid\" >> /tmp/oasis-recovery.log")
         return
     end
 
-    uci:set("oasis", "backup", "enable", "0")
+    uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "0")
 
-    local backup_list = uci:get_list("oasis", "backup", "targets")
+    local backup_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.backup, "targets")
 
     if #backup_list == 0 then
-        sys.exec("echo \"no backup list\" >> /tmp/oasis-recovery.log")
+        -- sys.exec("echo \"no backup list\" >> /tmp/oasis-recovery.log")
         return
     end
 
@@ -108,7 +108,7 @@ local recovery = function()
         os.remove("/etc/oasis/backup/" .. config)
     end
 
-    uci:delete("oasis", "backup", "targets")
+    uci:delete(common.db.uci.cfg, common.db.uci.sect.backup, "targets")
 
     sys.exec("uci commit")
     sys.exec("reboot")

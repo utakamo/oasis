@@ -1,6 +1,27 @@
 #!/usr/bin/env lua
 
-local ai = require("oasis.chat.ctrl")
+local ai = require("oasis.chat.main")
+
+local cmd = {}
+cmd.storage = "storage"
+cmd.add     = "add"
+cmd.delete  = "delete"
+cmd.select  = "select"
+cmd.chat    = "chat"
+cmd.delchat = "delchat"
+cmd.prompt  = "prompt"
+cmd.rename  = "rename"
+cmd.list    = "list"
+cmd.call    = "call"
+
+local opt = {}
+opt.n = "-n"
+opt.u = "-u"
+opt.k = "-k"
+opt.m = "-m"
+opt.s = "-s"
+
+local chat_data_prefix = "id="
 
 local help = function()
     print("Usage: oasis <command> [[<options>] arguments]...")
@@ -38,7 +59,7 @@ local options = {}
 local arguments = {}
 
 for i, command in ipairs(arg) do
-    if command == "storage" then
+    if command == cmd.storage then
         if (arg[i + 1]) then
             arguments.path = arg[i + 1]
         end
@@ -50,7 +71,7 @@ for i, command in ipairs(arg) do
         ai.storage(arguments)
         return
 
-    elseif command == "add" then
+    elseif command == cmd.add then
 
         if (arg[i + 1]) then
             arguments.service = arg[i + 1]
@@ -75,7 +96,7 @@ for i, command in ipairs(arg) do
         ai.add(arguments)
         return
 
-    elseif command == "change" then
+    elseif command == cmd.change then
 
         if arg[i + 1] then
             arguments.service = arg[i + 1]
@@ -83,30 +104,30 @@ for i, command in ipairs(arg) do
 
         for j, option in ipairs(arg) do
 
-            if (option == "-n") and (arg[j + 1]) then
+            if (option == opt.n) and (arg[j + 1]) then
                 options.n = arg[j + 1]
             end
 
-            if (option == "-u") and (arg[j + 1]) then
+            if (option == opt.u) and (arg[j + 1]) then
                 options.u = arg[j + 1]
             end
 
-            if (option == "-k") and (arg[j + 1]) then
+            if (option == opt.k) and (arg[j + 1]) then
                 options.k = arg[j + 1]
             end
 
-            if (option == "-m") and (arg[j + 1]) then
+            if (option == opt.m) and (arg[j + 1]) then
                 options.m = arg[j + 1]
             end
 
-            if (option == "-s") and (arg[j + 1]) then
+            if (option == opt.s) and (arg[j + 1]) then
                 options.s = arg[j + 1]
             end
         end
 
         ai.change(options, arguments)
         return
-    elseif command == "delete" then
+    elseif command == cmd.delete then
         if arg[i + 1] then
             arguments.service = arg[i + 1]
             ai.delete(arguments)
@@ -114,7 +135,7 @@ for i, command in ipairs(arg) do
         else
             ai.show_service_list()
         end
-    elseif command == "select" then
+    elseif command == cmd.select then
         if arg[i + 1] then
             arguments.service = arg[i + 1]
             ai.select(arguments)
@@ -123,34 +144,31 @@ for i, command in ipairs(arg) do
         end
 
         return
-    elseif command == "chat" then
-        local prefix = "id="
-        if (arg[i + 1] and (arg[i + 1]:sub(1,#prefix) == prefix)) then
-            arguments.id = arg[i + 1]:sub(#prefix + 1)
+    elseif command == cmd.chat then
+        if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix)) then
+            arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
         end
 
-        ai.chat(options, arguments)
+        ai.chat(arguments)
         return
-    elseif command == "delchat" then
-        local prefix = "id="
-        if (arg[i + 1] and (arg[i + 1]:sub(1,#prefix) == prefix)) then
-            arguments.id = arg[i + 1]:sub(#prefix + 1)
+    elseif command == cmd.delchat then
+        if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix)) then
+            arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
             ai.delchat(arguments)
             return
         else
             ai.list()
             return
         end
-    elseif command == "prompt" then
+    elseif command == cmd.prompt then
         if arg[i + 1] then
             arguments.message = arg[i + 1]
             ai.prompt(arguments)
         end
         return
-    elseif command == "rename" then
-        local prefix = "id="
-        if (arg[i + 1] and (arg[i + 1]:sub(1,#prefix) == prefix) and arg[i + 2]) then
-            arguments.id = arg[i + 1]:sub(#prefix + 1)
+    elseif command == cmd.rename then
+        if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix) and arg[i + 2]) then
+            arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
             arguments.title = arg[i + 2]
             ai.rename(arguments)
             return
@@ -158,10 +176,10 @@ for i, command in ipairs(arg) do
             ai.list()
             return
         end
-    elseif command == "list" then
+    elseif command == cmd.list then
         ai.list()
         return
-    elseif command == "call" then
+    elseif command == cmd.call then
         if arg[i + 1] and arg[i + 2] then
             arguments.cmd = arg[i + 1]
             arguments.message = arg[i + 1]

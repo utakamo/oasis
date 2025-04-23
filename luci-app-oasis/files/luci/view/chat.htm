@@ -931,8 +931,9 @@
         
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        let uci_info_message = await retrieve_uci_show(messageTextContainer);
-        messageText += uci_info_message;
+        let uci_info = await retrieve_uci_show_result(messageTextContainer);
+        messageText += uci_info;
+        console.log(messageText);
         send_message(receivedMessageTextContainer, messageText);
     }
 
@@ -1203,7 +1204,7 @@
         return /^\d+$/.test(str);
     }
 
-    async function retrieve_uci_show(messageTextContainer, messageText) {
+    async function retrieve_uci_show_result(messageTextContainer) {
 
         const selectElement = document.getElementById("uci-config-list");
         let target_uci_config = selectElement.value;
@@ -1234,8 +1235,6 @@
             }
 
             uci_info += '```\n';
-
-            messageText += uci_info;
             messageTextContainer.innerHTML += convertMarkdownToHTML(uci_info);
 
         } catch (error) {
@@ -1255,7 +1254,7 @@
         let finalResponse = null;
         let is_notify = false;
 
-        //console.log(messageText);
+        console.log("send message: " + messageText);
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {

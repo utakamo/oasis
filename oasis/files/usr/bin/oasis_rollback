@@ -5,8 +5,11 @@ local uci = require("luci.model.uci").cursor()
 local oasis = require("oasis.chat.apply")
 local common = require("oasis.common")
 
-local is_backup = uci:get_bool("oasis", "backup", "enable")
-local limit_time = uci:get("oasis", "backup", "rollback_time") or "300"
+local apply_complete = "/tmp/oasis/apply/complete"
+local apply_rollback = "/tmp/oasis/apply/rollback"
+
+local is_backup = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
+local limit_time = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "rollback_time") or "300"
 
 if not is_backup then
     return 1
@@ -18,7 +21,7 @@ end
 
 limit_time = tonumber(limit_time)
 
-local initial_uptime = uci:get("oasis", "backup", "uptime")
+local initial_uptime = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "uptime")
 
 if arg[1] and (arg[1] == "boot") then
     initial_uptime = common.get_uptime()
@@ -27,11 +30,11 @@ end
 while true do
     local final_uptime = common.get_uptime()
 
-    if common.check_file_exist("/tmp/oasis/apply/complete") then
-        uci:set("oasis", "backup", "enable", "0")
-        uci:commit("oasis")
+    if common.check_file_exist(apply_complete) then
+        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "0")
+        uci:commit(common.db.uci.cfg)
         return 0
-    elseif common.check_file_exist("/tmp/oasis/apply/rollback") then
+    elseif common.check_file_exist(apply_rollback) then
         oasis.recovery()
         return 0
     end

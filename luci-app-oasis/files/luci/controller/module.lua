@@ -40,6 +40,10 @@ function index()
     entry({"admin", "network", "oasis", "load-extra-sysmsg"}, call("load_extra_sysmsg"), nil).leaf = true
 end
 
+local debug_log = function(log)
+    sys.exec("echo \"" .. log .. "\" >> /tmp/oasis-module.log")
+end
+
 function uci_show_config(target)
     local params = uci:get_all(target) or {}
 
@@ -228,11 +232,11 @@ function import_chat_data()
     result.id = id
     result.title = "--"
 
-    local unnamed_section = uci:add("oasis", "chat")
+    local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.chat)
 
-    uci:set("oasis", unnamed_section, "id", result.id)
-    uci:set("oasis", unnamed_section, "title", result.title)
-    uci:commit("oasis")
+    uci:set(common.db.uci.cfg, unnamed_section, "id", result.id)
+    uci:set(common.db.uci.cfg, unnamed_section, "title", result.title)
+    uci:commit(common.db.uci.cfg)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
@@ -307,9 +311,11 @@ function apply_uci_cmd()
     os.remove("/tmp/oasis/apply/rollback")
 
     if apply_type == "commit" then
+        -- debug_log("commit-normal")
         oasis.backup(uci_list, chat_id, "normal")
         oasis.apply(uci_list, true) -- true: commit uci config (/etc/config/~)
     else
+        -- debug_log("commit-else")
         oasis.apply(uci_list, false) -- false: save uci config (/tmp/.uci/~)
     end
 

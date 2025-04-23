@@ -5,10 +5,9 @@ local jsonc = require("luci.jsonc")
 local transfer = require("oasis.chat.transfer")
 local common = require("oasis.common")
 
-
 local sys = require("luci.sys")
 local debug_log = function(log)
-    sys.exec("echo " .. log .. " >> /tmp/oasis.log")
+    sys.exec("echo \"" .. log .. "\" >> /tmp/oasistitle.log")
 end
 
 local read_chat_data = function(file_path)
@@ -37,8 +36,8 @@ local set_chat_title = function(id, title)
         return false
     end
 
-    uci:set("oasis", unnamed_section, "title", title)
-    uci:commit("oasis")
+    uci:set(common.db.uci.cfg, unnamed_section, "title", title)
+    uci:commit(common.db.uci.cfg)
 
     return true
 end
@@ -50,11 +49,11 @@ local methods = {
 
         call = function(args)
             local r = {}
-            local conf = common.get_oasis_conf()
-            local file_name = conf.prefix .. args.id
-            local file_path = common.normalize_path(conf.path) .. file_name
+            local cfg = common.get_oasis_conf()
+            local file_name = cfg.prefix .. args.id
+            local file_path = common.normalize_path(cfg.path) .. file_name
 
-            local rpath = uci:get("oasis", "role", "path")
+            local rpath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysrole = common.load_conf_file(rpath)
 
             -- debug_log(file_name)
@@ -69,7 +68,7 @@ local methods = {
             local chat_data = read_chat_data(file_path)
             local chat_json_tbl = jsonc.parse(chat_data)
 
-            chat_json_tbl.model = conf.model or "unknown"
+            chat_json_tbl.model = cfg.model or "unknown"
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {
                 role = "system",
                 content = sysrole.general.auto_title
@@ -78,15 +77,15 @@ local methods = {
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
             -- Post
-            transfer.post_to_server(conf.url, conf.api_key, chat_json_str, function(chunk)
+            transfer.post_to_server(cfg, chat_json_str, function(chunk)
 
                 local chunk_json = jsonc.parse(chunk)
 
-                -- chatgpt
-                if conf.url == "https://api.openai.com/v1/chat/completions" then
+                if (cfg.service == common.ai.service.openai.name)
+                    or (cfg.service == common.ai.service.custom_openai.name) then
                     title = title .. chunk_json.choices[1].message.content
-                -- other ai service (ollama etc ...)
                 else
+                    -- todo: check another ai service
                     title = title .. chunk_json.message.content
                 end
             end)
@@ -94,8 +93,6 @@ local methods = {
             title = title:gsub("%s+", "")
 
             local is_set = false
-
-            -- debug_log(title)
 
             if #title ~= 0 then
                 is_set = set_chat_title(args.id, title)

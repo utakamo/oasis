@@ -6,7 +6,7 @@ local uci = require("luci.model.uci").cursor()
 local common = require("oasis.common")
 
 local debug_log = function(log)
-    sys.exec("echo " .. log .. " >> /tmp/oasis.log")
+    sys.exec("echo \"" .. log .. "\" >> /tmp/oasis.log")
 end
 
 local read_chat_data = function(file_path)
@@ -49,7 +49,7 @@ local methods = {
             local chat_list = {}
             chat_list.item = {}
 
-            uci:foreach("oasis", "chat", function(info)
+            uci:foreach(common.db.uci.cfg, common.db.uci.sect.chat, function(info)
                 chat_list.item[#chat_list.item + 1] = {}
                 chat_list.item[#chat_list.item].id = info.id or "unknown"
                 chat_list.item[#chat_list.item].title = info.title or "--"
@@ -124,10 +124,10 @@ local methods = {
 
             write_chat_data(full_file_path, chat_json_str)
 
-            local unnamed_section = uci:add("oasis", "chat")
+            local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.chat)
 
-            uci:set("oasis", unnamed_section, "id", id)
-            uci:commit("oasis")
+            uci:set(common.db.uci.cfg, unnamed_section, "id", id)
+            uci:commit(common.db.uci.cfg)
 
             r.result = jsonc.stringify({ status = common.status.ok , id = id})
             return r
@@ -199,7 +199,7 @@ local methods = {
             local r = {}
             local unnamed_section = ""
 
-            uci:foreach("oasis", "chat", function(info)
+            uci:foreach(common.db.uci.cfg, common.db.uci.sect.chat, function(info)
                 if args.id == info.id then
                     unnamed_section = info[".name"]
                 end
@@ -222,8 +222,8 @@ local methods = {
                 return r
             end
 
-            uci:delete("oasis", unnamed_section)
-            uci:commit("oasis")
+            uci:delete(common.db.uci.cfg, unnamed_section)
+            uci:commit(common.db.uci.cfg)
 
             r.result = jsonc.stringify({ status = common.status.ok })
             return r
