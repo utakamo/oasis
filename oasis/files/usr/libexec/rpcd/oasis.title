@@ -74,6 +74,8 @@ local methods = {
                 content = sysrole.general.auto_title
             }
 
+            -- local recv_ai_msg = transfer.send_user_msg(cfg, format, chat)
+
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
             -- Post

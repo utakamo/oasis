@@ -1,8 +1,8 @@
 #!/usr/bin/env lua
 
-local util = require("luci.util")
-local uci = require("luci.model.uci").cursor()
-local sys = require("luci.sys")
+local util  = require("luci.util")
+local uci   = require("luci.model.uci").cursor()
+local sys   = require("luci.sys")
 
 local db                     = {}
 db.uci                       = {}
@@ -44,25 +44,17 @@ db.ubus.method.manual_set        = "manual_set"
 local ai                            = {}
 ai.service                          = {}
 ai.service.ollama                   = {}
-ai.service.ollama.name              = "ollama"
-ai.service.ollama.endpoint          = "http://[x.x.x.x]:11434/api/chat"
+ai.service.ollama.name              = "Ollama"
+ai.service.ollama.endpoint          = "http://[ollama ip address]:11434/api/chat"
 ai.service.openai                   = {}
-ai.service.openai.name              = "openai"
+ai.service.openai.name              = "OpenAI"
 ai.service.openai.endpoint          = "https://api.openai.com/v1/chat/completions"
 ai.service.anthropic                = {}
-ai.service.anthropic.name           = "anthropic"
+ai.service.anthropic.name           = "Anthropic"
 ai.service.anthropic.endpoint       = "https://api.anthropic.com/v1/messages"
 ai.service.gemini                   = {}
-ai.service.gemini.name              = "gemini"
+ai.service.gemini.name              = "Gemini"
 ai.service.gemini.endpoint          = "https://generativelanguage.googleapis.com"
-ai.service.custom_ollama            = {}
-ai.service.custom_ollama.name       = "custom-ollama"
-ai.service.custom_openai            = {}
-ai.service.custom_openai.name       = "custom-openai"
-ai.service.custom_anthropic         = {}
-ai.service.custom_anthropic.name    = "custom-anthropic"
-ai.service.custom_gemini            = {}
-ai.service.custom_gemini.name       = "custom-gemini"
 ai.format                           = {}
 ai.format.chat                      = "chat"
 ai.format.prompt                    = "prompt"

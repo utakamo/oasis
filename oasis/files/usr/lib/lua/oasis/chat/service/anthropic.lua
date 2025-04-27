@@ -1,7 +1,10 @@
 #!/usr/bin/env lua
 
-local jsonc = require("luci.jsonc")
-local common = require("oasis.common")
+local jsonc     = require("luci.jsonc")
+local common    = require("oasis.common")
+local uci       = require("luci.model.uci").cursor()
+local util      = require("luci.util")
+local datactrl  = require("oasis.chat.datactrl")
 
 local anthropic = {}
 anthropic.new = function()
@@ -12,10 +15,61 @@ anthropic.new = function()
         obj.recv_raw_msg = {}
         obj.recv_raw_msg.role = common.role.unknown
         obj.recv_raw_msg.message = ""
+        obj.cfg = nil
+        obj.format = nil
 
-        obj.reset = function(self)
+        obj.initialize = function(self, arg, format)
+            self.cfg = datactrl.retrieve_ai_service_cfg(arg, format)
+            self.format = format
+        end
+
+        obj.init_msg_buffer = function(self)
             self.recv_raw_msg.role = common.role.unknown
             self.recv_raw_msg.message = ""
+        end
+
+        obj.setup_system_msg = function(self, chat)
+
+            local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
+            local sysrole = common.load_conf_file(spath)
+
+            if (self.format == common.ai.format.chat) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
+                table.insert(chat.messages, 1, {
+                    role = common.role.system,
+                    content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                })
+            elseif (self.format == common.ai.format.output) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
+                table.insert(chat.messages, 1, {
+                    role = common.role.system,
+                    content = string.gsub(sysrole.default.output, "\\n", "\n")
+                })
+            elseif self.format == common.ai.format.prompt then
+                table.insert(chat.messages, 1, {
+                    role = common.role.system,
+                    content = string.gsub(sysrole.default.prompt, "\\n", "\n")
+                })
+            elseif self.format == common.ai.format.call then
+                table.insert(chat.messages, 1, {
+                    role = common.role.system,
+                    content = string.gsub(sysrole.default.call, "\\n", "\n")
+                })
+            end
+        end
+
+        obj.setup_msg = function(chat, speaker)
+
+            if (not speaker.role)
+                or (speaker.role ~= common.role.unknown)
+                or (not speaker.message)
+                or (#speaker.message == 0) then
+                return false
+            end
+
+            chat.messages[#chat.messages + 1] = {}
+            chat.messages[#chat.messages].role = speaker.role
+            chat.messages[#chat.messages].content = speaker.message
+
+            return true
         end
 
         obj.recv_ai_msg = function(self, chunk)
@@ -50,32 +104,25 @@ anthropic.new = function()
             return plain_text_for_console, json_text_for_webui, self.recv_raw_msg
         end
 
+        obj.append_chat_data = function(self, chat)
+            local message = {}
+            message.id = self.cfg.id
+            message.role1 = chat.messages[#chat.messages - 1].role
+            message.content1 = chat.messages[#chat.messages - 1].content
+            message.role2 = chat.messages[#chat.messages].role
+            message.content2 = chat.messages[#chat.messages].content
+            util.ubus("oasis.chat", "append", message)
+        end
+
+        obj.config = function(self)
+            return self.cfg
+        end
+
+        obj.format = function(self)
+            return self.format
+        end
+
         return obj
 end
 
 return anthropic.new()
-
---[[
-local recv_ai_msg = function(ai, chunk_all, chunk, mark)
-
-    local chunk_json
-    chunk_all = chunk_all .. chunk
-    chunk_json = jsonc.parse(chunk_all)
-
-    if not chunk_json then
-        return ""
-    end
-
-    if type(chunk_json) ~= "table" then
-        return ""
-    end
-
-    ai.role = chunk_json.role
-    ai.message = ai.message .. chunk_json.content.text
-    return common.markdown(mark, chunk_json.content.text)
-end
-
-return {
-    recv_ai_msg = recv_ai_msg,
-}
-]]

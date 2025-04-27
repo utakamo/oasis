@@ -1,3 +1,5 @@
+local common = require("oasis.common")
+
 m = Map("oasis", nil)
 
 assist = m:section(TypedSection, "basic")
@@ -12,52 +14,71 @@ storage.removable = false
 path = storage:option(Value, "path", "Storage Path")
 chat_max = storage:option(ListValue, "chat_max", "Chat Max")
 
-chat_max:value("10", "10")
-chat_max:value("20", "20")
-chat_max:value("30", "30")
-chat_max:value("40", "40")
-chat_max:value("50", "50")
-chat_max:value("60", "60")
-chat_max:value("70", "70")
-chat_max:value("80", "80")
-chat_max:value("90", "90")
-chat_max:value("100", "100")
+for i = 10, 100, 10 do
+    chat_max:value(tostring(i), tostring(i))
+end
 
-rollback = m:section(TypedSection, "backup")
+rollback = m:section(TypedSection, "recovery")
 monitor_time = rollback:option(ListValue, "rollback_time", "Rollback Time")
-monitor_time:value("300", "300")
-monitor_time:value("360", "360")
-monitor_time:value("420", "420")
-monitor_time:value("480", "480")
-monitor_time:value("540", "540")
-monitor_time:value("600", "600")
+for i = 300, 600, 60 do
+    monitor_time:value(tostring(i), tostring(i))
+end
 
 service = m:section(TypedSection, "service")
 service.addremove = true
 service.anonymous = true
 service.title = "SERVICE"
 
+identifer = service:option(Value, "identifer", "Identifer")
+identifer.default = "My AI Assistant"
+
 name = service:option(ListValue, "name", "Service")
-name:value("ollama", "Ollama")
-name:value("openai", "OpenAI")
-name:value("anthropic", "Anthropic")
-name:value("gemini", "Gemini")
-name:value("custo-ollama", "Ollama (Custom Endpoint)")
-name:value("custom-openai", "OpenAI (Custom Endpoint)")
-name:value("custom-anthropic", "Anthropic (Custom Endpoint)")
-name:value("custom-gemini", "Gemini (Custom Endpoint)")
+name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)
+name:value(common.ai.service.openai.name, common.ai.service.openai.name)
+name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
+name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
 
-ip_addr = service:option(Value, "ipaddr", "IP Address")
-ip_addr:depends("name", "ollama")
+endpoint_ollama = service:option(Value, "ollama_endpoint", "Endpoint")
+endpoint_ollama.default = common.ai.service.ollama.endpoint
+endpoint_ollama.description = "Please input ollama ip address."
+endpoint_ollama:depends("name", common.ai.service.ollama.name)
 
-endpoint = service:option(Value, "endpoint", "Endpoint")
-endpoint:depends("name", "custom-ollama")
-endpoint:depends("name", "custom-openai")
-endpoint:depends("name", "custom-anthropic")
-endpoint:depends("name", "custom-gemini")
+openai_endpoint = service:option(Value, "openai_endpoint", "Endpoint")
+openai_endpoint.default = common.ai.service.openai.endpoint
+openai_endpoint:depends("name", common.ai.service.openai.name)
+
+anthropic_endpoint = service:option(Value, "anthropic_endpoint", "Endpoint")
+anthropic_endpoint.default = common.ai.service.anthropic.endpoint
+anthropic_endpoint:depends("name", common.ai.service.anthropic.name)
+
+gemini_endpoint = service:option(Value, "gemini_endpoint", "Endpoint")
+gemini_endpoint.default = common.ai.service.gemini.endpoint
+gemini_endpoint:depends("name", common.ai.service.gemini.name)
 
 api_key = service:option(Value, "api_key", "API Key")
 api_key.password = true
+
+-- max_tokens (ListValue), only for Anthropic and Custom Anthropic
+max_tokens = service:option(ListValue, "max_tokens", "Max Tokens")
+for i = 1000, 30000, 1000 do
+    max_tokens:value(tostring(i), tostring(i))
+end
+max_tokens:depends("name", common.ai.service.anthropic.name)
+
+-- thinking (Flag), only for Anthropic and Custom Anthropic
+thinking = service:option(Flag, "thinking", "Thinking")
+thinking.enabled = "enabled"
+thinking.disabled = "disabled"
+thinking.default = "disabled"
+thinking:depends("name", common.ai.service.anthropic.name)
+
+-- budget_tokens (ListValue), only when thinking is enabled and for Anthropic/Custom Anthropic
+budget_tokens = service:option(ListValue, "budget_tokens", "Budget Tokens")
+for i = 1000, 20000, 1000 do
+    budget_tokens:value(tostring(i), tostring(i))
+end
+budget_tokens:depends({name = common.ai.service.anthropic.name, thinking = "enabled"})
+
 model = service:option(Value, "model", "Model")
 
 return m

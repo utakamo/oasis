@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local ai = require("oasis.chat.main")
+local oasis = require("oasis.chat.main")
 
 local cmd = {}
 cmd.storage = "storage"
@@ -68,7 +68,7 @@ for i, command in ipairs(arg) do
             arguments.chat_max = arg[i + 2]
         end
 
-        ai.storage(arguments)
+        oasis.storage(arguments)
         return
 
     elseif command == cmd.add then
@@ -93,7 +93,7 @@ for i, command in ipairs(arg) do
             arguments.storage = arg[i + 5]
         end
 
-        ai.add(arguments)
+        oasis.add(arguments)
         return
 
     elseif command == cmd.change then
@@ -125,22 +125,22 @@ for i, command in ipairs(arg) do
             end
         end
 
-        ai.change(options, arguments)
+        oasis.change(options, arguments)
         return
     elseif command == cmd.delete then
         if arg[i + 1] then
             arguments.service = arg[i + 1]
-            ai.delete(arguments)
+            oasis.delete(arguments)
             return
         else
-            ai.show_service_list()
+            oasis.show_service_list()
         end
     elseif command == cmd.select then
         if arg[i + 1] then
-            arguments.service = arg[i + 1]
-            ai.select(arguments)
+            arguments.identifer = arg[i + 1]
+            oasis.select(arguments)
         else
-            ai.show_service_list()
+            oasis.show_service_list()
         end
 
         return
@@ -149,41 +149,41 @@ for i, command in ipairs(arg) do
             arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
         end
 
-        ai.chat(arguments)
+        oasis.chat(arguments)
         return
     elseif command == cmd.delchat then
         if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix)) then
             arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
-            ai.delchat(arguments)
+            oasis.delchat(arguments)
             return
         else
-            ai.list()
+            oasis.list()
             return
         end
     elseif command == cmd.prompt then
         if arg[i + 1] then
             arguments.message = arg[i + 1]
-            ai.prompt(arguments)
+            oasis.prompt(arguments)
         end
         return
     elseif command == cmd.rename then
         if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix) and arg[i + 2]) then
             arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
             arguments.title = arg[i + 2]
-            ai.rename(arguments)
+            oasis.rename(arguments)
             return
         else
-            ai.list()
+            oasis.list()
             return
         end
     elseif command == cmd.list then
-        ai.list()
+        oasis.list()
         return
     elseif command == cmd.call then
         if arg[i + 1] and arg[i + 2] then
             arguments.cmd = arg[i + 1]
             arguments.message = arg[i + 1]
-            ai.cmd_call(arguments)
+            oasis.cmd_call(arguments)
             return
         end
     end

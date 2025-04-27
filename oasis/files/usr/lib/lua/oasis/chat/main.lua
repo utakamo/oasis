@@ -1,145 +1,36 @@
 #!/usr/bin/env lua
-local sys = require("luci.sys")
-local util = require("luci.util")
-local uci = require("luci.model.uci").cursor()
-local jsonc = require("luci.jsonc")
-local transfer = require("oasis.chat.transfer")
-local datactrl = require("oasis.chat.datactrl")
-local common = require("oasis.common")
+local sys       = require("luci.sys")
+local util      = require("luci.util")
+local uci       = require("luci.model.uci").cursor()
+local jsonc     = require("luci.jsonc")
+local transfer  = require("oasis.chat.transfer")
+local datactrl  = require("oasis.chat.datactrl")
+local common    = require("oasis.common")
+local ollama    = require("oasis.chat.service.ollama")
+local openai    = require("oasis.chat.service.openai")
+local anthropic = require("oasis.chat.service.anthropic")
+local gemini    = require("oasis.chat.service.gemini")
 
-local sysmsg_info = {}
-sysmsg_info.fix_key = {}
-sysmsg_info.fix_key.casual = "casual"
+local error_msg = {}
+error_msg.load_service1 = "Error!\n\tOne of the service settings exist!"
+error_msg.load_service2 = "\tPlease add the service configuration with the add command."
 
-local push_chat_data_for_record = function(chat, speaker)
+local select_service_obj = function()
 
+    local target = nil
     local service = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "name", "")
 
-    if (not speaker.role) or (not speaker.message) or (#speaker.message == 0) then
-        return
-    end
-
-    if (service == common.ai.service.ollama.name)
-        or (service == common.ai.service.openai.name)
-        or (service == common.ai.service.anthropic.name) then
-
-        chat.messages[#chat.messages + 1] = {}
-        chat.messages[#chat.messages].role = speaker.role
-        chat.messages[#chat.messages].content = speaker.message
-
+    if service == common.ai.service.ollama.name then
+        target = ollama
+    elseif service == common.ai.service.openai.name then
+        target = openai
+    elseif service == common.ai.service.anthropic.name then
+        target = anthropic
     elseif service == common.ai.service.gemini.name then
-        -- todo: fix
-        chat.messages[#chat.messages + 1] = {}
-        chat.messages[#chat.messages].role = speaker.role
-        chat.messages[#chat.messages].content = speaker.message
+        target = gemini
     end
 
-    -- add new ai service [template]
-    --[[
-    elseif service == common.ai.service.new-ai-service.name then
-
-        if (not speaker.role) or (not speaker.message) or (#speaker.message == 0) then
-            return
-        end
-
-        chat.messages[#chat.messages + 1] = {}
-        chat.messages[#chat.messages].role = speaker.role
-        chat.messages[#chat.messages].content = speaker.message
-    end
-    ]]
-end
-
-local create_chat_file = function(service, chat)
-    -- TODO:
-    -- Update to allow chat files to be created even when role:system is not present.
-    local message = {}
-    if (service.sysmsg_key) and (#service.sysmsg_key > 0) and (service.sysmsg_key == sysmsg_info.fix_key.casual) then
-        -- os.execute("echo \"no system message\" >> /tmp/oasis-create-chat-file.log")
-        message.role1 = chat.messages[#chat.messages - 1].role
-        message.content1 = chat.messages[#chat.messages - 1].content
-        message.role2 = chat.messages[#chat.messages].role
-        message.content2 = chat.messages[#chat.messages].content
-        message.role3 = ""
-        message.content3 = ""
-    else
-        -- os.execute("echo \"system message\" >> /tmp/oasis-create-chat-file.log")
-        message.role1 = chat.messages[#chat.messages - 2].role
-        message.content1 = chat.messages[#chat.messages - 2].content
-        message.role2 = chat.messages[#chat.messages - 1].role
-        message.content2 = chat.messages[#chat.messages - 1].content
-        message.role3 = chat.messages[#chat.messages].role
-        message.content3 = chat.messages[#chat.messages].content
-    end
-
-    -- os.execute("echo " .. message.role1 .. " >> /tmp/oasis-message.log")
-    -- os.execute("echo \"" .. message.content1 .. "\" >> /tmp/oasis-message.log")
-    -- os.execute("echo " .. message.role2 .. " >> /tmp/oasis-message.log")
-    -- os.execute("echo \"" .. message.content2 .. "\" >> /tmp/oasis-message.log")
-    -- os.execute("echo " .. message.role3 .. " >> /tmp/oasis-message.log")
-    -- os.execute("echo \"" .. message.content3 .. "\" >> /tmp/oasis-message.log")
-
-    local result = util.ubus("oasis.chat", "create", message)
-    service.id = result.id
-    return result.id
-end
-
-local set_chat_title = function(chat_id)
-    local request = util.ubus("oasis.title", "auto_set", {id = chat_id})
-    local announce =  "\n" .. "\27[1;37;44m" .. "Title:"
-    announce = announce  .. "\27[1;33;44m" .. request.title
-    announce = announce .. "  \27[1;37;44m" .. "ID:"
-    announce = announce .. "\27[1;33;44m" .. chat_id
-    announce = announce .. "\27[0m"
-    io.write("\n" .. announce .. "\n")
-    io.flush()
-end
-
-local append_chat_data = function(service, chat)
-    local message = {}
-    local ai_service = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "name")
-
-    if (ai_service == common.ai.service.ollama.name)
-        or (ai_service == common.ai.service.openai.name)
-        or (ai_service == common.ai.service.anthropic.name) then
-        message.id = service.id
-        message.role1 = chat.messages[#chat.messages - 1].role
-        message.content1 = chat.messages[#chat.messages - 1].content
-        message.role2 = chat.messages[#chat.messages].role
-        message.content2 = chat.messages[#chat.messages].content
-    elseif ai_service == common.ai.service.gemini.name then
-        -- todo
-        message.id = service.id
-        message.role1 = chat.messages[#chat.messages - 1].role
-        message.content1 = chat.messages[#chat.messages - 1].content
-        message.role2 = chat.messages[#chat.messages].role
-        message.content2 = chat.messages[#chat.messages].content
-    end
-    util.ubus("oasis.chat", "append", message)
-end
-
-local record_chat_data = function(service, chat)
-
-    -- print("#chat.messages = " .. #chat.messages)
-
-    -- First Conversation (#chat.messages == 3)
-    -- chat.messages[1] ... system message
-    -- chat.messages[2] ... user message
-    -- chat.messages[3] ... ai message <---- Save chat data
-
-    -- Conversation after the second (#chat.messages >= 5) and ((#chat.messages % 2) == 1)
-    -- chat.messages[4] ... user message
-    -- chat.messages[5] ... ai message <---- Save chat data
-    -- chat.messages[6] ... user message
-    -- chat.messages[7] ... ai message <---- Save chat data
-
-    -- First Conversation
-    if #chat.messages == 3 then
-        local chat_id = create_chat_file(service, chat)
-        set_chat_title(chat_id)
-    -- Conversation after the second
-    elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
-        append_chat_data(service, chat)
-    end
+    return target
 end
 
 local chat_history = function(chat)
@@ -149,170 +40,46 @@ local chat_history = function(chat)
     print(chat_json)
 end
 
-local communicate = function(cfg, chat, format)
-
-    local service = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "name", "")
-    local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-    local sysrole = common.load_conf_file(spath)
-
-    -- chat ..... chat mode for cui
-    if (format == common.ai.format.chat) and ((not cfg.id) or (#cfg.id == 0)) then
-        if (service == common.ai.service.ollama.name) or (service == common.ai.service.openai.name) then
-            table.insert(chat.messages, 1, {
-                role = common.role.system,
-                content = string.gsub(sysrole.default.chat, "\\n", "\n")
-            })
-        elseif service == common.ai.service.anthropic.name then
-            table.insert(chat, 1, {
-                system = string.gsub(sysrole.default.chat, "\\n", "\n")
-            })
-        elseif service == common.ai.service.gemini.name then
-            table.insert(chat.messages, 1, {
-                role = common.role.system,
-                content = string.gsub(sysrole.default.chat, "\\n", "\n")
-            })
-        end
-    -- output ... chat mode for luci
-    elseif (format == common.ai.format.output) and ((not cfg.id) or (#cfg.id == 0)) then
-        if (cfg.sysmsg_key) and (#cfg.sysmsg_key > 0) and (cfg.sysmsg_key ~= sysmsg_info.fix_key.casual) then
-            if (service == common.ai.service.ollama.name) or (service == common.ai.service.openai.name) then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole[cfg.sysmsg_key].chat, "\\n", "\n")
-                })
-            elseif service == common.ai.service.anthropic.name then
-                table.insert(chat, 1, {
-                    system = string.gsub(sysrole[cfg.sysmsg_key].chat, "\\n", "\n")
-                })
-            elseif service == common.ai.service.gemini.name then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole[cfg.sysmsg_key].chat, "\\n", "\n")
-                })
-            end
-        end
-    -- prompt ... prompt mode for cui
-    elseif format == common.ai.format.prompt then
-        if (service == common.ai.service.ollama.name) or (service == common.ai.service.openai.name) then
-            table.insert(chat.messages, 1, {
-                role = common.role.system,
-                content = string.gsub(sysrole.default.prompt, "\\n", "\n")
-            })
-        elseif service == common.ai.service.anthropic.name then
-            table.insert(chat, 1, {
-                system = string.gsub(sysrole.default.prompt, "\\n", "\n")
-            })
-        elseif service == common.ai.service.gemini.name then
-            table.insert(chat.messages, 1, {
-                role = common.role.system,
-                content = string.gsub(sysrole.default.prompt, "\\n", "\n")
-            })
-        end
-    -- call ... script call mode for cui
-    elseif format == common.ai.format.call then
-        if (service == common.ai.service.ollama.name) or (service == common.ai.service.openai.name) then
-            table.insert(chat.messages, 1, {
-                role = common.role.system,
-                content = string.gsub(sysrole.default.call, "\\n", "\n")
-            })
-        elseif service == common.ai.service.anthropic.name then
-            table.insert(chat, 1, {
-                system = string.gsub(sysrole.default.call, "\\n", "\n")
-            })
-        elseif service == common.ai.service.gemini.name then
-            table.insert(chat.messages, 1, {
-                role = common.role.system,
-                content = string.gsub(sysrole.default.call, "\\n", "\n")
-            })
-        end
-    end
-
-    --os.execute("echo sendyyy >> /tmp/send-oasis.log")
-
-    if format == common.ai.format.chat then
-        print("\n\27[34m" .. chat.model .. "\27[0m")
-    end
-
-    local user_msg_str = jsonc.stringify(chat, false)
-
-    local recv_ai_msg = transfer.send_user_msg(cfg, format, user_msg_str)
-
-    -- debug
-    -- for key, val in pairs(recv_ai_msg) do
-    --     os.execute("echo \"" .. key .. val .. "\" >> /tmp/oasis-recv.log")
-    -- end
-
-    local new_chat_info = nil
-
-    if format == common.ai.format.chat then
-        -- print("#ai.message = " .. #ai.message)
-        -- print("ai.message = " .. ai.message)
-        if (recv_ai_msg.role ~= common.role.unknown) and (#recv_ai_msg.message > 0) then
-            push_chat_data_for_record(chat, recv_ai_msg)
-            record_chat_data(cfg, chat)
-        end
-    elseif format == common.ai.format.output then
-        if (recv_ai_msg.role ~= common.role.unknown) and (#recv_ai_msg.message > 0) then
-
-            -- debug start
-            --[[
-            os.execute("echo " .. cfg.id .. " >> /tmp/oasis-id1.log")
-            os.execute("echo #cfg.id = " .. #cfg.id .. " >> /tmp/oasis.log")
-            os.execute("echo \"ai.message = " .. recv_ai_msg.message .. "\" >> /tmp/oasis-ai.log")
-
-            if (not cfg.id) then
-                os.execute("echo not cfg.id >> /tmp/oasis.log")
-            else
-                os.execute("echo cfg.id exist >> /tmp/oasis.log")
-            end
-            ]]
-            -- debug end
-
-            if (not cfg.id) or (#cfg.id == 0) then
-                push_chat_data_for_record(chat, recv_ai_msg)
-                local chat_info = {}
-                chat_info.id = create_chat_file(cfg, chat)
-                local result = util.ubus("oasis.title", "auto_set", {id = chat_info.id})
-                chat_info.title = result.title
-                new_chat_info = jsonc.stringify(chat_info, false)
-            else
-                push_chat_data_for_record(chat, recv_ai_msg)
-                append_chat_data(cfg, chat)
-            end
-        end
-    end
-
-    return new_chat_info, recv_ai_msg.message
-end
-
 local storage = function(args)
 
     local storage = {}
     local current_storage_path = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "path")
     local chat_max = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "chat_max")
 
-    print("[Current Storage Config]")
-    print(string.format("%-30s >> %s", "path", current_storage_path))
-    print(string.format("%-30s >> %s\n", "chat-max", chat_max))
+    local output = {}
+    output.title = {}
+    output.title.current    = "[Current Storage Config]"
+    output.title.setup      = "[Setup New Storage Config]"
+    output.title.input      = "please input new config!"
+    output.format_1         = "%-30s >> %s"
+    output.format_2         = "%-30s >> "
+    output.path             = "path (Blank if not change)"
+    output.chat_max         = "chat-max (Blank if not change)"
+    output.error.config     = "Error! Failed to load configuration information."
+    output.error.path       = "Error! Invalid directory path."
 
-    print("[Setup New Storage Config]")
-    print("please input new config!")
+    print(output.title.current)
+    print(string.format(output.format_1, "path", current_storage_path))
+    print(string.format(output.format_1, "chat-max", chat_max))
+
+    print(output.title.setup)
+    print(output.title.input)
 
     if (not args.path) then
-        io.write(string.format("%-30s >> ", "path (Blank if not change)"))
+        io.write(string.format(output.format_2, output.path))
         io.flush()
         storage.path = io.read()
     else
-        print(string.format("%-30s >> %s", "path", args.path))
+        print(string.format(output.format_1, "path", args.path))
         storage.path = args.path
     end
 
     if (not args.chat_max) then
-        io.write(string.format("%-30s >> ", "chat-max (Blank if not change)"))
+        io.write(string.format(output.format_2, output.chat_max))
         io.flush()
         storage.chat_max = io.read()
     else
-        print(string.format("%-30s >> %s", "chat-max", args.chat_max))
+        print(string.format(output.format_1, "chat-max", args.chat_max))
         storage.chat_max = args.chat_max
     end
 
@@ -320,14 +87,14 @@ local storage = function(args)
         local prefix = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "prefix")
 
         if (#current_storage_path == 0) or (#prefix == 0) then
-            print("Error! Failed to load configuration information.")
+            print(output.error.config)
             return
         end
 
         if storage.path:match("^[%w/]+$") then
             sys.exec("mv " .. current_storage_path .. "/" .. prefix .. "* " .. storage.path)
         else
-            print("Error! Invalid directory path.")
+            print(output.error.path)
             return
         end
 
@@ -345,51 +112,161 @@ local add = function(args)
 
     local setup = {}
 
-    if (not args.service) then
-        io.write(string.format("%-30s >> ", "Service Name"))
+    local output = {}
+    output.format_1        = "%-64s >> "
+    output.format_2        = "%-64s >> %s"
+    output.identifer       = "Identifer Name (Please enter your preferred name.)"
+    output.service         = "Service (\"Ollama\" or \"OpenAI\" or \"Anthropic\" or \"Gemini\")"
+    output.endpoint        = "Endpoint"
+    output.api_key         = "API KEY (leave blank if none)"
+    output.model           = "LLM MODEL"
+    output.max_tokens      = "Max Tokens (%d ～ %d)"               -- Anthropic Only
+    output.type            = "Thinking (\"%s\" or \"%s\")"         -- Anthropic Only
+    output.budget_tokens   = "Budget Tokens (%d ～ %d)"            -- Anthropic Only
+
+    local val = {}
+    val.type = {}
+    val.type.enable = "enabled"
+    val.type.disable = "disabled"
+    val.max_tokens = {}
+    val.max_tokens.min = 1000
+    val.max_tokens.max = 30000
+    val.budget_tokens = {}
+    val.budget_tokens.min = 1000
+    val.budget_tokens.max = 20000
+
+    output.max_tokens = string.format(output.max_tokens, val.max_tokens.min, val.max_tokens.max)
+    output.type = string.format(output.type, val.type.disable, val.type.enable)
+    output.budget_tokens = string.format(output.budget_tokens, val.budget_tokens.min, val.budget_tokens.max)
+
+    if (not args.identifer) then
+        io.write(string.format(output.format_1, output.identifer))
         io.flush()
-        setup.service = io.read()
+        setup.identifer = io.read()
     else
-        print(string.format("%-30s >> %s", "Service Name", args.service))
-        setup.service = args.service
+        print(string.format(output.format_2, output.identifer, args.service))
+        setup.identifer = args.identifer
     end
 
-    if (not args.url) then
-        io.write(string.format("%-30s >> ", "Endpoint(url)"))
-        io.flush()
-        setup.url = io.read()
+    if (not args.service) then
+        repeat
+            io.write(string.format(output.format_1, output.service))
+            io.flush()
+            setup.service = io.read()
+        until (setup.service == common.ai.service.ollama.name)
+                or (setup.service == common.ai.service.openai.name)
+                or (setup.service == common.ai.service.anthropic.name)
+                or (setup.service == common.ai.service.gemini.name)
     else
-        print(string.format("%-30s >> %s", "Endpoint(url)", args.url))
-        setup.url = args.url
+        if (args.service == common.ai.service.ollama.name)
+            or (args.service == common.ai.service.openai.name)
+            or (args.service == common.ai.service.anthropic.name)
+            or (args.service == common.ai.service.gemini.name) then
+
+            io.write(string.format(output.format_2, output.service, args.service))
+            setup.service = args.service
+        else
+            repeat
+                io.write(string.format(output.format_1, output.service))
+                io.flush()
+                setup.service = io.read()
+            until (setup.service == common.ai.service.ollama.name)
+                    or (setup.service == common.ai.service.openai.name)
+                    or (setup.service == common.ai.service.anthropic.name)
+                    or (setup.service == common.ai.service.gemini.name)
+        end
+    end
+
+    if (not args.endpoint) then
+        io.write(string.format(output.format_1, output.endpoint))
+        io.flush()
+        setup.endpoint = io.read()
+    else
+        print(string.format(output.format_2, output.endpoint, args.endpoint))
+        setup.endpoint = args.endponit
+    end
+
+    if setup.service == common.ai.service.anthropic.name then
+        repeat
+            io.write(string.format(output.format_1, output.max_tokens))
+            io.flush()
+            setup.max_tokens = io.read()
+        until (tonumber(setup.max_tokens) >= val.max_tokens.min)
+            and (tonumber(setup.max_tokens) <= val.max_tokens.max)
+
+        repeat
+            io.write(string.format(output.format_1, output.type))
+            io.flush()
+            setup.type = io.read()
+        until (setup.type == val.type.disable) or (setup.type == val.type.enable)
+
+        if setup.type == val.type.enable then
+            repeat
+                io.write(string.format(output.format_1, output.budget_tokens))
+                io.flush()
+                setup.budget_tokens = io.read()
+            until (tonumber(setup.budget_tokens) >= val.budget_tokens.min)
+                and (tonumber(setup.budget_tokens) <= val.budget_tokens.max)
+        end
     end
 
     if (not args.api_key) then
-        io.write(string.format("%-30s >> ", "API KEY (leave blank if none)"))
+        io.write(string.format(output.format_1, output.api_key))
         io.flush()
         setup.api_key = io.read()
     else
-        print(string.format("%-30s >> %s", "API KEY (leave blank if none)", args.api_key))
+        print(string.format(output.format_2, output.api_key, args.api_key))
         setup.api_key = args.api_key
     end
 
     if (not args.model) then
-        io.write(string.format("%-30s >> ", "LLM MODEL"))
+        io.write(string.format(output.format_1, output.model))
         io.flush()
         setup.model = io.read()
     else
-        print(string.format("%-30s >> %s", "LLM MODEL", args.model))
+        print(string.format(output.format_2, output.model, args.model))
         setup.model = args.model
     end
 
+    local endpoint_op_name = "unknown"
+
+    if setup.service == common.ai.service.ollama.name then
+        endpoint_op_name = "ollama_endpoint"
+    elseif setup.service == common.ai.service.openai.name then
+        endpoint_op_name = "openai_endpoint"
+    elseif setup.service == common.ai.service.anthropic.name then
+        endpoint_op_name = "anthropic_endpoint"
+    elseif setup.service == common.ai.service.gemini.name then
+        endpoint_op_name = "gemini_endpoint"
+    end
+
     local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.service)
+    uci:set(common.db.uci.cfg, unnamed_section, "identifer", setup.identifer)
     uci:set(common.db.uci.cfg, unnamed_section, "name", setup.service)
-    uci:set(common.db.uci.cfg, unnamed_section, "url", setup.url)
+    uci:set(common.db.uci.cfg, unnamed_section, endpoint_op_name, setup.endpoint)
     uci:set(common.db.uci.cfg, unnamed_section, "api_key", setup.api_key)
     uci:set(common.db.uci.cfg, unnamed_section, "model", setup.model)
+    if setup.max_tokens then
+        uci:set(common.db.uci.cfg, unnamed_section, "max_tokens", setup.max_tokens)
+    end
+
+    if setup.type then
+        uci:set(common.db.uci.cfg, unnamed_section, "type", setup.type)
+    end
+
+    if setup.budget_tokens then
+        uci:set(common.db.uci.cfg, unnamed_section, "budget_tokens", setup.budget_tokens)
+    end
+
     uci:commit(common.db.uci.cfg)
 end
 
 local change = function(opt, arg)
+
+    local output = {}
+    output.service = {}
+    output.service.update       = "Service Update!"
+    output.service.not_found    = "Service Not Found..."
 
     local is_update = false
 
@@ -416,13 +293,32 @@ local change = function(opt, arg)
     end)
 
     if is_update then
-        print("Service Update!")
+        print(output.service.update)
     else
-        print("Service Not Found...")
+        print(output.service.not_found)
     end
 end
 
 local show_service_list = function()
+
+    local output = {}
+    output.service = {}
+    output.service.in_use = function(index, identifer)
+        print("\n\27[1;34m[" .. index .. "] : " .. identifer .. " \27[1;32m(in use)\27[0m")
+    end
+
+    output.service.not_in_use = function(index, identifer)
+        print("\n\27[1;34m[" .. index .. "] : " .. identifer .. " \27[0m")
+    end
+
+    output.line = function()
+        print("-----------------------------------------------")
+    end
+
+    output.item = function(name, value)
+        io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, value))
+        io.flush()
+    end
 
     local index = 0
 
@@ -430,24 +326,33 @@ local show_service_list = function()
         index = index + 1
         if tbl.name then
             if index == 1 then
-                print("\n\27[1;34m[" .. index .. "] : " .. tbl.name .. " \27[1;32m(in use)\27[0m")
+                output.service.in_use(index, tbl.identifer)
             else
-                print("\n\27[1;34m[" .. index .. "] : " .. tbl.name .. "\27[0m")
+                output.service.not_in_use(index, tbl.identifer)
             end
-            print("-----------------------------------------------")
-            if tbl.url then
-                io.write(string.format("%-8s >> \27[33m%s\27[0m\n", "URL", tbl.url))
-                io.flush()
+
+            output.line()
+
+            if tbl.name then
+                output.item("AI Service", tbl.name)
+                local endpoint_str = "Endpoint"
+                if tbl.name == common.ai.service.ollama.name then
+                    output.item(endpoint_str, tbl.ollama_endpoint)
+                elseif tbl.name == common.ai.service.openai.name then
+                    output.item(endpoint_str, tbl.openai_endpoint)
+                elseif tbl.name == common.ai.service.anthropic.name then
+                    output.item(endpoint_str, tbl.anthropic_endpoint)
+                elseif tbl.name == common.ai.service.gemini.name then
+                    output.item(endpoint_str, tbl.gemini_endpoint)
+                end
             end
 
             if tbl.api_key then
-                io.write(string.format("%-8s >> \27[33m%s\27[0m\n", "API KEY", tbl.api_key))
-                io.flush()
+                output.item("API KEY", tbl.api_key)
             end
 
             if tbl.model then
-                io.write(string.format("%-8s >> \27[33m%s\27[0m\n", "MODEL", tbl.model))
-                io.flush()
+                output.item("MODEL", tbl.model)
             end
         end
     end)
@@ -455,37 +360,66 @@ end
 
 local delete = function(arg)
 
+    if not arg then
+        return
+    end
+
+    local output = {}
+    output.service = {}
+    output.service.confirm_service_delete = function(service)
+        local reply
+
+        repeat
+            io.write("Do you delete service [" ..service .. "] (Y/N):")
+            io.flush()
+
+            reply = io.read()
+
+        until reply == 'Y' or reply == 'N'
+
+        if reply == 'N' then
+            print("canceled.")
+            return 'N'
+        end
+
+        return 'Y'
+    end
+
+    output.service.delete = function(service)
+        uci:delete(common.db.uci.cfg, service)
+        uci:commit(common.db.uci.cfg)
+        print("Delete service [" .. service .. "]")
+    end
+
+    output.service.not_found = function(service)
+        print("Error: Service '" .. service .. "' was not found in the configuration.")
+    end
+
     if not arg.service then
         return
     end
 
-    local target_section = ""
+    local target_section
+    local found = false
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if service.name == arg.service then
+        if not found and service.name == arg.service then
             target_section = service[".name"]
+            found = true
+            return false
         end
     end)
 
-    if #target_section == 0 then
-        print("Service Name: " .. arg.service .. " is not found.")
+    if (not target_section) or (#target_section == 0) then
+        output.service.not_found(arg.service)
         return
     end
 
-
-    io.write("Do you delete service [" ..arg.service .. "] (Y/N):")
-    io.flush()
-
-    local reply = io.read()
-
-    if reply == 'N' then
-        print("canceled.")
+    if output.service.confirm_service_delete(arg.service) == 'N' then
+        return
     end
 
-    uci:delete(common.db.uci.cfg, target_section)
-    uci:commit(common.db.uci.cfg)
-
-    print("Delete service [" .. arg.service .. "]")
+    output.service.delete(arg.service)
 end
 
 local select = function(arg)
@@ -497,13 +431,13 @@ local select = function(arg)
     local target_section = ""
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if service.name == arg.service then
+        if service.identifer == arg.identifer then
             target_section = service[".name"]
         end
     end)
 
     if #target_section == 0 then
-        print("Service Name: " .. arg.service .. " is not found.")
+        print("Identifer Name: " .. arg.identifer .. " is not found.")
         return
     end
 
@@ -512,36 +446,34 @@ local select = function(arg)
     uci:commit(common.db.uci.cfg)
 
     local model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
-    print(arg.service .. " is selected.")
+    print(arg.identifer .. " is selected.")
     print("Target model: \27[33m" .. model .. "\27[0m")
 end
 
 local chat = function(arg)
 
-    local is_exist = false
+    local service = select_service_obj()
 
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function()
-        is_exist = true
-    end)
-
-    if not is_exist then
-        print("Error!\n\tOne of the service settings exist!")
-        print("\tPlease add the service configuration with the add command.")
+    if not service then
+        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
         return
     end
 
-    local cfg = datactrl.retrieve_ai_service_cfg(arg, common.ai.format.chat)
-    local chat = datactrl.load_chat_data(arg, cfg, common.ai.format.chat)
-    local your_message
-
-    local service_name = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "name", "Unknown")
+    service:initialize(arg, common.ai.format.chat)
+    local cfg = service:get_config()
 
     print("-----------------------------------")
-    print(string.format("%-14s :\27[33m %s \27[0m", "Target Service", service_name))
-    print(string.format("%-14s :\27[33m %s \27[0m", "Model", chat.model))
+    print(string.format("%-14s :\27[33m %s \27[0m", "Identifer", cfg.identifer))
+    print(string.format("%-14s :\27[33m %s \27[0m", "AI Service", cfg.service))
+    print(string.format("%-14s :\27[33m %s \27[0m", "Model", cfg.model))
     print("-----------------------------------")
+
+    local chat = datactrl.load_chat_data(service)
 
     while true do
+
+        local your_message
+
         repeat
             io.write("\27[32m\nYou :\27[0m")
             io.flush()
@@ -561,13 +493,11 @@ local chat = function(arg)
             break;
         end
 
-        local user = {}
-        user.role = common.role.user
-        user.message = your_message
-
-        push_chat_data_for_record(chat, user)
-        record_chat_data(cfg, chat)
-        communicate(cfg, chat, common.ai.format.chat)
+        -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
+        if service:setup_msg(chat, {role = common.role.user, message = your_message}) then
+            datactrl.record_chat_data(service, chat)
+            transfer.chat_with_ai(service, chat)
+        end
     end
 end
 
@@ -603,16 +533,23 @@ local delchat = function(arg)
 end
 
 local prompt = function(arg)
-    local cfg = datactrl.retrieve_ai_service_cfg(nil)
-    local user_prompt = datactrl.load_chat_data(nil)
 
-    local user = {}
-    user.role = common.role.user
-    user.message = arg.message
+    local service  = select_service_obj()
 
-    push_chat_data_for_record(user_prompt, user)
-    communicate(cfg, user_prompt, common.ai.format.prompt)
-    print()
+    if not service then
+        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
+        return
+    end
+
+    service:initialize(arg, common.ai.format.prompt)
+
+    local prompt = datactrl.load_chat_data(service)
+
+    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
+    if service:setup_msg(prompt, { role = common.role.user, message = arg.message }) then
+        transfer.chat_with_ai(service, prompt)
+        print()
+    end
 end
 
 local output = function(arg)
@@ -621,28 +558,25 @@ local output = function(arg)
         return
     end
 
-    local is_exist = false
+    local service = select_service_obj()
 
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function()
-        is_exist = true
-    end)
-
-    if not is_exist then
-        print("Error!\n\tOne of the service settings exist!")
-        print("\tPlease add the service configuration with the add command.")
+    if not service then
+        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
         return
     end
 
-    local cfg = datactrl.retrieve_ai_service_cfg(arg, common.ai.format.output)
-    local all_chat = datactrl.load_chat_data(arg, common.ai.format.output)
+    service:initialize(common.ai.format.output)
 
-    local user = {}
-    user.role = common.role.user
-    user.message = arg.message
+    local output = datactrl.load_chat_data(service)
 
-    push_chat_data_for_record(all_chat, user)
-    record_chat_data(cfg, all_chat)
-    local new_chat_info, message = communicate(cfg, all_chat, common.ai.format.output)
+    local new_chat_info, message = ""
+
+    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
+    if service:setup_msg(output, { role = common.role.user, message = arg.message}) then
+        datactrl.record_chat_data(service, output)
+        new_chat_info, message = transfer.chat_with_ai(service, output)
+    end
+
     return new_chat_info, message
 end
 
@@ -674,18 +608,23 @@ local list = function()
     end
 end
 
-local cmd_call = function(arg)
+local call = function(arg)
 
-    local cfg = datactrl.retrieve_ai_service_cfg(nil, common.ai.format.call)
-    local user_prompt = datactrl.load_chat_data(nil, common.ai.format.call)
+    local service = select_service_obj()
 
-    local user = {}
-    user.role = common.role.user
-    user.message = arg.message
+    if not service then
+        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
+        return
+    end
 
-    push_chat_data_for_record(user_prompt, user)
-    record_chat_data(cfg, user_prompt)
-    communicate(cfg, user_prompt, common.ai.format.call)
+    service:initialize(common.ai.format.call)
+    local call = datactrl.load_chat_data(service)
+
+    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
+    if service:setup_msg(call, { role = common.role.user, message = arg.message}) then
+        datactrl.record_chat_data(service, call)
+        transfer.chat_with_ai(service, call)
+    end
 end
 
 return {
@@ -701,5 +640,5 @@ return {
     output = output,
     rename = rename,
     list = list,
-    cmd_call =  cmd_call,
+    call =  call,
 }

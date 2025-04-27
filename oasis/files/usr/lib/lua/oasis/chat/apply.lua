@@ -1,10 +1,10 @@
 #!/usr/bin/env lua
 
-local jsonc = require("luci.jsonc")
-local util = require("luci.util")
-local uci = require("luci.model.uci").cursor()
-local sys = require("luci.sys")
-local common = require("oasis.common")
+local jsonc     = require("luci.jsonc")
+local util      = require("luci.util")
+local uci       = require("luci.model.uci").cursor()
+local sys       = require("luci.sys")
+local common    = require("oasis.common")
 
 local backup = function(uci_list, id, backup_type)
 
