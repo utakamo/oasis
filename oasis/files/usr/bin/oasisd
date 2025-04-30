@@ -1,9 +1,10 @@
 #!/usr/bin/env lua
 
-local sys = require("luci.sys")
-local uci = require("luci.model.uci").cursor()
-local oasis = require("oasis.chat.apply")
-local common = require("oasis.common")
+local sys       = require("luci.sys")
+local uci       = require("luci.model.uci").cursor()
+local oasis     = require("oasis.chat.apply")
+local common    = require("oasis.common")
+local misc      = require("oasis.chat.misc")
 
 local apply_complete = "/tmp/oasis/apply/complete"
 local apply_rollback = "/tmp/oasis/apply/rollback"
@@ -24,11 +25,11 @@ limit_time = tonumber(limit_time)
 local initial_uptime = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "uptime")
 
 if arg[1] and (arg[1] == "boot") then
-    initial_uptime = common.get_uptime()
+    initial_uptime = misc.get_uptime()
 end
 
 while true do
-    local final_uptime = common.get_uptime()
+    local final_uptime = misc.get_uptime()
 
     if common.check_file_exist(apply_complete) then
         uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "0")

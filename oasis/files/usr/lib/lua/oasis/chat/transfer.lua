@@ -90,13 +90,15 @@ end
 
 local chat_with_ai = function(service, chat)
 
+    local format = service:get_format()
+
     local output_llm_model = function(model)
         print("\n\27[34m" .. model .. "\27[0m")
     end
 
     service:setup_system_msg(chat)
 
-    if service:get_format() == common.ai.format.chat then
+    if format == common.ai.format.chat then
         output_llm_model(chat.model)
     end
 
@@ -110,13 +112,13 @@ local chat_with_ai = function(service, chat)
 
     local new_chat_info = nil
 
-    if service:get_format() == common.ai.format.chat then
+    if format == common.ai.format.chat then
         -- print("#ai.message = " .. #ai.message)
         -- print("ai.message = " .. ai.message)
         if service:setup_msg(chat, ai) then
             datactrl.record_chat_data(service:get_config(), chat)
         end
-    elseif service:get_format() == common.ai.format.output then
+    elseif format == common.ai.format.output then
         -- debug start
         --[[
         os.execute("echo " .. cfg.id .. " >> /tmp/oasis-id1.log")
@@ -144,6 +146,11 @@ local chat_with_ai = function(service, chat)
                 service:append_chat_data(service:get_config(), chat)
             end
         end
+    elseif format == common.ai.format.title then
+        os.execute("echo " .. ai.message .. " >> /tmp/oasis-title.log")
+        local chat_title = ai.message
+        chat_title:gsub("%s+", "")
+        return chat_title
     end
 
     return new_chat_info, ai.message

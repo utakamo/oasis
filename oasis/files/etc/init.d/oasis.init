@@ -6,5 +6,5 @@ start() {
 
     mkdir -p /tmp/oasis/apply
     # rollback timer start!!
-    lua /usr/bin/oasis_rollback boot &
+    lua /usr/bin/oasisd boot &
 }

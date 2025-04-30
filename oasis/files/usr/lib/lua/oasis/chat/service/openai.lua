@@ -5,6 +5,7 @@ local common    = require("oasis.common")
 local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
+local misc      = require("oasis.chat.misc")
 
 local openai = {}
 openai.new = function()
@@ -19,7 +20,7 @@ openai.new = function()
         obj.format = nil
 
         obj.initialize = function(self, arg, format)
-            self.cfg = datactrl.retrieve_ai_service_cfg(arg, format)
+            self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
             self.format = format
         end
 
@@ -33,26 +34,46 @@ openai.new = function()
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysrole = common.load_conf_file(spath)
 
+            -- System message(rule or knowledge) for chat
             if (self.format == common.ai.format.chat) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
                     content = string.gsub(sysrole.default.chat, "\\n", "\n")
                 })
-            elseif (self.format == common.ai.format.output) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
+                return
+            end
+
+            if (self.format == common.ai.format.output) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
                     content = string.gsub(sysrole.default.output, "\\n", "\n")
                 })
-            elseif self.format == common.ai.format.prompt then
+                return
+            end
+
+            if self.format == common.ai.format.prompt then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
                     content = string.gsub(sysrole.default.prompt, "\\n", "\n")
                 })
-            elseif self.format == common.ai.format.call then
+                return
+            end
+
+            if self.format == common.ai.format.call then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
                     content = string.gsub(sysrole.default.call, "\\n", "\n")
                 })
+                return
+            end
+
+            -- System message(rule or knowledge) for creating chat title
+            if (self.format == common.ai.format.title) then
+                table.insert(chat.messages, 1, {
+                    role = common.role.system,
+                    content = string.gsub(sysrole.general.auto_title, "\\n", "\n")
+                })
+                return
             end
         end
 
@@ -100,7 +121,7 @@ openai.new = function()
             reply.message.role = chunk_json.choices[1].message.role
             reply.message.content = chunk_json.choices[1].message.content
 
-            plain_text_for_console = common.markdown(self.mark, reply.message.content)
+            plain_text_for_console = misc.markdown(self.mark, reply.message.content)
             json_text_for_webui = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then

@@ -3,39 +3,53 @@
 local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
+local misc      = require("oasis.chat.misc")
 
 local sysmsg_info = {}
 sysmsg_info.fix_key = {}
 sysmsg_info.fix_key.casual = "casual"
 
-local retrieve_ai_service_cfg = function(arg, format)
-
+local get_ai_service_cfg = function(arg, opts)
 
     local cfg = {}
-    cfg.identifer   = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "identifer", "")
-    cfg.api_key     = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "api_key", "")
-    cfg.service     = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "name", "")
-    cfg.model       = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model", "")
+    local uci_ref = common.db.uci
+    local ai_ref = common.ai
 
-    if cfg.service == common.ai.service.ollama.name then
-        cfg.endpoint = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "ollama_endpoint")
-    elseif cfg.service == common.ai.service.openai.name then
-        cfg.endpoint = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "openai_endpoint")
-    elseif cfg.service == common.ai.service.anthropic.name then
-        cfg.endpoint = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "anthropic_endpoint")
-    elseif cfg.service == common.ai.service.gemini.name then
-        cfg.endpoint = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "gemini_endpoint")
+    cfg.identifier = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "identifier", "") or ""
+    cfg.api_key    = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "api_key", "") or ""
+    cfg.service    = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "name", "") or ""
+    cfg.model      = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "model", "") or ""
+    cfg.ipaddr     = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "ipaddr", "") or ""
+
+    if opts and opts.with_storage then
+        cfg.path   = uci:get(uci_ref.cfg, uci_ref.sect.storage, "path")
+        cfg.prefix = uci:get(uci_ref.cfg, uci_ref.sect.storage, "prefix")
     end
 
-    -- TODO
-    -- cfg.endpoint = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "endpoint")
+    for _, service in pairs(ai_ref.service) do
+        if cfg.service == service.name then
+            if cfg.service == ai_ref.service.ollama.name then
+                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "ollama_endpoint")
+                break
+            elseif cfg.service == ai_ref.service.openai.name then
+                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_endpoint")
+                break
+            elseif cfg.service == ai_ref.service.anthropic.name then
+                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_endpoint")
+                break
+            elseif cfg.service == ai_ref.service.gemini.name then
+                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "gemini_endpoint")
+                break
+            end
+        end
+    end
 
-    cfg.id = arg.id
-
-    if format == common.ai.format.output then
-        if (arg.sysmsg_key and (#arg.sysmsg_key > 0)) then
-            cfg.sysmsg_key = arg.sysmsg_key
-            -- os.execute("echo " .. cfg.sysmsg_key .. " >> /tmp/sysmsg.log")
+    if arg then
+        cfg.id = arg.id
+        if opts and opts.format == (ai_ref.format and ai_ref.format.output) then
+            if (arg.sysmsg_key and (#arg.sysmsg_key > 0)) then
+                cfg.sysmsg_key = arg.sysmsg_key
+            end
         end
     end
 
@@ -83,7 +97,7 @@ local load_chat_data = function(service)
         end
     end
 
-    -- TODO: Separate the retrieve_ai_service_cfg function into load_service and load_chat_history and print.
+    -- TODO: Separate the get_ai_service_cfg function into load_service and load_chat_history and print.
     if format ~= common.ai.format.output then
         -- todo: update
         for _, tbl in ipairs(chat.messages) do
@@ -91,7 +105,7 @@ local load_chat_data = function(service)
                 print("You :" .. tbl.content)
             elseif tbl.role == common.role.assistant then
 
-                local content = common.markdown(nil, tbl.content)
+                local content = misc.markdown(nil, tbl.content)
 
                 print()
                 print(chat.model)
@@ -139,6 +153,12 @@ end
 
 local set_chat_title = function(chat_id)
     local request = util.ubus("oasis.title", "auto_set", {id = chat_id})
+
+    if request.status == common.status.error then
+        io.write("\n\27[1;33;41m Title Creation: Error \27[0m\n")
+        return
+    end
+
     local announce =  "\n" .. "\27[1;37;44m" .. "Title:"
     announce = announce  .. "\27[1;33;44m" .. request.title
     announce = announce .. "  \27[1;37;44m" .. "ID:"
@@ -174,7 +194,7 @@ local record_chat_data = function(service, chat)
 end
 
 return {
-    retrieve_ai_service_cfg = retrieve_ai_service_cfg,
+    get_ai_service_cfg = get_ai_service_cfg,
     load_chat_data = load_chat_data,
     create_chat_file = create_chat_file,
     record_chat_data = record_chat_data,

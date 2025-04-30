@@ -37,12 +37,13 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
-	$(INSTALL_BIN) ./files/usr/bin/oasis_rollback $(1)$(APP_DIR)
+	$(INSTALL_BIN) ./files/usr/bin/oasisd $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/datactrl.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/main.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/transfer.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/filter.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/apply.lua $(1)$(LIBRARY_DIR)/oasis/chat
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/misc.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/ollama.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/openai.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/anthropic.lua $(1)$(LIBRARY_DIR)/oasis/chat/service

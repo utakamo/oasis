@@ -1,37 +1,15 @@
 #!/usr/bin/env lua
-local sys       = require("luci.sys")
-local util      = require("luci.util")
-local uci       = require("luci.model.uci").cursor()
-local jsonc     = require("luci.jsonc")
-local transfer  = require("oasis.chat.transfer")
-local datactrl  = require("oasis.chat.datactrl")
-local common    = require("oasis.common")
-local ollama    = require("oasis.chat.service.ollama")
-local openai    = require("oasis.chat.service.openai")
-local anthropic = require("oasis.chat.service.anthropic")
-local gemini    = require("oasis.chat.service.gemini")
+local sys               = require("luci.sys")
+local util              = require("luci.util")
+local uci               = require("luci.model.uci").cursor()
+local jsonc             = require("luci.jsonc")
+local transfer          = require("oasis.chat.transfer")
+local datactrl          = require("oasis.chat.datactrl")
+local common            = require("oasis.common")
 
 local error_msg = {}
 error_msg.load_service1 = "Error!\n\tOne of the service settings exist!"
 error_msg.load_service2 = "\tPlease add the service configuration with the add command."
-
-local select_service_obj = function()
-
-    local target = nil
-    local service = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "name", "")
-
-    if service == common.ai.service.ollama.name then
-        target = ollama
-    elseif service == common.ai.service.openai.name then
-        target = openai
-    elseif service == common.ai.service.anthropic.name then
-        target = anthropic
-    elseif service == common.ai.service.gemini.name then
-        target = gemini
-    end
-
-    return target
-end
 
 local chat_history = function(chat)
     print(#chat.messages)
@@ -115,7 +93,7 @@ local add = function(args)
     local output = {}
     output.format_1        = "%-64s >> "
     output.format_2        = "%-64s >> %s"
-    output.identifer       = "Identifer Name (Please enter your preferred name.)"
+    output.identifier       = "Identifer Name (Please enter your preferred name.)"
     output.service         = "Service (\"Ollama\" or \"OpenAI\" or \"Anthropic\" or \"Gemini\")"
     output.endpoint        = "Endpoint"
     output.api_key         = "API KEY (leave blank if none)"
@@ -139,13 +117,13 @@ local add = function(args)
     output.type = string.format(output.type, val.type.disable, val.type.enable)
     output.budget_tokens = string.format(output.budget_tokens, val.budget_tokens.min, val.budget_tokens.max)
 
-    if (not args.identifer) then
-        io.write(string.format(output.format_1, output.identifer))
+    if (not args.identifier) then
+        io.write(string.format(output.format_1, output.identifier))
         io.flush()
-        setup.identifer = io.read()
+        setup.identifier = io.read()
     else
-        print(string.format(output.format_2, output.identifer, args.service))
-        setup.identifer = args.identifer
+        print(string.format(output.format_2, output.identifier, args.service))
+        setup.identifier = args.identifier
     end
 
     if (not args.service) then
@@ -241,7 +219,7 @@ local add = function(args)
     end
 
     local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.service)
-    uci:set(common.db.uci.cfg, unnamed_section, "identifer", setup.identifer)
+    uci:set(common.db.uci.cfg, unnamed_section, "identifier", setup.identifier)
     uci:set(common.db.uci.cfg, unnamed_section, "name", setup.service)
     uci:set(common.db.uci.cfg, unnamed_section, endpoint_op_name, setup.endpoint)
     uci:set(common.db.uci.cfg, unnamed_section, "api_key", setup.api_key)
@@ -303,12 +281,12 @@ local show_service_list = function()
 
     local output = {}
     output.service = {}
-    output.service.in_use = function(index, identifer)
-        print("\n\27[1;34m[" .. index .. "] : " .. identifer .. " \27[1;32m(in use)\27[0m")
+    output.service.in_use = function(index, identifier)
+        print("\n\27[1;34m[" .. index .. "] : " .. identifier .. " \27[1;32m(in use)\27[0m")
     end
 
-    output.service.not_in_use = function(index, identifer)
-        print("\n\27[1;34m[" .. index .. "] : " .. identifer .. " \27[0m")
+    output.service.not_in_use = function(index, identifier)
+        print("\n\27[1;34m[" .. index .. "] : " .. identifier .. " \27[0m")
     end
 
     output.line = function()
@@ -326,9 +304,9 @@ local show_service_list = function()
         index = index + 1
         if tbl.name then
             if index == 1 then
-                output.service.in_use(index, tbl.identifer)
+                output.service.in_use(index, tbl.identifier)
             else
-                output.service.not_in_use(index, tbl.identifer)
+                output.service.not_in_use(index, tbl.identifier)
             end
 
             output.line()
@@ -431,13 +409,13 @@ local select = function(arg)
     local target_section = ""
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if service.identifer == arg.identifer then
+        if service.identifier == arg.identifier then
             target_section = service[".name"]
         end
     end)
 
     if #target_section == 0 then
-        print("Identifer Name: " .. arg.identifer .. " is not found.")
+        print("Identifer Name: " .. arg.identifier .. " is not found.")
         return
     end
 
@@ -446,13 +424,13 @@ local select = function(arg)
     uci:commit(common.db.uci.cfg)
 
     local model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
-    print(arg.identifer .. " is selected.")
+    print(arg.identifier .. " is selected.")
     print("Target model: \27[33m" .. model .. "\27[0m")
 end
 
 local chat = function(arg)
 
-    local service = select_service_obj()
+    local service = common.select_service_obj()
 
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
@@ -463,7 +441,7 @@ local chat = function(arg)
     local cfg = service:get_config()
 
     print("-----------------------------------")
-    print(string.format("%-14s :\27[33m %s \27[0m", "Identifer", cfg.identifer))
+    print(string.format("%-14s :\27[33m %s \27[0m", "Identifer", cfg.identifier))
     print(string.format("%-14s :\27[33m %s \27[0m", "AI Service", cfg.service))
     print(string.format("%-14s :\27[33m %s \27[0m", "Model", cfg.model))
     print("-----------------------------------")
@@ -534,7 +512,7 @@ end
 
 local prompt = function(arg)
 
-    local service  = select_service_obj()
+    local service = common.select_service_obj()
 
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
@@ -558,14 +536,14 @@ local output = function(arg)
         return
     end
 
-    local service = select_service_obj()
+    local service = common.select_service_obj()
 
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
         return
     end
 
-    service:initialize(common.ai.format.output)
+    service:initialize(nil, common.ai.format.output)
 
     local output = datactrl.load_chat_data(service)
 
@@ -610,14 +588,14 @@ end
 
 local call = function(arg)
 
-    local service = select_service_obj()
+    local service = common.select_service_obj()
 
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
         return
     end
 
-    service:initialize(common.ai.format.call)
+    service:initialize(nil, common.ai.format.call)
     local call = datactrl.load_chat_data(service)
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.

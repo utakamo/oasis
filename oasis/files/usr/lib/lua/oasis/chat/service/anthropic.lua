@@ -5,6 +5,7 @@ local common    = require("oasis.common")
 local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
+local misc      = require("oasis.chat.misc")
 
 local anthropic = {}
 anthropic.new = function()
@@ -19,7 +20,7 @@ anthropic.new = function()
         obj.format = nil
 
         obj.initialize = function(self, arg, format)
-            self.cfg = datactrl.retrieve_ai_service_cfg(arg, format)
+            self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
             self.format = format
         end
 
@@ -94,7 +95,7 @@ anthropic.new = function()
             reply.message.role = chunk_json.role
             reply.message.content = chunk_json.content.text
 
-            plain_text_for_console = common.markdown(self.mark, reply.message.content)
+            plain_text_for_console = misc.markdown(self.mark, reply.message.content)
             json_text_for_webui = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then

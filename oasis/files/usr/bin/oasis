@@ -137,7 +137,7 @@ for i, command in ipairs(arg) do
         end
     elseif command == cmd.select then
         if arg[i + 1] then
-            arguments.identifer = arg[i + 1]
+            arguments.identifier = arg[i + 1]
             oasis.select(arguments)
         else
             oasis.show_service_list()

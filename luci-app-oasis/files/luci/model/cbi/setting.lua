@@ -20,7 +20,7 @@ end
 
 rollback = m:section(TypedSection, "recovery")
 monitor_time = rollback:option(ListValue, "rollback_time", "Rollback Time")
-for i = 300, 600, 60 do
+for i = 180, 600, 60 do
     monitor_time:value(tostring(i), tostring(i))
 end
 
@@ -29,8 +29,8 @@ service.addremove = true
 service.anonymous = true
 service.title = "SERVICE"
 
-identifer = service:option(Value, "identifer", "Identifer")
-identifer.default = "My AI Assistant"
+identifier = service:option(Value, "identifier", "Identifer")
+identifier.default = "My AI Assistant"
 
 name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)

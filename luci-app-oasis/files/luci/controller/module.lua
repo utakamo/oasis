@@ -1,12 +1,14 @@
-local sys = require("luci.sys")
-local util = require("luci.util")
-local uci = require("luci.model.uci").cursor()
+local sys       = require("luci.sys")
+local util      = require("luci.util")
+local uci       = require("luci.model.uci").cursor()
 local luci_http = require("luci.http")
-local jsonc = require("luci.jsonc")
-local oasis = require("oasis.chat.apply")
-local common = require("oasis.common")
-local transfer = require("oasis.chat.transfer")
-local nixio = require("nixio")
+local jsonc     = require("luci.jsonc")
+local oasis     = require("oasis.chat.apply")
+local common    = require("oasis.common")
+local transfer  = require("oasis.chat.transfer")
+local misc      = require("oasis.chat.misc")
+local datactrl  = require("oasis.chat.datactrl")
+local nixio     = require("nixio")
 
 module("luci.controller.luci-app-oasis.module", package.seeall)
 
@@ -212,10 +214,10 @@ function import_chat_data()
 
     local id = common.generate_chat_id()
 
-    local conf = common.get_oasis_conf()
+    local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
     local file_name = conf.prefix .. id
-    local full_file_path = common.normalize_path(conf.path) .. file_name
-    common.touch(full_file_path)
+    local full_file_path = misc.normalize_path(conf.path) .. file_name
+    misc.touch(full_file_path)
 
     local file = io.open(full_file_path, "wb")
 
@@ -306,7 +308,7 @@ function apply_uci_cmd()
 
     local uci_list = jsonc.parse(uci_list_json)
 
-    -- initialize flag file for oasis_rollback
+    -- initialize flag file for oasisd
     os.remove("/tmp/oasis/apply/complete")
     os.remove("/tmp/oasis/apply/rollback")
 

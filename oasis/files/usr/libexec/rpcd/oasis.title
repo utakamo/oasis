@@ -1,16 +1,18 @@
 #!/usr/bin/env lua
 
-local uci = require("luci.model.uci").cursor()
-local jsonc = require("luci.jsonc")
-local transfer = require("oasis.chat.transfer")
-local common = require("oasis.common")
+local uci       = require("luci.model.uci").cursor()
+local jsonc     = require("luci.jsonc")
+local transfer  = require("oasis.chat.transfer")
+local common    = require("oasis.common")
+local misc      = require("oasis.chat.misc")
+local datactrl  = require("oasis.chat.datactrl")
 
 local sys = require("luci.sys")
 local debug_log = function(log)
     sys.exec("echo \"" .. log .. "\" >> /tmp/oasistitle.log")
 end
 
-local read_chat_data = function(file_path)
+local load_chat_data = function(file_path)
 
     -- debug_log(file_path)
 
@@ -25,7 +27,7 @@ local read_chat_data = function(file_path)
 
     -- debug_log(chat_data)
 
-    return chat_data
+    return jsonc.parse(chat_data)
 end
 
 local set_chat_title = function(id, title)
@@ -49,12 +51,22 @@ local methods = {
 
         call = function(args)
             local r = {}
-            local cfg = common.get_oasis_conf()
+
+            local cfg = datactrl.get_ai_service_cfg(nil, {with_storage = true})
             local file_name = cfg.prefix .. args.id
-            local file_path = common.normalize_path(cfg.path) .. file_name
+            local file_path = misc.normalize_path(cfg.path) .. file_name
 
             local rpath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysrole = common.load_conf_file(rpath)
+
+            local service = common.select_service_obj()
+
+            if not service then
+                r.result = jsonc.stringify({ status = common.status.not_found })
+                return r
+            end
+
+            service:initialize(nil, common.ai.format.title)
 
             -- debug_log(file_name)
             local is_search = common.search_chat_id(args.id)
@@ -64,41 +76,16 @@ local methods = {
                 return r
             end
 
-            local title = ""
-            local chat_data = read_chat_data(file_path)
-            local chat_json_tbl = jsonc.parse(chat_data)
+            local chat = load_chat_data(file_path)
+            chat.model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
+            local title = transfer.chat_with_ai(service, chat)
 
-            chat_json_tbl.model = cfg.model or "unknown"
-            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {
-                role = "system",
-                content = sysrole.general.auto_title
-            }
-
-            -- local recv_ai_msg = transfer.send_user_msg(cfg, format, chat)
-
-            local chat_json_str = jsonc.stringify(chat_json_tbl, false)
-
-            -- Post
-            transfer.post_to_server(cfg, chat_json_str, function(chunk)
-
-                local chunk_json = jsonc.parse(chunk)
-
-                if (cfg.service == common.ai.service.openai.name)
-                    or (cfg.service == common.ai.service.custom_openai.name) then
-                    title = title .. chunk_json.choices[1].message.content
-                else
-                    -- todo: check another ai service
-                    title = title .. chunk_json.message.content
-                end
-            end)
-
-            title = title:gsub("%s+", "")
-
-            local is_set = false
-
-            if #title ~= 0 then
-                is_set = set_chat_title(args.id, title)
+            if (not title) or (#title == 0) then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
             end
+
+            local is_set = set_chat_title(args.id, title)
 
             if not is_set then
                 r.result = jsonc.stringify({ status = common.status.error })

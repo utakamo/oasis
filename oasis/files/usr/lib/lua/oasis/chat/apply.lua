@@ -356,7 +356,7 @@ local apply = function(uci_list, commit)
         end
     end
 
-    sys.exec("lua /usr/bin/oasis_rollback &")
+    sys.exec("lua /usr/bin/oasisd &")
 
     for key, target_cmd_tbl in pairs(uci_list) do
         if (key == "set") and (type(target_cmd_tbl) == "table") then
