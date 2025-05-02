@@ -6,6 +6,7 @@ local common    = require("oasis.common")
 local jsonc     = require("luci.jsonc")
 local datactrl  = require("oasis.chat.datactrl")
 local util      = require("luci.util")
+local debug     = require("oasis.chat.debug")
 
 local post_to_server = function(service, user_msg_json, callback)
     local cfg = service:get_config()
@@ -102,13 +103,12 @@ local chat_with_ai = function(service, chat)
         output_llm_model(chat.model)
     end
 
+    debug.dump("send_messages.log", chat)
+
     -- send user message and receive ai message
     local ai= send_user_msg(service, chat)
 
-    -- debug
-    -- for key, val in pairs(ai) do
-    --     os.execute("echo \"" .. key .. val .. "\" >> /tmp/oasis-recv.log")
-    -- end
+    debug.dump("recv_messages.log", ai)
 
     local new_chat_info = nil
 
@@ -116,7 +116,7 @@ local chat_with_ai = function(service, chat)
         -- print("#ai.message = " .. #ai.message)
         -- print("ai.message = " .. ai.message)
         if service:setup_msg(chat, ai) then
-            datactrl.record_chat_data(service:get_config(), chat)
+            datactrl.record_chat_data(service, chat)
         end
     elseif format == common.ai.format.output then
         -- debug start
@@ -147,10 +147,8 @@ local chat_with_ai = function(service, chat)
             end
         end
     elseif format == common.ai.format.title then
-        os.execute("echo " .. ai.message .. " >> /tmp/oasis-title.log")
-        local chat_title = ai.message
-        chat_title:gsub("%s+", "")
-        return chat_title
+        -- os.execute("echo " .. ai.message .. " >> /tmp/oasis-title.log")
+        ai.message = ai.message:gsub("%s+", "")
     end
 
     return new_chat_info, ai.message

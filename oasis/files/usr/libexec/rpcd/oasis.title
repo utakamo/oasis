@@ -6,15 +6,11 @@ local transfer  = require("oasis.chat.transfer")
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 local datactrl  = require("oasis.chat.datactrl")
-
-local sys = require("luci.sys")
-local debug_log = function(log)
-    sys.exec("echo \"" .. log .. "\" >> /tmp/oasistitle.log")
-end
+local debug     = require("oasis.chat.debug")
 
 local load_chat_data = function(file_path)
 
-    -- debug_log(file_path)
+    -- debug.log("load_chat_data.log", file_path)
 
     local file = io.open(file_path, "r")
 
@@ -25,12 +21,12 @@ local load_chat_data = function(file_path)
     local chat_data = file:read("*a")
     file:close()
 
-    -- debug_log(chat_data)
+    -- debug.dump("load_chat_data.log", chat_data)
 
     return jsonc.parse(chat_data)
 end
 
-local set_chat_title = function(id, title)
+local save_chat_title = function(id, title)
 
     local unnamed_section = common.get_target_id_section(id)
 
@@ -68,7 +64,7 @@ local methods = {
 
             service:initialize(nil, common.ai.format.title)
 
-            -- debug_log(file_name)
+            debug.log("auto_set_filename.log", file_name)
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
@@ -76,21 +72,30 @@ local methods = {
                 return r
             end
 
+            -- debug.log("auto_set.log", file_path)
+
             local chat = load_chat_data(file_path)
             chat.model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
-            local title = transfer.chat_with_ai(service, chat)
+
+            -- debug.dump("auto_set_chat.log", chat)
+
+            local _, title = transfer.chat_with_ai(service, chat)
 
             if (not title) or (#title == 0) then
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
 
-            local is_set = set_chat_title(args.id, title)
+            -- debug.log("hello.log", "hello!!")
+
+            local is_set = save_chat_title(args.id, title)
 
             if not is_set then
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
+
+            -- debug.log("test.log", title)
 
             r.result = jsonc.stringify({ status = common.status.ok, title = title })
             return r
@@ -105,7 +110,7 @@ local methods = {
             local is_set = false
 
             if #args.title ~= 0 then
-                is_set = set_chat_title(args.id, args.title)
+                is_set = save_chat_title(args.id, args.title)
             end
 
             if not is_set then

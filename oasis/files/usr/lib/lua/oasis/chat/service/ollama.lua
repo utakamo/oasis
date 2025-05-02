@@ -6,6 +6,7 @@ local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
+local debug     = require("oasis.chat.debug")
 
 local ollama ={}
 ollama.new = function()
@@ -32,6 +33,8 @@ ollama.new = function()
 
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysrole = common.load_conf_file(spath)
+
+            os.execute("echo " .. self.format .. " >> /tmp/oasis_recv.log")
 
             -- System message(rule or knowledge) for chat
             if (self.format == common.ai.format.chat) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
@@ -68,7 +71,7 @@ ollama.new = function()
 
             -- System message(rule or knowledge) for creating chat title
             if (self.format == common.ai.format.title) then
-                table.insert(chat.messages, 1, {
+                table.insert(chat.messages, #chat.messages + 1, {
                     role = common.role.system,
                     content = string.gsub(sysrole.general.auto_title, "\\n", "\n")
                 })
@@ -97,6 +100,9 @@ ollama.new = function()
 
             local chunk_json = jsonc.parse(chunk)
 
+            -- debug
+            -- io.write(chunk)
+
             if (not chunk_json)
                 or (type(chunk_json) ~= "table")
                 or (not chunk_json.message)
@@ -121,6 +127,7 @@ ollama.new = function()
         obj.append_chat_data = function(self, chat)
             local message = {}
             message.id = self.cfg.id
+            debug.log("ollama-debug.log", message.id)
             message.role1 = chat.messages[#chat.messages - 1].role
             message.content1 = chat.messages[#chat.messages - 1].content
             message.role2 = chat.messages[#chat.messages].role

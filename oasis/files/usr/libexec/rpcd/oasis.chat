@@ -6,14 +6,11 @@ local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 local datactrl  = require("oasis.chat.datactrl")
-
-local debug_log = function(log)
-    sys.exec("echo \"" .. log .. "\" >> /tmp/oasis.log")
-end
+local debug     = require("oasis.chat.debug")
 
 local read_chat_data = function(file_path)
 
-    -- debug_log(file_path)
+    -- debug.log("read_chat_data.log", file_path)
 
     local file = io.open(file_path, "r")
 
@@ -24,7 +21,7 @@ local read_chat_data = function(file_path)
     local chat_data = file:read("*a")
     file:close()
 
-    -- debug_log(chat_data)
+    -- debug.log("read_chat_data.log", chat_data)
 
     return chat_data
 end
@@ -73,7 +70,7 @@ local methods = {
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
-                -- debug_log("not found")
+                -- debug.log("load.log", "not found")
                 r.result = jsonc.stringify({ status = common.status.not_found })
                 return r
             end
@@ -82,7 +79,7 @@ local methods = {
             local chat_data = read_chat_data(full_file_path)
 
             if #chat_data == 0 then
-                -- debug_log("error")
+                -- debug.log("load.log", "error")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -99,19 +96,19 @@ local methods = {
         call = function(args)
             local r = {}
 
-            -- debug_log(conf.path)
+            -- debug.log("create.log", conf.path)
             -- sys.exec("mkdir -p " .. conf.path)
 
             local id = common.generate_chat_id()
 
             if #id == 0 then
-                -- debug_log("hello")
+                -- debug.log("create.log", "hello")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
 
             local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
-            -- debug_log("get_oasis_conf")
+            -- debug.log("create.log", "get_oasis_conf")
             local file_name = conf.prefix .. id
             local full_file_path = misc.normalize_path(conf.path) .. file_name
             misc.touch(full_file_path)
@@ -156,7 +153,7 @@ local methods = {
             local file_name = conf.prefix .. args.id
             local full_file_path = misc.normalize_path(conf.path) .. file_name
 
-            -- debug_log(full_file_path)
+            debug.log("append.log", full_file_path)
 
             local file = io.open(full_file_path, "r")
 
@@ -168,7 +165,7 @@ local methods = {
             local chat_data = file:read("*a")
             file:close()
 
-            -- debug_log("[1]: " .. chat_data)
+            debug.dump("append-dump.log", chat_data)
 
             local chat_json_tbl = jsonc.parse(chat_data)
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role1, content = args.content1}
@@ -176,12 +173,12 @@ local methods = {
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
-            -- debug_log(chat_json_str)
+            debug.log("append.log", chat_json_str)
 
             file = io.open(full_file_path, "w")
 
             if not file then
-                -- debug_log(full_file_path)
+                -- debug.log("append.log", full_file_path)
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -217,7 +214,7 @@ local methods = {
             local full_file_path = misc.normalize_path(conf.path) .. file_name
             local result = os.remove(full_file_path)
 
-            -- debug_log(full_file_path)
+            -- debug.log("delete.log", full_file_path)
 
             if not result then
                 r.result = jsonc.stringify({ status = common.status.error })

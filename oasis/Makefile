@@ -44,6 +44,7 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/filter.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/apply.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/misc.lua $(1)$(LIBRARY_DIR)/oasis/chat
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/debug.lua $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/ollama.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/openai.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/anthropic.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
