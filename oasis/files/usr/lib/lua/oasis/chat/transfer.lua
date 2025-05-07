@@ -136,14 +136,15 @@ local chat_with_ai = function(service, chat)
         if (not service:get_config().id) or (#service:get_config().id == 0) then
             if service:setup_msg(chat, ai) then
                 local chat_info = {}
-                chat_info.id = datactrl.create_chat_file(service:get_config(), chat)
+                chat_info.id = datactrl.create_chat_file(service, chat)
                 local result = util.ubus("oasis.title", "auto_set", {id = chat_info.id})
                 chat_info.title = result.title
                 new_chat_info = jsonc.stringify(chat_info, false)
             end
         else
             if service:setup_msg(chat, ai) then
-                service:append_chat_data(service:get_config(), chat)
+                debug.log("chat_with_ai.log", "call append_chat_data")
+                service:append_chat_data(service, chat)
             end
         end
     elseif format == common.ai.format.title then

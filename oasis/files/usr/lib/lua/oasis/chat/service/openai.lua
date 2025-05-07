@@ -29,26 +29,43 @@ openai.new = function()
             self.recv_raw_msg.message = ""
         end
 
+        obj.set_chat_id = function(self, id)
+            self.cfg.id = id
+        end
+
         obj.setup_system_msg = function(self, chat)
 
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysrole = common.load_conf_file(spath)
 
-            -- System message(rule or knowledge) for chat
-            if (self.format == common.ai.format.chat) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.chat, "\\n", "\n")
-                })
-                return
-            end
+            -- The system message (knowledge) is added to the first message in the chat.
+            -- The first message is data that has not been assigned a chat ID.
+            if (not self.cfg.id) or (#self.cfg.id == 0) then
+                -- System message(rule or knowledge) for chat
+                if (self.format == common.ai.format.chat) then
+                    table.insert(chat.messages, 1, {
+                        role = common.role.system,
+                        content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                    })
+                    return
+                end
 
-            if (self.format == common.ai.format.output) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.output, "\\n", "\n")
-                })
-                return
+                if (self.format == common.ai.format.output) then
+                    table.insert(chat.messages, 1, {
+                        role = common.role.system,
+                        content = string.gsub(sysrole.default.output, "\\n", "\n")
+                    })
+                    return
+                end
+
+                -- System message(rule or knowledge) for creating chat title
+                if (self.format == common.ai.format.title) then
+                    table.insert(chat.messages, 1, {
+                        role = common.role.system,
+                        content = string.gsub(sysrole.general.auto_title, "\\n", "\n")
+                    })
+                    return
+                end
             end
 
             if self.format == common.ai.format.prompt then
@@ -63,15 +80,6 @@ openai.new = function()
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
                     content = string.gsub(sysrole.default.call, "\\n", "\n")
-                })
-                return
-            end
-
-            -- System message(rule or knowledge) for creating chat title
-            if (self.format == common.ai.format.title) then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.general.auto_title, "\\n", "\n")
                 })
                 return
             end

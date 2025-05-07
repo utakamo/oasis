@@ -141,6 +141,7 @@ local methods = {
         },
 
         call = function(args)
+            debug.log("append.log", "hello")
             local r = {}
             local is_same_id = common.search_chat_id(args.id)
 
@@ -148,6 +149,8 @@ local methods = {
                 r.result = jsonc.stringify({ status = common.status.not_found })
                 return r
             end
+
+            debug.log("append.log", "hello")
 
             local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
             local file_name = conf.prefix .. args.id

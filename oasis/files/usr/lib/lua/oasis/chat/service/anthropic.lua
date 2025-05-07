@@ -29,6 +29,10 @@ anthropic.new = function()
             self.recv_raw_msg.message = ""
         end
 
+        obj.set_chat_id = function(self, id)
+            self.cfg.id = id
+        end
+
         obj.setup_system_msg = function(self, chat)
 
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")

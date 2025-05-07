@@ -29,6 +29,10 @@ gemini.new = function()
             self.recv_raw_msg.message = ""
         end
 
+        obj.set_chat_id = function(self, id)
+            self.cfg.id = id
+        end
+
         obj.setup_msg = function(chat, speaker)
 
             if (not speaker.role)
@@ -43,6 +47,10 @@ gemini.new = function()
             chat.messages[#chat.messages].content = speaker.message
 
             return true
+        end
+
+        obj.set_chat_id = function(self, id)
+            self.cfg.id = id
         end
 
         obj.setup_system_msg = function(self, chat)

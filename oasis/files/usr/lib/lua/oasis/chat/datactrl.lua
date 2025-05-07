@@ -152,13 +152,15 @@ local create_chat_file = function(service, chat)
     return result.id
 end
 
-local set_chat_title = function(chat_id)
+local set_chat_title = function(service, chat_id)
     local request = util.ubus("oasis.title", "auto_set", {id = chat_id})
 
     if request.status == common.status.error then
         io.write("\n\27[1;33;41m Title Creation: Error \27[0m\n")
         return
     end
+
+    service:set_chat_id(chat_id)
 
     local announce =  "\n" .. "\27[1;37;44m" .. "Title:"
     announce = announce  .. "\27[1;33;44m" .. request.title
@@ -184,13 +186,16 @@ local record_chat_data = function(service, chat)
     -- chat.messages[6] ... user message
     -- chat.messages[7] ... ai message <---- Save chat data
 
+    debug.log("append_chat_data.log", #chat.messages)
+    debug.dump("append_chat_data.log", chat)
+
     -- First Conversation
     if #chat.messages == 3 then
         local chat_id = create_chat_file(service, chat)
-        set_chat_title(chat_id)
+        set_chat_title(service, chat_id)
     -- Conversation after the second
     elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
-        debug.dump("append_chat_data.log", chat)
+        debug.dump("append_chat_data_dump.log", chat)
         service:append_chat_data(chat)
     end
 end
