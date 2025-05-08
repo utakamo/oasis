@@ -150,13 +150,13 @@ local methods = {
                 return r
             end
 
-            debug.log("append.log", "hello")
+            -- debug.log("append.log", "hello")
 
             local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
             local file_name = conf.prefix .. args.id
             local full_file_path = misc.normalize_path(conf.path) .. file_name
 
-            debug.log("append.log", full_file_path)
+            -- debug.log("append.log", full_file_path)
 
             local file = io.open(full_file_path, "r")
 
@@ -168,15 +168,15 @@ local methods = {
             local chat_data = file:read("*a")
             file:close()
 
-            debug.dump("append-dump.log", chat_data)
+            -- debug.log("append.log", chat_data)
 
-            local chat_json_tbl = jsonc.parse(chat_data)
-            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role1, content = args.content1}
-            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role2, content = args.content2}
+            local chat_data_tbl = jsonc.parse(chat_data)
+            chat_data_tbl.messages[#chat_data_tbl.messages + 1] = {role = args.role1, content = args.content1}
+            chat_data_tbl.messages[#chat_data_tbl.messages + 1] = {role = args.role2, content = args.content2}
 
-            local chat_json_str = jsonc.stringify(chat_json_tbl, false)
+            local added_chat_data = jsonc.stringify(chat_data_tbl, false)
 
-            debug.log("append.log", chat_json_str)
+            -- debug.log("append.log", added_chat_data)
 
             file = io.open(full_file_path, "w")
 
@@ -186,7 +186,7 @@ local methods = {
                 return r
             end
 
-            file:write(chat_json_str)
+            file:write(added_chat_data)
             file:close()
 
             r.result = jsonc.stringify({ status = common.status.ok })
