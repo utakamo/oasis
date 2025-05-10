@@ -55,7 +55,7 @@ ollama.new = function()
                 if self.format == common.ai.format.output then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
-                        content = string.gsub(sysrole.default.output, "\\n", "\n")
+                        content = string.gsub(sysrole[self.cfg.sysmsg_key].chat, "\\n", "\n")
                     })
                     return
                 end
@@ -94,12 +94,15 @@ ollama.new = function()
                 or (speaker.role == common.role.unknown)
                 or (not speaker.message)
                 or (#speaker.message == 0) then
+                -- debug.log("setup_msg.log", "false")
                 return false
             end
 
             chat.messages[#chat.messages + 1] = {}
             chat.messages[#chat.messages].role = speaker.role
             chat.messages[#chat.messages].content = speaker.message
+
+            -- debug.dump("setup_msg.log", chat)
 
             return true
         end
@@ -133,9 +136,14 @@ ollama.new = function()
         end
 
         obj.append_chat_data = function(self, chat)
+            -- debug.log("append_chat_data.log", "called")
+            -- debug.log("append_chat_data.log", "id = " .. self.cfg.id)
+            -- debug.log("append_chat_data.log", chat.messages[#chat.messages - 1].role)
+            -- debug.log("append_chat_data.log", chat.messages[#chat.messages - 1].content)
+            -- debug.log("append_chat_data.log", chat.messages[#chat.messages].role)
+            -- debug.log("append_chat_data.log", chat.messages[#chat.messages].content)
             local message = {}
             message.id = self.cfg.id
-            debug.log("ollama-debug.log", message.id)
             message.role1 = chat.messages[#chat.messages - 1].role
             message.content1 = chat.messages[#chat.messages - 1].content
             message.role2 = chat.messages[#chat.messages].role

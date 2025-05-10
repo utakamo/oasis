@@ -544,7 +544,7 @@ local output = function(arg)
         return
     end
 
-    service:initialize(nil, common.ai.format.output)
+    service:initialize(arg, common.ai.format.output)
 
     local output = datactrl.load_chat_data(service)
 

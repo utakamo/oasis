@@ -91,6 +91,8 @@ end
 
 local chat_with_ai = function(service, chat)
 
+    debug.log("chat_with_ai.log", "called")
+
     local format = service:get_format()
 
     local output_llm_model = function(model)
@@ -133,7 +135,10 @@ local chat_with_ai = function(service, chat)
         ]]
         -- debug end
 
-        if (not service:get_config().id) or (#service:get_config().id == 0) then
+        local cfg = service:get_config()
+
+        if (not cfg.id) or (#cfg.id == 0) then
+            debug.log("output.log", "called")
             if service:setup_msg(chat, ai) then
                 local chat_info = {}
                 chat_info.id = datactrl.create_chat_file(service, chat)
@@ -142,9 +147,10 @@ local chat_with_ai = function(service, chat)
                 new_chat_info = jsonc.stringify(chat_info, false)
             end
         else
+            debug.log("output.log", "second")
             if service:setup_msg(chat, ai) then
                 debug.log("chat_with_ai.log", "call append_chat_data")
-                service:append_chat_data(service, chat)
+                service:append_chat_data(chat)
             end
         end
     elseif format == common.ai.format.title then
