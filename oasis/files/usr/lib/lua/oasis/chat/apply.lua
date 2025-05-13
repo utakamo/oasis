@@ -5,6 +5,7 @@ local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local sys       = require("luci.sys")
 local common    = require("oasis.common")
+local debug     = require("oasis.chat.debug")
 
 local backup = function(uci_list, id, backup_type)
 
@@ -79,6 +80,8 @@ local backup = function(uci_list, id, backup_type)
 end
 
 local recovery = function()
+
+    debug.log("recovery.log", "called")
 
     local is_enable = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
 

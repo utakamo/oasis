@@ -6,9 +6,6 @@ local oasis     = require("oasis.chat.apply")
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 
-local apply_complete = "/tmp/oasis/apply/complete"
-local apply_rollback = "/tmp/oasis/apply/rollback"
-
 local is_backup = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
 local limit_time = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "rollback_time") or "300"
 
@@ -31,11 +28,11 @@ end
 while true do
     local final_uptime = misc.get_uptime()
 
-    if common.check_file_exist(apply_complete) then
+    if misc.check_file_exist(common.flag.apply.complete) then
         uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "0")
         uci:commit(common.db.uci.cfg)
         return 0
-    elseif common.check_file_exist(apply_rollback) then
+    elseif misc.check_file_exist(common.flag.apply.rollback) then
         oasis.recovery()
         return 0
     end

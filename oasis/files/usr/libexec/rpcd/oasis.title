@@ -64,7 +64,7 @@ local methods = {
 
             service:initialize(nil, common.ai.format.title)
 
-            debug.log("auto_set_filename.log", file_name)
+            -- debug.log("auto_set_filename.log", file_name)
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then

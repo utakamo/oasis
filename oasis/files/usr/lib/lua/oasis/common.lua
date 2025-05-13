@@ -61,6 +61,11 @@ ai.format.call                      = "call"
 ai.format.output                    = "output"
 ai.format.title                     = "ai_create_title"
 
+local flag = {}
+flag.apply = {}
+flag.apply.complete = "/tmp/oasis/apply/complete"
+flag.apply.rollback = "/tmp/oasis/apply/rollback"
+
 local role = {}
 role.system      = "system"
 role.user        = "user"
@@ -187,14 +192,14 @@ local generate_chat_id = function()
 
     local is_exist
 
-    -- debug_log("generate_chat_id")
+    -- debug.log("generate_chat_id")
 
     repeat
         retry = retry - 1
 
         id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
 
-        -- debug_log(id)
+        -- debug.log(id)
 
         is_exist = search_chat_id(id)
 
@@ -204,7 +209,7 @@ local generate_chat_id = function()
         id = ""
     end
 
-    -- debug_log("new = " .. id)
+    -- debug.log("new = " .. id)
 
     return id
 end
@@ -235,6 +240,7 @@ end
 return {
     db = db,
     ai = ai,
+    flag = flag,
     role = role,
     select_service_obj = select_service_obj,
     status = status,

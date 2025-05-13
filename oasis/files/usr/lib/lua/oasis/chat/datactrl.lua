@@ -186,8 +186,8 @@ local record_chat_data = function(service, chat)
     -- chat.messages[6] ... user message
     -- chat.messages[7] ... ai message <---- Save chat data
 
-    debug.log("append_chat_data.log", #chat.messages)
-    debug.dump("append_chat_data.log", chat)
+    -- debug.log("append_chat_data.log", #chat.messages)
+    -- debug.dump("append_chat_data.log", chat)
 
     -- First Conversation
     if #chat.messages == 3 then

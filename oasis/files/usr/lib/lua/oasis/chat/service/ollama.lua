@@ -38,7 +38,7 @@ ollama.new = function()
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysrole = common.load_conf_file(spath)
 
-            os.execute("echo " .. self.format .. " >> /tmp/oasis_recv.log")
+            -- os.execute("echo " .. self.format .. " >> /tmp/oasis_recv.log")
 
             -- The system message (knowledge) is added to the first message in the chat.
             -- The first message is data that has not been assigned a chat ID.

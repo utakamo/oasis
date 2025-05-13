@@ -9,6 +9,7 @@ local transfer  = require("oasis.chat.transfer")
 local misc      = require("oasis.chat.misc")
 local datactrl  = require("oasis.chat.datactrl")
 local nixio     = require("nixio")
+local debug     = require("oasis.chat.debug")
 
 module("luci.controller.luci-app-oasis.module", package.seeall)
 
@@ -40,10 +41,6 @@ function index()
     entry({"admin", "network", "oasis", "uci-config-list"}, call("uci_config_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "uci-show"}, call("uci_show"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-extra-sysmsg"}, call("load_extra_sysmsg"), nil).leaf = true
-end
-
-local debug_log = function(log)
-    sys.exec("echo \"" .. log .. "\" >> /tmp/oasis-module.log")
 end
 
 function uci_show_config(target)
@@ -309,15 +306,16 @@ function apply_uci_cmd()
     local uci_list = jsonc.parse(uci_list_json)
 
     -- initialize flag file for oasisd
-    os.remove("/tmp/oasis/apply/complete")
-    os.remove("/tmp/oasis/apply/rollback")
+    os.remove(common.flag.apply.complete)
+    os.remove(common.flag.apply.rollback)
 
     if apply_type == "commit" then
-        -- debug_log("commit-normal")
+        -- debug.log("apply.log", "backup")
         oasis.backup(uci_list, chat_id, "normal")
+        -- debug.log("apply.log", "apply")
         oasis.apply(uci_list, true) -- true: commit uci config (/etc/config/~)
     else
-        -- debug_log("commit-else")
+        -- debug.log("commit-else")
         oasis.apply(uci_list, false) -- false: save uci config (/tmp/.uci/~)
     end
 

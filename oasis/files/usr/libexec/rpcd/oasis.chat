@@ -141,7 +141,7 @@ local methods = {
         },
 
         call = function(args)
-            debug.log("append.log", "hello")
+            -- debug.log("append.log", "hello")
             local r = {}
             local is_same_id = common.search_chat_id(args.id)
 
