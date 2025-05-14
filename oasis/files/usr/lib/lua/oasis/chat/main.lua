@@ -7,6 +7,7 @@ local jsonc             = require("luci.jsonc")
 local transfer          = require("oasis.chat.transfer")
 local datactrl          = require("oasis.chat.datactrl")
 local common            = require("oasis.common")
+local debug             = require("oasis.chat.debug")
 
 local error_msg = {}
 error_msg.load_service1 = "Error!\n\tOne of the service settings exist!"

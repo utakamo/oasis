@@ -85,18 +85,22 @@ openai.new = function()
             end
         end
 
-        obj.setup_msg = function(chat, speaker)
+        obj.setup_msg = function(self, chat, speaker)
 
             if (not speaker.role)
-                or (speaker.role ~= common.role.unknown)
+                or (#speaker.role == 0)
+                or (speaker.role == common.role.unknown)
                 or (not speaker.message)
                 or (#speaker.message == 0) then
+                -- debug.log("setup_msg.log", "false")
                 return false
             end
 
             chat.messages[#chat.messages + 1] = {}
             chat.messages[#chat.messages].role = speaker.role
             chat.messages[#chat.messages].content = speaker.message
+
+            -- debug.dump("setup_msg.log", chat)
 
             return true
         end
@@ -149,11 +153,11 @@ openai.new = function()
             util.ubus("oasis.chat", "append", message)
         end
 
-        obj.config = function(self)
+        obj.get_config = function(self)
             return self.cfg
         end
 
-        obj.format = function(self)
+        obj.get_format = function(self)
             return self.format
         end
 
