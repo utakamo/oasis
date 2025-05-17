@@ -6,6 +6,7 @@ local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
+-- local debug     = require("oasis.chat.debug")
 
 local openai = {}
 openai.new = function()
@@ -86,13 +87,14 @@ openai.new = function()
         end
 
         obj.setup_msg = function(self, chat, speaker)
+            -- debug:log("oasis.log", "\n--- [openai.lua][setup_msg] ---")
 
             if (not speaker.role)
                 or (#speaker.role == 0)
                 or (speaker.role == common.role.unknown)
                 or (not speaker.message)
                 or (#speaker.message == 0) then
-                -- debug.log("setup_msg.log", "false")
+                -- debug:log("oasis.log", "false")
                 return false
             end
 
@@ -100,7 +102,7 @@ openai.new = function()
             chat.messages[#chat.messages].role = speaker.role
             chat.messages[#chat.messages].content = speaker.message
 
-            -- debug.dump("setup_msg.log", chat)
+            -- debug:dump("oasis.log", chat)
 
             return true
         end

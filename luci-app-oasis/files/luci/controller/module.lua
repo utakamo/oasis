@@ -9,7 +9,7 @@ local transfer  = require("oasis.chat.transfer")
 local misc      = require("oasis.chat.misc")
 local datactrl  = require("oasis.chat.datactrl")
 local nixio     = require("nixio")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 module("luci.controller.luci-app-oasis.module", package.seeall)
 
@@ -285,23 +285,20 @@ end
 
 function apply_uci_cmd()
 
-    -- os.execute("echo apply_uci_cmd called >> /tmp/oasis-apply.log")
+    -- debug:log("oasis.log", "\n--- [module.lua][apply_uci_cmd] ---")
 
     local uci_list_json = luci_http.formvalue("uci_list")
     local chat_id = luci_http.formvalue("id")
     local apply_type = luci_http.formvalue("type")
 
     if (not uci_list_json) or (not chat_id) then
-        -- for debug
-        -- os.execute("echo \"apply_uci_cmd argument error\" >> /tmp/oasis-apply.log")
         luci_http.prepare_content("application/json")
         luci_http.write_json({ error = "Missing params" })
         return
     end
 
-    -- for debug
-    -- os.execute("echo \"chat_id = " .. chat_id .. "\" >> /tmp/oasis-apply.log")
-    -- os.execute("echo \"uci_list_json" .. uci_list_json .. "\" >> /tmp/oasis-apply.log")
+    -- debug:log("oasis.log", "chat id = " .. chat_id)
+    -- debug:log("oasis.log", "uci_list_json = " .. uci_list_json)
 
     local uci_list = jsonc.parse(uci_list_json)
 
@@ -310,12 +307,9 @@ function apply_uci_cmd()
     os.remove(common.flag.apply.rollback)
 
     if apply_type == "commit" then
-        -- debug.log("apply.log", "backup")
         oasis.backup(uci_list, chat_id, "normal")
-        -- debug.log("apply.log", "apply")
         oasis.apply(uci_list, true) -- true: commit uci config (/etc/config/~)
     else
-        -- debug.log("commit-else")
         oasis.apply(uci_list, false) -- false: save uci config (/tmp/.uci/~)
     end
 

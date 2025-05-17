@@ -7,7 +7,7 @@ local jsonc             = require("luci.jsonc")
 local transfer          = require("oasis.chat.transfer")
 local datactrl          = require("oasis.chat.datactrl")
 local common            = require("oasis.common")
-local debug             = require("oasis.chat.debug")
+-- local debug             = require("oasis.chat.debug")
 
 local error_msg = {}
 error_msg.load_service1 = "Error!\n\tOne of the service settings exist!"
@@ -534,6 +534,8 @@ end
 
 local output = function(arg)
 
+    -- debug:log("oasis.log", "\n--- [main.lua][output] ---")
+
     if (not arg.message) then
         return
     end
@@ -553,6 +555,7 @@ local output = function(arg)
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
     if service:setup_msg(output, { role = common.role.user, message = arg.message}) then
+        -- debug:log("oasis.log", "call record_chat_data func")
         datactrl.record_chat_data(service, output)
         new_chat_info, message = transfer.chat_with_ai(service, output)
     end

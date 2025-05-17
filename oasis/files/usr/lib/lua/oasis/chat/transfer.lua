@@ -6,7 +6,7 @@ local common    = require("oasis.common")
 local jsonc     = require("luci.jsonc")
 local datactrl  = require("oasis.chat.datactrl")
 local util      = require("luci.util")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 local post_to_server = function(service, user_msg_json, callback)
     local cfg = service:get_config()
@@ -91,7 +91,7 @@ end
 
 local chat_with_ai = function(service, chat)
 
-    -- debug.log("chat_with_ai.log", "called")
+    -- debug:log("oasis.log", "\n--- [transfer.lug][chat_with_ai] ---")
 
     local format = service:get_format()
 
@@ -105,12 +105,12 @@ local chat_with_ai = function(service, chat)
         output_llm_model(chat.model)
     end
 
-    -- debug.dump("send_messages.log", chat)
+    -- -- debug:dump("send_messages.log", chat)
 
     -- send user message and receive ai message
     local ai= send_user_msg(service, chat)
 
-    -- debug.dump("recv_messages.log", ai)
+    -- -- debug:dump("recv_messages.log", ai)
 
     local new_chat_info = nil
 
@@ -138,7 +138,7 @@ local chat_with_ai = function(service, chat)
         local cfg = service:get_config()
 
         if (not cfg.id) or (#cfg.id == 0) then
-            -- debug.log("output.log", "called")
+            -- debug:log("oasis.log", "first called")
             if service:setup_msg(chat, ai) then
                 local chat_info = {}
                 chat_info.id = datactrl.create_chat_file(service, chat)
@@ -147,14 +147,14 @@ local chat_with_ai = function(service, chat)
                 new_chat_info = jsonc.stringify(chat_info, false)
             end
         else
-            -- debug.log("output.log", "second")
+            -- debug:log("oasis.log", "second called")
             if service:setup_msg(chat, ai) then
-                -- debug.log("chat_with_ai.log", "call append_chat_data")
+                -- debug:log("oasis.log", "call append_chat_data")
                 service:append_chat_data(chat)
             end
         end
     elseif format == common.ai.format.title then
-        -- os.execute("echo " .. ai.message .. " >> /tmp/oasis-title.log")
+        -- debug:log("oasis.log", ai.message)
         ai.message = ai.message:gsub("%s+", "")
     end
 

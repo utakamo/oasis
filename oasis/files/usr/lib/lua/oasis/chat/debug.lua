@@ -1,33 +1,66 @@
 #!/usr/bin/env lua
 
-local sys       = require("luci.sys")
+--[[
+[Debug Log Mode]
+Debug log can be enabled by executing the following UCI commands:
+- uci set oasis.debug.disabled=0
+- uci commit oasis
 
-local log = function(filename, msg)
-    sys.exec("echo \"" .. msg .. "\" >> /tmp/" .. filename)
-end
+Additionally, to set the log output destination to a static area (/etc/oasis), use the following command:
+- uci set oasis.debug.volatile=0
+- uci commit oasis
 
-local dump = function(filename, data)
-    -- debug
-    for k1, v1 in pairs(data) do
-        if type(v1) == "string" then
-            log(filename, "data[" .. k1 .. "]=" .. v1)
-        elseif type(v1) == "table" then
-            for k2, v2 in pairs(v1) do
-                if type(v2) == "string" then
-                    log(filename, "data[" .. k1 .. "][" .. k2 .. "]=" .. v2)
-                elseif type(v2) == "table" then
-                    for k3, v3 in pairs(v2) do
-                        if type(v3) == "string" then
-                            log(filename, "data[" .. k1 .. "][" .. k2 .. "][" .. k3 .. "]=" .. v3)
-                        end
-                    end
-                end
+If volatile=1 (default), logs will be output to /tmp.
+
+Note:
+Currently, when debug logs are enabled, only the processing of Oasis UBUS objects is logged.
+To enable logging for the Lua script being debugged, add calls to the log or dump functions.
+]]
+
+local uci = require("luci.model.uci").cursor()
+
+local debug = {}
+debug.new = function()
+
+    local obj = {}
+
+    obj.disabled = uci:get_bool("oasis", "debug", "disabled")
+
+    obj.dest = "/etc/oasis/"
+
+    if uci:get_bool("oasis", "debug", "volatile") then
+        obj.dest = "/tmp/"
+    end
+
+    obj.log = function(self, filename, msg)
+        if self.disabled then return end
+
+        local path = self.dest .. filename
+        local file = io.open(path, "a")
+        if not file then
+            return
+        end
+        file:write(msg .. "\n")
+        file:close()
+    end
+
+    obj.recursive_dump = function(self, filename, tbl, path)
+        for k, v in pairs(tbl) do
+            local key_path = path .. "[" .. tostring(k) .. "]"
+            if type(v) == "string" then
+                self:log(filename, key_path .. "=" .. v)
+            elseif type(v) == "table" then
+                self:recursive_dump(filename, v, key_path)
             end
         end
     end
+
+    obj.dump = function(self, filename, data)
+        if self.disabled then return end
+        self:recursive_dump(filename, data, "data")
+    end
+
+    return obj
 end
 
-return {
-    log = log,
-    dump = dump,
-}
+return debug.new()

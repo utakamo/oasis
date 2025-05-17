@@ -5,7 +5,7 @@ local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local sys       = require("luci.sys")
 local common    = require("oasis.common")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 local backup = function(uci_list, id, backup_type)
 
@@ -81,12 +81,12 @@ end
 
 local recovery = function()
 
-    debug.log("recovery.log", "called")
+    -- debug:log("oasis.log", "\n--- [apply.lua][recovery] ---")
 
     local is_enable = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
 
     if not is_enable then
-        -- sys.exec("echo \"recovery invalid\" >> /tmp/oasis-recovery.log")
+        -- debug:log("oasis.log", "recovery invalid")
         return
     end
 
@@ -95,7 +95,7 @@ local recovery = function()
     local backup_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.backup, "targets")
 
     if #backup_list == 0 then
-        -- sys.exec("echo \"no backup list\" >> /tmp/oasis-recovery.log")
+        -- debug:log("oasis.log", "No Backup List")
         return
     end
 
@@ -103,7 +103,9 @@ local recovery = function()
         -- if config == "full_backup" then
         --     sys.exec("uci -f /etc/oasis/backup/full_backup import")
         -- else
-        sys.exec("uci -f /etc/oasis/backup/" .. config .. " import " .. config)
+        local import_cmd = "uci -f /etc/oasis/backup/" .. config .. " import " .. config
+        -- debug:log("oasis.log", import_cmd)
+        sys.exec(import_cmd)
         -- end
     end
 

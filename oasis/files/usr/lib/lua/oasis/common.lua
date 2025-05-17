@@ -2,6 +2,7 @@
 
 local uci   = require("luci.model.uci").cursor()
 local sys   = require("luci.sys")
+-- local debug = require("oasis.chat.debug")
 
 local db                     = {}
 db.uci                       = {}
@@ -192,14 +193,14 @@ local generate_chat_id = function()
 
     local is_exist
 
-    -- debug.log("generate_chat_id")
+    -- -- debug:log("oasis.log", "\n --- [common.lua][generate_chat_id] --- ")
 
     repeat
         retry = retry - 1
 
         id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
 
-        -- debug.log(id)
+        -- -- debug:log("oasis.log", "id = " .. id)
 
         is_exist = search_chat_id(id)
 
@@ -208,8 +209,6 @@ local generate_chat_id = function()
     if is_exist then
         id = ""
     end
-
-    -- debug.log("new = " .. id)
 
     return id
 end

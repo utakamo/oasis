@@ -10,7 +10,8 @@ local debug     = require("oasis.chat.debug")
 
 local read_chat_data = function(file_path)
 
-    -- debug.log("read_chat_data.log", file_path)
+    debug:log("oasis.log", "\n--- [oasis.chat][read_chat_data] ---")
+    debug:log("oasis.log", "file path = " .. file_path)
 
     local file = io.open(file_path, "r")
 
@@ -21,7 +22,7 @@ local read_chat_data = function(file_path)
     local chat_data = file:read("*a")
     file:close()
 
-    -- debug.log("read_chat_data.log", chat_data)
+    debug:log("oasis.log", "chat data = " .. chat_data)
 
     return chat_data
 end
@@ -64,13 +65,15 @@ local methods = {
         args = { id = "a_string" },
 
         call = function(args)
+            debug:log("oasis.log", "\n--- [oasis.chat][load] ---")
+
             local r = {}
             local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
             local file_name = conf.prefix .. args.id
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
-                -- debug.log("load.log", "not found")
+                debug:log("oasis.log", common.status.not_found)
                 r.result = jsonc.stringify({ status = common.status.not_found })
                 return r
             end
@@ -79,7 +82,7 @@ local methods = {
             local chat_data = read_chat_data(full_file_path)
 
             if #chat_data == 0 then
-                -- debug.log("load.log", "error")
+                debug:log("oasis.log", common.status.error)
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -94,23 +97,23 @@ local methods = {
         args = { role1 = "a_string", content1 = "a_string", role2 = "a_string", content2 = "a_string", role3 = "a_string", content3 = "a_string" },
 
         call = function(args)
+            debug:log("oasis.log", "\n--- [oasis.chat][create] ---")
             local r = {}
-
-            -- debug.log("create.log", conf.path)
-            -- sys.exec("mkdir -p " .. conf.path)
 
             local id = common.generate_chat_id()
 
             if #id == 0 then
-                -- debug.log("create.log", "hello")
+                debug:log("oasis.log", "status = " .. common.status.error)
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
 
             local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
-            -- debug.log("create.log", "get_oasis_conf")
+            debug:log("oasis.log", "config path = " .. conf.path)
             local file_name = conf.prefix .. id
+            debug:log("oasis.log", "file name = " .. file_name)
             local full_file_path = misc.normalize_path(conf.path) .. file_name
+            debug:log("oasis.log", "full file path = " .. full_file_path)
             misc.touch(full_file_path)
 
             local chat_json_tbl = {}
@@ -141,22 +144,21 @@ local methods = {
         },
 
         call = function(args)
-            -- debug.log("append.log", "hello")
+            debug:log("oasis.log", "\n--- [oasis.chat][append] ---")
             local r = {}
             local is_same_id = common.search_chat_id(args.id)
 
             if not is_same_id then
+                debug:log("oasis.log", common.status.not_found)
                 r.result = jsonc.stringify({ status = common.status.not_found })
                 return r
             end
-
-            -- debug.log("append.log", "hello")
 
             local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
             local file_name = conf.prefix .. args.id
             local full_file_path = misc.normalize_path(conf.path) .. file_name
 
-            -- debug.log("append.log", full_file_path)
+            debug:log("oasis.log", "file path = " .. full_file_path)
 
             local file = io.open(full_file_path, "r")
 
@@ -168,7 +170,7 @@ local methods = {
             local chat_data = file:read("*a")
             file:close()
 
-            -- debug.log("append.log", chat_data)
+            debug:log("oasis.log", "chat data = " .. chat_data)
 
             local chat_data_tbl = jsonc.parse(chat_data)
             chat_data_tbl.messages[#chat_data_tbl.messages + 1] = {role = args.role1, content = args.content1}
@@ -176,12 +178,12 @@ local methods = {
 
             local added_chat_data = jsonc.stringify(chat_data_tbl, false)
 
-            -- debug.log("append.log", added_chat_data)
+            debug:log("oasis.log", "Added chat data = " .. added_chat_data)
 
             file = io.open(full_file_path, "w")
 
             if not file then
-                -- debug.log("append.log", full_file_path)
+                debug:log("oasis.log", common.status.error)
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -198,6 +200,8 @@ local methods = {
         args = { id = "a_string" },
 
         call = function(args)
+            debug:log("oasis.log", "\n--- [oasis.chat][delete] ---")
+
             local r = {}
             local unnamed_section = ""
 
@@ -217,7 +221,7 @@ local methods = {
             local full_file_path = misc.normalize_path(conf.path) .. file_name
             local result = os.remove(full_file_path)
 
-            -- debug.log("delete.log", full_file_path)
+            debug:log("oasis.log", "file path = " .. full_file_path)
 
             if not result then
                 r.result = jsonc.stringify({ status = common.status.error })

@@ -6,7 +6,7 @@ local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 local ollama ={}
 ollama.new = function()
@@ -89,12 +89,14 @@ ollama.new = function()
 
         obj.setup_msg = function(self, chat, speaker)
 
+            -- debug:log("oasis.log", "\n--- [ollama.lua][setup_msg] ---")
+
             if (not speaker.role)
                 or (#speaker.role == 0)
                 or (speaker.role == common.role.unknown)
                 or (not speaker.message)
                 or (#speaker.message == 0) then
-                -- debug.log("setup_msg.log", "false")
+                -- debug:log("oasis.log", "false")
                 return false
             end
 
@@ -102,7 +104,7 @@ ollama.new = function()
             chat.messages[#chat.messages].role = speaker.role
             chat.messages[#chat.messages].content = speaker.message
 
-            -- debug.dump("setup_msg.log", chat)
+            -- debug:dump("oasis.log", chat)
 
             return true
         end
@@ -136,12 +138,11 @@ ollama.new = function()
         end
 
         obj.append_chat_data = function(self, chat)
-            -- debug.log("append_chat_data.log", "called")
-            -- debug.log("append_chat_data.log", "id = " .. self.cfg.id)
-            -- debug.log("append_chat_data.log", chat.messages[#chat.messages - 1].role)
-            -- debug.log("append_chat_data.log", chat.messages[#chat.messages - 1].content)
-            -- debug.log("append_chat_data.log", chat.messages[#chat.messages].role)
-            -- debug.log("append_chat_data.log", chat.messages[#chat.messages].content)
+            -- debug:log("oasis.log", "id = " .. self.cfg.id)
+            -- debug:log("oasis.log", chat.messages[#chat.messages - 1].role)
+            -- debug:log("oasis.log", chat.messages[#chat.messages - 1].content)
+            -- debug:log("oasis.log", chat.messages[#chat.messages].role)
+            -- debug:log("oasis.log", chat.messages[#chat.messages].content)
             local message = {}
             message.id = self.cfg.id
             message.role1 = chat.messages[#chat.messages - 1].role

@@ -4,7 +4,7 @@ local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 local sysmsg_info = {}
 sysmsg_info.fix_key = {}
@@ -186,8 +186,9 @@ local record_chat_data = function(service, chat)
     -- chat.messages[6] ... user message
     -- chat.messages[7] ... ai message <---- Save chat data
 
-    -- debug.log("append_chat_data.log", #chat.messages)
-    -- debug.dump("append_chat_data.log", chat)
+    -- debug:log("oasis.log", "\n--- [datactrl.lua][record_chat_data] ---")
+    -- debug:log("oasis.log", #chat.messages)
+    -- debug:dump("oasis.log", chat)
 
     -- First Conversation
     if #chat.messages == 3 then
@@ -195,7 +196,7 @@ local record_chat_data = function(service, chat)
         set_chat_title(service, chat_id)
     -- Conversation after the second
     elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
-        debug.dump("append_chat_data_dump.log", chat)
+        -- debug:dump("oasis.log", chat)
         service:append_chat_data(chat)
     end
 end
