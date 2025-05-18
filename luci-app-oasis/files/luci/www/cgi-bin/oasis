@@ -4,25 +4,23 @@ local uci = require("luci.model.uci").cursor()
 local common = require("oasis.common")
 local oasis = require("oasis.chat.main")
 local filter = require("oasis.chat.filter")
+-- local debug = require("oasis.chat.debug")
 
 local request_method = os.getenv("REQUEST_METHOD")
 
 print("Content-Type: text/plain\n")
 
--- os.execute("echo \"oasis cgi called\" >> /tmp/oasis.log")
+-- debug:log("luci-app-oasis.log",  "\n--- [cgi] ---")
 
 if request_method == "POST" then
-    -- os.execute("echo POST >> /tmp/oasis.log")
     local content_length = tonumber(os.getenv("CONTENT_LENGTH") or 0)
     local post_data = io.read(content_length)
-    -- os.execute("echo " .. content_length .. " >> /tmp/oasis.log")
-    -- os.execute("echo " .. post_data.message .. " >> /tmp/oasis.log")
+    -- debug:log("luci-app-oasis.log", "content length = " .. content_length)
+    -- debug:log("luci-app-oasis.log", "message = " .. post_data)
 
     local json_tbl = jsonc.parse(post_data)
 
-    -- for k, v in pairs(json_tbl) do
-    --     os.execute("key:" .. k .. ", value = " .. v .. " >> /tmp/oasis.log")
-    -- end
+    -- debug:dump("luci-app-oasis.log", json_tbl)
 
     if not json_tbl then
         io.write("Message Format Error.")
@@ -41,15 +39,13 @@ if request_method == "POST" then
             io.write(uci_cmd_notification)
             io.flush()
             os.execute("sleep 1")
+        else
+            -- debug:log("luci-app-oasis.log", "no uci list")
         end
-        -- for debug
-        -- else
-        --     os.execute("echo \"no uci list\" >> /tmp/oasis.log")
-        -- end
     end
 
     if #new_chat_info > 0 then
-        --os.execute("echo \"" .. new_chat_info .. "\" >> /tmp/oasis.log")
+        -- debug:log("luci-app-oasis.log", "new_chat_info = " .. new_chat_info)
         io.write(new_chat_info)
     end
 else

@@ -159,7 +159,7 @@ end
 
 function retrive_chat_list()
 
-    -- os.execute("echo retrive_chat_list called >> /tmp/oasis-retrieve.log")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][retrive_chat_list] ---")
 
     -- ubus call
     local result = util.ubus("oasis.chat", "list", {})
@@ -170,7 +170,7 @@ end
 
 function load_chat_data()
 
-    -- os.execute("echo load_chat_data called >> /tmp/oasis-load.log")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_chat_data] ---")
 
     local params = luci_http.formvalue("params")
 
@@ -191,6 +191,7 @@ end
 
 function import_chat_data()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][import_chat_data] ---")
     local chat_data = luci_http.formvalue("chat_data")
 
     if not chat_data then
@@ -243,7 +244,7 @@ end
 
 function delete_chat_data()
 
-    -- os.execute("echo delete_chat_data called >> /tmp/oasis-delete.log")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_chat_data] ---")
 
     local params = luci_http.formvalue("params")
 
@@ -264,7 +265,7 @@ end
 
 function rename()
 
-    -- os.execute("echo rename called >> /tmp/oasis-rename.log")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][rename] ---")
 
     local id = luci_http.formvalue("id")
     local title = luci_http.formvalue("title")
@@ -285,7 +286,7 @@ end
 
 function apply_uci_cmd()
 
-    -- debug:log("oasis.log", "\n--- [module.lua][apply_uci_cmd] ---")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][apply_uci_cmd] ---")
 
     local uci_list_json = luci_http.formvalue("uci_list")
     local chat_id = luci_http.formvalue("id")
@@ -297,8 +298,8 @@ function apply_uci_cmd()
         return
     end
 
-    -- debug:log("oasis.log", "chat id = " .. chat_id)
-    -- debug:log("oasis.log", "uci_list_json = " .. uci_list_json)
+    -- debug:log("luci-app-oasis.log", "chat id = " .. chat_id)
+    -- debug:log("luci-app-oasis.log", "uci_list_json = " .. uci_list_json)
 
     local uci_list = jsonc.parse(uci_list_json)
 
@@ -318,7 +319,7 @@ function apply_uci_cmd()
 end
 
 function confirm()
-    -- os.execute("echo \"finalize_settings error\" >> /tmp/oasis-confirm.log")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][confirm] ---")
     local result = util.ubus("oasis", "confirm")
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
@@ -326,6 +327,7 @@ end
 
 function finalize()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][finalize] ---")
     local result = sys.exec("touch /tmp/oasis/apply/complete;echo $?")
 
     luci_http.prepare_content("application/json")
@@ -338,6 +340,7 @@ function finalize()
 end
 
 function rollback()
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][rollback] ---")
     local result = sys.exec("touch /tmp/oasis/apply/rollback;echo $?")
 
     luci_http.prepare_content("application/json")
@@ -351,6 +354,8 @@ end
 
 function load_sysmsg()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg] ---")
+
     local json_param = {
         path = "/etc/oasis/oasis.conf"
     }
@@ -362,6 +367,8 @@ function load_sysmsg()
 end
 
 function load_sysmsg_info()
+
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg_info] ---")
 
     local json_param = {
         path = "/etc/oasis/oasis.conf"
@@ -375,7 +382,7 @@ end
 
 function update_sysmsg()
 
-    -- os.execute("echo rename called >> /tmp/oasis-rename.log")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][update_sysmsg] ---")
 
     local target = luci_http.formvalue("target")
     local title = luci_http.formvalue("title")
@@ -397,6 +404,8 @@ end
 
 function add_sysmsg()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][add_sysmsg] ---")
+
     local title = luci_http.formvalue("title")
     local message = luci_http.formvalue("message")
 
@@ -416,6 +425,8 @@ end
 
 function delete_sysmsg()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_sysmsg] ---")
+
     local target = luci_http.formvalue("target")
 
     if not target then
@@ -433,6 +444,8 @@ function delete_sysmsg()
 end
 
 function load_icon_info()
+
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_icon_info] ---")
     local json_param = {path = "/etc/oasis/oasis.conf"}
 
     local result = util.ubus("oasis", "load_icon_info", json_param)
@@ -443,6 +456,7 @@ end
 
 function select_icon()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][select_icon] ---")
     local using = luci_http.formvalue("using")
 
     if not using then
@@ -461,6 +475,7 @@ end
 
 function upload_icon_data()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][upload_icon_data] ---")
     local filename = luci_http.formvalue("filename")
     local image = luci_http.formvalue("image")
 
@@ -515,6 +530,8 @@ function upload_icon_data()
 end
 
 function delete_icon_data()
+
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_icon_data] ---")
     local icon_key = luci_http.formvalue("key")
 
     if not icon_key then
@@ -549,6 +566,8 @@ end
 
 function uci_config_list()
 
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][uci_config_list] ---")
+
     -- Currently, the only removal target in the uci config list is oasis and rpcd.
     -- Add the names of uci configs that you don't want to teach AI here.
     local black_list = {
@@ -578,6 +597,8 @@ function uci_config_list()
 end
 
 function uci_show()
+
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][uci_show] ---")
     local target = luci_http.formvalue("target")
 
     local list = util.ubus("uci", "configs", {})
@@ -611,6 +632,8 @@ function uci_show()
 end
 
 function load_extra_sysmsg()
+
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_extra_sysmsg] ---")
     local url = luci_http.formvalue("url")
 
     if (#url == 0) or (url == nil) then
