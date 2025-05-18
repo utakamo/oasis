@@ -109,6 +109,8 @@ openai.new = function()
 
         obj.recv_ai_msg = function(self, chunk)
 
+            -- debug:log("oasis.log", "\n--- [openai.lua][recv_ai_msg] ---")
+
             -- When data is received, the processing of this block will be executed.
             -- The received data is stored in a chunk.
             -- In OpenAI, the received chunk data may occasionally be missing as a JSON string.
@@ -121,6 +123,8 @@ openai.new = function()
             if (not chunk_json) or (type(chunk_json) ~= "table") then
                 return "", "", self.recv_ai_msg
             end
+
+            -- debug:log("oasis.log", self.chunk_all)
 
             self.chunk_all = ""
 

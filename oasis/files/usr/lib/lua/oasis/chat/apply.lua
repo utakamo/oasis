@@ -269,7 +269,6 @@ local apply = function(uci_list, commit)
     for config, sect_op_val_tbl in pairs(add_list) do
         for section, op_val_tbl in pairs(sect_op_val_tbl) do
             for option, val_tbl in pairs(op_val_tbl) do
-                -- debug
                 -- os.execute("echo \"" .. config .. "." .. section .. "." .. option .. "\" >> /tmp/oasis_add_list.log")
                 -- for _, v in ipairs(val_tbl) do
                 --     os.execute("echo " .. v .. " >> /tmp/oasis_add_list.log")

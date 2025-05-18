@@ -105,37 +105,26 @@ local chat_with_ai = function(service, chat)
         output_llm_model(chat.model)
     end
 
-    -- -- debug:dump("send_messages.log", chat)
+    -- debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
     local ai= send_user_msg(service, chat)
 
-    -- -- debug:dump("recv_messages.log", ai)
+    -- debug:dump("oasis.log", ai)
 
     local new_chat_info = nil
 
     if format == common.ai.format.chat then
-        -- print("#ai.message = " .. #ai.message)
-        -- print("ai.message = " .. ai.message)
+        -- debug:log("oasis.log", "#ai.message = " .. #ai.message)
+        -- debug:log("oasis.log", "ai.message = " .. ai.message)
         if service:setup_msg(chat, ai) then
             datactrl.record_chat_data(service, chat)
         end
     elseif format == common.ai.format.output then
-        -- debug start
-        --[[
-        os.execute("echo " .. cfg.id .. " >> /tmp/oasis-id1.log")
-        os.execute("echo #cfg.id = " .. #cfg.id .. " >> /tmp/oasis.log")
-        os.execute("echo \"ai.message = " .. ai.message .. "\" >> /tmp/oasis-ai.log")
-
-        if (not cfg.id) then
-            os.execute("echo not cfg.id >> /tmp/oasis.log")
-        else
-            os.execute("echo cfg.id exist >> /tmp/oasis.log")
-        end
-        ]]
-        -- debug end
 
         local cfg = service:get_config()
+
+        -- debug:dump("oasis.log", cfg)
 
         if (not cfg.id) or (#cfg.id == 0) then
             -- debug:log("oasis.log", "first called")

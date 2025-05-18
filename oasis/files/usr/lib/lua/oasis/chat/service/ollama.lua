@@ -113,7 +113,6 @@ ollama.new = function()
 
             local chunk_json = jsonc.parse(chunk)
 
-            -- debug
             -- io.write(chunk)
 
             if (not chunk_json)

@@ -75,7 +75,6 @@ local extract_code_blocks = function(text)
 		table.insert(code_blocks, code)
     end
 
-	-- debug log
 	-- for idx, code_block in ipairs(code_blocks) do
 	--	os.execute("echo \"[" .. idx .. "] " .. code_block .. "\" >> /tmp/oasis-code.log")
 	-- end
@@ -90,7 +89,6 @@ local split_lines = function(code_block)
 		table.insert(lines, line)
 	end
 
-	-- debug long
 	-- for idx, line in ipairs(lines) do
 	--	os.execute("echo \"[" .. idx .. "] " .. line .. "\" >> /tmp/oasis-split.log")
 	-- end
@@ -193,7 +191,6 @@ local uci_cmd_filter = function(message)
 		end
 	end
 
-	-- debug log
 	-- for idx, line in ipairs(all_lines) do
 	-- 	os.execute("echo \"[" .. idx .. "] " .. line .. "\" >> /tmp/oasis-filter.log")
 	-- end
