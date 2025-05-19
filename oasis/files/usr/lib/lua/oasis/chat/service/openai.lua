@@ -39,6 +39,9 @@ openai.new = function()
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysrole = common.load_conf_file(spath)
 
+            -- debug:log("oasis.log", "\n--- [openai.lua][setup_system_msg] ---");
+            -- debug:log("oasis.log", "format = " .. self.format)
+
             -- The system message (knowledge) is added to the first message in the chat.
             -- The first message is data that has not been assigned a chat ID.
             if (not self.cfg.id) or (#self.cfg.id == 0) then
@@ -54,7 +57,7 @@ openai.new = function()
                 if (self.format == common.ai.format.output) then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
-                        content = string.gsub(sysrole.default.output, "\\n", "\n")
+                        content = string.gsub(sysrole[self.cfg.sysmsg_key].chat, "\\n", "\n")
                     })
                     return
                 end
