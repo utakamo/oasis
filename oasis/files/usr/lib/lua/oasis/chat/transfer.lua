@@ -91,7 +91,7 @@ end
 
 local chat_with_ai = function(service, chat)
 
-    -- debug:log("oasis.log", "\n--- [transfer.lug][chat_with_ai] ---")
+    -- debug:log("oasis.log", "\n--- [transfer.lua][chat_with_ai] ---")
 
     local format = service:get_format()
 
@@ -105,6 +105,7 @@ local chat_with_ai = function(service, chat)
         output_llm_model(chat.model)
     end
 
+    -- debug:log("oasis.log", "dump chat date")
     -- debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
