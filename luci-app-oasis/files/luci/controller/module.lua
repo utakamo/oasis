@@ -41,6 +41,8 @@ function index()
     entry({"admin", "network", "oasis", "uci-config-list"}, call("uci_config_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "uci-show"}, call("uci_show"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-extra-sysmsg"}, call("load_extra_sysmsg"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-ai-service-list"}, call("load_ai_service_list"), nil).leaf = true
+    entry({"admin", "network", "oasis", "select-ai-service"}, call("select_ai_service"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -649,4 +651,75 @@ function load_extra_sysmsg()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(contents)
+end
+
+function load_ai_service_list()
+
+    local data = uci:get_all(common.db.uci.cfg);
+
+    if not data then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({error = "Failed to load config"})
+        return
+    end
+
+    local service_list = {}
+    for _, tbl in pairs(data) do
+        for key, value in pairs(tbl) do
+            if (key == ".type") and (value == "service") then
+                local uid = tbl[".name"]
+                service_list[#service_list + 1] = {}
+                service_list[#service_list].identifier    = data[uid].identifier
+                service_list[#service_list].name          = data[uid].name
+                service_list[#service_list].model         = data[uid].model
+            end
+        end
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(service_list)
+end
+
+function select_ai_service()
+
+    local identifier    = luci_http.formvalue("identifier")
+    local name          = luci_http.formvalue("name")
+    local model         = luci_http.formvalue("model")
+
+    local target_uid = ""
+    local data = uci:get_all(common.db.uci.cfg);
+
+    if not data then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({error = "Failed to load config"})
+        return
+    end
+
+    for _, tbl in pairs(data) do
+        for key, value in pairs(tbl) do
+            if (key == ".type") and (value == "service") then
+                local uid = tbl[".name"]
+                if (data[uid].identifier == identifier) and (data[uid].name == name) and (data[uid].model == model) then
+                    target_uid = uid
+                    break
+                end
+            end
+        end
+
+        if target_uid ~= "" then
+            break
+        end
+    end
+
+    if target_uid == "" then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({error = "Not Found"})
+        return
+    end
+
+    uci:reorder(common.db.uci.cfg, target_uid, 1)
+    uci:commit(common.db.uci.cfg)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({status = "OK"})
 end
