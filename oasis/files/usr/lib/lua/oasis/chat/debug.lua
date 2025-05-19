@@ -19,7 +19,7 @@ To enable logging for the Lua script being debugged, add calls to the log or dum
 
 local uci = require("luci.model.uci").cursor()
 
--- local debug = {}
+local debug = {}
 debug.new = function()
 
     local obj = {}
