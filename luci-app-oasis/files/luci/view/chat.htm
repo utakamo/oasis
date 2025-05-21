@@ -584,16 +584,16 @@
             option.value = 0;
             option.textContent = "No AI Service";
             document.getElementById("ai-service-list").appendChild(option);
+        } else {
+            ai_service_list = data;
+
+            ai_service_list.forEach((service, index) => {
+                const option = document.createElement("option");
+                option.value = index;
+                option.textContent = `${service.name} - ${service.model}`;
+                document.getElementById("ai-service-list").appendChild(option);
+            });
         }
-
-        ai_service_list = data;
-
-        ai_service_list.forEach((service, index) => {
-            const option = document.createElement("option");
-            option.value = index;
-            option.textContent = `${service.name} - ${service.model}`;
-            document.getElementById("ai-service-list").appendChild(option);
-        });
         })
         .catch(error => {
         console.error('Error:', error);
