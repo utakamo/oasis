@@ -692,9 +692,15 @@ end
 
 function select_ai_service()
 
+    -- debug:log("oasis.log", "\n--- [module.lua][select_ai_service] ---")
+
     local identifier    = luci_http.formvalue("identifier")
     local name          = luci_http.formvalue("name")
     local model         = luci_http.formvalue("model")
+
+    -- debug:log("oasis.log", "identifier = " .. identifier)
+    -- debug:log("oasis.log", "name = " .. name)
+    -- debug:log("oasis.log", "model = " .. model)
 
     local target_uid = ""
     local data = uci:get_all(common.db.uci.cfg);
@@ -720,6 +726,8 @@ function select_ai_service()
             break
         end
     end
+
+    -- debug:log("oasis.log", "target_uid = " .. target_uid)
 
     if target_uid == "" then
         luci_http.prepare_content("application/json")
