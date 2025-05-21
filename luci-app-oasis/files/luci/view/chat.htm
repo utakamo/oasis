@@ -580,7 +580,10 @@
         })
         .then(data => {
         if (!Array.isArray(data)) {
-            throw new Error('The data format is invalid.');
+            const option = document.createElement("option");
+            option.value = 0;
+            option.textContent = "No AI Service";
+            document.getElementById("ai-service-list").appendChild(option);
         }
 
         ai_service_list = data;
