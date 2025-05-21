@@ -6,12 +6,12 @@ local transfer  = require("oasis.chat.transfer")
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 local datactrl  = require("oasis.chat.datactrl")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 local load_chat_data = function(file_path)
 
-    debug:log("oasis.log", "\n--- [oasis.title][load_chat_data] ---")
-    debug:log("oasis.log", "file path = " .. file_path)
+    -- debug:log("oasis.log", "\n--- [oasis.title][load_chat_data] ---")
+    -- debug:log("oasis.log", "file path = " .. file_path)
 
     local file = io.open(file_path, "r")
 
@@ -22,7 +22,7 @@ local load_chat_data = function(file_path)
     local chat_data = file:read("*a")
     file:close()
 
-    debug:log("oasis.log", chat_data)
+    -- debug:log("oasis.log", chat_data)
 
     return jsonc.parse(chat_data)
 end
@@ -47,7 +47,7 @@ local methods = {
         args = { id = "a_string" },
 
         call = function(args)
-            debug:log("oasis.log", "\n--- [oasis.title][auto_set] ---")
+            -- debug:log("oasis.log", "\n--- [oasis.title][auto_set] ---")
             local r = {}
 
             local cfg = datactrl.get_ai_service_cfg(nil, {with_storage = true})
@@ -66,7 +66,7 @@ local methods = {
 
             service:initialize(nil, common.ai.format.title)
 
-            debug:log("oasis.log", "file name = " .. file_name)
+            -- debug:log("oasis.log", "file name = " .. file_name)
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
@@ -74,12 +74,12 @@ local methods = {
                 return r
             end
 
-            debug:log("oasis.log", "file path = " .. file_path)
+            -- debug:log("oasis.log", "file path = " .. file_path)
 
             local chat = load_chat_data(file_path)
             chat.model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
 
-            debug:dump("oasis.log", chat)
+            -- debug:dump("oasis.log", chat)
 
             local _, title = transfer.chat_with_ai(service, chat)
 
@@ -95,7 +95,7 @@ local methods = {
                 return r
             end
 
-            debug:log("oasis.log", "title = " .. title)
+            -- debug:log("oasis.log", "title = " .. title)
 
             r.result = jsonc.stringify({ status = common.status.ok, title = title })
             return r
