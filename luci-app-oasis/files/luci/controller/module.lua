@@ -655,7 +655,7 @@ end
 
 function load_ai_service_list()
 
-    local data = uci:get_all(common.db.uci.cfg);
+    local data = uci:get_all(common.db.uci.cfg)
 
     if not data then
         luci_http.prepare_content("application/json")
@@ -663,17 +663,27 @@ function load_ai_service_list()
         return
     end
 
-    local service_list = {}
-    for _, tbl in pairs(data) do
-        for key, value in pairs(tbl) do
-            if (key == ".type") and (value == "service") then
-                local uid = tbl[".name"]
-                service_list[#service_list + 1] = {}
-                service_list[#service_list].identifier    = data[uid].identifier
-                service_list[#service_list].name          = data[uid].name
-                service_list[#service_list].model         = data[uid].model
-            end
+    local service_names = {}
+    for name, tbl in pairs(data) do
+        if tbl[".type"] == "service" and type(name) == "string" and name:match("^cfg%x%x%x%x%x%x$") then
+            table.insert(service_names, name)
         end
+    end
+
+    table.sort(service_names, function(a, b)
+        local a_num = tonumber(a:sub(4), 16)
+        local b_num = tonumber(b:sub(4), 16)
+        return a_num < b_num
+    end)
+
+    local service_list = {}
+    for _, name in ipairs(service_names) do
+        local entry = data[name]
+        service_list[#service_list + 1] = {
+            identifier = entry.identifier,
+            name = entry.name,
+            model = entry.model
+        }
     end
 
     luci_http.prepare_content("application/json")
