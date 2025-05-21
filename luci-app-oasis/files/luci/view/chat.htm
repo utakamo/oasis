@@ -24,6 +24,7 @@
             </ul>
         </ul>
         <div id="keyboard-padding"></div>
+        <select id="ai-service-list"></select>
         <div class="chat-messages"></div>
         <div class="chat-input">
             <div class="chat-messages">
@@ -105,6 +106,7 @@
     let targetChatId = "";
     let message_outputing = false;
     const resourcePath = '<%= resource %>';
+    let ai_service_list = [];
 
     function loadPaperPlane() {
         const style = document.createElement('style');
@@ -562,6 +564,36 @@
         })
         .catch(error => {
             console.error('Error:', error);
+        });
+
+        fetch('<%=build_url("admin", "network", "oasis", "load-ai-service-list")%>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+        })
+        .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to retrieve the list of services.');
+        }
+        return response.json();
+        })
+        .then(data => {
+        if (!Array.isArray(data)) {
+            throw new Error('The data format is invalid.');
+        }
+
+        ai_service_list = data;
+
+        ai_service_list.forEach((service, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.textContent = `${service.name} - ${service.model}`;
+            document.getElementById("ai-service-list").appendChild(option);
+        });
+        })
+        .catch(error => {
+        console.error('Error:', error);
         });
 
         fetch('<%=build_url("admin", "network", "oasis", "uci-config-list")%>', {
@@ -1766,6 +1798,36 @@
             };
             reader.readAsDataURL(file);
         }
+    });
+
+    document.getElementById("ai-service-list").addEventListener("change", function(event) {
+      const selected_service_index = parseInt(event.target.value, 10);
+      const current_service = ai_service_list[selected_service_index];
+
+      if (current_service) {
+
+        fetch('<%=build_url("admin", "network", "oasis", "select-ai-service")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams(
+            {
+                identifier: current_service.identifier,
+                name: current_service.name,
+                model: current_service.model
+            }),
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Transmission failure');
+          return response.json();
+        })
+        .then(data => {
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      }
     });
 </script>
 
