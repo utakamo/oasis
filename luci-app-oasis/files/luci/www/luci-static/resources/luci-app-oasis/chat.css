@@ -142,6 +142,29 @@
     display: none;
 }
 
+#ai-service-list {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    margin: 5px auto;
+    border: 1.5px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#ai-service-list:hover {
+    border-color: #0078d4;
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.2);
+}
+
+#ai-service-list:focus {
+    border-color: #005a9e;
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.3);
+}
+
 .chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -182,6 +205,7 @@
     background-color: #d1e7dd;
     align-self: flex-end;
     margin-left: auto;
+    margin-right: 5px;
 }
 
 .message.received .message-text {
