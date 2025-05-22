@@ -2,191 +2,150 @@
 
 local oasis = require("oasis.chat.main")
 
-local cmd = {}
-cmd.storage = "storage"
-cmd.add     = "add"
-cmd.delete  = "delete"
-cmd.select  = "select"
-cmd.chat    = "chat"
-cmd.delchat = "delchat"
-cmd.prompt  = "prompt"
-cmd.rename  = "rename"
-cmd.list    = "list"
-cmd.call    = "call"
+local options_spec = {
+    ["-n"] = "n",
+    ["-u"] = "u",
+    ["-k"] = "k",
+    ["-m"] = "m",
+    ["-s"] = "s"
+}
 
-local opt = {}
-opt.n = "-n"
-opt.u = "-u"
-opt.k = "-k"
-opt.m = "-m"
-opt.s = "-s"
+local function help()
+    print([=[
+Usage: oasis <command> [[<options>] arguments]...
 
-local chat_data_prefix = "id="
+Options:
+ -n <service>           Set the service name
+ -u <url>               Set the URL or IP address
+ -k <api-key>           Set the API key
+ -m <model>             Set the LLM model
+ -s <storage>           Set the storage path
 
-local help = function()
-    print("Usage: oasis <command> [[<options>] arguments]...")
+Commands:
+ storage <path> [<chat-max>]
+ add [<service> [<url> [<api-key> [<model> [<storage>]]]]]
+ change <service> [<options> <value>]...
+ select [<service>]
+ delete <service>
+ chat [id=<chat-id>]
+ prompt <message>
+ sysrole [[<chat|prompt|call> [<options>] [<system message>]]
+ delchat id=<chat-id>
+ rename id=<chat-id> <title>
+ list
+ call <script> <message>
 
-    print("\nOptions:")
-    print(" -n <service>           Set the service name")
-    print(" -u <url>               Set the url or ipaddr for ai service")
-    print(" -k <api-key>           Set the api-key for ai service")
-    print(" -m <model>             Set the llm model for ai service")
-
-    print("\nCommands:")
-    print(" - storage <path> [<chat-max>] (default: chat-max = 30)")
-    print(" - add [<service> [<url> [<api-key> [<model> [<storage>]]]]]")
-    print(" - change <service> [<options> <argument>]...")
-    print(" - select [<service>]")
-    print(" - delete <service>")
-    print(" - chat [id=<chat-id>]")
-    print(" - prompt <message>")
-    print(" - sysrole [[<chat|prompt|call> [<options>] [<system message>]]")
-    print(" - delchat id=<chat-id>")
-    print(" - rename id=<chat-id> <title>")
-    print(" - list")
-    print(" - call <script> <messsage>")
-
-    print("\nDocs")
-    print("\thttps://utakamo.com")
+Docs:
+ https://utakamo.com
+    ]=])
 end
 
-if #arg == 0 then
-    help()
-    return 0
+local function parse_options(args, start_index)
+    local options = {}
+    local i = start_index
+    while i <= #args do
+        local opt_key = args[i]
+        local opt_val = args[i + 1]
+        local opt_name = options_spec[opt_key]
+        if opt_name and opt_val then
+            options[opt_name] = opt_val
+            i = i + 2
+        else
+            i = i + 1
+        end
+    end
+    return options
 end
 
-local options = {}
-local arguments = {}
+local function extract_id(arg_str)
+    local prefix = "id="
+    if arg_str and arg_str:sub(1, #prefix) == prefix then
+        return arg_str:sub(#prefix + 1)
+    end
+    return nil
+end
 
-for i, command in ipairs(arg) do
-    if command == cmd.storage then
-        if (arg[i + 1]) then
-            arguments.path = arg[i + 1]
-        end
+local commands = {}
 
-        if (arg[i + 2]) then
-            arguments.chat_max = arg[i + 2]
-        end
+commands.storage = function(args)
+    oasis.storage({ path = args[2], chat_max = args[3] })
+end
 
-        oasis.storage(arguments)
-        return
+commands.add = function(args)
+    oasis.add({
+        service = args[2],
+        url     = args[3],
+        api_key = args[4],
+        model   = args[5],
+        storage = args[6]
+    })
+end
 
-    elseif command == cmd.add then
+commands.change = function(args)
+    local service = args[2]
+    if not service then return help() end
+    local options = parse_options(args, 3)
+    oasis.change(options, { service = service })
+end
 
-        if (arg[i + 1]) then
-            arguments.service = arg[i + 1]
-        end
-
-        if (arg[i + 2]) then
-            arguments.url = arg[i + 2]
-        end
-
-        if (arg[i + 3]) then
-            arguments.api_key = arg[i + 3]
-        end
-
-        if (arg[i + 4]) then
-            arguments.model = arg[i + 4]
-        end
-
-        if (arg[i + 5]) then
-            arguments.storage = arg[i + 5]
-        end
-
-        oasis.add(arguments)
-        return
-
-    elseif command == cmd.change then
-
-        if arg[i + 1] then
-            arguments.service = arg[i + 1]
-        end
-
-        for j, option in ipairs(arg) do
-
-            if (option == opt.n) and (arg[j + 1]) then
-                options.n = arg[j + 1]
-            end
-
-            if (option == opt.u) and (arg[j + 1]) then
-                options.u = arg[j + 1]
-            end
-
-            if (option == opt.k) and (arg[j + 1]) then
-                options.k = arg[j + 1]
-            end
-
-            if (option == opt.m) and (arg[j + 1]) then
-                options.m = arg[j + 1]
-            end
-
-            if (option == opt.s) and (arg[j + 1]) then
-                options.s = arg[j + 1]
-            end
-        end
-
-        oasis.change(options, arguments)
-        return
-    elseif command == cmd.delete then
-        if arg[i + 1] then
-            arguments.service = arg[i + 1]
-            oasis.delete(arguments)
-            return
-        else
-            oasis.show_service_list()
-        end
-    elseif command == cmd.select then
-        if arg[i + 1] then
-            arguments.identifier = arg[i + 1]
-            oasis.select(arguments)
-        else
-            oasis.show_service_list()
-        end
-
-        return
-    elseif command == cmd.chat then
-        if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix)) then
-            arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
-        end
-
-        oasis.chat(arguments)
-        return
-    elseif command == cmd.delchat then
-        if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix)) then
-            arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
-            oasis.delchat(arguments)
-            return
-        else
-            oasis.list()
-            return
-        end
-    elseif command == cmd.prompt then
-        if arg[i + 1] then
-            arguments.message = arg[i + 1]
-            oasis.prompt(arguments)
-        end
-        return
-    elseif command == cmd.rename then
-        if (arg[i + 1] and (arg[i + 1]:sub(1,#chat_data_prefix) == chat_data_prefix) and arg[i + 2]) then
-            arguments.id = arg[i + 1]:sub(#chat_data_prefix + 1)
-            arguments.title = arg[i + 2]
-            oasis.rename(arguments)
-            return
-        else
-            oasis.list()
-            return
-        end
-    elseif command == cmd.list then
-        oasis.list()
-        return
-    elseif command == cmd.call then
-        if arg[i + 1] and arg[i + 2] then
-            arguments.cmd = arg[i + 1]
-            arguments.message = arg[i + 1]
-            oasis.cmd_call(arguments)
-            return
-        end
+commands.select = function(args)
+    if args[2] then
+        oasis.select({ identifier = args[2] })
+    else
+        oasis.show_service_list()
     end
 end
 
-help()
+commands.delete = function(args)
+    if args[2] then
+        oasis.delete({ service = args[2] })
+    else
+        oasis.show_service_list()
+    end
+end
+
+commands.chat = function(args)
+    local id = extract_id(args[2])
+    oasis.chat({ id = id })
+end
+
+commands.delchat = function(args)
+    local id = extract_id(args[2])
+    if id then
+        oasis.delchat({ id = id })
+    else
+        oasis.list()
+    end
+end
+
+commands.prompt = function(args)
+    if args[2] then
+        oasis.prompt({ message = args[2] })
+    end
+end
+
+commands.rename = function(args)
+    local id = extract_id(args[2])
+    if id and args[3] then
+        oasis.rename({ id = id, title = args[3] })
+    else
+        oasis.list()
+    end
+end
+
+commands.list = function()
+    oasis.list()
+end
+
+commands.call = function(args)
+    if args[2] and args[3] then
+        oasis.cmd_call({ cmd = args[2], message = args[3] })
+    end
+end
+
+local main_cmd = arg[1]
+if not main_cmd or not commands[main_cmd] then
+    help()
+else
+    commands[main_cmd](arg)
+end
