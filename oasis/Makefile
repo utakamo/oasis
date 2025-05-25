@@ -35,6 +35,16 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(UCI_CONFIG_DIR)
 	$(INSTALL_DIR) $(1)$(STORAGE_DIR)
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list1
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list2
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list3
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list4
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list5
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list6
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list7
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list8
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list9
+	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list10
 	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasisd $(1)$(APP_DIR)

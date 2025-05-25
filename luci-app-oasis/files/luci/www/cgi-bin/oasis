@@ -39,7 +39,7 @@ if request_method == "POST" then
             io.write(uci_cmd_notification)
             io.flush()
             os.execute("sleep 1")
-        else
+        -- else
             -- debug:log("luci-app-oasis.log", "no uci list")
         end
     end

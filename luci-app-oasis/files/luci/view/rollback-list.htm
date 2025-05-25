@@ -1,0 +1,246 @@
+<%+header%>
+
+<style>
+    .rollback-list {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .rollback-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+        padding: 16px 20px;
+        margin-bottom: 30px;
+        color: #333
+    }
+
+    .rollback-button {
+        padding: 10px 16px;
+        background-color: #0078D4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .rollback-button:hover {
+        background-color: #005a9e;
+    }
+
+    .rollback-button.selected {
+        background-color: #FFD700;
+        /* color: #333; */
+    }
+
+    .text-box {
+        margin-top: 12px;
+        border-left: 4px solid #FFA500;
+        padding-left: 12px;
+    }
+
+    /* Overlay */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal {
+        background: white;
+        padding: 24px 32px;
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        color:#333;
+        max-width: 300px;
+        width: 90%;
+    }
+
+    .modal p {
+        margin-bottom: 20px;
+        font-size: 16px;
+    }
+
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .modal-button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .modal-button.ok {
+        background-color: #0056b3;
+        color: white;
+    }
+
+    .modal-button.cancel {
+        background-color: #ccc;
+        color: #333;
+    }
+</style>
+
+<div id="loadingOverlay" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+">
+    <div>Rollback in progress...</div>
+</div>
+
+<div class="rollback-list" id="rollbackContainer"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+<div class="modal">
+    <p>Would you like to execute the rollback?</p>
+    <div class="modal-buttons">
+    <button class="modal-button ok" id="confirmOk">OK</button>
+    <button class="modal-button cancel" id="confirmCancel">Cancel</button>
+    </div>
+</div>
+</div>
+
+<script>
+    const container = document.getElementById('rollbackContainer');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const confirmOk = document.getElementById('confirmOk');
+    const confirmCancel = document.getElementById('confirmCancel');
+
+    let currentRollbackId = null;
+    let currentButton = null;
+
+    function renderRollbackData(rollbackData) {
+        container.innerHTML = '';
+
+        const reversedData = rollbackData.slice().reverse();
+        reversedData.forEach((entry, index) => {
+            const card = document.createElement('div');
+            card.className = 'rollback-card';
+
+            const isLatest = (index === 0);
+
+            const buttonHTML = isLatest
+                ? `<button class="rollback-button" disabled style="background-color: #ff1493; cursor: not-allowed;">Current Setting</button>`
+                : `<button class="rollback-button" data-id="${entry.id}">Rollback</button>`;
+
+            card.innerHTML = `
+                ${buttonHTML}
+                <div class="text-box">${entry.text.replace(/\n/g, '<br>')}</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    fetch('<%=build_url("admin", "network", "oasis", "load-rollback-list")%>', {
+        method: 'POST',
+    })
+    .then(response => response.json())
+    .then(data => {
+        const rollbackData = data.map((entry, index) => {
+            let cmds = [];
+
+            Object.keys(entry).forEach(cmdType => {
+                const cmdList = entry[cmdType];
+                if (Array.isArray(cmdList) && cmdList.length > 0) {
+                    cmdList.forEach(item => {
+                        if (item.class && item.class.config && item.class.section && item.class.option) {
+                            const value = item.class.value;
+                            cmds.push(`uci ${cmdType} ${item.class.config}.${item.class.section}.${item.class.option}=${value}`);
+                        }
+                    });
+                }
+            });
+
+            return {
+                id: index + 1,
+                text: cmds.join('\n') || 'No UCI commands found.'
+            };
+        });
+
+        renderRollbackData(rollbackData);
+    })
+    .catch(error => {
+        console.error("Failed to retrieve rollback data:", error);
+        container.innerHTML = '<p>Failed to retrieve rollback data.</p>';
+    });
+
+    function showLoadingOverlay(message) {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.querySelector('div').textContent = message || 'Loading...';
+        overlay.style.display = 'flex';
+    }
+
+    function hideLoadingOverlay() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    container.addEventListener('click', function (e) {
+        if (e.target.classList.contains('rollback-button')) {
+            currentRollbackId = e.target.dataset.id;
+            currentButton = e.target;
+
+            document.querySelectorAll('.rollback-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            currentButton.classList.add('selected');
+
+            modalOverlay.style.display = 'flex';
+        }
+    });
+
+    confirmOk.onclick = function () {
+        modalOverlay.style.display = 'none';
+
+        showLoadingOverlay("Rollback in progress...");
+
+        fetch('<%=build_url("admin", "network", "oasis", "rollback-target-data")%>', { 
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ index: currentRollbackId }),
+        })
+        .then(response => response.json())
+        .then(result => {
+            hideLoadingOverlay();
+            alert(`Rollback ID ${currentRollbackId} has been completed.`);
+        })
+        .catch(error => {
+            hideLoadingOverlay();
+            console.error("Error during rollback process:", error);
+            alert("Rollback failed.");
+        });
+    };
+
+    confirmCancel.onclick = function () {
+        modalOverlay.style.display = 'none';
+        if (currentButton) {
+            currentButton.classList.remove('selected');
+        }
+    };
+</script>
+<%+footer%>

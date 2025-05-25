@@ -78,6 +78,12 @@ status.ok           = "OK"
 status.error        = "ERROR"
 status.not_found    = "NOT FOUND"
 
+local rollback  = {}
+rollback.dir                = "/etc/oasis/backup/"
+rollback.list_item_name     = "list"
+rollback.uci_cmd_json       = "uci_list.json"
+rollback.backup_uci_list    = "backup_uci_list.json"
+
 local select_service_obj = function()
 
     local target = nil
@@ -243,6 +249,7 @@ return {
     role = role,
     select_service_obj = select_service_obj,
     status = status,
+    rollback = rollback,
     get_target_id_section = get_target_id_section,
     search_chat_id = search_chat_id,
     load_conf_file = load_conf_file,

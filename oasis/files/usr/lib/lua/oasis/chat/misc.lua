@@ -90,10 +90,47 @@ local touch = function(filename)
     return false
 end
 
+local write_file = function(filename, data)
+    local file = io.open(filename, "w")
+    file:write(data)
+    file:close()
+end
+
+local read_file = function(filename)
+    local file = io.open(filename, "r")  -- 読み取りモードで開く
+    if not file then
+        return nil, "Failed to open file"
+    end
+
+    local content = file:read("*a")  -- ファイル全体を読み込む
+    file:close()  -- ファイルを閉じる
+    return content
+end
+
+
+local copy_file = function(src, dest)
+    local src_file = io.open(src, "rb")
+    if not src_file then return false, "Source file not found" end
+
+    local content = src_file:read("*a")
+    src_file:close()
+
+    local dest_file = io.open(dest, "wb")
+    if not dest_file then return false, "Failed to create destination file" end
+
+    dest_file:write(content)
+    dest_file:close()
+
+    return true
+end
+
 return {
     markdown = markdown,
     get_uptime = get_uptime,
     normalize_path = normalize_path,
     check_file_exist = check_file_exist,
     touch = touch,
+    write_file = write_file,
+    read_file = read_file,
+    copy_file = copy_file,
 }
