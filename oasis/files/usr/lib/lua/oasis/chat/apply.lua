@@ -117,7 +117,7 @@ local rollback_target_data = function(index)
                 -- rollback uci config
                 sys.exec("uci -f " .. common.rollback.dir .. rollback_list[i] .. "/" .. cfg .. " import " .. cfg)
                 debug:log("oasis.log", "rollback ---> " .. cfg)
-                restored_list[#restored_list] = cfg
+                restored_list[#restored_list + 1] = cfg
             end
         end
     end
