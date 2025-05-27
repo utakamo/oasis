@@ -138,19 +138,26 @@
     function renderRollbackData(rollbackData) {
         container.innerHTML = '';
 
+        const card = document.createElement('div');
+        card.className = 'rollback-card';
+
         const reversedData = rollbackData.slice().reverse();
+
         reversedData.forEach((entry, index) => {
-            const card = document.createElement('div');
-            card.className = 'rollback-card';
+            const textBox = document.createElement('div');
+            textBox.className = 'text-box';
+            textBox.innerHTML = entry.text.replace(/\n/g, '<br>');
 
-            const buttonHTML = `<button class="rollback-button" data-id="${entry.id}">Rollback</button>`;
+            const button = document.createElement('button');
+            button.className = 'rollback-button';
+            button.dataset.id = entry.id;
+            button.textContent = 'Rollback';
 
-            card.innerHTML = `
-                <div class="text-box">${entry.text.replace(/\n/g, '<br>')}</div>
-                ${buttonHTML}
-            `;
-            container.appendChild(card);
+            card.appendChild(textBox);
+            card.appendChild(button);
         });
+
+        container.appendChild(card);
     }
 
     fetch('<%=build_url("admin", "network", "oasis", "load-rollback-list")%>', {
