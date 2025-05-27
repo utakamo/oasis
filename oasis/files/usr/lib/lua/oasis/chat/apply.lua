@@ -123,7 +123,7 @@ local rollback_target_data = function(index)
     end
 
     -- Delete unnecessary rollback data (/etc/oasis/backup/list*)
-    for i = (index + 1), #rollback_list do
+    for i = index, #rollback_list do
         debug:log("oasis.log", "Delete unnecessary settings for rollback.")
         local delete_uci_list_file = common.rollback.dir .. rollback_list[i] .. "/" .. common.rollback.backup_uci_list
         local delete_uci_list_json = misc.read_file(delete_uci_list_file)
@@ -142,7 +142,7 @@ local rollback_target_data = function(index)
     -- Update uci config
     local update_rollback_dir_list = {}
 
-    for i = 1, index do
+    for i = 1, (index - 1) do
         update_rollback_dir_list[#update_rollback_dir_list + 1] = common.rollback.list_item_name .. i
         debug:log("oasis.log", "update_rollback_dir_list[" .. (#update_rollback_dir_list + 1) .. "] = " .. common.rollback.list_item_name .. i)
     end
