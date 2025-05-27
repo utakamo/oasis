@@ -122,7 +122,7 @@ local rollback_target_data = function(index)
         end
     end
 
-    -- Delete unnecessary rollback data
+    -- Delete unnecessary rollback data (/etc/oasis/backup/list*)
     for i = (index + 1), #rollback_list do
         debug:log("oasis.log", "Delete unnecessary settings for rollback.")
         local delete_uci_list_file = common.rollback.dir .. rollback_list[i] .. "/" .. common.rollback.backup_uci_list
@@ -144,6 +144,7 @@ local rollback_target_data = function(index)
 
     for i = 1, index do
         update_rollback_dir_list[#update_rollback_dir_list + 1] = common.rollback.list_item_name .. i
+        debug:log("oasis.log", "update_rollback_dir_list[" .. (#update_rollback_dir_list + 1) .. "] = " .. common.rollback.list_item_name .. i)
     end
 
     uci:set_list(common.db.uci.cfg, common.db.uci.sect.backup, "list", update_rollback_dir_list)
@@ -278,14 +279,14 @@ local recovery = function()
         -- if config == "full_backup" then
         --     sys.exec("uci -f /etc/oasis/backup/full_backup import")
         -- else
-        local import_cmd = "uci -f /etc/oasis/backup/" .. config .. " import " .. config
+        local import_cmd = "uci -f " .. common.rollback.dir .. config .. " import " .. config
         -- debug:log("oasis.log", import_cmd)
         sys.exec(import_cmd)
         -- end
     end
 
     for _, config in ipairs(backup_uci_list) do
-        os.remove("/etc/oasis/backup/" .. config)
+        os.remove(common.rollback.dir .. config)
     end
 
     uci:delete(common.db.uci.cfg, common.db.uci.sect.backup, "targets")

@@ -248,7 +248,7 @@ local methods = {
                 return r
             end
 
-            local file = io.open("/etc/oasis/backup/uci_list.json", "r")
+            local file = io.open(common.rollback.dir .. common.rollback.uci_cmd_json, "r")
             local uci_list_json = file:read("*a")
             file:close()
 

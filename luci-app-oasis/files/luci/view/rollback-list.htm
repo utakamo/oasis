@@ -21,6 +21,7 @@
         color: white;
         border: none;
         border-radius: 4px;
+        margin-bottom: 5px;
         font-size: 14px;
         font-weight: 600;
         cursor: pointer;
@@ -37,7 +38,8 @@
     }
 
     .text-box {
-        margin-top: 12px;
+        margin-top: 5px;
+        margin-bottom: 12px;
         border-left: 4px solid #FFA500;
         padding-left: 12px;
     }
@@ -141,15 +143,11 @@
             const card = document.createElement('div');
             card.className = 'rollback-card';
 
-            const isLatest = (index === 0);
-
-            const buttonHTML = isLatest
-                ? `<button class="rollback-button" disabled style="background-color: #ff1493; cursor: not-allowed;">Current Setting</button>`
-                : `<button class="rollback-button" data-id="${entry.id}">Rollback</button>`;
+            const buttonHTML = `<button class="rollback-button" data-id="${entry.id}">Rollback</button>`;
 
             card.innerHTML = `
-                ${buttonHTML}
                 <div class="text-box">${entry.text.replace(/\n/g, '<br>')}</div>
+                ${buttonHTML}
             `;
             container.appendChild(card);
         });
@@ -184,8 +182,7 @@
         renderRollbackData(rollbackData);
     })
     .catch(error => {
-        console.error("Failed to retrieve rollback data:", error);
-        container.innerHTML = '<p>Failed to retrieve rollback data.</p>';
+        container.innerHTML = '<p>No Rollback Data</p>';
     });
 
     function showLoadingOverlay(message) {
