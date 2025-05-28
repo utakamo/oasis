@@ -542,8 +542,8 @@ local apply = function(uci_list, commit)
         if (key == "set") and (type(target_cmd_tbl) == "table") then
             for _, cmd in ipairs(target_cmd_tbl) do
                 if (cmd.class.config == "network") or (cmd.class.config == "wireless") then
-                    local is_file_exist = common.check_file_exist("/etc/init.d/network")
-                    if is_file_exist then
+                    local is_init_script = common.check_file_exist("/etc/init.d/network")
+                    if is_init_script then
                         -- sys.exec("echo /etc/init.d/network >> /tmp/oasis-apply2.log")
                         sys.exec("/etc/init.d/network restart")
                         break
@@ -553,11 +553,11 @@ local apply = function(uci_list, commit)
 
             for _, cmd in ipairs(target_cmd_tbl) do
                 if (cmd.class.config ~= "network") and (cmd.class.config ~= "wireless") then
-                    local file_path = "/etc/init.d/" .. cmd.class.config
-                    local is_file_exist = common.check_file_exist(file_path)
+                    local init_script = "/etc/init.d/" .. cmd.class.config
+                    local is_file_exist = common.check_file_exist(init_script)
                     if is_file_exist then
                         -- sys.exec("echo " .. file_path .. " >> /tmp/oasis-apply3.log")
-                        sys.exec(file_path .. " restart")
+                        sys.exec(init_script .. " restart")
                     end
                 end
             end
