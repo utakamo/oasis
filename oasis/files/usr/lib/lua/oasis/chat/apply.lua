@@ -557,7 +557,7 @@ local apply = function(uci_list, commit)
             debug:dump("oasis.log", target_cmd_tbl)
             for _, cmd in ipairs(target_cmd_tbl) do
                 if (cmd.class.config == "network") or (cmd.class.config == "wireless") then
-                    local is_init_script = common.check_file_exist("/etc/init.d/network")
+                    local is_init_script = misc.check_file_exist("/etc/init.d/network")
                     if is_init_script then
                         debug:log("oasis.log", "[1] trigger config: " .. cmd.class.config)
                         sys.exec("/etc/init.d/network restart")
@@ -569,7 +569,7 @@ local apply = function(uci_list, commit)
             for _, cmd in ipairs(target_cmd_tbl) do
                 if (cmd.class.config ~= "network") and (cmd.class.config ~= "wireless") then
                     local init_script = "/etc/init.d/" .. cmd.class.config
-                    local is_file_exist = common.check_file_exist(init_script)
+                    local is_file_exist = misc.check_file_exist(init_script)
                     if is_file_exist then
                         debug.log("oasis.log", "[2] trigger config: " .. cmd.class.config)
                         sys.exec(init_script .. " restart")
