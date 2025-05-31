@@ -18,8 +18,8 @@ for i = 10, 100, 10 do
     chat_max:value(tostring(i), tostring(i))
 end
 
-rollback = m:section(TypedSection, "recovery")
-monitor_time = rollback:option(ListValue, "rollback_time", "Rollback Time")
+rollback = m:section(TypedSection, "rollback")
+monitor_time = rollback:option(ListValue, "time", "Rollback Time")
 for i = 60, 600, 60 do
     monitor_time:value(tostring(i), tostring(i))
 end

@@ -313,7 +313,7 @@ function apply_uci_cmd()
     os.remove(common.flag.apply.rollback)
 
     if apply_type == "commit" then
-        oasis.backup(uci_list, chat_id, "normal")
+        oasis.create_new_backup_data(uci_list, chat_id, "normal")
         oasis.apply(uci_list, true) -- true: commit uci config (/etc/config/~)
     else
         oasis.apply(uci_list, false) -- false: save uci config (/tmp/.uci/~)

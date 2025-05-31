@@ -241,9 +241,9 @@ local methods = {
     confirm = {
         call = function()
             local r = {}
-            local is_temporary_setting = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
+            local is_rollback_confirm = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
 
-            if not is_temporary_setting then
+            if not is_rollback_confirm then
                 r.result = jsonc.stringify({ status = common.status.not_found })
                 return r
             end

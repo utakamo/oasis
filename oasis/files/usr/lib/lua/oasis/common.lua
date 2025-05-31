@@ -11,7 +11,7 @@ db.uci.sect                  = {}
 db.uci.sect.chat             = "chat"
 db.uci.sect.storage          = "storage"
 db.uci.sect.service          = "service"
-db.uci.sect.backup           = "backup"
+db.uci.sect.rollback         = "rollback"
 db.uci.sect.role             = "role"
 db.uci.sect.assist           = "assist"
 

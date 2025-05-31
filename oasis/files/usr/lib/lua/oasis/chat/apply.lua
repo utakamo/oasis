@@ -17,10 +17,12 @@ local enqueue_rollback_data = function(data)
     debug:log("oasis.log", "write: " .. common.rollback.dir .. common.rollback.uci_cmd_json)
     debug:log("oasis.log", "data: " .. data)
 
-    local target_uci_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.backup, "targets")
-    local rollback_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.backup, "list")
+    local target_uci_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "targets")
+    local rollback_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list")
 
+    debug:log("oasis.log", "<target uci list>")
     debug:dump("oasis.log", target_uci_list)
+    debug:log("oasis.log", "<rollback list>")
     debug:dump("oasis.log", rollback_list)
 
     local index = #rollback_list + 1
@@ -47,7 +49,8 @@ local enqueue_rollback_data = function(data)
         debug:log("oasis.log", "filename: " .. filename)
         misc.write_file(filename, backup_uci_list)
 
-        uci:set_list(common.db.uci.cfg, common.db.uci.sect.backup, "list", rollback_list)
+        uci:set_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list", rollback_list)
+        uci:commit(common.db.uci.cfg)
     else
         for i = 1, 10 do
             if i == 1 then
@@ -87,7 +90,7 @@ local rollback_target_data = function(index)
     debug:log("oasis.log", "\n--- [apply.lua][rollback_target_data] ---")
     debug:log("oasis.log", "index: " .. index)
 
-    local rollback_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.backup, "list")
+    local rollback_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list")
     local restored_list = {}
 
     debug:dump("oasis.log", rollback_list)
@@ -147,7 +150,8 @@ local rollback_target_data = function(index)
         debug:log("oasis.log", "update_rollback_dir_list[" .. (#update_rollback_dir_list + 1) .. "] = " .. common.rollback.list_item_name .. i)
     end
 
-    uci:set_list(common.db.uci.cfg, common.db.uci.sect.backup, "list", update_rollback_dir_list)
+    uci:set_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list", update_rollback_dir_list)
+    uci:commit(common.db.uci.cfg)
 
     return true
 end
@@ -155,10 +159,17 @@ end
 local get_rollback_data_list = function()
 
     debug:log("oasis.log", "\n--- [apply.lua][get_rollback_data_list] ---")
-    local rollback_child_dirs = uci:get_list(common.db.uci.cfg, common.db.uci.sect.backup, "list")
+    local rollback_child_dirs = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list")
+    local is_rollback_confirm = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
     local rollback_data_list = {}
 
     for i = 1, #rollback_child_dirs do
+
+        if (i == #rollback_child_dirs) and (is_rollback_confirm) then
+            debug:log("oasis.log", "User is confirming the settings. Latest rollback data is excluded from the list.")
+            break
+        end
+
         local base_path = common.rollback.dir .. rollback_child_dirs[i] .. "/"
         local uci_file = base_path .. common.rollback.uci_cmd_json
         local backup_uci_list = base_path .. common.rollback.backup_uci_list
@@ -186,7 +197,7 @@ local get_rollback_data_list = function()
     return rollback_data_list
 end
 
-local backup = function(uci_list, id, backup_type)
+local create_new_backup_data = function(uci_list, id, backup_type)
 
     local list = {}
 
@@ -233,9 +244,9 @@ local backup = function(uci_list, id, backup_type)
     end
 
     if #list > 0 then
-        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "1")
-        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "src_id", id)
-        uci:set_list(common.db.uci.cfg, common.db.uci.sect.backup, "targets", list)
+        uci:set(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm", "1")
+        uci:set(common.db.uci.cfg, common.db.uci.sect.rollback, "src_id", id)
+        uci:set_list(common.db.uci.cfg, common.db.uci.sect.rollback, "targets", list)
 
         local uci_list_json = jsonc.stringify(uci_list)
         enqueue_rollback_data(uci_list_json)
@@ -246,7 +257,7 @@ local backup = function(uci_list, id, backup_type)
 
         local system_info = util.ubus("system", "info", {})
         local uptime = system_info.uptime
-        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "uptime", uptime)
+        uci:set(common.db.uci.cfg, common.db.uci.sect.rollback, "uptime", uptime)
         uci:commit(common.db.uci.cfg)
 
         return true
@@ -255,20 +266,25 @@ local backup = function(uci_list, id, backup_type)
     return false
 end
 
-local recovery = function()
+local complete = function()
+    uci:set(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm", "0")
+    uci:commit(common.db.uci.cfg)
+end
 
-    -- debug:log("oasis.log", "\n--- [apply.lua][recovery] ---")
+local rollback = function()
 
-    local is_enable = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
+    -- debug:log("oasis.log", "\n--- [apply.lua][rollback] ---")
+
+    local is_enable = uci:get(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
 
     if not is_enable then
-        -- debug:log("oasis.log", "recovery invalid")
+        -- debug:log("oasis.log", "rollback invalid")
         return
     end
 
-    uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "0")
+    uci:set(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm", "0")
 
-    local backup_uci_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.backup, "targets")
+    local backup_uci_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "targets")
 
     if #backup_uci_list == 0 then
         -- debug:log("oasis.log", "No Backup List")
@@ -289,9 +305,9 @@ local recovery = function()
         os.remove(common.rollback.dir .. config)
     end
 
-    uci:delete(common.db.uci.cfg, common.db.uci.sect.backup, "targets")
+    uci:delete(common.db.uci.cfg, common.db.uci.sect.rollback, "targets")
 
-    sys.exec("uci commit")
+    uci:commit(common.db.uci.cfg)
     sys.exec("reboot")
 end
 
@@ -306,18 +322,9 @@ local finalize = function()
     return false
 end
 
-local rollback = function()
-
-    local result = sys.exec("touch /tmp/oasis/apply/rollback;echo $?")
-
-    if result == 0 then
-        return true
-    end
-
-    return false
-end
-
 local apply = function(uci_list, commit)
+
+    debug:log("oasis.log", "\n--- [apply.lua][apply] ---")
 
     -- uci add command
     for _, cmd in ipairs(uci_list.add) do
@@ -325,6 +332,8 @@ local apply = function(uci_list, commit)
         -- uci add <config> <section-type>
         -- Note: cmd.class.section ---> <section-type>
         if (cmd.class.config) and (cmd.class.section) then
+            debug:log("oasis.log", "uci add <config> <section-type>")
+            debug:log("oasis.log", "--->" .. cmd.class.config .. " " .. cmd.class.section)
             uci:add(cmd.class.config, cmd.class.section)
 
             if commit then
@@ -339,13 +348,8 @@ local apply = function(uci_list, commit)
         -- create option
         -- uci set <config>.<section>.<option>=<value>
         if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
-
-            -- for debug
-            -- local param_log = cmd.class.config
-            -- param_log = param_log .. " " .. cmd.class.section
-            -- param_log = param_log .. " ".. cmd.class.option
-            -- param_log = param_log .. " " .. cmd.class.value
-            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            debug:log("oasis.log", "uci set <config>.<section>.<option>=<value>")
+            debug:log("oasis.log", "--->" .. cmd.class.config .. "." .. cmd.class.section .. "." .. cmd.class.option .. "=" .. cmd.class.value)
             local safe_value = cmd.class.value
             safe_value = safe_value:gsub("'", "")
             safe_value = safe_value:gsub('\"', "")
@@ -360,13 +364,8 @@ local apply = function(uci_list, commit)
         -- uci set <config>.<section>=<section-type>
         -- Note: safe_value ---> section-type
         elseif (cmd.class.config) and (cmd.class.section) and (cmd.class.value) then
-
-            -- for debug
-            -- local param_log = cmd.class.config
-            -- param_log = param_log .. " " .. cmd.class.section
-            -- param_log = param_log .. " ".. cmd.class.option
-            -- param_log = param_log .. " " .. cmd.class.value
-            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            debug:log("oasis.log", "uci set <config>.<section>=<section-type>")
+            debug:log("oasis.log", "--->" .. cmd.class.config .. "." .. cmd.class.section .. "=" .. cmd.class.value)
             local safe_value = cmd.class.value
             safe_value = safe_value:gsub("'", "")
             safe_value = safe_value:gsub('\"', "")
@@ -384,13 +383,8 @@ local apply = function(uci_list, commit)
         -- create list value
         -- uci add_list <config>.<section>.<option>=<value>
         if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
-
-            -- for debug
-            -- local param_log = cmd.class.config
-            -- param_log = param_log .. " " .. cmd.class.section
-            -- param_log = param_log .. " ".. cmd.class.option
-            -- param_log = param_log .. " " .. cmd.class.value
-            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            debug:log("oasis.log", "uci add_list command")
+            debug:log("oasis.log", "--->" .. cmd.class.config .. "." .. cmd.class.section .. "." .. cmd.class.option .. "=" .. cmd.class.value)
             local safe_value = cmd.class.value
             safe_value = safe_value:gsub("'", "")
             safe_value = safe_value:gsub('\"', "")
@@ -436,7 +430,6 @@ local apply = function(uci_list, commit)
             elseif (not is_option_search) then
                 add_list[cmd.class.config][cmd.class.section][cmd.class.option] = {}
             end
-            -- os.execute("echo \"" .. safe_value ..  "\" >> /tmp/oasis-list.log")
             local items = #add_list[cmd.class.config][cmd.class.section][cmd.class.option] + 1
             add_list[cmd.class.config][cmd.class.section][cmd.class.option][items] = safe_value
         end
@@ -445,10 +438,8 @@ local apply = function(uci_list, commit)
     for config, sect_op_val_tbl in pairs(add_list) do
         for section, op_val_tbl in pairs(sect_op_val_tbl) do
             for option, val_tbl in pairs(op_val_tbl) do
-                -- os.execute("echo \"" .. config .. "." .. section .. "." .. option .. "\" >> /tmp/oasis_add_list.log")
-                -- for _, v in ipairs(val_tbl) do
-                --     os.execute("echo " .. v .. " >> /tmp/oasis_add_list.log")
-                -- end
+                debug:log("oasis.log", "<add list>")
+                debug:dump("oasis.log", val_tbl)
                 uci:set_list(config, section, option, val_tbl)
             end
         end
@@ -463,13 +454,8 @@ local apply = function(uci_list, commit)
         -- delete target list value
         -- uci del_list <config>.<section>.<option>=<value>
         if (cmd.class.config) and (cmd.class.section) and (cmd.class.option) and (cmd.class.value) then
-
-            -- for debug
-            -- local param_log = cmd.class.config
-            -- param_log = param_log .. " " .. cmd.class.section
-            -- param_log = param_log .. " ".. cmd.class.option
-            -- param_log = param_log .. " " .. cmd.class.value
-            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            debug:log("oasis.log", "uci del_list command")
+            debug:log("oasis.log", "--->" .. cmd.class.config .. "." .. cmd.class.section .. "." .. cmd.class.option .. "=" .. cmd.class.value)
             local safe_value = cmd.class.value
             safe_value = safe_value:gsub("'", "")
             safe_value = safe_value:gsub('\"', "")
@@ -496,13 +482,8 @@ local apply = function(uci_list, commit)
     for _, cmd in ipairs(uci_list.reorder) do
         -- uci reorder <config>.<section>=<position index>
         if (cmd.class.config) and (cmd.class.section) and (cmd.class.value) then
-
-            -- for debug
-            -- local param_log = cmd.class.config
-            -- param_log = param_log .. " " .. cmd.class.section
-            -- param_log = param_log .. " ".. cmd.class.option
-            -- param_log = param_log .. " " .. cmd.class.value
-            -- sys.exec("echo \"" .. param_log ..  "\" >> /tmp/oasis-apply.log")
+            debug:log("oasis.log", "uci reorder command (create named section)")
+            debug:log("oasis.log", "--->" .. cmd.class.config .. "." .. cmd.class.section .. "." .. cmd.class.option .. "=" .. cmd.class.value)
             local safe_value = cmd.class.value
             safe_value = safe_value:gsub("'", "")
             safe_value = safe_value:gsub('\"', "")
@@ -538,13 +519,18 @@ local apply = function(uci_list, commit)
 
     sys.exec("lua /usr/bin/oasisd &")
 
+    debug:log("oasis.log", "Check ---> /etc/init.d/xxxx")
+    debug:log("oasis.log", "<uci list>")
+    debug:dump("oasis.log", uci_list)
     for key, target_cmd_tbl in pairs(uci_list) do
         if (key == "set") and (type(target_cmd_tbl) == "table") then
+            debug:log("oasis.log", "<target_cmd_tbl>")
+            debug:dump("oasis.log", target_cmd_tbl)
             for _, cmd in ipairs(target_cmd_tbl) do
                 if (cmd.class.config == "network") or (cmd.class.config == "wireless") then
                     local is_init_script = common.check_file_exist("/etc/init.d/network")
                     if is_init_script then
-                        -- sys.exec("echo /etc/init.d/network >> /tmp/oasis-apply2.log")
+                        debug:log("oasis.log", "[1] trigger config: " .. cmd.class.config)
                         sys.exec("/etc/init.d/network restart")
                         break
                     end
@@ -556,7 +542,7 @@ local apply = function(uci_list, commit)
                     local init_script = "/etc/init.d/" .. cmd.class.config
                     local is_file_exist = common.check_file_exist(init_script)
                     if is_file_exist then
-                        -- sys.exec("echo " .. file_path .. " >> /tmp/oasis-apply3.log")
+                        debug.log("oasis.log", "[2] trigger config: " .. cmd.class.config)
                         sys.exec(init_script .. " restart")
                     end
                 end
@@ -566,11 +552,11 @@ local apply = function(uci_list, commit)
 end
 
 return {
-    backup = backup,
+    create_new_backup_data = create_new_backup_data,
     apply = apply,
-    recovery = recovery,
-    finalize = finalize,
+    complete = complete,
     rollback = rollback,
+    finalize = finalize,
     rollback_target_data = rollback_target_data,
     get_rollback_data_list = get_rollback_data_list,
 }

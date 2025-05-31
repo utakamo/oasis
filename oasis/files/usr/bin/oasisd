@@ -6,10 +6,10 @@ local oasis     = require("oasis.chat.apply")
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 
-local is_backup = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.backup, "enable")
-local limit_time = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "rollback_time") or "300"
+local is_rollback_confirm = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
+local limit_time = uci:get(common.db.uci.cfg, common.db.uci.sect.rollback, "time") or "300"
 
-if not is_backup then
+if not is_rollback_confirm then
     return 1
 end
 
@@ -19,7 +19,7 @@ end
 
 limit_time = tonumber(limit_time)
 
-local initial_uptime = uci:get(common.db.uci.cfg, common.db.uci.sect.backup, "uptime")
+local initial_uptime = uci:get(common.db.uci.cfg, common.db.uci.sect.rollback, "uptime")
 
 if arg[1] and (arg[1] == "boot") then
     initial_uptime = misc.get_uptime()
@@ -29,18 +29,17 @@ while true do
     local final_uptime = misc.get_uptime()
 
     if misc.check_file_exist(common.flag.apply.complete) then
-        uci:set(common.db.uci.cfg, common.db.uci.sect.backup, "enable", "0")
-        uci:commit(common.db.uci.cfg)
+        oasis.complete()
         return 0
     elseif misc.check_file_exist(common.flag.apply.rollback) then
-        oasis.recovery()
+        oasis.rollback()
         return 0
     end
 
     local elapsed_seconds = tonumber(final_uptime) - tonumber(initial_uptime)
 
     if elapsed_seconds > limit_time then
-        oasis.recovery()
+        oasis.rollback()
         return 0
     end
 
