@@ -273,41 +273,70 @@ end
 
 local rollback = function()
 
-    -- debug:log("oasis.log", "\n--- [apply.lua][rollback] ---")
+    debug:log("oasis.log", "\n--- [apply.lua][rollback] ---")
 
-    local is_enable = uci:get(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
+    local is_rollback_confirm = uci:get(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
 
-    if not is_enable then
-        -- debug:log("oasis.log", "rollback invalid")
+    if not is_rollback_confirm then
+        debug:log("oasis.log", "rollback invalid")
         return
     end
 
     uci:set(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm", "0")
 
-    local backup_uci_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "targets")
+    local target_uci_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "targets")
 
-    if #backup_uci_list == 0 then
-        -- debug:log("oasis.log", "No Backup List")
+    if #target_uci_list == 0 then
+        debug:log("oasis.log", "No Backup List")
         return
     end
 
-    for _, config in ipairs(backup_uci_list) do
-        -- if config == "full_backup" then
-        --     sys.exec("uci -f /etc/oasis/backup/full_backup import")
-        -- else
-        local import_cmd = "uci -f " .. common.rollback.dir .. config .. " import " .. config
-        -- debug:log("oasis.log", import_cmd)
-        sys.exec(import_cmd)
-        -- end
+    -- [Delete Target Rollback Data]
+    -- Rollback ---> /etc/backup/<previous uci configs>
+    for _, cfg in ipairs(target_uci_list) do
+        local rollback = "uci -f " .. common.rollback.dir .. cfg .. " import " .. cfg
+        debug:log("oasis.log", "uci cmd: " .. rollback)
+        sys.exec(rollback)
     end
 
-    for _, config in ipairs(backup_uci_list) do
-        os.remove(common.rollback.dir .. config)
+    -- Delete unnecessary current rollback data (/etc/backup/<previous uci configs>)
+    for _, cfg in ipairs(target_uci_list) do
+        debug:log("oasis.log", "Remove: " .. common.rollback.dir .. cfg)
+        os.remove(common.rollback.dir .. cfg)
     end
+
+    -- Delete unnecessary current rollback data (/etc/backup/<uci_cmd_json>)
+    debug:log("oasis.log", "Remove: " .. common.rollback.dir .. common.rollback.uci_cmd_json)
+    os.remove(common.rollback.dir .. common.rollback.uci_cmd_json)
 
     uci:delete(common.db.uci.cfg, common.db.uci.sect.rollback, "targets")
 
+    -- Delete unnecessary rollback data in list (/etc/backup/list*/~)
+    local rollback_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list")
+    local rollback_data_dir = common.rollback.dir .. rollback_list[#rollback_list] .."/"
+    local rollback_data_file = rollback_data_dir .. common.rollback.backup_uci_list
+    debug:log("oasis.log", "Read: " .. rollback_data_file)
+
+    local rollback_data_json = misc.read_file(rollback_data_file)
+    local rollback_data_tbl = jsonc.parse(rollback_data_json)
+
+    debug:dump("oasis.log", rollback_data_tbl)
+
+    for _, cfg in ipairs(rollback_data_tbl) do
+        debug:log("oasis.log", "Remove: " .. rollback_data_dir .. cfg)
+        os.remove(rollback_data_dir .. cfg)
+    end
+
+    debug:log("oasis.log", "Remove: " .. rollback_data_dir .. common.rollback.uci_cmd_json)
+    os.remove(rollback_data_dir .. common.rollback.uci_cmd_json)
+
+    debug:log("oasis.log", "[1][rollback_list]")
+    debug:dump("oasis.log", rollback_list)
+    table.remove(rollback_list, #rollback_list)
+    uci:set_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list", rollback_list)
     uci:commit(common.db.uci.cfg)
+    debug:log("oasis.log", "[2][rollback_list]")
+    debug:dump("oasis.log", rollback_list)
     sys.exec("reboot")
 end
 
