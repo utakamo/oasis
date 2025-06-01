@@ -58,7 +58,7 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/ollama.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/openai.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/anthropic.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/google.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/gemini.lua $(1)$(LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/common.lua $(1)$(LIBRARY_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.chat $(1)$(UBUS_SERVER_APP_DIR)

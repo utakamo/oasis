@@ -48,12 +48,12 @@ local get_ai_service_cfg = function(arg, opts)
                     cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_custom_endpoint")
                 end
                 break
-            elseif cfg.service == ai_ref.service.google.name then
-                local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "google_endpoint_type", "") or ""
+            elseif cfg.service == ai_ref.service.gemini.name then
+                local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "gemini_endpoint_type", "") or ""
                 if endpoint_type == common.endpoint.type.default then
-                    cfg.endpoint = common.ai.service.google.endpoint
+                    cfg.endpoint = common.ai.service.gemini.endpoint
                 elseif endpoint_type == common.endpoint.type.custom then
-                    cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "google_custom_endpoint")
+                    cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "gemini_custom_endpoint")
                 end
                 break
             elseif cfg.service == ai_ref.service.openrouter.name then
@@ -113,7 +113,7 @@ local load_chat_data = function(service)
             }
             chat.messages = {}
         end
-    elseif (cfg.service == common.ai.service.google.name) then
+    elseif (cfg.service == common.ai.service.gemini.name) then
         -- New Chat - initialize
         if not chat.contents then
             chat.contents = {}

@@ -26,7 +26,7 @@ local post_to_server = function(service, user_msg_json, callback)
                 "Authorization: Bearer " .. cfg.api_key
             })
 
-        elseif cfg.service == common.ai.service.google.name then
+        elseif cfg.service == common.ai.service.gemini.name then
             easy:setopt_httpheader({
                 "Content-Type: application/json",
                 "Authorization: Bearer " .. cfg.api_key

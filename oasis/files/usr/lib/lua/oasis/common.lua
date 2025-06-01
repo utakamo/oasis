@@ -52,9 +52,9 @@ ai.service.openai.endpoint          = "https://api.openai.com/v1/chat/completion
 ai.service.anthropic                = {}
 ai.service.anthropic.name           = "Anthropic"
 ai.service.anthropic.endpoint       = "https://api.anthropic.com/v1/messages"
-ai.service.google                   = {}
-ai.service.google.name              = "Gemini"
-ai.service.google.endpoint          = "https://generativelanguage.googleapis.com"
+ai.service.gemini                   = {}
+ai.service.gemini.name              = "Google Gemini"
+ai.service.gemini.endpoint          = "https://generativelanguage.geminiapis.com"
 ai.service.openrouter               = {}
 ai.service.openrouter.name          = "OpenRouter"
 ai.service.openrouter.endpoint      = "https://openrouter.ai/api/v1/chat/completions"
@@ -124,8 +124,8 @@ local select_service_obj = function()
         target = require("oasis.chat.service.openai")
     elseif service == ai.service.anthropic.name then
         target = require("oasis.chat.service.anthropic")
-    elseif service == ai.service.google.name then
-        target = require("oasis.chat.service.google")
+    elseif service == ai.service.gemini.name then
+        target = require("oasis.chat.service.gemini")
     elseif service == ai.service.openrouter.name then
         target = require("oasis.chat.service.openrouter")
     end

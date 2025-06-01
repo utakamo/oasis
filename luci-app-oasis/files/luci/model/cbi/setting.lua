@@ -48,7 +48,7 @@ name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)
 name:value(common.ai.service.openai.name, common.ai.service.openai.name)
 name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
-name:value(common.ai.service.google.name, common.ai.service.google.name)
+name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
 name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
 
 -- Ollama
@@ -77,14 +77,14 @@ anthropic_custom_endpoint = service:option(Value, "anthropic_custom_endpoint", "
 anthropic_custom_endpoint:depends("anthropic_endpoint_type", common.endpoint.type.custom)
 
 -- Google Gemini
-endpoint_type_for_google = service:option(ListValue, "google_endpoint_type", "Endpoint")
-endpoint_type_for_google:value(common.endpoint.type.default, common.endpoint.type.default)
-endpoint_type_for_google:value(common.endpoint.type.custom, common.endpoint.type.custom)
-endpoint_type_for_google.description = "Default: " .. common.ai.service.google.endpoint
-endpoint_type_for_google:depends("name", common.ai.service.google.name)
+endpoint_type_for_gemini = service:option(ListValue, "gemini_endpoint_type", "Endpoint")
+endpoint_type_for_gemini:value(common.endpoint.type.default, common.endpoint.type.default)
+endpoint_type_for_gemini:value(common.endpoint.type.custom, common.endpoint.type.custom)
+endpoint_type_for_gemini.description = "Default: " .. common.ai.service.gemini.endpoint
+endpoint_type_for_gemini:depends("name", common.ai.service.gemini.name)
 
-google_custom_endpoint = service:option(Value, "google_custom_endpoint", "Endpoint")
-google_custom_endpoint:depends("google_endpoint_type", common.endpoint.type.custom)
+gemini_custom_endpoint = service:option(Value, "gemini_custom_endpoint", "Endpoint")
+gemini_custom_endpoint:depends("gemini_endpoint_type", common.endpoint.type.custom)
 
 -- OpenRouter
 endpoint_type_for_openrouter = service:option(ListValue, "openrouter_endpoint_type", "Endpoint Type")
