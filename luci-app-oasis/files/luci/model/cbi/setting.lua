@@ -29,8 +29,20 @@ service.addremove = true
 service.anonymous = true
 service.title = "SERVICE"
 
-identifier = service:option(Value, "identifier", "Identifer")
-identifier.default = "My AI Assistant"
+identifier = service:option(Value, "identifier", "Identifier")
+identifier.default = common.generate_service_id()
+identifier.rmempty = false
+identifier.description = "This value is automatically set and cannot be changed."
+
+function identifier.render(self, section, scope)
+    self.readonly = true
+    self.disabled = true
+    Value.render(self, section, scope)
+end
+
+function identifier.formvalue(self, section)
+    return self.map:get(section, self.option)
+end
 
 name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)

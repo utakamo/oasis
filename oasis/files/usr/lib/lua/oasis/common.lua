@@ -84,6 +84,27 @@ rollback.list_item_name     = "list"
 rollback.uci_cmd_json       = "uci_list.json"
 rollback.backup_uci_list    = "backup_uci_list.json"
 
+local GENERATE_ID_MAX_RETRY = 5
+
+
+local function generate_random_id(method)
+
+    local id = ""
+
+    if method == "urandom" then
+        id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
+        id = id:gsub("\n", "")
+    elseif method == "seed" then
+        math.randomseed(os.time() + os.clock() * 1000000)
+        -- math.randomseed(os.time() + tonumber(tostring({}):sub(8), 16))
+        for _ = 1, 10 do
+            id = id .. tostring(math.random(0, 9))
+        end
+    end
+
+    return id
+end
+
 local select_service_obj = function()
 
     local target = nil
@@ -195,20 +216,67 @@ end
 local generate_chat_id = function()
 
     local id
-    local retry = 5
+    local retry = GENERATE_ID_MAX_RETRY
 
     local is_exist
 
-    -- -- debug:log("oasis.log", "\n --- [common.lua][generate_chat_id] --- ")
+    -- debug:log("oasis.log", "\n --- [common.lua][generate_chat_id] --- ")
 
     repeat
         retry = retry - 1
 
-        id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
+        id = generate_random_id("urandom")
+        -- id = generate_random_id("seed")
 
-        -- -- debug:log("oasis.log", "id = " .. id)
+        -- debug:log("oasis.log", "id = " .. id)
 
         is_exist = search_chat_id(id)
+
+    until (not is_exist) or (retry <= 0)
+
+    if is_exist then
+        id = ""
+    end
+
+    return id
+end
+
+local generate_service_id = function()
+
+    local oasis_cfg_tbl = uci:get_all(db.uci.cfg)
+
+    local search_service_id = function(id)
+
+        for sect, sect_tbl in pairs(oasis_cfg_tbl) do
+            for opt, value in pairs(sect_tbl) do
+                if (opt == ".type") and (value == "service") then
+                    if (oasis_cfg_tbl[sect].identifier) and (id == oasis_cfg_tbl[sect].identifier) then
+                        -- debug:log("oasis.log", "Same service id exist!")
+                        return true
+                    end
+                end
+            end
+        end
+
+        return false
+    end
+
+    local id
+    local retry = GENERATE_ID_MAX_RETRY
+
+    local is_exist
+
+    -- debug:log("oasis.log", "\n --- [common.lua][generate_chat_id] --- ")
+
+    repeat
+        retry = retry - 1
+
+        id = generate_random_id("urandom")
+        -- id = generate_random_id("seed")
+
+        -- debug:log("oasis.log", "id = " .. id)
+
+        is_exist = search_service_id(id)
 
     until (not is_exist) or (retry <= 0)
 
@@ -255,5 +323,6 @@ return {
     load_conf_file = load_conf_file,
     update_conf_file = update_conf_file,
     generate_chat_id = generate_chat_id,
+    generate_service_id = generate_service_id,
     check_chat_format = check_chat_format,
 }
