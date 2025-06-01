@@ -34,33 +34,33 @@ local get_ai_service_cfg = function(arg, opts)
                 break
             elseif cfg.service == ai_ref.service.openai.name then
                 local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_endpoint_type", "") or ""
-                if endpoint_type == "default" then
+                if endpoint_type == common.endpoint.type.default then
                     cfg.endpoint = common.ai.service.openai.endpoint
-                elseif endpoint_type == "custom" then
+                elseif endpoint_type == common.endpoint.type.custom then
                     cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_custom_endpoint")
                 end
                 break
             elseif cfg.service == ai_ref.service.anthropic.name then
                 local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_endpoint_type", "") or ""
-                if endpoint_type == "default" then
+                if endpoint_type == common.endpoint.type.default then
                     cfg.endpoint = common.ai.service.anthropic.endpoint
-                elseif endpoint_type == "custom" then
+                elseif endpoint_type == common.endpoint.type.custom then
                     cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_custom_endpoint")
                 end
                 break
             elseif cfg.service == ai_ref.service.google.name then
                 local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "google_endpoint_type", "") or ""
-                if endpoint_type == "default" then
+                if endpoint_type == common.endpoint.type.default then
                     cfg.endpoint = common.ai.service.google.endpoint
-                elseif endpoint_type == "custom" then
+                elseif endpoint_type == common.endpoint.type.custom then
                     cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "google_custom_endpoint")
                 end
                 break
             elseif cfg.service == ai_ref.service.openrouter.name then
                 local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openrouter_endpoint_type", "") or ""
-                if endpoint_type == "default" then
+                if endpoint_type == common.endpoint.type.default then
                     cfg.endpoint = common.ai.service.openrouter.endpoint
-                elseif endpoint_type == "custom" then
+                elseif endpoint_type == common.endpoint.type.custom then
                     cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openrouter_custom_endpoint")
                 end
                 break

@@ -55,6 +55,9 @@ ai.service.anthropic.endpoint       = "https://api.anthropic.com/v1/messages"
 ai.service.google                   = {}
 ai.service.google.name              = "Gemini"
 ai.service.google.endpoint          = "https://generativelanguage.googleapis.com"
+ai.service.openrouter               = {}
+ai.service.openrouter.name          = "OpenRouter"
+ai.service.openrouter.endpoint      = "https://openrouter.ai/api/v1/chat/completions"
 ai.format                           = {}
 ai.format.chat                      = "chat"
 ai.format.prompt                    = "prompt"
@@ -64,8 +67,8 @@ ai.format.title                     = "ai_create_title"
 
 local endpoint = {}
 endpoint.type = {}
-endpoint.type.default = "default"
-endpoint.type.custom = "custom"
+endpoint.type.default   = "default"
+endpoint.type.custom    = "custom"
 
 local flag = {}
 flag.apply = {}
