@@ -7,8 +7,8 @@ local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
 
-local gemini ={}
-gemini.new = function()
+local google ={}
+google.new = function()
 
         local obj = {}
         obj.chunk_all = ""
@@ -133,4 +133,4 @@ gemini.new = function()
         return obj
 end
 
-return gemini.new()
+return google.new()

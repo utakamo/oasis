@@ -136,12 +136,12 @@ local add = function(args)
         until (setup.service == common.ai.service.ollama.name)
                 or (setup.service == common.ai.service.openai.name)
                 or (setup.service == common.ai.service.anthropic.name)
-                or (setup.service == common.ai.service.gemini.name)
+                or (setup.service == common.ai.service.google.name)
     else
         if (args.service == common.ai.service.ollama.name)
             or (args.service == common.ai.service.openai.name)
             or (args.service == common.ai.service.anthropic.name)
-            or (args.service == common.ai.service.gemini.name) then
+            or (args.service == common.ai.service.google.name) then
 
             io.write(string.format(output.format_2, output.service, args.service))
             setup.service = args.service
@@ -153,7 +153,7 @@ local add = function(args)
             until (setup.service == common.ai.service.ollama.name)
                     or (setup.service == common.ai.service.openai.name)
                     or (setup.service == common.ai.service.anthropic.name)
-                    or (setup.service == common.ai.service.gemini.name)
+                    or (setup.service == common.ai.service.google.name)
         end
     end
 
@@ -216,8 +216,8 @@ local add = function(args)
         endpoint_op_name = "openai_endpoint"
     elseif setup.service == common.ai.service.anthropic.name then
         endpoint_op_name = "anthropic_endpoint"
-    elseif setup.service == common.ai.service.gemini.name then
-        endpoint_op_name = "gemini_endpoint"
+    elseif setup.service == common.ai.service.google.name then
+        endpoint_op_name = "google_endpoint"
     end
 
     local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.service)
@@ -322,8 +322,8 @@ local show_service_list = function()
                     output.item(endpoint_str, tbl.openai_endpoint)
                 elseif tbl.name == common.ai.service.anthropic.name then
                     output.item(endpoint_str, tbl.anthropic_endpoint)
-                elseif tbl.name == common.ai.service.gemini.name then
-                    output.item(endpoint_str, tbl.gemini_endpoint)
+                elseif tbl.name == common.ai.service.google.name then
+                    output.item(endpoint_str, tbl.google_endpoint)
                 end
             end
 

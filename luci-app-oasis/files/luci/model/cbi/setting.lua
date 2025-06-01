@@ -48,24 +48,42 @@ name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)
 name:value(common.ai.service.openai.name, common.ai.service.openai.name)
 name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
-name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
+name:value(common.ai.service.google.name, common.ai.service.google.name)
 
-endpoint_ollama = service:option(Value, "ollama_endpoint", "Endpoint")
-endpoint_ollama.default = common.ai.service.ollama.endpoint
-endpoint_ollama.description = "Please input ollama ip address."
-endpoint_ollama:depends("name", common.ai.service.ollama.name)
+-- Ollama
+ollama_endpoint = service:option(Value, "ollama_endpoint", "Endpoint")
+ollama_endpoint.default = common.ai.service.ollama.endpoint
+ollama_endpoint:depends("name", common.ai.service.ollama.name)
 
-openai_endpoint = service:option(Value, "openai_endpoint", "Endpoint")
-openai_endpoint.default = common.ai.service.openai.endpoint
-openai_endpoint:depends("name", common.ai.service.openai.name)
+-- OpenAI
+endpoint_type_for_openai = service:option(ListValue, "openai_endpoint_type", "Endpoint Type")
+endpoint_type_for_openai:value(common.endpoint.type.default, common.endpoint.type.default)
+endpoint_type_for_openai:value(common.endpoint.type.custom, common.endpoint.type.custom)
+endpoint_type_for_openai.description = "Default: " .. common.ai.service.openai.endpoint
+endpoint_type_for_openai:depends("name", common.ai.service.openai.name)
 
-anthropic_endpoint = service:option(Value, "anthropic_endpoint", "Endpoint")
-anthropic_endpoint.default = common.ai.service.anthropic.endpoint
-anthropic_endpoint:depends("name", common.ai.service.anthropic.name)
+openai_custom_endpoint = service:option(Value, "openai_custom_endpoint", "Custom Endpoint")
+openai_custom_endpoint:depends("openai_endpoint_type", common.endpoint.type.custom)
 
-gemini_endpoint = service:option(Value, "gemini_endpoint", "Endpoint")
-gemini_endpoint.default = common.ai.service.gemini.endpoint
-gemini_endpoint:depends("name", common.ai.service.gemini.name)
+-- Anthropic
+endpoint_type_for_anthropic = service:option(ListValue, "anthropic_endpoint_type", "Endpoint Type")
+endpoint_type_for_anthropic:value(common.endpoint.type.default, common.endpoint.type.default)
+endpoint_type_for_anthropic:value(common.endpoint.type.custom, common.endpoint.type.custom)
+endpoint_type_for_anthropic.description = "Default: " .. common.ai.service.anthropic.endpoint
+endpoint_type_for_anthropic:depends("name", common.ai.service.anthropic.name)
+
+anthropic_custom_endpoint = service:option(Value, "anthropic_custom_endpoint", "Custom Endpoint")
+anthropic_custom_endpoint:depends("anthropic_endpoint_type", common.endpoint.type.custom)
+
+-- Google Gemini
+endpoint_type_for_google = service:option(ListValue, "google_endpoint_type", "Endpoint")
+endpoint_type_for_google:value(common.endpoint.type.default, common.endpoint.type.default)
+endpoint_type_for_google:value(common.endpoint.type.custom, common.endpoint.type.custom)
+endpoint_type_for_google.description = "Default: " .. common.ai.service.google.endpoint
+endpoint_type_for_google:depends("name", common.ai.service.google.name)
+
+google_custom_endpoint = service:option(Value, "google_custom_endpoint", "Endpoint")
+google_custom_endpoint:depends("google_endpoint_type", common.endpoint.type.custom)
 
 api_key = service:option(Value, "api_key", "API Key")
 api_key.password = true

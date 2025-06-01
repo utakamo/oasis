@@ -9,9 +9,10 @@ local util      = require("luci.util")
 -- local debug     = require("oasis.chat.debug")
 
 local post_to_server = function(service, user_msg_json, callback)
+
     local cfg = service:get_config()
     local easy = curl.easy()
-    -- os.execute("echo " .. cfg.endpoint .. " /tmp/refactor.log")
+
     easy:setopt_url(cfg.endpoint)
     easy:setopt_writefunction(callback)
     -- ollama or openai
@@ -25,7 +26,7 @@ local post_to_server = function(service, user_msg_json, callback)
                 "Authorization: Bearer " .. cfg.api_key
             })
 
-        elseif cfg.service == common.ai.service.gemini.name then
+        elseif cfg.service == common.ai.service.google.name then
             easy:setopt_httpheader({
                 "Content-Type: application/json",
                 "Authorization: Bearer " .. cfg.api_key

@@ -33,13 +33,36 @@ local get_ai_service_cfg = function(arg, opts)
                 cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "ollama_endpoint")
                 break
             elseif cfg.service == ai_ref.service.openai.name then
-                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_endpoint")
+                local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_endpoint_type", "") or ""
+                if endpoint_type == "default" then
+                    cfg.endpoint = common.ai.service.openai.endpoint
+                elseif endpoint_type == "custom" then
+                    cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_custom_endpoint")
+                end
                 break
             elseif cfg.service == ai_ref.service.anthropic.name then
-                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_endpoint")
+                local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_endpoint_type", "") or ""
+                if endpoint_type == "default" then
+                    cfg.endpoint = common.ai.service.anthropic.endpoint
+                elseif endpoint_type == "custom" then
+                    cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_custom_endpoint")
+                end
                 break
-            elseif cfg.service == ai_ref.service.gemini.name then
-                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "gemini_endpoint")
+            elseif cfg.service == ai_ref.service.google.name then
+                local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "google_endpoint_type", "") or ""
+                if endpoint_type == "default" then
+                    cfg.endpoint = common.ai.service.google.endpoint
+                elseif endpoint_type == "custom" then
+                    cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "google_custom_endpoint")
+                end
+                break
+            elseif cfg.service == ai_ref.service.openrouter.name then
+                local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openrouter_endpoint_type", "") or ""
+                if endpoint_type == "default" then
+                    cfg.endpoint = common.ai.service.openrouter.endpoint
+                elseif endpoint_type == "custom" then
+                    cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openrouter_custom_endpoint")
+                end
                 break
             end
         end
@@ -90,7 +113,7 @@ local load_chat_data = function(service)
             }
             chat.messages = {}
         end
-    elseif (cfg.service == common.ai.service.gemini.name) then
+    elseif (cfg.service == common.ai.service.google.name) then
         -- New Chat - initialize
         if not chat.contents then
             chat.contents = {}
