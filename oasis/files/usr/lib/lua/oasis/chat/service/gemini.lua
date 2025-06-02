@@ -59,24 +59,28 @@ gemini.new = function()
             local sysrole = common.load_conf_file(spath)
 
             if (self.format == common.ai.format.chat) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                table.insert(chat.contents, 1, {
+                    parts = {
+                        { text = string.gsub(sysrole.default.chat, "\\n", "\n") },
+                    },
                 })
             elseif (self.format == common.ai.format.output) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.output, "\\n", "\n")
+                table.insert(chat.contents, 1, {
+                    parts = {
+                        { text = string.gsub(sysrole.default.output, "\\n", "\n") },
+                    },
                 })
             elseif self.format == common.ai.format.prompt then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.prompt, "\\n", "\n")
+                table.insert(chat.contents, 1, {
+                    parts = {
+                        { text = string.gsub(sysrole.default.prompt, "\\n", "\n") },
+                    },
                 })
             elseif self.format == common.ai.format.call then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.call, "\\n", "\n")
+                table.insert(chat.contents, 1, {
+                    parts = {
+                        { text = string.gsub(sysrole.default.call, "\\n", "\n") },
+                    },
                 })
             end
         end
@@ -91,19 +95,19 @@ gemini.new = function()
 
             self.chunk_all = ""
 
-            local plain_text_for_console
-            local json_text_for_webui
+            local role = chunk_json.candidates[1].content.role
+            local content = chunk_json.candidates[1].content.parts[1].text
 
-            self.recv_raw_msg.role = chunk_json.candidates[1].content.role
-            self.recv_raw_msg.message = chunk_json.candidates[1].content.parts.text
+            self.recv_raw_msg.role = role
+            self.recv_raw_msg.message = content
 
             local reply = {}
             reply.message = {}
-            reply.message.role = chunk_json.candidates[1].content.role
-            reply.message.content = chunk_json.candidates[1].content.parts.text
+            reply.message.role = role
+            reply.message.content = content
 
-            plain_text_for_console = misc.markdown(self.mark, reply.message.content)
-            json_text_for_webui = jsonc.stringify(reply, false)
+            local plain_text_for_console = misc.markdown(self.mark, content)
+            local json_text_for_webui = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
                 return "", "", self.recv_ai_msg
