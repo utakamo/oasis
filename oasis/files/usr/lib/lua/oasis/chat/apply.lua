@@ -27,7 +27,7 @@ local enqueue_rollback_data = function(data)
 
     local index = #rollback_list + 1
 
-    if (index < 10) then
+    if (index <= 10) then
         debug:log("oasis.log", "First enqueue!!")
         rollback_list[index] = common.rollback.list_item_name .. index
 
