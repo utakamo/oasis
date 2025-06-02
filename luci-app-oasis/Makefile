@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-oasis
-PKG_VERSION:=1.5.3
+PKG_VERSION:=2.0.0
 PKG_RELEASE:=1
 
 SOURCE_DIR:=./files/luci
@@ -21,7 +21,7 @@ define Package/luci-app-oasis
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= AI Support Application
-    DEPENDS:=+oasis +luci-compat
+    DEPENDS:=+oasis
     PKGARCH:=all
 endef
 

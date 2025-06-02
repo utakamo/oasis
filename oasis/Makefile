@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
-PKG_VERSION:=1.5.3
+PKG_VERSION:=2.0.0
 PKG_RELEASE:=1
 
 APP_DIR = /usr/bin
@@ -19,7 +19,7 @@ define Package/oasis
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= AI Support Application
-    DEPENDS:=+lua-curl-v3
+    DEPENDS:=+lua-curl-v3 +luci-compat
     PKGARCH:=all
 endef
 
