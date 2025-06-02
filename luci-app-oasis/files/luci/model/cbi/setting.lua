@@ -47,9 +47,9 @@ end
 name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)
 name:value(common.ai.service.openai.name, common.ai.service.openai.name)
-name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
-name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
-name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
+-- name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
+-- name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
+-- name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
 
 -- Ollama
 ollama_endpoint = service:option(Value, "ollama_endpoint", "Endpoint")
@@ -67,34 +67,34 @@ openai_custom_endpoint = service:option(Value, "openai_custom_endpoint", "Custom
 openai_custom_endpoint:depends("openai_endpoint_type", common.endpoint.type.custom)
 
 -- Anthropic
-endpoint_type_for_anthropic = service:option(ListValue, "anthropic_endpoint_type", "Endpoint Type")
-endpoint_type_for_anthropic:value(common.endpoint.type.default, common.endpoint.type.default)
-endpoint_type_for_anthropic:value(common.endpoint.type.custom, common.endpoint.type.custom)
-endpoint_type_for_anthropic.description = "Default: " .. common.ai.service.anthropic.endpoint
-endpoint_type_for_anthropic:depends("name", common.ai.service.anthropic.name)
+-- endpoint_type_for_anthropic = service:option(ListValue, "anthropic_endpoint_type", "Endpoint Type")
+-- endpoint_type_for_anthropic:value(common.endpoint.type.default, common.endpoint.type.default)
+-- endpoint_type_for_anthropic:value(common.endpoint.type.custom, common.endpoint.type.custom)
+-- endpoint_type_for_anthropic.description = "Default: " .. common.ai.service.anthropic.endpoint
+-- endpoint_type_for_anthropic:depends("name", common.ai.service.anthropic.name)
 
-anthropic_custom_endpoint = service:option(Value, "anthropic_custom_endpoint", "Custom Endpoint")
-anthropic_custom_endpoint:depends("anthropic_endpoint_type", common.endpoint.type.custom)
+-- anthropic_custom_endpoint = service:option(Value, "anthropic_custom_endpoint", "Custom Endpoint")
+-- anthropic_custom_endpoint:depends("anthropic_endpoint_type", common.endpoint.type.custom)
 
 -- Google Gemini
-endpoint_type_for_gemini = service:option(ListValue, "gemini_endpoint_type", "Endpoint")
-endpoint_type_for_gemini:value(common.endpoint.type.default, common.endpoint.type.default)
-endpoint_type_for_gemini:value(common.endpoint.type.custom, common.endpoint.type.custom)
-endpoint_type_for_gemini.description = "Default: " .. common.ai.service.gemini.endpoint
-endpoint_type_for_gemini:depends("name", common.ai.service.gemini.name)
+-- endpoint_type_for_gemini = service:option(ListValue, "gemini_endpoint_type", "Endpoint")
+-- endpoint_type_for_gemini:value(common.endpoint.type.default, common.endpoint.type.default)
+-- endpoint_type_for_gemini:value(common.endpoint.type.custom, common.endpoint.type.custom)
+-- endpoint_type_for_gemini.description = "Default: " .. common.ai.service.gemini.endpoint
+-- endpoint_type_for_gemini:depends("name", common.ai.service.gemini.name)
 
-gemini_custom_endpoint = service:option(Value, "gemini_custom_endpoint", "Endpoint")
-gemini_custom_endpoint:depends("gemini_endpoint_type", common.endpoint.type.custom)
+-- gemini_custom_endpoint = service:option(Value, "gemini_custom_endpoint", "Endpoint")
+-- gemini_custom_endpoint:depends("gemini_endpoint_type", common.endpoint.type.custom)
 
 -- OpenRouter
-endpoint_type_for_openrouter = service:option(ListValue, "openrouter_endpoint_type", "Endpoint Type")
-endpoint_type_for_openrouter:value(common.endpoint.type.default, common.endpoint.type.default)
-endpoint_type_for_openrouter:value(common.endpoint.type.custom, common.endpoint.type.custom)
-endpoint_type_for_openrouter.description = "Default: " .. common.ai.service.openrouter.endpoint
-endpoint_type_for_openrouter:depends("name", common.ai.service.openrouter.name)
+-- endpoint_type_for_openrouter = service:option(ListValue, "openrouter_endpoint_type", "Endpoint Type")
+-- endpoint_type_for_openrouter:value(common.endpoint.type.default, common.endpoint.type.default)
+-- endpoint_type_for_openrouter:value(common.endpoint.type.custom, common.endpoint.type.custom)
+-- endpoint_type_for_openrouter.description = "Default: " .. common.ai.service.openrouter.endpoint
+-- endpoint_type_for_openrouter:depends("name", common.ai.service.openrouter.name)
 
-openrouter_custom_endpoint = service:option(Value, "openrouter_custom_endpoint", "Custom Endpoint")
-openrouter_custom_endpoint:depends("openrouter_endpoint_type", common.endpoint.type.custom)
+-- openrouter_custom_endpoint = service:option(Value, "openrouter_custom_endpoint", "Custom Endpoint")
+-- openrouter_custom_endpoint:depends("openrouter_endpoint_type", common.endpoint.type.custom)
 
 api_key = service:option(Value, "api_key", "API Key")
 api_key.password = true
