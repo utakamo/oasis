@@ -43,6 +43,6 @@ while true do
         return 0
     end
 
-    sys.exec("sleep 3")
+    sys.exec("sleep 1")
 
 end
