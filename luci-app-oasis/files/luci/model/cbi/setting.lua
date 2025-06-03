@@ -3,9 +3,9 @@ local common = require("oasis.common")
 m = Map("oasis", nil)
 
 assist = m:section(TypedSection, "basic")
-enable = assist:option(Flag, "enable", "Enable", "Enable setting change suggestions by AI")
-enable.enabled = "1"
-enable.disabled = "0"
+assist_enable = assist:option(Flag, "enable", "Enable", "Enable setting change suggestions by AI")
+assist_enable.enabled = "1"
+assist_enable.disabled = "0"
 
 storage = m:section(TypedSection, "storage")
 storage.addremove = false
@@ -23,6 +23,10 @@ monitor_time = rollback:option(ListValue, "time", "Rollback Time")
 for i = 60, 600, 60 do
     monitor_time:value(tostring(i), tostring(i))
 end
+
+rollback_enable = rollback:option(Flag, "enable", "Enable", "Rollback Data List")
+rollback_enable.enabled = "1"
+rollback_enable.disabled = "0"
 
 service = m:section(TypedSection, "service")
 service.addremove = true
