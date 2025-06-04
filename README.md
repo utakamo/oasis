@@ -93,7 +93,7 @@ Currently, Oasis adjusts responses related to OpenWrt solely through system mess
 As a result, by storing information about OpenWrt settings as knowledge in existing or new system messages, it will become specialized in modifying OpenWrt settings.
 In particular, Oasis analyzes whether content related to modifying OpenWrt settings (UCI command sequences) found within AI responses can be executed. Then, it notifies the user with a popup.
 
-## Rollback Data List (New Function!!!)
+## Rollback Data List (New feature from v2.0.1!!)
 AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
 <img width="857" alt="Image" src="https://github.com/user-attachments/assets/9b344f7f-3cee-44ae-9fd0-eeaf5bc5c855" />
 
