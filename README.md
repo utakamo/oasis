@@ -78,6 +78,10 @@ After applying the settings, if the user can access the WebUI, they will be noti
 > [!IMPORTANT]
 > After a configuration change, if the user does not press the Finalize or Rollback button within 5 minutes (default), the configuration will automatically rollback (Rollback monitoring). This ensures that even if there was a configuration error that caused a brick, the system will return to the original, normal settings. Note: If the OpenWrt device is powered off during the rollback monitoring period, the rollback monitoring will resume upon restart.
 
+## Rollback Data List (New feature from v2.0.1!!)
+AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
+<img width="857" alt="Image" src="https://github.com/user-attachments/assets/9b344f7f-3cee-44ae-9fd0-eeaf5bc5c855" />
+
 ## System Message
 In Oasis, users can create and save system messages to use when starting a chat with AI. System messages are preloaded data used by AI to respond to the user.
 For example, add a message like the following as a system message to instruct the AI to interpret English and Japanese.
@@ -92,10 +96,6 @@ In this way, by including instructions or specific knowledge for the AI as syste
 Currently, Oasis adjusts responses related to OpenWrt solely through system messages.
 As a result, by storing information about OpenWrt settings as knowledge in existing or new system messages, it will become specialized in modifying OpenWrt settings.
 In particular, Oasis analyzes whether content related to modifying OpenWrt settings (UCI command sequences) found within AI responses can be executed. Then, it notifies the user with a popup.
-
-## Rollback Data List (New feature from v2.0.1!!)
-AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
-<img width="857" alt="Image" src="https://github.com/user-attachments/assets/9b344f7f-3cee-44ae-9fd0-eeaf5bc5c855" />
 
 ## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
