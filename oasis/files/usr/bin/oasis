@@ -15,14 +15,14 @@ local function help()
 Usage: oasis <command> [[<options>] arguments]...
 
 Options:
- -u <url>               Set the URL or IP address
+ -u <Endpoint>          Set the  AI Service Endpoint(URL)
  -k <api-key>           Set the API key
  -m <model>             Set the LLM model
  -s <storage>           Set the storage path
 
 Commands:
  storage <path> [<chat-max>]
- add [<service> [<url> [<api-key> [<model> [<storage>]]]]]
+ add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
  change <service-id> [<options> <value>]...
  select [<service-id>]
  delete <service-id>
@@ -72,11 +72,11 @@ end
 
 commands.add = function(args)
     oasis.add({
-        service = args[2],
-        url     = args[3],
-        api_key = args[4],
-        model   = args[5],
-        storage = args[6]
+        service  = args[2],
+        endpoint = args[3],
+        api_key  = args[4],
+        model    = args[5],
+        storage  = args[6]
     })
 end
 
