@@ -96,7 +96,8 @@ local add = function(args)
     output.format_1        = "%-64s >> "
     output.format_2        = "%-64s >> %s"
     output.identifier       = "Identifer Name (Please enter your preferred name.)"
-    output.service         = "Service (\"Ollama\" or \"OpenAI\" or \"Anthropic\" or \"Google Gemini\")"
+    -- output.service         = "Service (\"Ollama\" or \"OpenAI\" or \"Anthropic\" or \"Google Gemini\")"
+    output.service         = "Service (\"Ollama\" or \"OpenAI\")"
     output.endpoint        = "Endpoint"
     output.api_key         = "API KEY (leave blank if none)"
     output.model           = "LLM MODEL"
@@ -213,19 +214,29 @@ local add = function(args)
     if setup.service == common.ai.service.ollama.name then
         endpoint_op_name = "ollama_endpoint"
     elseif setup.service == common.ai.service.openai.name then
-        endpoint_op_name = "openai_endpoint"
+        endpoint_op_name = "openai_custom_endpoint"
     elseif setup.service == common.ai.service.anthropic.name then
-        endpoint_op_name = "anthropic_endpoint"
+        endpoint_op_name = "anthropic_custom_endpoint"
     elseif setup.service == common.ai.service.gemini.name then
-        endpoint_op_name = "gemini_endpoint"
+        endpoint_op_name = "gemini_custom_endpoint"
     end
 
     local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.service)
     uci:set(common.db.uci.cfg, unnamed_section, "identifier", setup.identifier)
     uci:set(common.db.uci.cfg, unnamed_section, "name", setup.service)
     uci:set(common.db.uci.cfg, unnamed_section, endpoint_op_name, setup.endpoint)
+
+    if setup.service == common.ai.service.openai.name then
+        uci:set(common.db.uci.cfg, unnamed_section, "openai_endpoint_type", common.endpoint.type.custom)
+    elseif setup.service == common.ai.service.anthropic.name then
+        uci:set(common.db.uci.cfg, unnamed_section, "anthropic_endpoint_type", common.endpoint.type.custom)
+    elseif setup.service == common.ai.service.gemini.name then
+        uci:set(common.db.uci.cfg, unnamed_section, "gemini_endpoint_type", common.endpoint.type.custom)
+    end
+
     uci:set(common.db.uci.cfg, unnamed_section, "api_key", setup.api_key)
     uci:set(common.db.uci.cfg, unnamed_section, "model", setup.model)
+
     if setup.max_tokens then
         uci:set(common.db.uci.cfg, unnamed_section, "max_tokens", setup.max_tokens)
     end
@@ -251,13 +262,21 @@ local change = function(opt, arg)
     local is_update = false
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if service.name == arg.service then
+        if service.identifier == arg.identifier then
             is_update = true
-            if opt.n then
-                uci:set(common.db.uci.cfg, service[".name"], "name", opt.n)
-            end
             if opt.u then
-                uci:set(common.db.uci.cfg, service[".name"], "url", opt.u)
+                if service.name == common.ai.service.ollama.name then
+                    uci:set(common.db.uci.cfg, service[".name"], "ollama_endpoint", opt.u)
+                elseif service.name == common.ai.service.openai.name then
+                    uci:set(common.db.uci.cfg, service[".name"], "openai_custom_endpoint", opt.u)
+                    uci:set(common.db.uci.cfg, service[".name"], "openai_endpoint_type", common.endpoint.type.custom)
+                elseif service.name == common.ai.service.anthropic.name then
+                    uci:set(common.db.uci.cfg, service[".name"], "anthropic_custom_endpoint", opt.u)
+                    uci:set(common.db.uci.cfg, service[".name"], "anthropic_endpoint_type", common.endpoint.type.custom)
+                elseif common.ai.service.gemini.name then
+                    uci:set(common.db.uci.cfg, service[".name"], "gemini_custom_endpoint", opt.u)
+                    uci:set(common.db.uci.cfg, service[".name"], "gemini_endpoint_type", common.endpoint.type.custom)
+                end
             end
             if opt.k then
                 uci:set(common.db.uci.cfg, service[".name"], "api_key", opt.k)
@@ -319,11 +338,23 @@ local show_service_list = function()
                 if tbl.name == common.ai.service.ollama.name then
                     output.item(endpoint_str, tbl.ollama_endpoint)
                 elseif tbl.name == common.ai.service.openai.name then
-                    output.item(endpoint_str, tbl.openai_endpoint)
+                    if (tbl.openai_endpoint_type) and (tbl.openai_endpoint_type == common.endpoint.type.default) then
+                        output.item(endpoint_str, common.ai.service.openai.endpoint)
+                    elseif (tbl.openai_endpoint_type) and (tbl.openai_endpoint_type == common.endpoint.type.custom) then
+                        output.item(endpoint_str, tbl.openai_custom_endpoint)
+                    end
                 elseif tbl.name == common.ai.service.anthropic.name then
-                    output.item(endpoint_str, tbl.anthropic_endpoint)
+                    if (tbl.anthropic_endpoint_type) and (tbl.anthropic_endpoint_type == common.endpoint.type.default) then
+                        output.item(endpoint_str, common.ai.service.anthropic.endpoint)
+                    elseif (tbl.anthropic_endpoint_type) and (tbl.anthropic_endpoint_type == common.endpoint.type.custom) then
+                        output.item(endpoint_str, tbl.anthropic_custom_endpoint)
+                    end
                 elseif tbl.name == common.ai.service.gemini.name then
-                    output.item(endpoint_str, tbl.gemini_endpoint)
+                    if (tbl.gemini_endpoint_type) and (tbl.gemini_endpoint_type == common.endpoint.type.default) then
+                        output.item(endpoint_str, common.ai.service.gemini.endpoint)
+                    elseif (tbl.gemini_endpoint_type) and (tbl.gemini_endpoint_type == common.endpoint.type.custom) then
+                        output.item(endpoint_str, tbl.gemini_custom_endpoint)
+                    end
                 end
             end
 
@@ -346,11 +377,11 @@ local delete = function(arg)
 
     local output = {}
     output.service = {}
-    output.service.confirm_service_delete = function(service)
+    output.service.confirm_service_delete = function(identifier)
         local reply
 
         repeat
-            io.write("Do you delete service [" ..service .. "] (Y/N):")
+            io.write("Do you delete service [" ..identifier .. "] (Y/N):")
             io.flush()
 
             reply = io.read()
@@ -371,11 +402,11 @@ local delete = function(arg)
         print("Delete service [" .. service .. "]")
     end
 
-    output.service.not_found = function(service)
-        print("Error: Service '" .. service .. "' was not found in the configuration.")
+    output.service.not_found = function(identifier)
+        print("Error: Service ID('" .. identifier .. "') was not found in the configuration.")
     end
 
-    if not arg.service then
+    if not arg.identifier then
         return
     end
 
@@ -383,7 +414,7 @@ local delete = function(arg)
     local found = false
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if not found and service.name == arg.service then
+        if not found and service.identifier == arg.identifier then
             target_section = service[".name"]
             found = true
             return false
@@ -391,20 +422,20 @@ local delete = function(arg)
     end)
 
     if (not target_section) or (#target_section == 0) then
-        output.service.not_found(arg.service)
+        output.service.not_found(arg.identifier)
         return
     end
 
-    if output.service.confirm_service_delete(arg.service) == 'N' then
+    if output.service.confirm_service_delete(arg.identifier) == 'N' then
         return
     end
 
-    output.service.delete(arg.service)
+    output.service.delete(target_section)
 end
 
 local select = function(arg)
 
-    if not arg.service then
+    if not arg.identifier then
         return
     end
 

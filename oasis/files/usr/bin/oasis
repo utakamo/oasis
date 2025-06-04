@@ -15,7 +15,6 @@ local function help()
 Usage: oasis <command> [[<options>] arguments]...
 
 Options:
- -n <service>           Set the service name
  -u <url>               Set the URL or IP address
  -k <api-key>           Set the API key
  -m <model>             Set the LLM model
@@ -24,9 +23,9 @@ Options:
 Commands:
  storage <path> [<chat-max>]
  add [<service> [<url> [<api-key> [<model> [<storage>]]]]]
- change <service> [<options> <value>]...
- select [<service>]
- delete <service>
+ change <service-id> [<options> <value>]...
+ select [<service-id>]
+ delete <service-id>
  chat [id=<chat-id>]
  prompt <message>
  sysrole [[<chat|prompt|call> [<options>] [<system message>]]
@@ -82,10 +81,10 @@ commands.add = function(args)
 end
 
 commands.change = function(args)
-    local service = args[2]
-    if not service then return help() end
+    local identifier = args[2]
+    if not identifier then return help() end
     local options = parse_options(args, 3)
-    oasis.change(options, { service = service })
+    oasis.change(options, { identifier = identifier })
 end
 
 commands.select = function(args)
@@ -98,7 +97,7 @@ end
 
 commands.delete = function(args)
     if args[2] then
-        oasis.delete({ service = args[2] })
+        oasis.delete({ identifier = args[2] })
     else
         oasis.show_service_list()
     end
