@@ -10,7 +10,7 @@ local common            = require("oasis.common")
 -- local debug             = require("oasis.chat.debug")
 
 local error_msg = {}
-error_msg.load_service1 = "Error!\n\tOne of the service settings exist!"
+error_msg.load_service1 = "Error!\n\tThere is no AI service configuration."
 error_msg.load_service2 = "\tPlease add the service configuration with the add command."
 
 local chat_history = function(chat)
