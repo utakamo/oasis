@@ -125,17 +125,16 @@ root@OpenWrt:~# oasis
 Usage: oasis <command> [[<options>] arguments]...
 
 Options:
- -n <service>           Set the service name
  -u <url>               Set the url or ipaddr for ai service
  -k <api-key>           Set the api-key for ai service
  -m <model>             Set the llm model for ai service
 
 Commands:
  - storage <path> [<chat-max>] (default: chat-max = 30)
- - add [<service> [<url> [<api-key> [<model> [<storage>]]]]]
- - change <service> [<options> <argument>]...
- - select [<service>]
- - delete <service>
+ - add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
+ - change <service-id> [<options> <argument>]...
+ - select [<service-id>]
+ - delete <service-id>
  - chat [id=<chat-id>]
  - prompt <message>
  - delchat id=<chat-id>
