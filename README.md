@@ -14,7 +14,7 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 | :---: | :---  |
 |   oasis    |   AI chat core software (provides stand-alone CUI-based chat functionality)   |
 |  luci-app-oasis |   This is a plugin to use AI chat from within LuCI's WebUI. (base software is oasis)  |
-<img width="944" alt="image" src="https://github.com/user-attachments/assets/a9ec9673-c8ce-4afc-8173-c803ea02ef07" />
+<img width="884" alt="Image" src="https://github.com/user-attachments/assets/94b14ba9-7942-4eb3-8f01-b40dbf2af039" />
 
 ## How to install luci-app-oasis
 Dependency: oasis, lua-curl-v3, luci-compat  
