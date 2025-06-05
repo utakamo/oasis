@@ -104,6 +104,7 @@ After applying the settings, if the user can access the WebUI, they will be noti
 ## Ask OpenWrt Setting (Advanced Usage)
 If you are willing to provide your current settings to the AI, you can select UCI Config from the dropdown menu below the message box. When you provide this as supplementary information when making a request to the AI, the accuracy of its suggestions will improve significantly. For example, as shown in the following case.
 
+In the following example, Wi-Fi is enabled, and when requesting some configuration changes, the current wireless settings are provided to the AI as reference information.
 <img width="854" alt="Image" src="https://github.com/user-attachments/assets/4d58b2e9-82eb-43cc-b90f-11597760994e" />
 <img width="849" alt="Image" src="https://github.com/user-attachments/assets/7abdfb17-9997-411a-9c56-1646deb1cb03" />
 <img width="833" alt="Image" src="https://github.com/user-attachments/assets/6228d327-f388-4ba9-8b35-2b50c58d24a9" />
