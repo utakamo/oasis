@@ -38,14 +38,15 @@ Rebooting the system after installation is also fine.
 <img width="838" alt="Image" src="https://github.com/user-attachments/assets/a4d4cb84-2135-40b7-97ee-4d0e0dacff2c" />
 
 > [!NOTE]
+> #### 1.1. OpenAI Endpoint
 > If you want to use OpenAI, you need to set the Endpoint Type.
 > - Default Endpoint ----> https://api.openai.com/v1/chat/completions
 > - Custom Endpoint ----> User-specified endpoint
 >
-> #### OpenAI API Key  
+> #### 1.2. OpenAI API Key  
 > Please create an API Key on your OpenAI Platform page.  
 >
-> #### OpenAI LLM Models (Example)
+> #### 1.3. OpenAI LLM Models (Example)
 > - gpt-3.5-turbo
 > - gpt-4
 > - gpt-4o
@@ -53,7 +54,11 @@ Rebooting the system after installation is also fine.
 >  
 > For details, please refer to the OpenAI website.
 
+### 2. Example Ollama Setup
+<img width="853" alt="Image" src="https://github.com/user-attachments/assets/7cc74e68-c920-4f2a-b0df-c0eba7264774" />
+
 > [!NOTE]
+> #### 2.1. About Ollama (AI Server) Setup
 > If you want to use Ollama, you need to set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.  
 > ```
 > OLLAMA_HOST=0.0.0.0
@@ -64,9 +69,15 @@ Rebooting the system after installation is also fine.
 > My technical blog has an introductory page on the above Ollama setup, which describes the setup on Windows and Linux (Japanese Page).
 > https://utakamo.com/article/ai/llm/ollama/setup/index.html#network-support
 >
-> Ollama Endpoint Format: ```http://<Your Ollama PC Address>:11434/api/chat ```
-> 
+> #### 2.2. Ollama Endpoint
+> Ollama Endpoint Format: ```http://<Your Ollama PC Address>:11434/api/chat ```  
+> In the example above, Ollama's IP address is 192.168.1.109/24, so ```http://192.168.1.109:11434/api/chat``` is set as the endpoint.
+>
+> #### 2.3. Ollama API Key
 > When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.
+>
+> #### 2.4. LLM Models
+> https://ollama.com/library
 
 ## Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
