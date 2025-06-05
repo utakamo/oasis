@@ -42,10 +42,10 @@ Rebooting the system after installation is also fine.
 > - Default Endpoint ----> https://api.openai.com/v1/chat/completions
 > - Custom Endpoint ----> User-specified endpoint
 >
-> #### API Key  
+> #### OpenAI API Key  
 > Please create an API Key on your OpenAI Platform page.  
 >
-> #### Models (Example)
+> #### OpenAI LLM Models (Example)
 > - gpt-3.5-turbo
 > - gpt-4
 > - gpt-4o
