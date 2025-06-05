@@ -79,7 +79,7 @@ Rebooting the system after installation is also fine.
 > #### 2.4. LLM Models
 > https://ollama.com/library
 
-## Chat with AI
+## 1. Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
 <img width="944" alt="image" src="https://github.com/user-attachments/assets/a9ec9673-c8ce-4afc-8173-c803ea02ef07" />  
 When chatting with AI for the first time, you can choose what topics to talk about. These options can be freely added or removed by the user in the System Message tab.  
@@ -90,7 +90,7 @@ When a chat with AI begins, it is given a title and displayed in the chat list o
 Chat data can be renamed, exported, or deleted.
 <img width="942" alt="Image" src="https://github.com/user-attachments/assets/10d013bc-cc9d-4f9c-bcc4-2cedd0466a8d" />
 
-## Ask OpenWrt Setting
+## Ask OpenWrt Setting (Basic Usage)
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
 <img width="944" alt="Image" src="https://github.com/user-attachments/assets/7ce13aff-b7f3-4594-80f7-a04d8a1bf012" />  
 When a configuration change is suggested by the AI using UCI commands, the internal system of OpenWrt recognizes that a configuration change has been proposed by the AI. It then notifies the user via a popup to apply the configuration change to the current runtime. The user can accept the configuration change by pressing the Apply button.  
@@ -100,6 +100,9 @@ After applying the settings, if the user can access the WebUI, they will be noti
 <img width="946" alt="Image" src="https://github.com/user-attachments/assets/081313e4-e3ad-405f-a75b-ff4a46c83684" />
 > [!IMPORTANT]
 > After a configuration change, if the user does not press the Finalize or Rollback button within 5 minutes (default), the configuration will automatically rollback (Rollback monitoring). This ensures that even if there was a configuration error that caused a brick, the system will return to the original, normal settings. Note: If the OpenWrt device is powered off during the rollback monitoring period, the rollback monitoring will resume upon restart.
+
+## Ask OpenWrt Setting (Advanced Usage)
+
 
 ## Rollback Data List (New feature from v2.0.1!!)
 AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
