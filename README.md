@@ -34,13 +34,22 @@ Rebooting the system after installation is also fine.
 
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
-<img width="842" alt="image" src="https://github.com/user-attachments/assets/3485c62a-16b7-4c13-9a47-6069e4d500ed" />
+### 1. Example OpenAI Setup
+<img width="838" alt="Image" src="https://github.com/user-attachments/assets/a4d4cb84-2135-40b7-97ee-4d0e0dacff2c" />
 
 > [!NOTE]
-> If you want to use OpenAI, you need to set the Endpoint to the following URL.  
-> https://api.openai.com/v1/chat/completions
+> If you want to use OpenAI, you need to set the Endpoint Type.
+> - Default Endpoint ----> https://api.openai.com/v1/chat/completions
+> - Custom Endpoint ----> User-specified endpoint
 >
-> Please create an API Key on your OpenAI account page.  
+> #### API Key  
+> Please create an API Key on your OpenAI Platform page.  
+>
+> #### Models (Example)
+> - gpt-3.5-turbo
+> - gpt-4
+> - gpt-4o
+>  
 > For details, please refer to the OpenAI website.
 
 > [!NOTE]
