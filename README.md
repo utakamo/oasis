@@ -102,6 +102,7 @@ After applying the settings, if the user can access the WebUI, they will be noti
 > After a configuration change, if the user does not press the Finalize or Rollback button within 5 minutes (default), the configuration will automatically rollback (Rollback monitoring). This ensures that even if there was a configuration error that caused a brick, the system will return to the original, normal settings. Note: If the OpenWrt device is powered off during the rollback monitoring period, the rollback monitoring will resume upon restart.
 
 ## Ask OpenWrt Setting (Advanced Usage)
+<img width="854" alt="Image" src="https://github.com/user-attachments/assets/4d58b2e9-82eb-43cc-b90f-11597760994e" />
 
 
 ## Rollback Data List (New feature from v2.0.1!!)
