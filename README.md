@@ -49,6 +49,7 @@ Rebooting the system after installation is also fine.
 > - gpt-3.5-turbo
 > - gpt-4
 > - gpt-4o
+> - etc...
 >  
 > For details, please refer to the OpenAI website.
 
