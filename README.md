@@ -122,7 +122,7 @@ By providing the current configuration information, the accuracy of the AI's sug
 AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
 <img width="857" alt="Image" src="https://github.com/user-attachments/assets/9b344f7f-3cee-44ae-9fd0-eeaf5bc5c855" />
 
-## System Message
+## System Message (Knowledge)
 In Oasis, users can create and save system messages to use when starting a chat with AI. System messages are preloaded data used by AI to respond to the user.
 For example, add a message like the following as a system message to instruct the AI to interpret English and Japanese.
 <img width="947" alt="Image" src="https://github.com/user-attachments/assets/6b3e41a7-d31c-47d7-9521-56c5a5a1e578" />  
