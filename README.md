@@ -104,6 +104,7 @@ After applying the settings, if the user can access the WebUI, they will be noti
 ## Ask OpenWrt Setting (Advanced Usage)
 <img width="854" alt="Image" src="https://github.com/user-attachments/assets/4d58b2e9-82eb-43cc-b90f-11597760994e" />
 <img width="833" alt="Image" src="https://github.com/user-attachments/assets/6228d327-f388-4ba9-8b35-2b50c58d24a9" />
+<img width="835" alt="Image" src="https://github.com/user-attachments/assets/a4e9c003-aa5f-433f-a337-af9e40046d31" />
 
 ## Rollback Data List (New feature from v2.0.1!!)
 AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
