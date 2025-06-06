@@ -10,6 +10,7 @@ UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
 UCI_CONFIG_DIR = /etc/config
 OASIS_DIR = /etc/oasis
 INIT_DIR = /etc/init.d
+RPCD_ACL_DIR = /usr/share/rpcd/acl.d
 STORAGE_DIR = $(OASIS_DIR)/chat_data
 BACKUP_DIR = $(OASIS_DIR)/backup
 
@@ -28,6 +29,7 @@ endef
 
 define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(INIT_DIR)
+	$(INSTALL_DIR) $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_DIR) $(1)$(APP_DIR)
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/chat
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/chat/service
@@ -46,6 +48,7 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list9
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list10
 	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
+	$(INSTALL_DATA) ./files/usr/share/rpcd/acl.d/oasis.json $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasisd $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/datactrl.lua $(1)$(LIBRARY_DIR)/oasis/chat

@@ -1,0 +1,19 @@
+{
+        "oasis": {
+                "description": "Access Oasis",
+                "write": {
+                        "ubus": {
+                                "oasis": [ "updata_sysmsg", "add_sysmsg", "delete_sysmsg" ],
+                                "oasis.chat": [ "delete", "send" ],
+                                "oasis.title": [ "*" ]
+                        }
+                },
+
+                "read": {
+                        "ubus": {
+                            "oasis": [ "load_sysmsg", "config", "load_sysmsg_info" ],
+                            "oasis.chat": [ "list", "load" ]
+                        }
+                }
+        }
+}
