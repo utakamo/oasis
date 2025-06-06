@@ -291,7 +291,7 @@ root@OpenWrt:~# ubus -v list oasis.title
         "manual_set":{"id":"String","title":"String"}
 ```
 
-# Oasis RPC (Next Version Release!!!)
+# Oasis RPC (Perphaps, Next Version Release...)
 under development ...
 ## 1. create session id
 ```
