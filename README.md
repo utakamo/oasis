@@ -291,6 +291,17 @@ root@OpenWrt:~# ubus -v list oasis.title
         "manual_set":{"id":"String","title":"String"}
 ```
 
+# Oasis RPC (Next Version Release!!!)
+under development ...
+## 1. create session id
+```
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "00000000000000000000000000000000", "session", "login", { "username": "root", "password": ""  } ] }'  http://192.168.1.1/ubus
+```
+## 2. send user message
+```
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "287840a46458e65acdbec280d188cc03", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "こんにちは!"} ] }'  http://192.168.1.1/ubus
+```
+
 # Dependency Package
 - lua-curl-v3
 - luci-compat
