@@ -63,6 +63,7 @@ ai.format.chat                      = "chat"
 ai.format.prompt                    = "prompt"
 ai.format.call                      = "call"
 ai.format.output                    = "output"
+ai.format.rpc_output               = "rpc-output"
 ai.format.title                     = "ai_create_title"
 
 local endpoint = {}

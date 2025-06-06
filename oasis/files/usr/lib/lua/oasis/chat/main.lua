@@ -593,6 +593,36 @@ local output = function(arg)
     return new_chat_info, message
 end
 
+local rpc_output = function(arg)
+
+    -- debug:log("oasis.log", "\n--- [main.lua][output] ---")
+
+    if (not arg.message) then
+        return
+    end
+
+    local service = common.select_service_obj()
+
+    if not service then
+        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
+        return
+    end
+
+    service:initialize(arg, common.ai.format.rpc_output)
+
+    local output = datactrl.load_chat_data(service)
+
+    local new_chat_info, message = ""
+
+    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
+    if service:setup_msg(output, { role = common.role.user, message = arg.message}) then
+        datactrl.record_chat_data(service, output)
+        new_chat_info, message = transfer.chat_with_ai(service, output)
+    end
+
+    return new_chat_info, message
+end
+
 local rename = function(arg)
     local result = util.ubus("oasis.title", "manual_set", {id = arg.id, title = arg.title})
 
@@ -651,6 +681,7 @@ return {
     delchat = delchat,
     prompt = prompt,
     output = output,
+    rpc_output = rpc_output,
     rename = rename,
     list = list,
     call =  call,

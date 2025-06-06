@@ -61,6 +61,41 @@ local methods = {
         end
     },
 
+    -- usage1
+    --  ubus call oasis.chat send '{"id":"", "sysmsg_key":"default", "message":"Hello!"}'
+    -- usage2
+    --  ubus call oasis.chat send '{"id":"1860172038", "sysmsg_key":"default", "message":"GoodBye!!"}'
+    send = {
+        args = { id = "a_string", sysmsg_key = "a_string", message = "a_string" },
+
+        call = function(args)
+            -- debug:log("oasis.log", "\n--- [oasis.chat][message] ---")
+
+            local r = {}
+
+            if (not args.id) or (not args.message) or (#args.message == 0)  then
+                r.result = jsonc.stringify({ status = common.status.error })
+            end
+
+            local oasis = require("oasis.chat.main")
+
+            local new_chat_info, plain_text_ai_message = oasis.rpc_output(
+                                {   id          = args.id,
+                                    sysmsg_key  = args.sysmsg_key,
+                                    message     = args.message,
+                                    cmd         = "chat" 
+                                })
+
+            if (not new_chat_info) then
+                r.result = jsonc.stringify({ content = plain_text_ai_message})
+            else
+                r.result = jsonc.stringify({ content = plain_text_ai_message, id = new_chat_info.id, title = new_chat_info.title })
+            end
+
+            return r
+        end
+    },
+
     load = {
         args = { id = "a_string" },
 
