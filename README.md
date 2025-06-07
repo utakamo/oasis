@@ -267,7 +267,7 @@ root@OpenWrt:~#
 # oasis ubus objects and methods
 ```
 root@OpenWrt:~# ubus -v list oasis
-'oasis' @a0b66d2b
+'oasis' @a37609a7
         "load_icon_info":{"path":"String"}
         "select_icon":{"using":"String","path":"String"}
         "update_sysmsg":{"target":"String","path":"String","title":"String","message":"String"}
@@ -279,14 +279,15 @@ root@OpenWrt:~# ubus -v list oasis
         "add_sysmsg":{"message":"String","path":"String","title":"String"}
         "delete_sysmsg":{"target":"String","path":"String"}
 root@OpenWrt:~# ubus -v list oasis.chat
-'oasis.chat' @8a301e6e
+'oasis.chat' @ca5eb901
         "delete":{"id":"String"}
         "list":{}
         "append":{"content2":"String","id":"String","role2":"String","role1":"String","content1":"String"}
-        "load":{"id":"String"}
         "create":{"content3":"String","content2":"String","content1":"String","role2":"String","role1":"String","role3":"String"}
+        "load":{"id":"String"}
+        "send":{"id":"String","sysmsg_key":"String","message":"String"}
 root@OpenWrt:~# ubus -v list oasis.title
-'oasis.title' @1687aa3a
+'oasis.title' @c767d4a2
         "auto_set":{"id":"String"}
         "manual_set":{"id":"String","title":"String"}
 ```
