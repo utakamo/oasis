@@ -299,7 +299,7 @@ Dependency Package: uhttpd-mod-ubus
 > If you wish to use this functionality, you may need to install uhttpd-mod-ubus.
 > ```
 > root@OpenWrt~# opkg update
-> root@OpenWrt~# opkg install httpd-mod-ubus
+> root@OpenWrt~# opkg install uhttpd-mod-ubus
 > ```
 
 ![Image](https://github.com/user-attachments/assets/b2575171-d005-4536-b905-cd69c083e43a)
