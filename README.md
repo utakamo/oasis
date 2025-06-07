@@ -293,7 +293,12 @@ root@OpenWrt:~# ubus -v list oasis.title
 ```
 
 # Oasis RPC (Perphaps, Next Version Release...)
-under development ...
+under development ...  
+Dependency Package: uhttpd-mod-ubus
+> [!NOTE]
+> If you wish to use this functionality, you may need to install uhttpd-mod-ubus.
+> 
+
 ![Image](https://github.com/user-attachments/assets/b2575171-d005-4536-b905-cd69c083e43a)
 
 The following is an example of message request and response exchange utilizing Oasis's RPC function. The assumed router credentials are as follows:  
