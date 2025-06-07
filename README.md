@@ -302,7 +302,7 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 `
 ## 2. send user message (First conversation)
 `
-curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "287840a46458e65acdbec280d188cc03", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "こんにちは!"} ] }'  http://192.168.1.1/ubus
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "287840a46458e65acdbec280d188cc03", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "Hello!!"} ] }'  http://192.168.1.1/ubus
 `
 
 # Dependency Package
