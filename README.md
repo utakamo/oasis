@@ -313,7 +313,9 @@ The ubus_rpc_session in this response will be used for sending subsequent reques
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "Hello!!"} ] }'  http://192.168.1.1/ubus
 `
 ## 3. Send user message (Subsequent conversations)
+`
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "6569257330", "sysmsg_key": "default", "message": "Please change the LAN network to 192.168.5.0/24."} ] }'  http://192.168.1.1/ubus
+`
 
 # Dependency Package
 - lua-curl-v3
