@@ -298,7 +298,7 @@ under development ...
 
 ## 1. create session id
 `
-curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "00000000000000000000000000000000", "session", "login", { "username": "root", "password": ""  } ] }'  http://192.168.1.1/ubus
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "00000000000000000000000000000000", "session", "login", { "username": "root", "password": "12345678"  } ] }'  http://192.168.1.1/ubus
 `
 ## 2. send user message (First conversation)
 `
