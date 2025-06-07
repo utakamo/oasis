@@ -296,14 +296,24 @@ root@OpenWrt:~# ubus -v list oasis.title
 under development ...
 ![Image](https://github.com/user-attachments/assets/b2575171-d005-4536-b905-cd69c083e43a)
 
-## 1. create session id
+## 1. Create session id
+- [Request]  
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "00000000000000000000000000000000", "session", "login", { "username": "root", "password": "12345678"  } ] }'  http://192.168.1.1/ubus
 `
-## 2. send user message (First conversation)
+- [Response (Example)]  
 `
-curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "287840a46458e65acdbec280d188cc03", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "Hello!!"} ] }'  http://192.168.1.1/ubus
+{"jsonrpc":"2.0","id":1,"result":[0,{"ubus_rpc_session":"3cc578e5bc9f2b032c6445ea5696c9c8","timeout":300,"expires":299, ... 
 `
+
+The ubus_rpc_session in this response will be used for sending subsequent requests. In this example, the ubus_rpc_session is 12345678, so this number is used in the next request submission example.
+
+## 2. Send user message (First conversation)
+`
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "Hello!!"} ] }'  http://192.168.1.1/ubus
+`
+## 3. Send user message (Subsequent conversations)
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "6569257330", "sysmsg_key": "default", "message": "Please change the LAN network to 192.168.5.0/24."} ] }'  http://192.168.1.1/ubus
 
 # Dependency Package
 - lua-curl-v3
