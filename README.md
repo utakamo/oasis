@@ -292,7 +292,7 @@ root@OpenWrt:~# ubus -v list oasis.title
         "manual_set":{"id":"String","title":"String"}
 ```
 
-# Oasis RPC (Perphaps, Next Version Release...)
+# Oasis RPC (json-rpc2.0) :Perphaps, Next Version Release...
 under development ...  
 Dependency Package: uhttpd-mod-ubus
 > [!NOTE]
