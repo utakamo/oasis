@@ -1,8 +1,9 @@
 #!/usr/bin/env lua
 
-local jsonc = require("luci.jsonc")
-local uci = require("luci.model.uci").cursor()
-local common = require("oasis.common")
+local jsonc     = require("luci.jsonc")
+local util      = require("luci.util")
+local uci       = require("luci.model.uci").cursor()
+local common    = require("oasis.common")
 
 ------------------------------
 -- [Used from oasis object] --
@@ -160,6 +161,43 @@ local retrieve_service_info = function(format)
     return service_list_tbl
 end
 
+local retrieve_uci_config = function(format)
+
+    -- Currently, the only removal target in the uci config list is oasis and rpcd.
+    -- Add the names of uci configs that you don't want to teach AI here.
+    local black_list = {
+        "oasis",
+        "rpcd",
+    }
+
+    local list_tbl = util.ubus("uci", "configs", {})
+
+    if (not list_tbl) or (not list_tbl.configs) then
+        if (format) and (format == "json") then
+            return jsonc.stringify({ error = "No uci list" })
+        end
+
+        return { error = "No uci listt" }
+    end
+
+    for index = #list_tbl.configs, 1, -1 do
+        for _, exclude_item in ipairs(black_list) do
+            if list_tbl.configs[index] == exclude_item then
+                table.remove(list_tbl.configs, index)
+                break
+            end
+        end
+    end
+
+    local list_json = jsonc.stringify(list_tbl)
+
+    if (format) and (format == "json") then
+        return list_json
+    end
+
+    return list_tbl
+end
+
 return {
     retrieve_config         = retrieve_config,
     retrieve_icon_info      = retrieve_icon_info,
@@ -167,4 +205,5 @@ return {
     retrieve_sysmsg_info    = retrieve_sysmsg_info,
     retrieve_chat_info      = retrieve_chat_info,
     retrieve_service_info   = retrieve_service_info,
+    retrieve_uci_config     = retrieve_uci_config,
 }
