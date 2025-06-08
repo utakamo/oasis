@@ -214,7 +214,7 @@ local methods = {
         end
     },
 
-    all_info = {
+    base_info = {
         call = function()
             local r = {}
             local info_tbl = {}
