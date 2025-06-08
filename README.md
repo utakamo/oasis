@@ -308,6 +308,7 @@ If you want to use the RPC feature, please check the RPC radio button on the Oas
 The following is an example of message request and response exchange utilizing Oasis's RPC function. The assumed router credentials are as follows:  
 - Username: root
 - Password: 12345678
+OpenWrt Device Ip address: `192.168.1.1/24`  
 
 ## 1. Create ubus rpc session id
 - [Request]  
