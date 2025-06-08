@@ -3,7 +3,7 @@
                 "description": "Access Oasis",
                 "write": {
                         "ubus": {
-                                "oasis": [ "updata_sysmsg", "add_sysmsg", "delete_sysmsg" ],
+                                "oasis": [ "base_info", "updata_sysmsg", "add_sysmsg", "delete_sysmsg" ],
                                 "oasis.chat": [ "delete", "send" ],
                                 "oasis.title": [ "*" ]
                         }
