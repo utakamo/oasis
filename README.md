@@ -293,7 +293,7 @@ root@OpenWrt:~# ubus -v list oasis.title
 ```
 
 # Oasis RPC (json-rpc2.0) :Perphaps, Next Version Release...
-Dependency Package: uhttpd-mod-ubus
+Dependency Package: `uhttpd-mod-ubus`
 > [!NOTE]
 > If you wish to use this functionality, you may need to install uhttpd-mod-ubus.
 > ```
