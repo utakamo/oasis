@@ -320,7 +320,7 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 
 The ubus_rpc_session in this response will be used for sending subsequent requests. In this example, the ubus_rpc_session is `3cc578e5bc9f2b032c6445ea5696c9c8`, so this number is used in the next request submission example.
 
-## 2. Send user message (First conversation)
+## 2. Send user message (Initial conversation)
 - [Request]  
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "Hello!!"} ] }'  http://192.168.1.1/ubus
@@ -329,6 +329,7 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 `
 {"jsonrpc":"2.0","id":1,"result":[0,{"id":"6413522354","content":"Hello! 😊  How can I help you today?  \n\nDo you have any questions about your OpenWrt setup or would you like some assistance with it? \n","title":"OpenWrtConfigurationAssistance"}]}
 `
+The AI's response in the initial conversation includes a chat ID (Ex: `6413522354`). To continue the conversation, you need to include this chat ID when sending a message."
 
 ## 3. Send user message (Subsequent conversations)
 - [Request]
