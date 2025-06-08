@@ -309,7 +309,7 @@ The following is an example of message request and response exchange utilizing O
 - Username: root
 - Password: 12345678
 
-## 1. Create session id
+## 1. Create ubus rpc session id
 - [Request]  
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "00000000000000000000000000000000", "session", "login", { "username": "root", "password": "12345678"  } ] }'  http://192.168.1.1/ubus
