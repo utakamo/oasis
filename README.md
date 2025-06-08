@@ -320,7 +320,19 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 
 The ubus_rpc_session in this response will be used for sending subsequent requests. In this example, the ubus_rpc_session is `3cc578e5bc9f2b032c6445ea5696c9c8`, so this number is used in the next request submission example.
 
-## 2. Send user message (Initial conversation)
+## 2. Get base infomation for ai chat
+- [Request]  
+`
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis", "base_info", {} ] }'  http://192.168.1.1/ubus
+`
+- [Response (Example)]  
+`
+{"jsonrpc":"2.0","id":1,"result":[0,{"icon":{"list":{"icon_1":"openwrt.png","icon_2":"operator.png"},"ctrl":{"using":"icon_1","path":"/www/luci-static/resources/luci-app-oasis/"}},"service":[{"identifier":"9451724582","name":"Ollama","model":"gemma2:2b"},{"identifier":"8326977190","name":"OpenAI","model":"gpt-4"}],"sysmsg":{"key":["custom_2","custom_1","default"],"title":["OpenWrt Teacher (for High-Performance LLM)","OpenWrt System Knowledge (Sample)","OpenWrt Network Knowledge (Sample)"]},"chat":{"item":[{"id":"0132179937","title":"OpenWrtSettings&Help"}]}}]}
+`
+
+By sending and receiving the above request and response, you obtain the basic information needed to start the chat. The basic information includes system messages (knowledge) and corresponding keys, which can be properly specified in the fields for chat message requests explained next, allowing you to send messages to the AI.
+
+## 3. Send user message (Initial conversation)
 - [Request]  
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "Hello!!"} ] }'  http://192.168.1.1/ubus
@@ -332,7 +344,7 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 
 The AI's response in the initial conversation includes a chat ID (Ex: `6413522354`). To continue the conversation, you need to include this chat ID when sending a message."
 
-## 3. Send user message (Subsequent conversations)
+## 4. Send user message (Subsequent conversations)
 - [Request]
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "6413522354", "sysmsg_key": "default", "message": "What you can do?"} ] }'  http://192.168.1.1/ubus
