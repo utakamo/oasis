@@ -6,7 +6,7 @@ local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 local datactrl  = require("oasis.chat.datactrl")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 local read_chat_data = function(file_path)
 
@@ -69,7 +69,7 @@ local methods = {
         args = { id = "a_string", sysmsg_key = "a_string", message = "a_string" },
 
         call = function(args)
-            debug:log("oasis.log", "\n--- [oasis.chat][send] ---")
+            -- debug:log("oasis.log", "\n--- [oasis.chat][send] ---")
 
             local r = {}
 
@@ -86,7 +86,7 @@ local methods = {
                                     cmd         = "chat" 
                                 })
 
-            debug:dump("oasis.log", response)
+            -- debug:dump("oasis.log", response)
 
             if response.status ~= common.status.ok then
                 r.result = jsonc.stringify(response)
@@ -100,8 +100,8 @@ local methods = {
 
             local new_chat_tbl = jsonc.parse(new_chat_info)
 
-            debug:dump("oasis.log", new_chat_tbl)
-            debug:log("oasis.log", plain_text_ai_message)
+            -- debug:dump("oasis.log", new_chat_tbl)
+            -- debug:log("oasis.log", plain_text_ai_message)
 
             r.result = jsonc.stringify({ content = plain_text_ai_message, id = new_chat_tbl.id, title = new_chat_tbl.title })
 
