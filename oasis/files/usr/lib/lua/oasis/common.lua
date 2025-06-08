@@ -14,6 +14,7 @@ db.uci.sect.service          = "service"
 db.uci.sect.rollback         = "rollback"
 db.uci.sect.role             = "role"
 db.uci.sect.assist           = "assist"
+db.uci.sect.rpc              = "rpc"
 
 db.ubus                          = {}
 db.ubus.object                   = {}

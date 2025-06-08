@@ -6,7 +6,7 @@ local common    = require("oasis.common")
 local jsonc     = require("luci.jsonc")
 local datactrl  = require("oasis.chat.datactrl")
 local util      = require("luci.util")
--- local debug     = require("oasis.chat.debug")
+local debug     = require("oasis.chat.debug")
 
 local post_to_server = function(service, user_msg_json, callback)
 
@@ -92,7 +92,7 @@ end
 
 local chat_with_ai = function(service, chat)
 
-    -- debug:log("oasis.log", "\n--- [transfer.lua][chat_with_ai] ---")
+    debug:log("oasis.log", "\n--- [transfer.lua][chat_with_ai] ---")
 
     local format = service:get_format()
 
@@ -106,13 +106,13 @@ local chat_with_ai = function(service, chat)
         output_llm_model(chat.model)
     end
 
-    -- debug:log("oasis.log", "dump chat date")
-    -- debug:dump("oasis.log", chat)
+    debug:log("oasis.log", "dump chat data")
+    debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
     local ai= send_user_msg(service, chat)
 
-    -- debug:dump("oasis.log", ai)
+    debug:dump("oasis.log", ai)
 
     local new_chat_info = nil
 
@@ -122,14 +122,14 @@ local chat_with_ai = function(service, chat)
         if service:setup_msg(chat, ai) then
             datactrl.record_chat_data(service, chat)
         end
-    elseif format == common.ai.format.output then
+    elseif (format == common.ai.format.output) or (format == common.ai.format.rpc_output) then
 
         local cfg = service:get_config()
 
-        -- debug:dump("oasis.log", cfg)
+        debug:dump("oasis.log", cfg)
 
         if (not cfg.id) or (#cfg.id == 0) then
-            -- debug:log("oasis.log", "first called")
+            debug:log("oasis.log", "first called")
             if service:setup_msg(chat, ai) then
                 local chat_info = {}
                 chat_info.id = datactrl.create_chat_file(service, chat)
@@ -138,9 +138,9 @@ local chat_with_ai = function(service, chat)
                 new_chat_info = jsonc.stringify(chat_info, false)
             end
         else
-            -- debug:log("oasis.log", "second called")
+            debug:log("oasis.log", "second called")
             if service:setup_msg(chat, ai) then
-                -- debug:log("oasis.log", "call append_chat_data")
+                debug:log("oasis.log", "call append_chat_data")
                 service:append_chat_data(chat)
             end
         end

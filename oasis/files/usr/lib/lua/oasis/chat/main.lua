@@ -7,7 +7,7 @@ local jsonc             = require("luci.jsonc")
 local transfer          = require("oasis.chat.transfer")
 local datactrl          = require("oasis.chat.datactrl")
 local common            = require("oasis.common")
--- local debug             = require("oasis.chat.debug")
+local debug             = require("oasis.chat.debug")
 
 local error_msg = {}
 error_msg.load_service1 = "Error!\n\tThere is no AI service configuration."
@@ -582,6 +582,9 @@ local output = function(arg)
 
     local output = datactrl.load_chat_data(service)
 
+    debug:log("oasis.log", "Load chat data ...")
+    debug:dump("oasis.log", output)
+
     local new_chat_info, message = ""
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
@@ -595,32 +598,51 @@ end
 
 local rpc_output = function(arg)
 
-    -- debug:log("oasis.log", "\n--- [main.lua][output] ---")
+    debug:log("oasis.log", "\n--- [main.lua][rpc_output] ---")
 
-    if (not arg.message) then
-        return
+    local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")
+
+    if not enable then
+        return { status = common.status.error, desc = "Oasis's RPC function is not enabled." }
+    end
+
+    if not arg then
+        return { status = common.status.error, desc = "No argument." }, nil, nil
     end
 
     local service = common.select_service_obj()
 
     if not service then
-        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
-        return
+        return { status = common.status.error, desc = "AI Service Not Found." }, nil, nil
     end
 
     service:initialize(arg, common.ai.format.rpc_output)
 
-    local output = datactrl.load_chat_data(service)
+    debug:log("oasis.log", "[main.lua][rpc_output] Service initialize done ...")
+
+    local rpc_output = datactrl.load_chat_data(service)
+
+    debug:log("oasis.log", "[main.lua][rpc_output] Load chat data ...")
+    debug:dump("oasis.log", rpc_output)
 
     local new_chat_info, message = ""
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-    if service:setup_msg(output, { role = common.role.user, message = arg.message}) then
-        datactrl.record_chat_data(service, output)
-        new_chat_info, message = transfer.chat_with_ai(service, output)
+    if service:setup_msg(rpc_output, { role = common.role.user, message = arg.message}) then
+        datactrl.record_chat_data(service, rpc_output)
+        debug:log("oasis.log", "[main.lua][rpc_output] record_chat_data done ...")
+        new_chat_info, message = transfer.chat_with_ai(service, rpc_output)
+        debug:log("oasis.log", "[main.lua][rpc_output] chat_with_ai done ...")
     end
 
-    return new_chat_info, message
+    if new_chat_info then
+        debug:log("oasis.log", "[main.lua][rpc_output] new_chat_info dump")
+        debug:log("oasis.log", new_chat_info)
+    end
+
+    debug:log("oasis.log", "[main.lua][rpc_output] message = " .. message)
+
+    return { status = common.status.ok }, new_chat_info, message
 end
 
 local rename = function(arg)

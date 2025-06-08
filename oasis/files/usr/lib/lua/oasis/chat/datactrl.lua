@@ -4,13 +4,15 @@ local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
--- local debug     = require("oasis.chat.debug")
+local debug     = require("oasis.chat.debug")
 
 local sysmsg_info = {}
 sysmsg_info.fix_key = {}
 sysmsg_info.fix_key.casual = "casual"
 
 local get_ai_service_cfg = function(arg, opts)
+
+    debug:log("oasis.log", "\n--- [datactrl.lua][get_ai_service_cfg] ---")
 
     local cfg = {}
     local uci_ref = common.db.uci
@@ -68,10 +70,16 @@ local get_ai_service_cfg = function(arg, opts)
         end
     end
 
+    -- debug:log("oasis.log", "opts dump")
+    -- debug:dump("oasis.log", opts)
+    -- debug:log("oasis.log", "arg")
+    -- debug:dump("oasis.log", arg)
+
     if arg then
         cfg.id = arg.id
-        if opts and opts.format == (ai_ref.format and ai_ref.format.output) then
+        if opts and ((opts.format == ai_ref.format.output) or (opts.format == ai_ref.format.rpc_output)) then
             if (arg.sysmsg_key and (#arg.sysmsg_key > 0)) then
+                debug:log("oasis.log", "set sysmsg_key: " .. arg.sysmsg_key)
                 cfg.sysmsg_key = arg.sysmsg_key
             end
         end
@@ -82,11 +90,14 @@ end
 
 local load_chat_data = function(service)
 
+    debug:log("oasis.log", "\n--- [datactrl.lua][load_chat_data] ---")
+
     local cfg = service:get_config()
     local format = service:get_format()
     local chat = {}
 
     if cfg and cfg.id and (#cfg.id ~= 0) then
+        debug:log("oasis.log", "load chat data!! (id = )" .. cfg.id)
         chat = util.ubus("oasis.chat", "load", {id = cfg.id})
     end
 
@@ -122,7 +133,7 @@ local load_chat_data = function(service)
     end
 
     -- TODO: Separate the get_ai_service_cfg function into load_service and load_chat_history and print.
-    if format ~= common.ai.format.output then
+    if (format ~= common.ai.format.output) and (format ~= common.ai.format.rpc_output) then
         -- todo: update
         for _, tbl in ipairs(chat.messages) do
             if tbl.role == common.role.user then
@@ -209,9 +220,9 @@ local record_chat_data = function(service, chat)
     -- chat.messages[6] ... user message
     -- chat.messages[7] ... ai message <---- Save chat data
 
-    -- debug:log("oasis.log", "\n--- [datactrl.lua][record_chat_data] ---")
-    -- debug:log("oasis.log", #chat.messages)
-    -- debug:dump("oasis.log", chat)
+    debug:log("oasis.log", "\n--- [datactrl.lua][record_chat_data] ---")
+    debug:log("oasis.log", #chat.messages)
+    debug:dump("oasis.log", chat)
 
     -- First Conversation
     if #chat.messages == 3 then
@@ -219,7 +230,7 @@ local record_chat_data = function(service, chat)
         set_chat_title(service, chat_id)
     -- Conversation after the second
     elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
-        -- debug:dump("oasis.log", chat)
+        debug:dump("oasis.log", chat)
         service:append_chat_data(chat)
     end
 end

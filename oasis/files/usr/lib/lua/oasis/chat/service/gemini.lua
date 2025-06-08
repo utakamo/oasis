@@ -64,7 +64,7 @@ gemini.new = function()
                         { text = string.gsub(sysrole.default.chat, "\\n", "\n") },
                     },
                 })
-            elseif (self.format == common.ai.format.output) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
+            elseif ((self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output)) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
                 table.insert(chat.contents, 1, {
                     parts = {
                         { text = string.gsub(sysrole.default.output, "\\n", "\n") },

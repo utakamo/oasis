@@ -6,7 +6,7 @@ local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
--- local debug     = require("oasis.chat.debug")
+local debug     = require("oasis.chat.debug")
 
 local ollama ={}
 ollama.new = function()
@@ -41,6 +41,14 @@ ollama.new = function()
             -- debug:log("oasis.log", "\n--- [ollama.lua][setup_system_msg] ---");
             -- debug:log("oasis.log", "format = " .. self.format)
 
+            -- if self.cfg.id then
+            --     debug:log("oasis.log", "id = " .. self.cfg.id)
+            -- end
+
+            -- debug:dump("oasis.log", chat)
+
+            -- debug:log("oasis.log", self.cfg.sysmsg_key)
+
             -- The system message (knowledge) is added to the first message in the chat.
             -- The first message is data that has not been assigned a chat ID.
             if (not self.cfg.id) or (#self.cfg.id == 0) then
@@ -53,7 +61,7 @@ ollama.new = function()
                     return
                 end
 
-                if self.format == common.ai.format.output then
+                if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
                         content = string.gsub(sysrole[self.cfg.sysmsg_key].chat, "\\n", "\n")
@@ -90,14 +98,14 @@ ollama.new = function()
 
         obj.setup_msg = function(self, chat, speaker)
 
-            -- debug:log("oasis.log", "\n--- [ollama.lua][setup_msg] ---")
+            debug:log("oasis.log", "\n--- [ollama.lua][setup_msg] ---")
 
             if (not speaker.role)
                 or (#speaker.role == 0)
                 or (speaker.role == common.role.unknown)
                 or (not speaker.message)
                 or (#speaker.message == 0) then
-                -- debug:log("oasis.log", "false")
+                debug:log("oasis.log", "false")
                 return false
             end
 
@@ -105,7 +113,7 @@ ollama.new = function()
             chat.messages[#chat.messages].role = speaker.role
             chat.messages[#chat.messages].content = speaker.message
 
-            -- debug:dump("oasis.log", chat)
+            debug:dump("oasis.log", chat)
 
             return true
         end

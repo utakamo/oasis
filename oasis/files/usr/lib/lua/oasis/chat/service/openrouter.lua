@@ -54,7 +54,7 @@ openrouter.new = function()
                     return
                 end
 
-                if (self.format == common.ai.format.output) then
+                if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
                         content = string.gsub(sysrole[self.cfg.sysmsg_key].chat, "\\n", "\n")

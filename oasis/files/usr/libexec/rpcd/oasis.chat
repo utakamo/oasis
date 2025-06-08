@@ -6,7 +6,7 @@ local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 local datactrl  = require("oasis.chat.datactrl")
--- local debug     = require("oasis.chat.debug")
+local debug     = require("oasis.chat.debug")
 
 local read_chat_data = function(file_path)
 
@@ -69,7 +69,7 @@ local methods = {
         args = { id = "a_string", sysmsg_key = "a_string", message = "a_string" },
 
         call = function(args)
-            -- debug:log("oasis.log", "\n--- [oasis.chat][message] ---")
+            debug:log("oasis.log", "\n--- [oasis.chat][send] ---")
 
             local r = {}
 
@@ -79,18 +79,31 @@ local methods = {
 
             local oasis = require("oasis.chat.main")
 
-            local new_chat_info, plain_text_ai_message = oasis.rpc_output(
+            local response, new_chat_info, plain_text_ai_message = oasis.rpc_output(
                                 {   id          = args.id,
                                     sysmsg_key  = args.sysmsg_key,
                                     message     = args.message,
                                     cmd         = "chat" 
                                 })
 
-            if (not new_chat_info) then
-                r.result = jsonc.stringify({ content = plain_text_ai_message})
-            else
-                r.result = jsonc.stringify({ content = plain_text_ai_message, id = new_chat_info.id, title = new_chat_info.title })
+            debug:dump("oasis.log", response)
+
+            if response.status ~= common.status.ok then
+                r.result = jsonc.stringify(response)
+                return r
             end
+
+            if not new_chat_info then
+                r.result = jsonc.stringify({ content = plain_text_ai_message})
+                return r
+            end
+
+            local new_chat_tbl = jsonc.parse(new_chat_info)
+
+            debug:dump("oasis.log", new_chat_tbl)
+            debug:log("oasis.log", plain_text_ai_message)
+
+            r.result = jsonc.stringify({ content = plain_text_ai_message, id = new_chat_tbl.id, title = new_chat_tbl.title })
 
             return r
         end

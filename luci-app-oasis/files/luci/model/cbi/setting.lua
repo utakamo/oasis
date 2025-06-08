@@ -7,6 +7,11 @@ assist_enable = assist:option(Flag, "enable", "Enable", "Enable setting change s
 assist_enable.enabled = "1"
 assist_enable.disabled = "0"
 
+rpc = m:section(TypedSection, "rpc")
+rpc_enable = rpc:option(Flag, "enable", "Enable", "Enable setting change rpc")
+rpc_enable.enabled = "1"
+rpc_enable.disabled = "0"
+
 storage = m:section(TypedSection, "storage")
 storage.addremove = false
 storage.removable = false

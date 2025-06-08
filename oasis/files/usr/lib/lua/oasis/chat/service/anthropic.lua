@@ -43,7 +43,7 @@ anthropic.new = function()
                     role = common.role.system,
                     content = string.gsub(sysrole.default.chat, "\\n", "\n")
                 })
-            elseif (self.format == common.ai.format.output) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
+            elseif ((self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output)) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
                     content = string.gsub(sysrole.default.output, "\\n", "\n")
