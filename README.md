@@ -329,7 +329,7 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 `  
 - [Response (Example)]  
 `
-{"jsonrpc":"2.0","id":1,"result":[0,{"icon":{"list":{"icon_1":"openwrt.png","icon_2":"operator.png"},"ctrl":{"using":"icon_1","path":"/www/luci-static/resources/luci-app-oasis/"}},"service":[{"identifier":"9451724582","name":"Ollama","model":"gemma2:2b"},{"identifier":"8326977190","name":"OpenAI","model":"gpt-4"}],"sysmsg":{"key":["custom_2","custom_1","default"],"title":["OpenWrt Teacher (for High-Performance LLM)","OpenWrt System Knowledge (Sample)","OpenWrt Network Knowledge (Sample)"]},"chat":{"item":[{"id":"0132179937","title":"OpenWrtSettings&Help"}]}}]}
+{"jsonrpc":"2.0","id":1,"result":[0,{"config":{"configs":["dhcp","dropbear","firewall","luci","network","system","uhttpd","wireless"]},"sysmsg":{"key":["custom_2","custom_1","default"],"title":["OpenWrt Teacher (for High-Performance LLM)","OpenWrt System Knowledge (Sample)","OpenWrt Network Knowledge (Sample)"]},"service":[{"identifier":"6882093279","name":"Ollama","model":"gemma2:2b"},{"identifier":"2653757863","name":"OpenAI","model":"gpt-4"}],"icon":{"list":{"icon_1":"openwrt.png","icon_2":"operator.png"},"ctrl":{"using":"icon_1","path":"/www/luci-static/resources/luci-app-oasis/"}},"chat":{"item":[]}}]}
 `
 
 By sending and receiving the above request and response, you obtain the basic information needed to start the chat. The basic information includes system messages (knowledge) and corresponding keys, which can be properly specified in the fields for chat message requests explained next, allowing you to send messages to the AI.
