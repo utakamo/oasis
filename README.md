@@ -312,7 +312,7 @@ The following is an example of message request and response exchange utilizing O
 - [Request]  
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "00000000000000000000000000000000", "session", "login", { "username": "root", "password": "12345678"  } ] }'  http://192.168.1.1/ubus
-`
+`  
 - [Response (Example)]  
 `
 {"jsonrpc":"2.0","id":1,"result":[0,{"ubus_rpc_session":"3cc578e5bc9f2b032c6445ea5696c9c8","timeout":300,"expires":299, ... 
@@ -324,7 +324,7 @@ The ubus_rpc_session in this response will be used for sending subsequent reques
 - [Request]  
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis", "base_info", {} ] }'  http://192.168.1.1/ubus
-`
+`  
 - [Response (Example)]  
 `
 {"jsonrpc":"2.0","id":1,"result":[0,{"icon":{"list":{"icon_1":"openwrt.png","icon_2":"operator.png"},"ctrl":{"using":"icon_1","path":"/www/luci-static/resources/luci-app-oasis/"}},"service":[{"identifier":"9451724582","name":"Ollama","model":"gemma2:2b"},{"identifier":"8326977190","name":"OpenAI","model":"gpt-4"}],"sysmsg":{"key":["custom_2","custom_1","default"],"title":["OpenWrt Teacher (for High-Performance LLM)","OpenWrt System Knowledge (Sample)","OpenWrt Network Knowledge (Sample)"]},"chat":{"item":[{"id":"0132179937","title":"OpenWrtSettings&Help"}]}}]}
@@ -336,7 +336,7 @@ By sending and receiving the above request and response, you obtain the basic in
 - [Request]  
 `
 curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "", "sysmsg_key": "default", "message": "Hello!!"} ] }'  http://192.168.1.1/ubus
-`
+`  
 - [Response (Example)]  
 `
 {"jsonrpc":"2.0","id":1,"result":[0,{"id":"6413522354","content":"Hello! 😊  How can I help you today?  \n\nDo you have any questions about your OpenWrt setup or would you like some assistance with it? \n","title":"OpenWrtConfigurationAssistance"}]}
@@ -352,7 +352,7 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 - [Response (Example)]  
 `
 {"jsonrpc":"2.0","id":1,"result":[0,{"content":"I'm pretty good at OpenWrt!  😄  Here are a few things I can do for you:\n\n**1. Answer your questions:**  Got some burning questions about how OpenWrt works, or which settings to tweak on your router? Ask away! \n**2. Help with setting up your network:**  Maybe you want to change your Wi-Fi network name, enable a specific feature like VPN, or even configure a new device connection. I can help you navigate the UCI interface and suggest the commands. \n**3. Provide troubleshooting assistance:** Is your internet speed slow? Are you having trouble connecting to a particular website?  I can guide you through potential solutions based on common issues.\n\nJust remember: **I'm here to help, but ultimately the OpenWrt setup is in your hands.**  You need to understand how the commands work and make changes yourself. But I'll be there to point you in the right direction. \n\n\nLet me know what you're interested in! 👍\n"}]}
-`
+`  
 
 ## 5. Load chat data
 - [Request]  
