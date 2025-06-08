@@ -3,14 +3,14 @@
 local jsonc = require("luci.jsonc")
 local uci = require("luci.model.uci").cursor()
 local common = require("oasis.common")
+local oasis_ubus = require("oasis.ubus.util")
 
 local methods = {
 
     config = {
         call = function()
             local r = {}
-            local storage = uci:get_all(common.db.uci.cfg, common.db.uci.sect.storage)
-            r.result = jsonc.stringify(storage)
+            r.result = oasis_ubus.retrieve_config()
             return r
         end
     },
@@ -261,6 +261,14 @@ local methods = {
             return r
         end
     },
+
+    all_info = {
+        call = function()
+            local r = {}
+            r.result = jsonc.stringify({status = "placefolder"})
+            return r
+        end
+    }
 }
 
 local function parseInput()
