@@ -220,6 +220,7 @@ local methods = {
             local info_tbl = {}
             info_tbl.icon = oasis_ubus.retrieve_icon_info("/etc/oasis/oasis.conf", "table")
             info_tbl.sysmsg = oasis_ubus.retrieve_sysmsg_info("/etc/oasis/oasis.conf", "table")
+            info_tbl.chat = oasis_ubus.retrieve_chat_info("table")
             r.result = jsonc.stringify(info_tbl)
             return r
         end

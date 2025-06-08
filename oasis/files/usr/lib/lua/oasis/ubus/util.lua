@@ -97,9 +97,29 @@ local retrieve_sysmsg_info = function(path, format)
     return icon_info_tbl
 end
 
+local retrieve_chat_info = function(format)
+    local chat_list_tbl = {}
+    chat_list_tbl.item = {}
+
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.chat, function(info)
+        chat_list_tbl.item[#chat_list_tbl.item + 1] = {}
+        chat_list_tbl.item[#chat_list_tbl.item].id = info.id or "unknown"
+        chat_list_tbl.item[#chat_list_tbl.item].title = info.title or "--"
+    end)
+
+    local chat_list_json = jsonc.stringify(chat_list_tbl)
+
+    if format == "json" then
+        return chat_list_json
+    end
+
+    return chat_list_tbl
+end
+
 return {
     retrieve_config         = retrieve_config,
     retrieve_icon_info      = retrieve_icon_info,
     retrieve_sysmsg         = retrieve_sysmsg,
     retrieve_sysmsg_info    = retrieve_sysmsg_info,
+    retrieve_chat_info      = retrieve_chat_info,
 }
