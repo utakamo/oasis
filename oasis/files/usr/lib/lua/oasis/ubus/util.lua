@@ -116,10 +116,55 @@ local retrieve_chat_info = function(format)
     return chat_list_tbl
 end
 
+local retrieve_service_info = function(format)
+
+    local data = uci:get_all(common.db.uci.cfg)
+
+    if not data then
+        if (format) and (format == "json")  then
+            return jsonc.stringify({ status = "Failed to load config" })
+        end
+
+        return { status = "Failed to load config" }
+    end
+
+    local service_names = {}
+    for name, tbl in pairs(data) do
+        if tbl[".type"] == "service" and type(name) == "string" and name:match("^cfg%x%x%x%x%x%x$") then
+            table.insert(service_names, name)
+        end
+    end
+
+    table.sort(service_names, function(a, b)
+        local a_num = tonumber(a:sub(4), 16)
+        local b_num = tonumber(b:sub(4), 16)
+        return a_num < b_num
+    end)
+
+    local service_list_tbl = {}
+    for _, name in ipairs(service_names) do
+        local entry = data[name]
+        service_list_tbl[#service_list_tbl + 1] = {
+            identifier = entry.identifier,
+            name = entry.name,
+            model = entry.model
+        }
+    end
+
+    local service_list_json = jsonc.stringify(service_list_tbl)
+
+    if (format) and (format == "json")  then
+        return service_list_json
+    end
+
+    return service_list_tbl
+end
+
 return {
     retrieve_config         = retrieve_config,
     retrieve_icon_info      = retrieve_icon_info,
     retrieve_sysmsg         = retrieve_sysmsg,
     retrieve_sysmsg_info    = retrieve_sysmsg_info,
     retrieve_chat_info      = retrieve_chat_info,
+    retrieve_service_info   = retrieve_service_info,
 }
