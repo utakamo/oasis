@@ -64,6 +64,13 @@ local methods = {
                 r.result = jsonc.stringify({ status = common.status.error })
             end
 
+            local is_service = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "identifier", nil)
+
+            if not is_service then
+                r.result = jsonc.stringify({ status = "No AI Service ..." })
+                return r
+            end
+
             local oasis = require("oasis.chat.main")
 
             local response, new_chat_info, plain_text_ai_message = oasis.rpc_output(
@@ -80,8 +87,10 @@ local methods = {
                 return r
             end
 
+            local uci_prase_tbl = oasis_ubus.parse_uci_cmd_sequence(plain_text_ai_message, "table")
+
             if not new_chat_info then
-                r.result = jsonc.stringify({ content = plain_text_ai_message})
+                r.result = jsonc.stringify({ content = plain_text_ai_message, uci_parse_tbl = uci_prase_tbl})
                 return r
             end
 
@@ -90,7 +99,10 @@ local methods = {
             -- debug:dump("oasis.log", new_chat_tbl)
             -- debug:log("oasis.log", plain_text_ai_message)
 
-            r.result = jsonc.stringify({ content = plain_text_ai_message, id = new_chat_tbl.id, title = new_chat_tbl.title })
+            r.result = jsonc.stringify({content         = plain_text_ai_message,
+                                        id              = new_chat_tbl.id, 
+                                        title           = new_chat_tbl.title, 
+                                        uci_parse_tbl   = uci_prase_tbl })
 
             return r
         end
