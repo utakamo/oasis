@@ -796,7 +796,7 @@ function base_info()
     info_tbl.sysmsg = oasis_ubus.retrieve_sysmsg_info("/etc/oasis/oasis.conf", "table")
     info_tbl.chat = oasis_ubus.retrieve_chat_info("table")
     info_tbl.service = oasis_ubus.retrieve_service_info("table")
-    info_tbl.config = oasis_ubus.retrieve_uci_config("table")
+    info_tbl.configs = oasis_ubus.retrieve_uci_config("table")
     luci_http.prepare_content("application/json")
     luci_http.write_json(info_tbl)
 end
