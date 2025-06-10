@@ -214,15 +214,49 @@ local methods = {
         end
     },
 
+    analize = {
+        args = { message = "a_string"},
+
+        call = function(args)
+            local r = {}
+
+            local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")
+
+            if not enable then
+                r.result = jsonc.stringify({ status = common.status.error, desc = "Oasis's RPC function is not enabled." })
+                return r
+            end
+
+            r.result = oasis_ubus.parse_uci_cmd_sequence(args.message, "json")
+
+            return r
+        end
+    },
+
     base_info = {
         call = function()
             local r = {}
+
+            local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")
+
+            if not enable then
+                r.result = jsonc.stringify({ status = common.status.error, desc = "Oasis's RPC function is not enabled." })
+                return r
+            end
+
+            local is_service = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "identifier", nil)
+
+            if not is_service then
+                r.result = jsonc.stringify({ status = common.status.error, desc = "No AI Service ..." })
+                return r
+            end
+
             local info_tbl = {}
             info_tbl.icon = oasis_ubus.retrieve_icon_info("/etc/oasis/oasis.conf", "table")
             info_tbl.sysmsg = oasis_ubus.retrieve_sysmsg_info("/etc/oasis/oasis.conf", "table")
             info_tbl.chat = oasis_ubus.retrieve_chat_info("table")
             info_tbl.service = oasis_ubus.retrieve_service_info("table")
-            info_tbl.config = oasis_ubus.retrieve_uci_config("table")
+            info_tbl.configs = oasis_ubus.retrieve_uci_config("table")
             r.result = jsonc.stringify(info_tbl)
             return r
         end
