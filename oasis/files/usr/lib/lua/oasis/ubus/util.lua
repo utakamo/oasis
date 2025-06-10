@@ -5,7 +5,7 @@ local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local filter    = require("oasis.chat.filter")
-local debug     = require("oasis.chat.debug")
+-- local debug     = require("oasis.chat.debug")
 
 ------------------------------
 -- [Used from oasis object] --
@@ -51,7 +51,7 @@ end
 
 local retrieve_sysmsg = function(path, format)
 
-    debug:log("oasis.log", "\n--- [util.lua][retrieve_sysmsg] ---")
+    -- debug:log("oasis.log", "\n--- [util.lua][retrieve_sysmsg] ---")
 
     local sysmsg_tbl = common.load_conf_file(path)
 
@@ -63,7 +63,7 @@ local retrieve_sysmsg = function(path, format)
         return { status = common.status.not_found }
     end
 
-    debug:dump("oasis.log", sysmsg_tbl)
+    -- debug:dump("oasis.log", sysmsg_tbl)
 
     local sysmsg_json = jsonc.stringify(sysmsg_tbl)
 
