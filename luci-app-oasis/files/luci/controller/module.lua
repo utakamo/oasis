@@ -363,11 +363,7 @@ function load_sysmsg()
 
     -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg] ---")
 
-    local json_param = {
-        path = "/etc/oasis/oasis.conf"
-    }
-
-    local result = util.ubus("oasis", "load_sysmsg", json_param)
+    local result = util.ubus("oasis", "load_sysmsg", {})
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
@@ -377,11 +373,7 @@ function load_sysmsg_info()
 
     -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg_info] ---")
 
-    local json_param = {
-        path = "/etc/oasis/oasis.conf"
-    }
-
-    local result = util.ubus("oasis", "load_sysmsg_info", json_param)
+    local result = util.ubus("oasis", "load_sysmsg_info", {})
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
@@ -401,7 +393,7 @@ function update_sysmsg()
         return
     end
 
-    local json_param = {path = "/etc/oasis/oasis.conf", target = target, title = title, message = message}
+    local json_param = { target = target, title = title, message = message}
 
     local result = util.ubus("oasis", "update_sysmsg", json_param)
 
@@ -422,7 +414,7 @@ function add_sysmsg()
         return
     end
 
-    local json_param = {path = "/etc/oasis/oasis.conf", title = title, message = message}
+    local json_param = { title = title, message = message}
 
     local result = util.ubus("oasis", "add_sysmsg", json_param)
 
@@ -442,7 +434,7 @@ function delete_sysmsg()
         return
     end
 
-    local json_param = {path = "/etc/oasis/oasis.conf", target = target}
+    local json_param = { target = target}
 
     local result = util.ubus("oasis", "delete_sysmsg", json_param)
 
@@ -453,9 +445,8 @@ end
 function load_icon_info()
 
     -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_icon_info] ---")
-    local json_param = {path = "/etc/oasis/oasis.conf"}
 
-    local result = util.ubus("oasis", "load_icon_info", json_param)
+    local result = util.ubus("oasis", "load_icon_info", {})
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
@@ -472,7 +463,7 @@ function select_icon()
         return
     end
 
-    local json_param = {path = "/etc/oasis/oasis.conf", using = using}
+    local json_param = { using = using }
 
     local result = util.ubus("oasis", "select_icon", json_param)
 
