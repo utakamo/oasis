@@ -4,6 +4,8 @@ local jsonc     = require("luci.jsonc")
 local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
+local filter    = require("oasis.chat.filter")
+local debug     = require("oasis.chat.debug")
 
 ------------------------------
 -- [Used from oasis object] --
@@ -48,6 +50,9 @@ local retrieve_icon_info = function(path, format)
 end
 
 local retrieve_sysmsg = function(path, format)
+
+    debug:log("oasis.log", "\n--- [util.lua][retrieve_sysmsg] ---")
+
     local sysmsg_tbl = common.load_conf_file(path)
 
     if not sysmsg_tbl then
@@ -58,6 +63,8 @@ local retrieve_sysmsg = function(path, format)
         return { status = common.status.not_found }
     end
 
+    debug:dump("oasis.log", sysmsg_tbl)
+
     local sysmsg_json = jsonc.stringify(sysmsg_tbl)
 
     if (format) and (format == "json") then
@@ -66,7 +73,6 @@ local retrieve_sysmsg = function(path, format)
 
     return sysmsg_tbl
 end
-
 local retrieve_sysmsg_info = function(path, format)
     local data_tbl = common.load_conf_file(path)
 
@@ -78,24 +84,32 @@ local retrieve_sysmsg_info = function(path, format)
         return { status = common.status.not_found }
     end
 
-    local icon_info_tbl = {}
-    icon_info_tbl.key = {}
-    icon_info_tbl.title = {}
+    local sysmsg_array = {}
 
     for key, tbl in pairs(data_tbl) do
         if tbl.title then
-            icon_info_tbl.key[#icon_info_tbl.key + 1] = key
-            icon_info_tbl.title[#icon_info_tbl.title + 1] = tbl.title
+            table.insert(sysmsg_array, {
+                key = key,
+                title = tbl.title
+            })
         end
     end
 
-    local icon_info_json = jsonc.stringify(icon_info_tbl)
+    table.sort(sysmsg_array, function(a, b)
+        if a.key == "default" then return true end
+        if b.key == "default" then return false end
+        return a.key < b.key
+    end)
+
+    local result_tbl = { sysmsg = sysmsg_array }
+
+    local sysmsg_json = jsonc.stringify(result_tbl)
 
     if (format) and (format == "json")  then
-        return icon_info_json
+        return sysmsg_json
     end
 
-    return icon_info_tbl
+    return result_tbl.sysmsg
 end
 
 local retrieve_chat_info = function(format)
@@ -195,7 +209,29 @@ local retrieve_uci_config = function(format)
         return list_json
     end
 
-    return list_tbl
+    return list_tbl.configs
+end
+
+local parse_uci_cmd_sequence = function(message, format)
+    local uci_cmd_notification = {}
+    uci_cmd_notification.uci_list = filter.uci_cmd_filter(message)
+    uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification.uci_list)
+    if uci_cmd_notification.uci_notify then
+        if (format) and (format == "json") then
+            return jsonc.stringify(uci_cmd_notification)
+        end
+
+        return uci_cmd_notification
+    end
+
+    local notification = {}
+    notification.status = "No Parsing ..."
+
+    if (format) and (format == "json") then
+        return jsonc.stringify(notification)
+    end
+
+    return notification
 end
 
 return {
@@ -206,4 +242,5 @@ return {
     retrieve_chat_info      = retrieve_chat_info,
     retrieve_service_info   = retrieve_service_info,
     retrieve_uci_config     = retrieve_uci_config,
+    parse_uci_cmd_sequence  = parse_uci_cmd_sequence,
 }
