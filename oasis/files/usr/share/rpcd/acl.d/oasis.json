@@ -1,6 +1,6 @@
 {
         "oasis": {
-                "description": "Access Oasis",
+                "description": "Access Oasis RPC",
                 "write": {
                         "ubus": {
                                 "oasis": [ "base_info", "updata_sysmsg", "add_sysmsg", "delete_sysmsg" ],
