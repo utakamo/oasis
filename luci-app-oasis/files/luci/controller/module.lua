@@ -1,15 +1,16 @@
-local sys       = require("luci.sys")
-local util      = require("luci.util")
-local uci       = require("luci.model.uci").cursor()
-local luci_http = require("luci.http")
-local jsonc     = require("luci.jsonc")
-local oasis     = require("oasis.chat.apply")
-local common    = require("oasis.common")
-local transfer  = require("oasis.chat.transfer")
-local misc      = require("oasis.chat.misc")
-local datactrl  = require("oasis.chat.datactrl")
-local nixio     = require("nixio")
-local debug     = require("oasis.chat.debug")
+local sys           = require("luci.sys")
+local util          = require("luci.util")
+local uci           = require("luci.model.uci").cursor()
+local luci_http     = require("luci.http")
+local jsonc         = require("luci.jsonc")
+local oasis         = require("oasis.chat.apply")
+local common        = require("oasis.common")
+local transfer      = require("oasis.chat.transfer")
+local misc          = require("oasis.chat.misc")
+local datactrl      = require("oasis.chat.datactrl")
+local nixio         = require("nixio")
+local oasis_ubus    = require("oasis.ubus.util")
+local debug         = require("oasis.chat.debug")
 
 module("luci.controller.luci-app-oasis.module", package.seeall)
 
@@ -46,6 +47,7 @@ function index()
     entry({"admin", "network", "oasis", "select-ai-service"}, call("select_ai_service"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-rollback-list"}, call("load_rollback_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback-target-data"}, call("rollback_target_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "base-info"}, call("base_info"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -786,4 +788,15 @@ function rollback_target_data()
     luci_http.prepare_content("application/json")
     luci_http.write_json({ status = "OK" })
     os.execute("reboot")
+end
+
+function base_info()
+    local info_tbl = {}
+    info_tbl.icon = oasis_ubus.retrieve_icon_info("/etc/oasis/oasis.conf", "table")
+    info_tbl.sysmsg = oasis_ubus.retrieve_sysmsg_info("/etc/oasis/oasis.conf", "table")
+    info_tbl.chat = oasis_ubus.retrieve_chat_info("table")
+    info_tbl.service = oasis_ubus.retrieve_service_info("table")
+    info_tbl.config = oasis_ubus.retrieve_uci_config("table")
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(info_tbl)
 end

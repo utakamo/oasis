@@ -8,7 +8,7 @@ assist_enable.enabled = "1"
 assist_enable.disabled = "0"
 
 rpc = m:section(TypedSection, "rpc")
-rpc_enable = rpc:option(Flag, "enable", "Enable", "Enable setting change rpc")
+rpc_enable = rpc:option(Flag, "enable", "Enable")
 rpc_enable.enabled = "1"
 rpc_enable.disabled = "0"
 
@@ -24,12 +24,12 @@ for i = 10, 100, 10 do
 end
 
 rollback = m:section(TypedSection, "rollback")
-monitor_time = rollback:option(ListValue, "time", "Rollback Time")
+monitor_time = rollback:option(ListValue, "time", "Monitor Time")
 for i = 60, 600, 60 do
     monitor_time:value(tostring(i), tostring(i))
 end
 
-rollback_enable = rollback:option(Flag, "enable", "Enable", "Rollback Data List")
+rollback_enable = rollback:option(Flag, "enable", "Storing Data List")
 rollback_enable.enabled = "1"
 rollback_enable.disabled = "0"
 

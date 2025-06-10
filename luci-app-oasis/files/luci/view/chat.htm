@@ -486,8 +486,7 @@
             sysmsg_select_button.className = 'sysmsg-select-button';
 
             sysmsg_select_button.addEventListener('click', function() {
-                sysmsg_key = 'casual'
-                //console.log(sysmsg_key);
+                sysmsg_key = 'casual';
                 const sysmsg_list_popup = document.getElementById('sysmsg-list-popup');
                 sysmsg_list_popup.style.display = 'none';
 
@@ -502,32 +501,26 @@
                 send_chat_data(systemMessage, messageInput, messageText);
             });
 
-            // TODO: Fix it later.
-            // Temporarily commenting out the code due to the presence of a bug.
-            //sysmsg_button_container.appendChild(sysmsg_select_button);
+            sysmsg_list = data.sysmsg;
 
-            sysmsg_list = data;
+            const sortedSysmsgList = sysmsg_list
+                .map(item => {
+                    if (!item.key || typeof item.key !== "string") return null;
 
-            //console.log(sysmsg_list);
-
-            const sortedSysmsgList = sysmsg_list.key
-                .map((key, index) => {
-                    if (!key || typeof key !== "string") return null;
-
-                    if (key === "default") {
+                    if (item.key === "default") {
                         return {
-                            key,
-                            title: sysmsg_list.title && sysmsg_list.title[index] ? sysmsg_list.title[index] : "Default",
+                            key: item.key,
+                            title: item.title || "Default",
                             number: -1
                         };
                     }
 
-                    const match = key.match(/^custom_(\d+)$/);
+                    const match = item.key.match(/^custom_(\d+)$/);
                     if (!match) return null;
 
                     return {
-                        key,
-                        title: sysmsg_list.title && sysmsg_list.title[index] ? sysmsg_list.title[index] : "No Title",
+                        key: item.key,
+                        title: item.title || "No Title",
                         number: parseInt(match[1], 10)
                     };
                 })
@@ -544,13 +537,12 @@
 
                 sysmsg_select_button.addEventListener('click', function() {
                     sysmsg_key = item.key;
-                    //console.log("Selected sysmsg_key:", sysmsg_key);
                     const sysmsg_list_popup = document.getElementById('sysmsg-list-popup');
                     sysmsg_list_popup.style.display = 'none';
 
                     const systemMessage = document.getElementById("oasis-system");
                     const messageInput = document.getElementById('message-input');
-                    const messageText = messageInput.value.trim().replace(/\\n/g, '\n');;
+                    const messageText = messageInput.value.trim().replace(/\\n/g, '\n');
 
                     if (!messageText) {
                         return;
