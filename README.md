@@ -305,7 +305,7 @@ Dependency Package: `uhttpd-mod-ubus`
 
 Oasis supports RPC functionality.  
 If you want to use the RPC feature, please check the RPC radio button on the Oasis settings page.
-![Image](https://github.com/user-attachments/assets/b2575171-d005-4536-b905-cd69c083e43a)
+<img width="747" alt="Image" src="https://github.com/user-attachments/assets/1829e60d-a420-45e7-962e-5dbc03787036" />
 
 The following is an example of message request and response exchange utilizing Oasis's RPC function. The assumed router credentials are as follows:  
 - Username: `root`
