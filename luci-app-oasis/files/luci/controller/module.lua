@@ -21,7 +21,6 @@ function index()
     entry({"admin", "network", "oasis", "sysmsg"}, template("luci-app-oasis/sysmsg"), "System Message", 30).dependent=false
     entry({"admin", "network", "oasis", "setting"}, cbi("luci-app-oasis/setting"), "General Setting", 20).dependent=false
     entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 10).dependent=false
-    entry({"admin", "network", "oasis", "chat-list"}, call("retrive_chat_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "export-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "import-chat-data"}, call("import_chat_data"), nil).leaf = true
@@ -32,7 +31,6 @@ function index()
     entry({"admin", "network", "oasis", "finalize"}, call("finalize"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback"}, call("rollback"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-sysmsg"}, call("load_sysmsg"), nil).leaf = true
-    entry({"admin", "network", "oasis", "load-sysmsg-info"}, call("load_sysmsg_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "update-sysmsg"}, call("update_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-sysmsg"}, call("add_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-sysmsg"}, call("delete_sysmsg"), nil).leaf = true
@@ -40,10 +38,8 @@ function index()
     entry({"admin", "network", "oasis", "select-icon"}, call("select_icon"), nil).leaf = true
     entry({"admin", "network", "oasis", "upload-icon-data"}, call("upload_icon_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-icon-data"}, call("delete_icon_data"), nil).leaf = true
-    entry({"admin", "network", "oasis", "uci-config-list"}, call("uci_config_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "uci-show"}, call("uci_show"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-extra-sysmsg"}, call("load_extra_sysmsg"), nil).leaf = true
-    entry({"admin", "network", "oasis", "load-ai-service-list"}, call("load_ai_service_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "select-ai-service"}, call("select_ai_service"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-rollback-list"}, call("load_rollback_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback-target-data"}, call("rollback_target_data"), nil).leaf = true
@@ -162,17 +158,6 @@ function uci_show_config(target)
     end
 
     return sorted_params
-end
-
-function retrive_chat_list()
-
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][retrive_chat_list] ---")
-
-    -- ubus call
-    local result = util.ubus("oasis.chat", "list", {})
-
-    luci_http.prepare_content("application/json")
-    luci_http.write_json(result)
 end
 
 function load_chat_data()
@@ -369,16 +354,6 @@ function load_sysmsg()
     luci_http.write_json(result)
 end
 
-function load_sysmsg_info()
-
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg_info] ---")
-
-    local result = util.ubus("oasis", "load_sysmsg_info", {})
-
-    luci_http.prepare_content("application/json")
-    luci_http.write_json(result)
-end
-
 function update_sysmsg()
 
     -- debug:log("luci-app-oasis.log", "\n--- [module.lua][update_sysmsg] ---")
@@ -562,38 +537,6 @@ function delete_icon_data()
     luci_http.write_json("OK")
 end
 
-function uci_config_list()
-
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][uci_config_list] ---")
-
-    -- Currently, the only removal target in the uci config list is oasis and rpcd.
-    -- Add the names of uci configs that you don't want to teach AI here.
-    local black_list = {
-        "oasis",
-        "rpcd",
-    }
-
-    local list = util.ubus("uci", "configs", {})
-
-    if (not list) or (not list.configs) then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "No uci list" })
-        return
-    end
-
-    for index = #list.configs, 1, -1 do
-        for _, exclude_item in ipairs(black_list) do
-            if list.configs[index] == exclude_item then
-                table.remove(list.configs, index)
-                break
-            end
-        end
-    end
-
-    luci_http.prepare_content("application/json")
-    luci_http.write_json(list)
-end
-
 function uci_show()
 
     -- debug:log("luci-app-oasis.log", "\n--- [module.lua][uci_show] ---")
@@ -647,43 +590,6 @@ function load_extra_sysmsg()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(contents)
-end
-
-function load_ai_service_list()
-
-    local data = uci:get_all(common.db.uci.cfg)
-
-    if not data then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({error = "Failed to load config"})
-        return
-    end
-
-    local service_names = {}
-    for name, tbl in pairs(data) do
-        if tbl[".type"] == "service" and type(name) == "string" and name:match("^cfg%x%x%x%x%x%x$") then
-            table.insert(service_names, name)
-        end
-    end
-
-    table.sort(service_names, function(a, b)
-        local a_num = tonumber(a:sub(4), 16)
-        local b_num = tonumber(b:sub(4), 16)
-        return a_num < b_num
-    end)
-
-    local service_list = {}
-    for _, name in ipairs(service_names) do
-        local entry = data[name]
-        service_list[#service_list + 1] = {
-            identifier = entry.identifier,
-            name = entry.name,
-            model = entry.model
-        }
-    end
-
-    luci_http.prepare_content("application/json")
-    luci_http.write_json(service_list)
 end
 
 function select_ai_service()
