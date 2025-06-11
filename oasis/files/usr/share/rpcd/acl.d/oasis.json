@@ -3,7 +3,7 @@
                 "description": "Access Oasis RPC",
                 "write": {
                         "ubus": {
-                                "oasis": [ "base_info", "updata_sysmsg", "add_sysmsg", "delete_sysmsg" ],
+                                "oasis": [ "base_info", "update_sysmsg_data", "add_sysmsg_data", "delete_sysmsg_data" ],
                                 "oasis.chat": [ "delete", "send" ],
                                 "oasis.title": [ "*" ]
                         }
@@ -11,7 +11,7 @@
 
                 "read": {
                         "ubus": {
-                            "oasis": [ "load_sysmsg", "config", "load_sysmsg_info" ],
+                            "oasis": [ "load_sysmsg_data", "config", "load_sysmsg_list" ],
                             "oasis.chat": [ "list", "load" ]
                         }
                 }

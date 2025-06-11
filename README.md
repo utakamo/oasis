@@ -270,16 +270,16 @@ root@OpenWrt:~# ubus -v list oasis
 'oasis' @92107461
         "load_icon_info":{}
         "select_icon":{"using":"String"}
-        "update_sysmsg":{"target":"String","title":"String","message":"String"}
-        "load_sysmsg":{}
+        "update_sysmsg_data":{"target":"String","title":"String","message":"String"}
+        "load_sysmsg_data":{}
         "delete_icon":{"target":"String"}
         "confirm":{}
         "config":{}
         "base_info":{}
         "analize":{"message":"String"}
-        "load_sysmsg_info":{}
-        "add_sysmsg":{"title":"String","message":"String"}
-        "delete_sysmsg":{"target":"String"}
+        "load_sysmsg_list":{}
+        "add_sysmsg_data":{"title":"String","message":"String"}
+        "delete_sysmsg_data":{"target":"String"}
 root@OpenWrt:~# ubus -v list oasis.chat
 'oasis.chat' @b4e0a13c
         "delete":{"id":"String"}

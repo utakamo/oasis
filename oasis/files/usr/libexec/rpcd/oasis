@@ -78,7 +78,7 @@ local methods = {
         end
     },
 
-    load_sysmsg = {
+    load_sysmsg_data = {
 
         call = function()
             local r = {}
@@ -87,7 +87,7 @@ local methods = {
         end
     },
 
-    load_sysmsg_info = {
+    load_sysmsg_list = {
 
         call = function()
             local r = {}
@@ -96,7 +96,7 @@ local methods = {
         end
     },
 
-    add_sysmsg = {
+    add_sysmsg_data = {
         args = { title = "a_string", message = "a_string"},
 
         call = function(args)
@@ -130,7 +130,7 @@ local methods = {
         end
     },
 
-    update_sysmsg = {
+    update_sysmsg_data = {
         args = { target = "a_string", title = "a_string", message = "a_string"},
 
         call = function(args)
@@ -159,7 +159,7 @@ local methods = {
         end
     },
 
-    delete_sysmsg = {
+    delete_sysmsg_data = {
         args = { target = "a_string" },
 
         call = function(args)

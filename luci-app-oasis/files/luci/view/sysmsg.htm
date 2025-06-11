@@ -147,15 +147,15 @@
                 return;
             }
 
-            let update_sysmsg = textarea.value;
-            update_sysmsg = update_sysmsg.replace(/"/g, '\\"');
+            let update_sysmsg_data = textarea.value;
+            update_sysmsg_data = update_sysmsg_data.replace(/"/g, '\\"');
 
             fetch('<%=build_url("admin", "network", "oasis", "update-sysmsg")%>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: new URLSearchParams({ target: key, title: input.value, message: update_sysmsg }),
+                body: new URLSearchParams({ target: key, title: input.value, message: update_sysmsg_data }),
             })
             .then(response => response.json())
             .then(data => {
@@ -262,15 +262,15 @@
         }
 
 
-        let add_sysmsg =  new_sysmsg_data.value;
-        add_sysmsg = add_sysmsg.replace(/"/g, '\\"');
+        let add_sysmsg_data =  new_sysmsg_data.value;
+        add_sysmsg_data = add_sysmsg_data.replace(/"/g, '\\"');
 
         fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({ title: new_sysmsg_title.value, message: add_sysmsg }),
+            body: new URLSearchParams({ title: new_sysmsg_title.value, message: add_sysmsg_data }),
         })
         .then(response => response.json())
         .then(data => {
@@ -314,15 +314,15 @@
         }
 
 
-        let add_sysmsg =  extra_sysmsg_data.value;
-        add_sysmsg = add_sysmsg.replace(/"/g, '\\"');
+        let add_sysmsg_data =  extra_sysmsg_data.value;
+        add_sysmsg_data = add_sysmsg_data.replace(/"/g, '\\"');
 
         fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({ title: extra_sysmsg_title.value, message: add_sysmsg }),
+            body: new URLSearchParams({ title: extra_sysmsg_title.value, message: add_sysmsg_data }),
         })
         .then(response => response.json())
         .then(data => {

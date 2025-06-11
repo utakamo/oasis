@@ -30,10 +30,10 @@ function index()
     entry({"admin", "network", "oasis", "confirm"}, call("confirm"), nil).leaf = true
     entry({"admin", "network", "oasis", "finalize"}, call("finalize"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback"}, call("rollback"), nil).leaf = true
-    entry({"admin", "network", "oasis", "load-sysmsg"}, call("load_sysmsg"), nil).leaf = true
-    entry({"admin", "network", "oasis", "update-sysmsg"}, call("update_sysmsg"), nil).leaf = true
-    entry({"admin", "network", "oasis", "add-sysmsg"}, call("add_sysmsg"), nil).leaf = true
-    entry({"admin", "network", "oasis", "delete-sysmsg"}, call("delete_sysmsg"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-sysmsg"}, call("load_sysmsg_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "update-sysmsg"}, call("update_sysmsg_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "add-sysmsg"}, call("add_sysmsg_data"), nil).leaf = true
+    entry({"admin", "network", "oasis", "delete-sysmsg"}, call("delete_sysmsg_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-icon-info"}, call("load_icon_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "select-icon"}, call("select_icon"), nil).leaf = true
     entry({"admin", "network", "oasis", "upload-icon-data"}, call("upload_icon_data"), nil).leaf = true
@@ -344,19 +344,19 @@ function rollback()
     end
 end
 
-function load_sysmsg()
+function load_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg] ---")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg_data] ---")
 
-    local result = util.ubus("oasis", "load_sysmsg", {})
+    local result = util.ubus("oasis", "load_sysmsg_data", {})
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
 end
 
-function update_sysmsg()
+function update_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][update_sysmsg] ---")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][update_sysmsg_data] ---")
 
     local target = luci_http.formvalue("target")
     local title = luci_http.formvalue("title")
@@ -370,15 +370,15 @@ function update_sysmsg()
 
     local json_param = { target = target, title = title, message = message}
 
-    local result = util.ubus("oasis", "update_sysmsg", json_param)
+    local result = util.ubus("oasis", "update_sysmsg_data", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
 end
 
-function add_sysmsg()
+function add_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][add_sysmsg] ---")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][add_sysmsg_data] ---")
 
     local title = luci_http.formvalue("title")
     local message = luci_http.formvalue("message")
@@ -391,15 +391,15 @@ function add_sysmsg()
 
     local json_param = { title = title, message = message}
 
-    local result = util.ubus("oasis", "add_sysmsg", json_param)
+    local result = util.ubus("oasis", "add_sysmsg_data", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
 end
 
-function delete_sysmsg()
+function delete_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_sysmsg] ---")
+    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_sysmsg_data] ---")
 
     local target = luci_http.formvalue("target")
 
@@ -411,7 +411,7 @@ function delete_sysmsg()
 
     local json_param = { target = target}
 
-    local result = util.ubus("oasis", "delete_sysmsg", json_param)
+    local result = util.ubus("oasis", "delete_sysmsg_data", json_param)
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
