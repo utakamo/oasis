@@ -493,18 +493,23 @@
             const aiServiceSelect = document.getElementById("ai-service-list");
             aiServiceSelect.innerHTML = '';  // clear existing options
 
-            if (ai_service_list.length === 0) {
-                const option = document.createElement("option");
-                option.value = 0;
-                option.textContent = "No AI Service";
-                aiServiceSelect.appendChild(option);
-            } else {
-                ai_service_list.forEach((service, index) => {
+            let validServiceFound = false;
+
+            ai_service_list.forEach((service, index) => {
+                if (service && service.name && service.model) {
                     const option = document.createElement("option");
                     option.value = index;
                     option.textContent = `${service.name} - ${service.model}`;
                     aiServiceSelect.appendChild(option);
-                });
+                    validServiceFound = true;
+                }
+            });
+
+            if (!validServiceFound) {
+                const option = document.createElement("option");
+                option.value = 0;
+                option.textContent = "No AI Service";
+                aiServiceSelect.appendChild(option);
             }
 
             const uciConfigSelect = document.getElementById("uci-config-list");
