@@ -211,6 +211,48 @@ local methods = {
         end
     },
 
+    select_ai_service = {
+        args = { id = "a_string", name = "a_string", model = "a_string"},
+
+        call = function(args)
+            local r = {}
+            local target_uid = ""
+            local data = uci:get_all(common.db.uci.cfg);
+
+            if not data then
+                r.result = jsonc.stringify({error = "Failed to load config"})
+                return r
+            end
+
+            for _, tbl in pairs(data) do
+                for key, value in pairs(tbl) do
+                    if (key == ".type") and (value == "service") then
+                        local uid = tbl[".name"]
+                        if (data[uid].identifier == args.id) and (data[uid].name == args.name) and (data[uid].model == args.model) then
+                            target_uid = uid
+                            break
+                        end
+                    end
+                end
+
+                if target_uid ~= "" then
+                    break
+                end
+            end
+
+            if target_uid == "" then
+                r.result = jsonc.stringify({error = "Not Found"})
+                return r
+            end
+
+            uci:reorder(common.db.uci.cfg, target_uid, 1)
+            uci:commit(common.db.uci.cfg)
+
+            r.result = jsonc.stringify({status = "OK"})
+            return r
+        end
+    },
+
     analize = {
         args = { message = "a_string"},
 

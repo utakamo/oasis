@@ -3,7 +3,7 @@
                 "description": "Access Oasis RPC",
                 "write": {
                         "ubus": {
-                                "oasis": [ "base_info", "update_sysmsg_data", "add_sysmsg_data", "delete_sysmsg_data" ],
+                                "oasis": [ "base_info", "select_ai_service", "update_sysmsg_data", "add_sysmsg_data", "delete_sysmsg_data" ],
                                 "oasis.chat": [ "delete", "send" ],
                                 "oasis.title": [ "*" ]
                         }
