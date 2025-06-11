@@ -344,7 +344,7 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 {"jsonrpc":"2.0","id":1,"result":[0,{"id":"6441905234","uci_parse_tbl":{"status":"No Parsing ..."},"content":"Hello! How can I assist you with OpenWrt today?","title":"\"OpenWrtAssistanceSessionIntroduction\""}]}
 `  
 
-The AI's response in the initial conversation includes a chat ID (Ex: `6413522354`). To continue the conversation, you need to include this chat ID when sending a message."
+The AI's response in the initial conversation includes a chat ID (Ex: `6441905234`). To continue the conversation, you need to include this chat ID when sending a message."
 
 ## 4. Send user message (Subsequent conversations)
 - [Request]
