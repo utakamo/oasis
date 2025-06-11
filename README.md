@@ -264,35 +264,6 @@ Hello! 👋  What can I do for you today? 😊
 
 root@OpenWrt:~# 
 ```
-# oasis ubus objects and methods
-```
-root@OpenWrt:~# ubus -v list oasis
-'oasis' @92107461
-        "load_icon_info":{}
-        "select_icon":{"using":"String"}
-        "update_sysmsg_data":{"target":"String","title":"String","message":"String"}
-        "load_sysmsg_data":{}
-        "delete_icon":{"target":"String"}
-        "confirm":{}
-        "config":{}
-        "base_info":{}
-        "analize":{"message":"String"}
-        "load_sysmsg_list":{}
-        "add_sysmsg_data":{"title":"String","message":"String"}
-        "delete_sysmsg_data":{"target":"String"}
-root@OpenWrt:~# ubus -v list oasis.chat
-'oasis.chat' @b4e0a13c
-        "delete":{"id":"String"}
-        "list":{}
-        "append":{"content2":"String","id":"String","role2":"String","role1":"String","content1":"String"}
-        "create":{"content3":"String","content2":"String","content1":"String","role2":"String","role1":"String","role3":"String"}
-        "load":{"id":"String"}
-        "send":{"id":"String","sysmsg_key":"String","message":"String"}
-root@OpenWrt:~# ubus -v list oasis.title
-'oasis.title' @bb1a58e9
-        "auto_set":{"id":"String"}
-        "manual_set":{"id":"String","title":"String"}
-```
 
 # Oasis RPC (json-rpc2.0) :Perphaps, Next Version Release...
 Dependency Package: `uhttpd-mod-ubus`
@@ -370,6 +341,38 @@ curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "metho
 `  
 
 When sending a request, set the id field (Ex:`0132179937`). The value of this id should be specified as the id included in the response of the base information retrieval or the initial conversation. The chat data corresponding to that id will be returned as the response.
+
+# oasis ubus objects and methods
+```
+root@OpenWrt:~# ubus -v list oasis
+'oasis' @689f0349
+        "load_icon_info":{}
+        "select_icon":{"using":"String"}
+        "load_sysmsg_list":{}
+        "load_sysmsg_data":{}
+        "delete_icon":{"target":"String"}
+        "add_sysmsg_data":{"title":"String","message":"String"}
+        "config":{}
+        "base_info":{}
+        "analize":{"message":"String"}
+        "update_sysmsg_data":{"target":"String","title":"String","message":"String"}
+        "delete_sysmsg_data":{"target":"String"}
+        "confirm":{}
+        "select_ai_service":{"id":"String","name":"String","model":"String"}
+root@OpenWrt:~# ubus -v list oasis.chat
+'oasis.chat' @b4e0a13c
+        "delete":{"id":"String"}
+        "list":{}
+        "append":{"content2":"String","id":"String","role2":"String","role1":"String","content1":"String"}
+        "create":{"content3":"String","content2":"String","content1":"String","role2":"String","role1":"String","role3":"String"}
+        "load":{"id":"String"}
+        "send":{"id":"String","sysmsg_key":"String","message":"String"}
+root@OpenWrt:~# ubus -v list oasis.title
+'oasis.title' @bb1a58e9
+        "auto_set":{"id":"String"}
+        "manual_set":{"id":"String","title":"String"}
+```
+
 
 # Dependency Package
 - lua-curl-v3
