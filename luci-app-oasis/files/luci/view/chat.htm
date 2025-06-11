@@ -868,7 +868,7 @@
 
         let uci_info = await retrieve_uci_show_result(messageTextContainer);
         messageText += uci_info;
-        console.log(messageText);
+        //console.log(messageText);
         send_message(receivedMessageTextContainer, messageText);
     }
 
@@ -1189,7 +1189,7 @@
         let finalResponse = null;
         let is_notify = false;
 
-        console.log("send message: " + messageText);
+        //console.log("send message: " + messageText);
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
