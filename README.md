@@ -349,11 +349,12 @@ The AI's response in the initial conversation includes a chat ID (Ex: `641352235
 ## 4. Send user message (Subsequent conversations)
 - [Request]
 `
-curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "3cc578e5bc9f2b032c6445ea5696c9c8", "oasis.chat", "send", {"id": "6413522354", "sysmsg_key": "default", "message": "What you can do?"} ] }'  http://192.168.1.1/ubus
+curl -H 'Content-Type: application/json' -d '{ "jsonrpc": "2.0", "id": 1, "method": "call", "params": [ "c5b484940761463117b0ab5d4a6105e7", "oasis.chat", "send", {"id": "6441905234", "sysmsg_key": "default", "message": "Please change the hostname to utakamo.
+"} ] }'  http://192.168.1.1/ubus
 `
 - [Response (Example)]  
 `
-{"jsonrpc":"2.0","id":1,"result":[0,{"content":"I'm pretty good at OpenWrt!  😄  Here are a few things I can do for you:\n\n**1. Answer your questions:**  Got some burning questions about how OpenWrt works, or which settings to tweak on your router? Ask away! \n**2. Help with setting up your network:**  Maybe you want to change your Wi-Fi network name, enable a specific feature like VPN, or even configure a new device connection. I can help you navigate the UCI interface and suggest the commands. \n**3. Provide troubleshooting assistance:** Is your internet speed slow? Are you having trouble connecting to a particular website?  I can guide you through potential solutions based on common issues.\n\nJust remember: **I'm here to help, but ultimately the OpenWrt setup is in your hands.**  You need to understand how the commands work and make changes yourself. But I'll be there to point you in the right direction. \n\n\nLet me know what you're interested in! 👍\n"}]}
+{"jsonrpc":"2.0","id":1,"result":[0,{"content":"Sure, you can change the hostname to 'utakamo' using the UCI command. Here are the steps you need to follow:\n\n1. Open a terminal.\n\n2. Enter the following command:\n\n```bash\nuci set system.@system[0].hostname='utakamo'\n```\n\nNow, your system's hostname should be updated to 'utakamo'. Please let me know if you have any other questions or tasks!","uci_parse_tbl":{"uci_notify":true,"uci_list":{"delete":[],"set":[{"class":{"option":"hostname","config":"system","value":"'utakamo'","section":"@system[0]"},"param":"system.@system[0].hostname='utakamo'"}],"del_list":[],"reorder":[],"add_list":[],"add":[]}}}]}
 `  
 
 ## 5. Load chat data
