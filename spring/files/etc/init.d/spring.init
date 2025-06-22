@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+bootstart=$(uci -q get spring.ctrl.bootstart)
+
+start() {	
+	if [ $? -eq 0 ];then
+        /usr/bin/spring
+		echo "spring start!"
+	fi
+}
+
+stop() {
+	killall /usr/bin/spring
+	echo 'spring stop'
+}
+
+restart() {
+	stop > /dev/null
+	sleep 1
+	start > /dev/null
+	echo 'spring restart'
+}
