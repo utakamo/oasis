@@ -5,7 +5,7 @@ START=99
 bootstart=$(uci -q get spring.ctrl.bootstart)
 
 start() {	
-	if [ $? -eq 0 ];then
+	if [ "${bootstart}" = "1" ];then
         /usr/bin/springd
 		echo "springd start!"
 	fi

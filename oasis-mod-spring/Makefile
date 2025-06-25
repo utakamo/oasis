@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=spring
+PKG_NAME:=oasis-mod-spring
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
@@ -21,7 +21,7 @@ SCRIPTS_DIR = $(SPRING_DIR)/scripts
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/spring
+define Package/oasis-mod-spring
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= Automaton System for Oasis Integration
@@ -43,7 +43,7 @@ define Build/Compile
 		LDFLAGS="$(TARGET_LDFLAGS)"
 endef
 
-define Package/spring/install
+define Package/oasis-mod-spring/install
 		$(INSTALL_DIR) $(1)$(APP_DIR)
 		$(INSTALL_DIR) $(1)$(INIT_DIR)
 		$(INSTALL_DIR) $(1)$(SCRIPTS_DIR)
@@ -57,4 +57,4 @@ define Package/spring/install
 		$(INSTALL_BIN) ./files/usr/lib/lua/spring/matrix/master.lua $(1)$(LIBRARY_DIR)/spring/matrix
 endef
 
-$(eval $(call BuildPackage,spring))
+$(eval $(call BuildPackage,oasis-mod-spring))
