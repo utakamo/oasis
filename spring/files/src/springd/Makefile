@@ -20,4 +20,4 @@ springd: $(OBJ)
 .PHONY: clean
 
 clean:
-	rm -f springd datacheck ./*.o ./util/*.o ./util/ioctl/*.o ./util/netlink/*.o
+	rm -f springd datacheck ./*.o ./util/*.o ./util/ioctl/*.o ./util/netlink/*.o ../common/*.o

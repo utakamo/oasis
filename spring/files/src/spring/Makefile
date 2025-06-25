@@ -18,4 +18,4 @@ datacheck: $(OBJ)
 .PHONY: clean
 
 clean:
-	rm -f spring datacheck ./*.o
+	rm -f spring datacheck ./*.o  ../common/*.o
