@@ -68,16 +68,20 @@ void daemonize(void) {
 }
 
 void handle_signal(int sig) {
+
+    // [IMPORTANT]
+    // According to POSIX standards, functions like printf should not be executed within a signal handler.
+    // Calls to DEBUG_LOG within this function should be limited to temporary use only.
+    // Please refer to the POSIX-defined async-signal-safe functions for a list of functions that are safe to call within a signal handler.
+
     switch(sig) {
         case SIGTERM:
-            DEBUG_LOG("[handle_signal] SIGTERM SIGNAL!!\n");
+            //DEBUG_LOG("[handle_signal] SIGTERM SIGNAL!!\n");
             is_terminate = true;
             break;
         case SIGUSR1:
-            // printf("SIGUSR1 received\n");
             break;
         case SIGUSR2:
-            // printf("SIGUSR2 received\n");
             break;
         default:
             break;
