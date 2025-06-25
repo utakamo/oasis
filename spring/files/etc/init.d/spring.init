@@ -6,19 +6,19 @@ bootstart=$(uci -q get spring.ctrl.bootstart)
 
 start() {	
 	if [ $? -eq 0 ];then
-        /usr/bin/spring
-		echo "spring start!"
+        /usr/bin/springd
+		echo "springd start!"
 	fi
 }
 
 stop() {
-	killall /usr/bin/spring
-	echo 'spring stop'
+	killall /usr/bin/springd
+	echo 'springd stop'
 }
 
 restart() {
 	stop > /dev/null
 	sleep 1
 	start > /dev/null
-	echo 'spring restart'
+	echo 'springd restart'
 }

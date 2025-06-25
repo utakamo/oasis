@@ -31,13 +31,9 @@ int get_ifname_from_idx(lua_State *L) {
 
 int get_if_ipv4(lua_State *L) {
     const char *ifname = luaL_checkstring(L, 1);
-    const char *ipv4_addr = luaL_checkstring(L, 2);
-    size_t addr_len = luaL_checkinteger(L, 3);
 
     int sockfd;
     struct ifreq ifr;
-
-    memset((char *)ipv4_addr, '\0', addr_len);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
@@ -53,10 +49,10 @@ int get_if_ipv4(lua_State *L) {
     }
 
     struct sockaddr_in *ipaddr = (struct sockaddr_in *)&ifr.ifr_addr;
-    snprintf((char *)ipv4_addr, addr_len, "%s", inet_ntoa(ipaddr->sin_addr));
+    lua_pushstring(L, inet_ntoa(ipaddr->sin_addr));
 
     close(sockfd);
-    return 0;
+    return 1;
 }
 
 int get_netmask(lua_State *L) {
@@ -234,7 +230,7 @@ int get_mtu(lua_State *L) {
 
     close(sockfd);
     lua_pushinteger(L, ifr.ifr_mtu);
-    return 1;
+    return 0;
 }
 
 int get_mac_addr(lua_State *L) {

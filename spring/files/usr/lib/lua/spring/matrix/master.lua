@@ -65,6 +65,7 @@ db.phase.behavior.action        = "action"
 db.list                         = {}
 db.list.param                   = {}
 db.list.param.name              = {}
+db.list.param.name.name         = "name"
 db.list.param.name.type         = "type"
 db.list.param.name.call         = "call"
 db.list.param.name.cmdline      = "cmdline"
@@ -160,7 +161,7 @@ local create_phase = function(defines, event_base_tbl, action_base_tbl, interval
     local register_function_into_list = function(list, df, inf, bvr)
         for idx, _ in ipairs(inf) do
             local defidx = 0
-            if inf[idx].type == db.func.type.lua.code then
+            if (inf[idx].type == db.func.type.lua.code) or (inf[idx].type == db.func.type.c.code) then
                 for index, target_func in ipairs(df) do
                     for func, _ in pairs(target_func.name) do
                         if inf[idx].name == func then
@@ -176,6 +177,7 @@ local create_phase = function(defines, event_base_tbl, action_base_tbl, interval
 
                 if defidx > 0 then
                     list[bvr][#list[bvr] + 1] = {}
+                    list[bvr][#list[bvr]][db.list.param.name.name] = inf[idx].name
                     list[bvr][#list[bvr]][db.list.param.name.type] = db.phase.type.code
                     list[bvr][#list[bvr]][db.list.param.name.call] = df[defidx][db.define.param.name.name][inf[idx].name]
                     list[bvr][#list[bvr]][db.list.param.name.cmdline] = df[defidx][db.define.param.name.cmdline]
@@ -184,6 +186,7 @@ local create_phase = function(defines, event_base_tbl, action_base_tbl, interval
 
             elseif inf[idx].type == db.func.type.lua.script then
                     list[bvr][#list[bvr] + 1] = {}
+                    list[bvr][#list[bvr]][db.list.param.name.name] = script -- script file name
                     list[bvr][#list[bvr]][db.list.param.name.type] = db.phase.type.script
                     list[bvr][#list[bvr]][db.list.param.name.call] = function(script)
                     -- Todo: check file exist
@@ -209,6 +212,9 @@ local execute_phase = function(target_phase_func_list)
     -- event detect function
     for idx, func in ipairs(target_phase_func_list.event) do
 
+        debug:log("spring-function-list.log", "Func name: " .. func.name)
+        debug:dump("spring-data.log", func)
+
         if misc.check_file_exist("/tmp/spring/terminate") then
             return PHASE.NONE
         end
@@ -220,11 +226,14 @@ local execute_phase = function(target_phase_func_list)
         local result
         if func.type == db.phase.type.code then
             if func.cmdline then
+                debug:log("spring-func1.log", "arg")
                 result = func.call(func.args)
             else
+                debug:log("spring-func2.log", "no arg")
                 result = func.call()
             end
         elseif func.type == db.phase.type.script then
+            debug:log("spring-func3.log", "scirpt")
             result = func.call(func.script)
         end
 

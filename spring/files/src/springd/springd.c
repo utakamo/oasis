@@ -175,8 +175,9 @@ void* matrix_ctrl_process(void *arg) {
     lua_getglobal(L, "test_exec_allevents");
     if (lua_isfunction(L, -1)) {
         if (lua_pcall(L, 0, 0, 0) != 0) {
-            DEBUG_LOG("Error running test_exec_allevents\n");
-            fprintf(stderr, "Error running test_exec_allevents: %s\n", lua_tostring(L, -1));
+            const char *lua_err = lua_tostring(L, -1);
+            DEBUG_LOG("Error running test_exec_allevents: %s\n", lua_err ? lua_err : "(no error message)");
+            fprintf(stderr, "Error running test_exec_allevents: %s\n", lua_err ? lua_err : "(no error message)");
             lua_pop(L, 1);
         }
     } else {

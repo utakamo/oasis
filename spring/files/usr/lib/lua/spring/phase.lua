@@ -44,8 +44,8 @@ local register_phase_base_tbl = function(utype)
 end
 
 -- function_defines is master list
-local func_define = {}
-matrix.register_luacode_event_detecter_func(func_define, false, "get_wired_if_list", function()
+local defines = {}
+matrix.register_luacode_event_detecter_func(defines, false, "get_wired_if_list", function()
 
     local result = util.ubus("network.interface", "dump", {})
 
@@ -65,7 +65,7 @@ matrix.register_luacode_event_detecter_func(func_define, false, "get_wired_if_li
     return interfaces
 end)
 
-matrix.register_luacode_event_detecter_func(func_define, false, "get_wireless_if_list", function()
+matrix.register_luacode_event_detecter_func(defines, false, "get_wireless_if_list", function()
 
     local result = util.ubus("iwinfo", "devices", {})
 
@@ -78,25 +78,25 @@ matrix.register_luacode_event_detecter_func(func_define, false, "get_wireless_if
     return interfaces
 end)
 
-matrix.register_luacode_event_detecter_func(func_define, false, "output", function()
+matrix.register_luacode_event_detecter_func(defines, false, "output", function()
     return "Hello Practice"
 end)
 
-matrix.register_luacode_event_detecter_func(func_define, false, "get_os_name", function()
+matrix.register_luacode_event_detecter_func(defines, false, "get_os_name", function()
     local handle = io.popen("uname -o")
     local result = handle:read("*a")
     handle:close()
     return result:match("^%s*(.-)%s*$")
 end)
 
-matrix.register_luacode_event_detecter_func(func_define, false, "get_kernel_version", function()
+matrix.register_luacode_event_detecter_func(defines, false, "get_kernel_version", function()
     local handle = io.popen("uname -r")
     local result = handle:read("*a")
     handle:close()
     return result:match("^%s*(.-)%s*$")
 end)
 
-matrix.register_luacode_event_detecter_func(func_define, false, "get_used_memory", function()
+matrix.register_luacode_event_detecter_func(defines, false, "get_used_memory", function()
     local info = util.ubus("system", "info", {})
 
     if not info or not info.memory then
@@ -109,7 +109,7 @@ matrix.register_luacode_event_detecter_func(func_define, false, "get_used_memory
     return used
 end)
 
-matrix.register_luacode_event_detecter_func(func_define, false, "get_load_average", function()
+matrix.register_luacode_event_detecter_func(defines, false, "get_load_average", function()
     local handle = io.popen("cat /proc/loadavg")
     local line = handle:read("*l")
     handle:close()
@@ -121,7 +121,8 @@ matrix.register_luacode_event_detecter_func(func_define, false, "get_load_averag
     }
 end)
 
-matrix.register_luacode_event_detecter_func(func_define, true, "get_ip_address", function(args)
+matrix.register_luacode_event_detecter_func(defines, true, "get_ip_address", function(args)
+    debug:log("get_ip_address.log", "called!!")
     local interface = args[1] or "eth0"  -- Default to eth0 if no argument is provided
     local cmd = string.format("ip -4 addr show %s | grep inet", interface)
     local handle = io.popen(cmd)
@@ -130,11 +131,11 @@ matrix.register_luacode_event_detecter_func(func_define, true, "get_ip_address",
     return line and line:match("inet ([%d%.]+)") or nil
 end)
 
-matrix.register_ccode_event_detecter_func(func_define, true, "get_ifname_from_idx")
-matrix.register_ccode_event_detecter_func(func_define, true, "get_if_ipv4")
-matrix.register_ccode_event_detecter_func(func_define, true, "get_netmask")
-matrix.register_ccode_event_detecter_func(func_define, true, "get_mtu")
-matrix.register_ccode_event_detecter_func(func_define, true, "get_mac_addr")
+matrix.register_ccode_event_detecter_func(defines, true, "get_ifname_from_idx")
+matrix.register_ccode_event_detecter_func(defines, true, "get_if_ipv4")
+matrix.register_ccode_event_detecter_func(defines, true, "get_netmask")
+matrix.register_ccode_event_detecter_func(defines, true, "get_mtu")
+matrix.register_ccode_event_detecter_func(defines, true, "get_mac_addr")
 -- Type Code Only
 -------------------------------------------------------
 --                   [PHASE 1]                       --
@@ -223,8 +224,8 @@ phase2_evt_base_tbl[#phase2_evt_base_tbl].name     = "get_os_name"
 ]]
 
 local matrix_phase_tbl = {}
-matrix_phase_tbl[#matrix_phase_tbl + 1] = matrix.create_phase(func_define, evt_base_tbl[1], act_base_tbl[1]) -- phase1
-matrix_phase_tbl[#matrix_phase_tbl + 1] = matrix.create_phase(func_define, evt_base_tbl[2], act_base_tbl[2], 1) -- phase2
+matrix_phase_tbl[#matrix_phase_tbl + 1] = matrix.create_phase(defines, evt_base_tbl[1], act_base_tbl[1]) -- phase1
+matrix_phase_tbl[#matrix_phase_tbl + 1] = matrix.create_phase(defines, evt_base_tbl[2], act_base_tbl[2], 1) -- phase2
 
 function test_exec_allevents()
     debug:log("spring-call.log", "called by springd")
