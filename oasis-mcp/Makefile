@@ -14,7 +14,7 @@ define Package/oasis-mcp
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= MCP Plugin Module for oasis
-    DEPENDS:=+oasis +uhttp-mod-ubus
+    DEPENDS:=+oasis +uhttpd-mod-ubus
     PKGARCH:=all
 endef
 
