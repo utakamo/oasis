@@ -44,8 +44,11 @@ function index()
     entry({"admin", "network", "oasis", "load-rollback-list"}, call("load_rollback_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback-target-data"}, call("rollback_target_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "base-info"}, call("base_info"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-local-tools-info"}, call("load_local_tools_info"), nil).leaf = true
+    entry({"admin", "network", "oasis", "change-tool-enable"}, call("change_tool_enable"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-local-tools-info"}, call("load_local_tools_info"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -698,6 +701,61 @@ function base_info()
     info_tbl.configs = oasis_ubus.retrieve_uci_config("table")
     luci_http.prepare_content("application/json")
     luci_http.write_json(info_tbl)
+end
+
+function load_local_tools_info()
+    local tools = {}
+    uci:foreach("oasis", "tool", function(s)
+        local entry = {}
+        for k, v in pairs(s) do
+            if k:sub(1,1) ~= "." then
+                if type(v) == "table" then
+                    entry[k] = {}
+                    for _, vv in ipairs(v) do
+                        table.insert(entry[k], vv)
+                    end
+                else
+                    entry[k] = v
+                end
+            end
+        end
+        table.insert(tools, entry)
+    end)
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(tools)
+end
+
+function change_tool_enable()
+    local tool_name = luci_http.formvalue("name")
+    local enable = luci_http.formvalue("enable")
+
+    if not tool_name or tool_name == "" then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing tool name" })
+        return
+    end
+    if enable ~= "0" and enable ~= "1" then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Invalid enable value (must be 0 or 1)" })
+        return
+    end
+
+    local found = false
+    uci:foreach("oasis", "tool", function(s)
+        if s["name"] == tool_name then
+            uci:set("oasis", s[".name"], "enable", enable)
+            found = true
+            return false -- break
+        end
+    end)
+    if not found then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Tool not found" })
+        return
+    end
+    uci:commit("oasis")
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ status = "OK" })
 end
 
 function add_remote_mcp_server()
