@@ -15,6 +15,8 @@ db.uci.sect.rollback         = "rollback"
 db.uci.sect.role             = "role"
 db.uci.sect.assist           = "assist"
 db.uci.sect.rpc              = "rpc"
+db.uci.sect.tool             = "tool"
+db.uci.sect.remote_mcp       = "remote_mcp"
 
 db.ubus                             = {}
 db.ubus.object                      = {}
