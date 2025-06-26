@@ -1,4 +1,5 @@
 #include "packet.h"
+#include "debug.h"
 #include <string.h>
 
 void init_packet(Packet *packet, uint32_t id, uint16_t type, const char *data) {
@@ -17,7 +18,7 @@ void print_packet(const Packet *packet) {
         return;
     }
 
-    printf("Packet ID: %u\n", packet->id);
-    printf("Packet Type: %u\n", packet->type);
-    printf("Packet Data: %s\n", packet->data);
+    DEBUG_LOG("Packet ID: %u\n", packet->id);
+    DEBUG_LOG("Packet Type: %u\n", packet->type);
+    DEBUG_LOG("Packet Data: %s\n", packet->data);
 }

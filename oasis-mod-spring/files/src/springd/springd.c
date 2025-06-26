@@ -21,7 +21,23 @@
 #include <sys/un.h>
 #include "../common/debug.h"
 
+#define SPRING_TERMINATE_FILE "/tmp/spring/terminate"
+
 bool is_terminate = false;
+
+// Get thread interval from UCI config
+int get_thread_interval(const char* option, int default_val) {
+    char uci_parameter[256];
+    snprintf(uci_parameter, sizeof(uci_parameter), "spring.thread_interval.%s", option);
+    char *endptr;
+    char value[256] = {0};
+    uci_get_option(uci_parameter, value);
+    unsigned long val = strtoul(value, &endptr, 10);
+    if (endptr != value && *endptr == '\0' && val > 0 && val <= INT_MAX) {
+        return (int)val;
+    }
+    return default_val;
+}
 
 void daemonize(void) {
     pid_t pid;
@@ -117,15 +133,13 @@ void* send_message_process(void* arg) {
         lua_close(L);
         return NULL;
     }
-
+    int interval = get_thread_interval("message_sender_thread", 1);
     for (;;) {
         if (is_terminate) {
             break;
         }
-
-        sleep(1);
+        sleep(interval);
     }
-
     lua_close(L);
     return NULL;
 }
@@ -190,6 +204,7 @@ void* matrix_ctrl_process(void *arg) {
         fprintf(stderr, "test_exec_allevents is not a function\n");
     }
 
+    int interval = get_thread_interval("matrix_ctrl_thread", 1);
     for (;;) {
 
         if (is_terminate) {
@@ -199,7 +214,7 @@ void* matrix_ctrl_process(void *arg) {
         
         DEBUG_LOG("[matrix_ctr_process] loop ... \n");
 
-        sleep(1);
+        sleep(interval);
     }
 
     lua_close(L);
@@ -245,6 +260,7 @@ void* handle_unix_socket_communication(void* arg) {
 
     printf("Server listening on /tmp/springd.sock\n");
 
+    int interval = get_thread_interval("recv_cmd_thread", 1);
     for (;;) {
 
         if (is_terminate) {
@@ -253,7 +269,7 @@ void* handle_unix_socket_communication(void* arg) {
         }
 
         DEBUG_LOG("[handle_unix_socket_communication] loop ...\n");
-        sleep(1);
+        sleep(interval);
 
         // Accept a connection
         client_fd = accept(server_fd, NULL, NULL);
@@ -281,7 +297,7 @@ void* handle_unix_socket_communication(void* arg) {
 }
 
 void* watchdog_process(void* arg) {
-
+    int interval = get_thread_interval("wathdog_thread", 1);
     for (;;) {
 
         if (is_terminate) {
@@ -289,7 +305,7 @@ void* watchdog_process(void* arg) {
             break;
         }
 
-        sleep(1);
+        sleep(interval);
     }
     return NULL;
 }
@@ -315,6 +331,15 @@ void thread_function() {
     }
 }
 
+void create_terminate_file(void) {
+    FILE *file = fopen(SPRING_TERMINATE_FILE, "w");
+    if (file) {
+        fclose(file);
+    } else {
+        DEBUG_LOG("Failed to create %s\n", SPRING_TERMINATE_FILE);
+    }
+}
+
 int main(void) {
     daemonize();
     setup_signal_handlers();
@@ -331,6 +356,7 @@ int main(void) {
 
         if (is_terminate) {
             DEBUG_LOG("[main] terminate\n");
+            create_terminate_file();
             break;
         }
 
