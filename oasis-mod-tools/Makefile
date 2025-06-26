@@ -5,7 +5,7 @@ PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
 LIBRARY_DIR = /usr/lib/lua
-UCI_CONFIG_DIR = /etc/config
+OASIS_MERGE_CONFIG_DIR = /etc/oasis/tool
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,11 +21,19 @@ define Build/Compile
 endef
 
 define Package/oasis-mod-tools/install
+	$(INSTALL_DIR) $(1)$(OASIS_MERGE_CONFIG_DIR)
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service
-	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/remote/mcp/service/anthropic.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/anthropic.lua
-	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/remote/mcp/service/google.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/google.lua
-	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/remote/mcp/service/ollama.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/ollama.lua
-	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/remote/mcp/service/openai.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/openai.lua
+	$(INSTALL_DATA) ./files/etc/oasis/tool/tool.config $(1)$(OASIS_MERGE_CONFIG_DIR)
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/anthropic.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/anthropic.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/google.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/google.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/ollama.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/ollama.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/openai.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/openai.lua
+endef
+
+define Package/oasis-mod-tools/postinst
+	#!/bin/sh
+	uci import -m /etc/oasis/tool/tool.config oasis
+	uci commit oasis
 endef
 
 $(eval $(call BuildPackage,oasis-mod-tools))
