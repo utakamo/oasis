@@ -32,7 +32,7 @@ endef
 
 define Package/oasis-mod-tools/postinst
 	#!/bin/sh
-	uci import -m /etc/oasis/tool/tool.config oasis
+	uci -f /etc/oasis/tool/tool.config -m import oasis
 	uci commit oasis
 endef
 
