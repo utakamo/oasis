@@ -44,6 +44,8 @@ function index()
     entry({"admin", "network", "oasis", "load-rollback-list"}, call("load_rollback_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback-target-data"}, call("rollback_target_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "base-info"}, call("base_info"), nil).leaf = true
+    entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
+    entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -697,3 +699,113 @@ function base_info()
     luci_http.prepare_content("application/json")
     luci_http.write_json(info_tbl)
 end
+
+function add_remote_mcp_server()
+    local meta_info = {}
+    meta_info.name = luci_http.formvalue("name")
+    meta_info.server_label = luci_http.formvalue("server_label")
+    meta_info.type = luci_http.formvalue("type")
+    meta_info.server_url = luci_http.formvalue("server_url")
+    meta_info.require_approval = luci_http.formvalue("require_approval")
+
+    -- allowed_tools: supports multiple values
+    local allowed_tools = luci_http.formvaluetable("allowed_tools")
+    if allowed_tools and next(allowed_tools) then
+        meta_info.allowed_tools = {}
+        for _, v in pairs(allowed_tools) do
+            table.insert(meta_info.allowed_tools, v)
+        end
+    end
+
+    local section = uci:add("oasis", "remote_mcp_server", meta_info.name or meta_info.server_label or "unnamed")
+    for k, v in pairs(meta_info) do
+        if k ~= "name" and k ~= "allowed_tools" then
+            uci:set("oasis", section, k, tostring(v))
+        end
+    end
+    if meta_info.allowed_tools then
+        for _, tool in ipairs(meta_info.allowed_tools) do
+            uci:add_list("oasis", section, "allowed_tools", tool)
+        end
+    end
+    uci:commit("oasis")
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ status = "OK" })
+end
+
+function remove_remote_mcp_server()
+    local section_name = luci_http.formvalue("name")
+    if not section_name or section_name == "" then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing section name" })
+        return
+    end
+    -- Check if the target section exists
+    local found = false
+    uci:foreach("oasis", "remote_mcp_server", function(s)
+        if s[".name"] == section_name then
+            found = true
+            return false -- break
+        end
+    end)
+    if not found then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Section not found" })
+        return
+    end
+    -- Delete process
+    local ok = uci:delete("oasis", section_name)
+    if not ok then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Failed to remove remote mcp server config" })
+        return
+    end
+
+    uci:commit("oasis")
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ status = "OK" })
+end
+
+function load_remote_mcp_server_info()
+    local servers = {}
+    uci:foreach("oasis", "remote_mcp_server", function(s)
+        local entry = {}
+        for k, v in pairs(s) do
+            if k:sub(1,1) ~= "." then
+                if type(v) == "table" then
+                    entry[k] = {}
+                    for _, vv in ipairs(v) do
+                        table.insert(entry[k], vv)
+                    end
+                else
+                    entry[k] = v
+                end
+            end
+        end
+        entry["name"] = s[".name"]
+        table.insert(servers, entry)
+    end)
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(servers)
+end
+
+--[[
+    [
+        {
+            "name": "deepwiki",
+            "type": "mcp",
+            "server_label": "deepwiki",
+            "server_url": "https://mcp.deepwiki.com/mcp",
+            "require_approval": "never",
+            "allowed_tools": ["ask_question"]
+        },
+        {
+            "name": "another",
+            "type": "mcp",
+            "server_label": "another",
+            "server_url": "https://another.example.com/mcp",
+            "require_approval": "manual",
+            "allowed_tools": ["foo", "bar"]
+        }
+    ]
+]]
