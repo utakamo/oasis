@@ -1,5 +1,21 @@
 #!/usr/bin/env lua
 
+--[[
+# Rules for defining tools in the MCP server
+    - Rule 1. 
+        If a tool requires arguments, you must specify a type string for each argument.
+
+        Reference:
+        1. string type  ---> "a_string"
+        TODO: Investigate data type specifications other than "a_string" and add them here. 
+
+    - Rule 2. 
+        The table returned by mcp_server.response must be an associative array (key-value pairs).
+
+        Example: 
+        mcp_server.response({reply = "Hello MCP Client!"})
+]]
+
 local mcp_server = require("oasis.local.mcp_server")
 
 mcp_server.add_tool("get_weather", {
