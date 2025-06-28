@@ -50,28 +50,6 @@ config tool 'function_A'
     list property 'another_param:number:another description'
 ]]
 
-local get_weather = function(location)
-    -- Mock: Returns a fake temperature for the given location
-    return {
-        location = location,
-        temperature = "25°C",
-        condition = "Sunny"
-    }
-end
-
-local get_wlan_ifname_list = function()
-    -- Mock: Returns a list of wireless LAN interface names
-    return { "wlan0", "wlan1" }
-end
-
-local function_A = function(param1, param2)
-    -- Mock: Returns the received parameters as is
-    return {
-        received_param1 = param1,
-        received_param2 = param2
-    }
-end
-
 -- Function Calling - tools
 local provide_tools = function()
     local tools = {}

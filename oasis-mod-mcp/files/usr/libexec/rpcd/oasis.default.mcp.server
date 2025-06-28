@@ -1,0 +1,34 @@
+#!/usr/bin/env lua
+
+local mcp_server = require("oasis.local.mcp_server_base")
+
+mcp_server.add_tool("get_weather", {
+    args = { location = "a_string" },
+    call = function(args)
+        -- Mock: Returns a fake temperature for the given location
+        local res = mcp_server.response({ location = args.location, temperature = "25°C", condition = "Sunny" })
+        return res
+    end
+})
+
+mcp_server.add_tool("get_wlan_ifname_list", {
+    call = function(args)
+        -- Mock: Returns a list of wireless LAN interface names
+        local res = mcp_server.response({ "wlan0", "wlan1" })
+        return res
+    end
+})
+
+mcp_server.add_tool("function_A", {
+    args = { param1 = "a_string", param2 = "a_string" },
+    call = function(args)
+        -- Mock: Returns the received parameters as is
+        local res = mcp_server.response({
+            received_param1 = args.param1,
+            received_param2 = args.param2
+        })
+        return res
+    end
+})
+
+mcp_server.activate_tools(arg)
