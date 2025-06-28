@@ -57,4 +57,13 @@ define Package/oasis-mod-spring/install
 		$(INSTALL_BIN) ./files/usr/lib/lua/spring/matrix/master.lua $(1)$(LIBRARY_DIR)/spring/matrix
 endef
 
+define Package/oasis-mod-spring/postinst
+	#!/bin/sh
+	uci set oasis.support.spring=1
+	uci commit oasis
+	#TODO: Check below
+	#mkdir -p /tmp/oasis
+	#touch /tmp/oasis/reboot_required
+endef
+
 $(eval $(call BuildPackage,oasis-mod-spring))
