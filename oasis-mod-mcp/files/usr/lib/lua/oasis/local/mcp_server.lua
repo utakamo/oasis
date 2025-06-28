@@ -4,6 +4,17 @@ local jsonc = require("luci.jsonc")
 
 local methods = {}
 
+--[[
+# Note: How to retrieve tool list infomation
+ Target MCP Server ---> "oasis.util.mcp.server"
+
+ Execute:
+ root@OpenWrt:~# /usr/libexec/rpcd/oasis.util.mcp.server list
+
+ Output:
+ {"get_weather":{"location":"a_string"},"sample":{},"function_A":{"param1":"a_string","param2":"a_string"}}
+]]
+
 local add_tool = function(func_name, def)
     methods[func_name] = def
 end
