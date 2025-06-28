@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local mcp_server = require("oasis.local.mcp_server_base")
+local mcp_server = require("oasis.local.mcp_server")
 
 mcp_server.add_tool("get_weather", {
     args = { location = "a_string" },
@@ -12,9 +12,9 @@ mcp_server.add_tool("get_weather", {
 })
 
 mcp_server.add_tool("get_wlan_ifname_list", {
-    call = function(args)
-        -- Mock: Returns a list of wireless LAN interface names
-        local res = mcp_server.response({ "wlan0", "wlan1" })
+    call = function()
+        -- Mock: Returns a fake temperature for the given location
+        local res = mcp_server.response({ ifname1 = "wlan0", ifname2 = "wlan1" })
         return res
     end
 })
