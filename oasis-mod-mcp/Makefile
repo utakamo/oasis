@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/oasis-mod-mcp
     CATEGORY:=utakamo
     SECTION:=utakamo
-    TITLE:= MCP Plugin Module for oasis
+    TITLE:= Remote MCP and Local Tool Plugin Module for oasis
     DEPENDS:=+oasis
     PKGARCH:=all
 endef
