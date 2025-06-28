@@ -8,18 +8,6 @@ local add_tool = function(func_name, def)
     methods[func_name] = def
 end
 
-add_tool("list", {
-    call = function()
-        local names = {}
-        for name, _ in pairs(methods or {}) do
-            table.insert(names, name)
-        end
-        local r = {}
-        r.result = jsonc.stringify(names)
-        return r
-    end
-})
-
 local response = function(tbl)
     local r = {}
     r.result = jsonc.stringify(tbl)
@@ -75,7 +63,6 @@ local validateArgs = function(func, uargs)
             os.exit(1)
         end
     end
-
     return tool
 end
 

@@ -27,10 +27,10 @@ define Package/oasis-mod-mcp/install
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/local
 	$(INSTALL_DATA) ./files/etc/oasis/tool/tool.config $(1)$(OASIS_MERGE_CONFIG_DIR)
-	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.default.mcp.server $(1)$(UBUS_SERVER_APP_DIR)/oasis.default.mcp.server
+	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.util.mcp.server $(1)$(UBUS_SERVER_APP_DIR)/oasis.util.mcp.server
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/function_calling.lua $(1)$(LIBRARY_DIR)/oasis/local/function_calling.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/mcp_client.lua $(1)$(LIBRARY_DIR)/oasis/local/mcp_client.lua
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/mcp_server_base.lua $(1)$(LIBRARY_DIR)/oasis/local/mcp_server_base.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/mcp_server.lua $(1)$(LIBRARY_DIR)/oasis/local/mcp_server.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/anthropic.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/anthropic.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/google.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/google.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/ollama.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/ollama.lua
