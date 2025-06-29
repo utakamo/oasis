@@ -16,7 +16,7 @@
                 "location": "a_string"
             }
         },
-        "function_A": {
+        "echo": {
             "tool_desc": "Echoes back the received parameters.",
             "args_desc": [
                 "Parameter 1 (string)",

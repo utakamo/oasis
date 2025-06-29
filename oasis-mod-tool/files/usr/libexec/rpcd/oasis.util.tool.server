@@ -51,7 +51,7 @@ server.add_tool("get_wlan_ifname_list", {
     end
 })
 
-server.add_tool("function_A", {
+server.add_tool("echo", {
     -- args_desc: Description of parameters specified when invoking the tool.
     args_desc = { "Parameter 1 (string)", "Parameter 2 (string)" },
     args = { param1 = "a_string", param2 = "a_string" },
