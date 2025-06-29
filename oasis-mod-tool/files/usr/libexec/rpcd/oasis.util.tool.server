@@ -27,7 +27,7 @@
 local server = require("oasis.local.tool_server")
 
 -- Sample tool "get_weather"
-server.add_tool("get_weather", {
+server.tool("get_weather", {
     -- args_desc: Description of parameters specified when invoking the tool.
     args_desc   = { "City and country e.g. Bogotá, Colombia" },
     args        = { location = "a_string" },
@@ -41,7 +41,7 @@ server.add_tool("get_weather", {
     end
 })
 
-server.add_tool("get_wlan_ifname_list", {
+server.tool("get_wlan_ifname_list", {
     -- tool_desc: Description of the tool's functionality.
     tool_desc = "Get the list of WLAN interface names.",
     call = function()
@@ -51,7 +51,7 @@ server.add_tool("get_wlan_ifname_list", {
     end
 })
 
-server.add_tool("echo", {
+server.tool("echo", {
     -- args_desc: Description of parameters specified when invoking the tool.
     args_desc = { "Parameter 1 (string)", "Parameter 2 (string)" },
     args = { param1 = "a_string", param2 = "a_string" },

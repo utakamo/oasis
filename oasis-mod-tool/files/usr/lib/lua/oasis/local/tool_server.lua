@@ -4,7 +4,7 @@ local jsonc = require("luci.jsonc")
 
 local methods = {}
 
-local add_tool = function(func_name, def)
+local tool = function(func_name, def)
     methods[func_name] = def
 end
 
@@ -104,7 +104,7 @@ local activate = function(arg)
 end
 
 return {
-    add_tool = add_tool,
+    tool = tool,
     response = response,
     parseInput = parseInput,
     validateArgs = validateArgs,
