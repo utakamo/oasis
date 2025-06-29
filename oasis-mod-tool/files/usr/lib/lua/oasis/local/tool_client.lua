@@ -17,15 +17,18 @@
             }
         },
         "function_A": {
-            "tool_desc": "",
-            "args_desc": {},
+            "tool_desc": "Echoes back the received parameters.",
+            "args_desc": [
+                "Parameter 1 (string)",
+                "Parameter 2 (string)"
+            ],
             "args": {
                 "param1": "a_string",
                 "param2": "a_string"
             }
         },
         "get_wlan_ifname_list": {
-            "tool_desc": "",
+            "tool_desc": "Get the list of WLAN interface names.",
             "args_desc": {},
             "args": {}
         }
