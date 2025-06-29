@@ -18,16 +18,16 @@
         TODO: Investigate data type specifications other than "a_string" and add them here. 
 
     - Rule 2. 
-        The table returned by tool_server.response must be an associative array (key-value pairs).
+        The table returned by server.response must be an associative array (key-value pairs).
 
         Example: 
-        tool_server.response({reply = "Hello Tool Client!"})
+        server.response({reply = "Hello Tool Client!"})
 ]]
 
-local tool_server = require("oasis.local.tool_server")
+local server = require("oasis.local.tool_server")
 
 -- Sample tool "get_weather"
-tool_server.add_tool("get_weather", {
+server.add_tool("get_weather", {
     -- args_desc: Description of parameters specified when invoking the tool.
     args_desc   = { "City and country e.g. Bogotá, Colombia" },
     args        = { location = "a_string" },
@@ -36,22 +36,22 @@ tool_server.add_tool("get_weather", {
     tool_desc   = "Get current temperature for a given location.",
     call = function(args)
         -- Mock: Returns a fake temperature for the given location
-        local res = tool_server.response({ location = args.location, temperature = "25°C", condition = "Sunny" })
+        local res = server.response({ location = args.location, temperature = "25°C", condition = "Sunny" })
         return res
     end
 })
 
-tool_server.add_tool("get_wlan_ifname_list", {
+server.add_tool("get_wlan_ifname_list", {
     -- tool_desc: Description of the tool's functionality.
     tool_desc = "Get the list of WLAN interface names.",
     call = function()
         -- Mock: Returns a fake temperature for the given location
-        local res = tool_server.response({ ifname1 = "wlan0", ifname2 = "wlan1" })
+        local res = server.response({ ifname1 = "wlan0", ifname2 = "wlan1" })
         return res
     end
 })
 
-tool_server.add_tool("function_A", {
+server.add_tool("function_A", {
     -- args_desc: Description of parameters specified when invoking the tool.
     args_desc = { "Parameter 1 (string)", "Parameter 2 (string)" },
     args = { param1 = "a_string", param2 = "a_string" },
@@ -60,7 +60,7 @@ tool_server.add_tool("function_A", {
     tool_desc = "Echoes back the received parameters.",
     call = function(args)
         -- Mock: Returns the received parameters as is
-        local res = tool_server.response({
+        local res = server.response({
             received_param1 = args.param1,
             received_param2 = args.param2
         })
@@ -68,4 +68,4 @@ tool_server.add_tool("function_A", {
     end
 })
 
-tool_server.activate(arg)
+server.activate(arg)
