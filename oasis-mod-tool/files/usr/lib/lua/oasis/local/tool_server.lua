@@ -66,7 +66,7 @@ local validateArgs = function(func, uargs)
     return tool
 end
 
-local activate_tools = function(arg)
+local activate = function(arg)
     -- Export call_<tool> functions for ubus/rpcd compatibility
     for name, def in pairs(methods) do
         _G["call_" .. name] = function(session, args)
@@ -108,5 +108,5 @@ return {
     response = response,
     parseInput = parseInput,
     validateArgs = validateArgs,
-    activate_tools = activate_tools,
+    activate = activate,
 }
