@@ -38,10 +38,11 @@
 local uci = require("luci.model.uci").cursor()
 local jsonc = require("luci.jsonc")
 local sys = require("luci.sys")
+local fs = require("nixio.fs")
 
 local ubus_server_app_dir = "/usr/libexec/rpcd"
 
-local function setup_server_config(server)
+local setup_server_config = function(server)
 
     local server_path = ubus_server_app_dir .. server
     local meta = sys.exec(server_path .. " meta")
@@ -78,6 +79,29 @@ local function setup_server_config(server)
     uci:commit("oasis")
 end
 
+local list_rpcd_files = function()
+  local files = fs.dir("/usr/libexec/rpcd")
+  if not files then
+    return nil
+  end
+
+  local result = {}
+  for file in files do
+    table.insert(result, file)
+  end
+  return result
+end
+
+local update_server_info = function()
+    local scripts = list_rpcd_files()
+    if scripts then
+        for _, script in ipairs(scripts) do
+            setup_server_config(script)
+        end
+    end
+end
+
 return {
     setup_server_config = setup_server_config,
+    update_server_info = update_server_info,
 }
