@@ -1,0 +1,6 @@
+#!/usr/bin/env lua
+
+-- olt: Oasis Local Tool
+local olt_client = require("oasis.local.tool.client")
+
+olt_client.update_server_info()
