@@ -2,7 +2,7 @@
 
 --[[
 
-# Oasis Local Tool Server
+# Oasis Local Tool (OLT) Server
  This server script is implemented using features inspired by the Model Context Protocol.
  By leveraging UBUS, an integral part of the OpenWrt ecosystem, the client and server (this script)
  can cooperate to allow the AI to access the tools provided by this script.
@@ -24,7 +24,7 @@
         server.response({reply = "Hello Tool Client!"})
 ]]
 
-local server = require("oasis.local.tool_server")
+local server = require("oasis.local.tool.server")
 
 -- Sample tool "get_weather"
 server.tool("get_weather", {
