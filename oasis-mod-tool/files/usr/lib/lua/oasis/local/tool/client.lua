@@ -42,15 +42,19 @@ local fs = require("nixio.fs")
 
 local ubus_server_app_dir = "/usr/libexec/rpcd"
 
-local setup_server_config = function(server)
+local setup_server_config = function(server_name)
 
-    local server_path = ubus_server_app_dir .. server
+    local server_path = ubus_server_app_dir .. server_name
     local meta = sys.exec(server_path .. " meta")
 
+    -- Todo:
+    -- Check meta command success
+
     local data = jsonc.parse(meta)
+
     for _, tool in pairs(data) do
         local s = uci:section("oasis", "tool")
-        uci:set("oasis", s, "server", server)
+        uci:set("oasis", s, "server", server_name)
         uci:set("oasis", s, "enable", "1")
         uci:set("oasis", s, "type", "function")
         uci:set("oasis", s, "description", tool.tool_desc or "")
@@ -79,8 +83,8 @@ local setup_server_config = function(server)
     uci:commit("oasis")
 end
 
-local list_rpcd_files = function()
-  local files = fs.dir("/usr/libexec/rpcd")
+local listup_server_candidate = function()
+  local files = fs.dir(ubus_server_app_dir)
   if not files then
     return nil
   end
@@ -93,15 +97,21 @@ local list_rpcd_files = function()
 end
 
 local update_server_info = function()
-    local scripts = list_rpcd_files()
-    if scripts then
-        for _, script in ipairs(scripts) do
-            setup_server_config(script)
+    local servers = listup_server_candidate()
+    if servers then
+        for _, server_name in ipairs(servers) do
+            setup_server_config(server_name)
         end
     end
+end
+
+local execute_target_server_tool = function(tool, args)
+    -- Todo:
+    -- core process
 end
 
 return {
     setup_server_config = setup_server_config,
     update_server_info = update_server_info,
+    execute_target_server_tool = execute_target_server_tool,
 }
