@@ -35,10 +35,13 @@
     }
 ]]
 
-local uci = require("luci.model.uci").cursor()
-local jsonc = require("luci.jsonc")
-local sys = require("luci.sys")
-local fs = require("nixio.fs")
+local uci       = require("luci.model.uci").cursor()
+local common    = require("oasis.common")
+local debug     = require("oasis.chat.debug")
+local util      = require("luci.util")
+local jsonc     = require("luci.jsonc")
+local sys       = require("luci.sys")
+local fs        = require("nixio.fs")
 
 local ubus_server_app_dir = "/usr/libexec/rpcd"
 
@@ -105,13 +108,180 @@ local update_server_info = function()
     end
 end
 
-local execute_target_server_tool = function(tool, args)
-    -- Todo:
-    -- core process
+-- This function is called when sending a message to the LLM.
+local get_function_call_schema = function()
+    local tools = {}
+
+    uci:foreach(common.db.uci.config, common.db.uci.sect.tool, function(s)
+        if s.enable == "1" then
+            local required = s.required or {}
+            if type(required) == "string" then
+                required = {required}
+            end
+            local additionalProperties = (s.additionalProperties == "1")
+            -- Generate properties
+            local properties = {}
+            if s.property then
+                local prop_list = s.property
+                if type(prop_list) == "string" then
+                    prop_list = {prop_list}
+                end
+                for _, prop in ipairs(prop_list) do
+                    local name, typ, desc = prop:match("([^:]+):([^:]+):(.+)")
+                    if name and typ then
+                        properties[name] = { type = typ, description = desc or "" }
+                    end
+                end
+            end
+            local tool = {
+                type = s.type or "function",
+                name = s[".name"],
+                description = s.description or "",
+                parameters = {
+                    type = "object",
+                    properties = properties,
+                    required = required,
+                    additionalProperties = additionalProperties
+                }
+            }
+            table.insert(tools, tool)
+        end
+    end)
+    return tools
+end
+
+
+--[[
+{
+    "type": "function",
+    "name": "get_weather",
+    "description": "Get current temperature for a given location.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "City and country e.g. Bogotá, Colombia"
+            }
+        },
+        "required": [
+            "location"
+        ],
+        "additionalProperties": False
+    }
+}
+]]
+
+--[[
+[Sample UCI Config]
+config tool 'get_weather'
+    option enable '1'
+    option server 'oasis.util.tool.server'
+    option type 'function'
+    option description 'Get current temperature for a given location.'
+    list required 'location'
+    option additionalProperties '0'
+    list property 'location:string:City and country e.g. Bogotá, Colombia'
+
+config tool 'get_wlan_ifname_list'
+    option enable '1'
+    option server 'oasis.util.tool.server'
+    option type 'function'
+    option description 'Get the list of WLAN interface names.'
+    option additionalProperties '0'
+
+config tool 'echo'
+    option enable '1'
+    option server 'oasis.util.tool.server'
+    option type 'function'
+    option description 'Echoes back the received parameters.'
+    list required 'param1'
+    list required 'param2'
+    option additionalProperties '0'
+    list property 'param1:string:Parameter 1 (string)'
+    list property 'param2:string:Parameter 2 (string)'
+]]
+
+--[[
+ - [Json Data (OpenAI)] -
+    {
+    "id": "chatcmpl-xxxx",
+    "object": "chat.completion",
+    "choices": [
+        {
+        "index": 0,
+        "message": {
+            "role": "assistant",
+            "content": null,
+            "function_call": {
+            "name": "echo",
+            "arguments": "{ \"param1\": \"hello\", \"param2\": \"world\" }"
+            }
+        },
+        "finish_reason": "function_call"
+        }
+    ],
+    "created": 1234567890,
+    "model": "gpt-4-0613"
+    }
+
+ - [Lua Table (OpenAI)] -
+    local response = {
+        id = "chatcmpl-xxxx",
+        object = "chat.completion",
+        choices = {
+            {
+                index = 0,
+                message = {
+                    role = "assistant",
+                    content = nil,
+                    function_call = {
+                        name = "echo",
+                        arguments = '{ "param1": "hello", "param2": "world" }'
+                    }
+                },
+                finish_reason = "function_call"
+            }
+        },
+        created = 1234567890,
+        model = "gpt-4-0613"
+    }
+]]
+
+local exec_server_tool = function(tool_name, data)
+    local found = false
+    local result = {}
+    uci:foreach("oasis", "tool", function(s)
+        if s[".name"] == tool_name and s.enable == "1" then
+            found = true
+            local server = s.server
+            result = util.ubus(server, tool_name, data)
+            debug:log("oasis-mod-tool.log", string.format("Result for tool '%s': %s", tool_name, tostring(result)))
+            return false
+        end
+    end)
+    if not found then
+        debug:log("oasis-mod-tool.log", string.format("Tool '%s' not found or not enabled.", tool_name))
+    end
+
+    return result
+end
+
+local function function_call(response)
+    -- Todo: write some ai service code
+    local choice = response.choices[1]
+    if choice and choice.message and choice.message.function_call then
+        local tool_name = choice.message.function_call.name
+        local args_json = choice.message.function_call.arguments
+        local args = jsonc.parse(args_json)
+        local result = exec_server_tool(tool_name, args)
+        return result
+    end
 end
 
 return {
     setup_server_config = setup_server_config,
     update_server_info = update_server_info,
-    execute_target_server_tool = execute_target_server_tool,
+    get_function_call_schema = get_function_call_schema,
+    function_call = function_call,
 }
