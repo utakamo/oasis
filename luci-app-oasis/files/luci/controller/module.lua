@@ -874,6 +874,23 @@ function load_server_info()
         list[s.server].funcs[#list[s.server].funcs + 1] = {}
         list[s.server].funcs[#list[s.server].funcs].name = s.name
         list[s.server].funcs[#list[s.server].funcs].enable = s.enable
+
+        if s.description then
+            list[s.server].funcs[#list[s.server].funcs].description = s.description
+        end
+
+        if s.property then
+            for _, prop in ipairs(s.property) do
+                if not list[s.server].funcs[#list[s.server].funcs].property then
+                    list[s.server].funcs[#list[s.server].funcs].property = {}
+                end
+                local name, typ, desc = prop:match("([^:]+):([^:]+):(.+)")
+                if name and typ then
+                    local idx = #list[s.server].funcs[#list[s.server].funcs].property + 1
+                    list[s.server].funcs[#list[s.server].funcs].property[idx] = { name = name, type = typ, description = desc or "" }
+                end
+            end
+        end
     end)
 
     for server, _ in pairs(list) do
