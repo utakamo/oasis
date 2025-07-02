@@ -10,6 +10,7 @@ local misc          = require("oasis.chat.misc")
 local datactrl      = require("oasis.chat.datactrl")
 local nixio         = require("nixio")
 local oasis_ubus    = require("oasis.ubus.util")
+local client        = require("oasis.local.tool.client")
 local debug         = require("oasis.chat.debug")
 
 module("luci.controller.luci-app-oasis.module", package.seeall)
@@ -56,6 +57,7 @@ function index()
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-local-tools-info"}, call("load_local_tools_info"), nil).leaf = true
+    entry({"admin", "network", "oasis", "load-server-info"}, call("load_server_info"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -854,23 +856,32 @@ function load_remote_mcp_server_info()
     luci_http.write_json(servers)
 end
 
---[[
-    [
-        {
-            "name": "deepwiki",
-            "type": "mcp",
-            "server_label": "deepwiki",
-            "server_url": "https://mcp.deepwiki.com/mcp",
-            "require_approval": "never",
-            "allowed_tools": ["ask_question"]
-        },
-        {
-            "name": "another",
-            "type": "mcp",
-            "server_label": "another",
-            "server_url": "https://another.example.com/mcp",
-            "require_approval": "manual",
-            "allowed_tools": ["foo", "bar"]
-        }
-    ]
-]]
+function load_server_info()
+
+    local list = {}
+
+    uci:foreach(common.db.uci.config, common.db.uci.sect.tool, function(s)
+
+        if not list[s.server] then
+            list[s.server] = {}
+            list[s.server].status = "loading"
+        end
+
+        if not list[s.server].funcs then
+            list[s.server].funcs = {}      
+        end
+
+        list[s.server].funcs[#list[s.server].funcs + 1] = {}
+        list[s.server].funcs[#list[s.server].funcs].name = s.name
+        list[s.server].funcs[#list[s.server].funcs].enable = s.enable
+    end)
+
+    for server, _ in pairs(list) do
+        if client.check_server_loaded(server) then
+            list[server].status = "loaded"
+        end
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(list)
+end
