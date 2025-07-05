@@ -47,7 +47,6 @@ local fs        = require("nixio.fs")
 local ubus_server_app_dir = "/usr/libexec/rpcd"
 
 local setup_server_config = function(server_name)
-
     local server_path = ubus_server_app_dir .. server_name
     local meta = sys.exec(server_path .. " meta")
 
@@ -55,13 +54,16 @@ local setup_server_config = function(server_name)
     -- Check meta command success
 
     local data = jsonc.parse(meta)
+    local created_sections = {}
 
-    for _, tool in pairs(data) do
+    for tool_name, tool in pairs(data) do
         local s = uci:section("oasis", "tool")
+        uci:set("oasis", s, "name", tool_name)
         uci:set("oasis", s, "server", server_name)
         uci:set("oasis", s, "enable", "1")
         uci:set("oasis", s, "type", "function")
         uci:set("oasis", s, "description", tool.tool_desc or "")
+        uci:set("oasis", s, "conflict", "0")
 
         -- required parameter
         if tool.args then
@@ -83,6 +85,7 @@ local setup_server_config = function(server_name)
                 uci:add("oasis", s, "property", string.format("%s:%s:%s", param, uci_type, desc))
             end
         end
+        table.insert(created_sections, {section = s, name = tool_name})
     end
     uci:commit("oasis")
 end
@@ -100,6 +103,25 @@ local listup_server_candidate = function()
   return result
 end
 
+local check_tool_name_conflict = function()
+    -- Check Conflict Tool Name
+    -- If the value of the conflict option is set to 1, usage will be prohibited.
+    local name_to_sections = {}
+    uci:foreach("oasis", "tool", function(s)
+        if s.name then
+            name_to_sections[s.name] = name_to_sections[s.name] or {}
+            table.insert(name_to_sections[s.name], s[".name"])
+        end
+    end)
+    for _, sections in pairs(name_to_sections) do
+        if #sections > 1 then
+            for _, sec in ipairs(sections) do
+                uci:set("oasis", sec, "conflict", "1")
+            end
+        end
+    end
+end
+
 local update_server_info = function()
     local servers = listup_server_candidate()
     if servers then
@@ -107,6 +129,7 @@ local update_server_info = function()
             setup_server_config(server_name)
         end
     end
+    check_tool_name_conflict()
 end
 
 -- This function is called when sending a message to the LLM.
@@ -175,7 +198,8 @@ end
 
 --[[
 [Sample UCI Config]
-config tool 'get_weather'
+config tool
+    option name 'get_weather'
     option enable '1'
     option conflict '0'
     option server 'oasis.util.tool.server'
@@ -185,7 +209,8 @@ config tool 'get_weather'
     option additionalProperties '0'
     list property 'location:string:City and country e.g. Bogotá, Colombia'
 
-config tool 'get_wlan_ifname_list'
+config tool
+    option name 'get_wlan_ifname_list'
     option enable '1'
     option conflict '0'
     option server 'oasis.util.tool.server'
@@ -193,7 +218,8 @@ config tool 'get_wlan_ifname_list'
     option description 'Get the list of WLAN interface names.'
     option additionalProperties '0'
 
-config tool 'echo'
+config tool
+    option name 'echo'
     option enable '1'
     option conflict '0'
     option server 'oasis.util.tool.server'
