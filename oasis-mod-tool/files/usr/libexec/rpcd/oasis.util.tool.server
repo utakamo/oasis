@@ -3,7 +3,7 @@
 --[[
 
 # Oasis Local Tool (OLT) Server
- This server script is implemented using features inspired by the Model Context Protocol.
+ This server script is implemented based on concepts inspired by the Model Context Protocol and Agents.json.
  By leveraging UBUS, an integral part of the OpenWrt ecosystem, the client and server (this script)
  can cooperate to allow the AI to access the tools provided by this script.
  On OpenWrt environments with Oasis and oasis-mod-tool installed, third-party developers
