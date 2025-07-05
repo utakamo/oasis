@@ -6,7 +6,6 @@ PKG_RELEASE:=1
 
 INIT_DIR = /etc/init.d
 LIBRARY_DIR = /usr/lib/lua
-OASIS_MERGE_CONFIG_DIR = /etc/oasis/tool
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
 
 include $(INCLUDE_DIR)/package.mk
@@ -24,12 +23,10 @@ endef
 
 define Package/oasis-mod-tool/install
 	$(INSTALL_DIR) $(1)$(INIT_DIR)
-	$(INSTALL_DIR) $(1)$(OASIS_MERGE_CONFIG_DIR)
 	$(INSTALL_DIR) $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service
 	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/local/tool
 	$(INSTALL_BIN) ./files/etc/init.d/olt_tool.init $(1)$(INIT_DIR)/olt_tool
-	$(INSTALL_DATA) ./files/etc/oasis/tool/tool.config $(1)$(OASIS_MERGE_CONFIG_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.util.tool.server $(1)$(UBUS_SERVER_APP_DIR)/oasis.util.tool.server
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/function_calling.lua $(1)$(LIBRARY_DIR)/oasis/local/function_calling.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/client.lua $(1)$(LIBRARY_DIR)/oasis/local/tool/client.lua
@@ -44,7 +41,6 @@ define Package/oasis-mod-tool/postinst
 	#!/bin/sh
 	uci set oasis.support.local_tools=1
 	uci set oasis.support.remote_mcp_server=1
-	uci -f /etc/oasis/tool/tool.config -m import oasis
 	uci commit oasis
 	#TODO: Check below
 	#mkdir -p /tmp/oasis
