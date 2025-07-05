@@ -82,22 +82,22 @@ local run = function(arg)
 
     if arg[1] == "list" then
         local _, rv = nil, {}
-        for _, tool in pairs(methods) do rv[_] = tool.args or {} end
+        for _, tl in pairs(methods) do rv[_] = tl.args or {} end
         print((jsonc.stringify(rv):gsub(":%[%]", ":{}")))
     elseif arg[1] == "meta" then
         local _, rv = nil, {}
-        for name, tool in pairs(methods) do
+        for name, tl in pairs(methods) do
             rv[name] = {
-                args = tool.args or {},
-                args_desc = tool.args_desc or {},
-                tool_desc = tool.tool_desc or ""
+                args = tl.args or {},
+                args_desc = tl.args_desc or {},
+                tool_desc = tl.tool_desc or ""
             }
         end
         print((jsonc.stringify(rv):gsub(":%[%]", ":{}")))
     elseif arg[1] == "call" then
         local args = parseInput()
-        local tool = validateArgs(arg[2], args)
-        local run = tool.call(args)
+        local tgt_tool = validateArgs(arg[2], args)
+        local run = tgt_tool.call(args)
         print(run.result)
         os.exit(run.code or 0)
     end
