@@ -23,9 +23,9 @@ function index()
     entry({"admin", "network", "oasis"}, firstchild(), "Oasis", 30).dependent=false
     entry({"admin", "network", "oasis", "icons"}, template("luci-app-oasis/icons"), "Icon", 60).dependent=false
     entry({"admin", "network", "oasis", "rollback-list"}, template("luci-app-oasis/rollback-list"), "Rollback List", 50).dependent=false
-    -- if local_tools or remote_mcp_server then
-    --     entry({"admin", "network", "oasis", "rollback-list"}, template("luci-app-oasis/tools-mcp"), "Tools/Remote MCP", 40).dependent=false
-    -- end
+    if local_tools or remote_mcp_server then
+         entry({"admin", "network", "oasis", "tools"}, template("luci-app-oasis/tools"), "Tools", 40).dependent=false
+    end
     entry({"admin", "network", "oasis", "sysmsg"}, template("luci-app-oasis/sysmsg"), "System Message", 30).dependent=false
     entry({"admin", "network", "oasis", "setting"}, cbi("luci-app-oasis/setting"), "General Setting", 20).dependent=false
     entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 10).dependent=false

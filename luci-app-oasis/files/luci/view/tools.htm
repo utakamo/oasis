@@ -1,0 +1,129 @@
+<%+header%>
+
+<style>
+  #oasis-tool-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: sans-serif;
+  }
+
+  h2, h3 {
+    margin: 0;
+    padding: 5px 0;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    width: 400px;
+    height: 400px;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .cell {
+    background-color: #eee;
+    border: 1px solid #666;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .cell-title {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-bottom: 5px;
+  }
+
+  .cell-description {
+    flex: 1;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+    color: #444;
+  }
+
+  .cell-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .toggle-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9em;
+  }
+
+  .toggle-button.disabled {
+    background-color: #888;
+  }
+</style>
+
+<h2>Local Tools</h2>
+
+<div id="oasis-tool-container">
+  <!--
+  <h3>ServerA</h3>
+  <div class="grid">
+    <div class="cell">
+      <div class="cell-title">Function 1</div>
+      <div class="cell-description">This function performs action A.</div>
+      <div class="cell-footer">
+        <button class="toggle-button">Enable</button>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="cell-title">Function 2</div>
+      <div class="cell-description">This function handles process B.</div>
+      <div class="cell-footer">
+        <button class="toggle-button">Enable</button>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="cell-title">Function 3</div>
+      <div class="cell-description">This function manages task C.</div>
+      <div class="cell-footer">
+        <button class="toggle-button">Enable</button>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="cell-title">Function 4</div>
+      <div class="cell-description">This function executes operation D.</div>
+      <div class="cell-footer">
+        <button class="toggle-button">Enable</button>
+      </div>
+    </div>
+  </div>
+  -->
+</div>
+
+<h2>Remote MCP Server</h2>
+
+<div id="oasis-mcp-containe">
+  <!-- Remote tools will be added here -->
+</div>
+
+<script>
+  document.querySelectorAll('.toggle-button').forEach(button => {
+    button.addEventListener('click', () => {
+      const isEnabled = button.textContent === 'Enable';
+      button.textContent = isEnabled ? 'Disable' : 'Enable';
+      button.classList.toggle('disabled', isEnabled);
+    });
+  });
+</script>
+
+<%+footer%>
