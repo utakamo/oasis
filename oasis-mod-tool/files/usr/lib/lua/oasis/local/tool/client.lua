@@ -177,6 +177,7 @@ end
 [Sample UCI Config]
 config tool 'get_weather'
     option enable '1'
+    option conflict '0'
     option server 'oasis.util.tool.server'
     option type 'function'
     option description 'Get current temperature for a given location.'
@@ -186,6 +187,7 @@ config tool 'get_weather'
 
 config tool 'get_wlan_ifname_list'
     option enable '1'
+    option conflict '0'
     option server 'oasis.util.tool.server'
     option type 'function'
     option description 'Get the list of WLAN interface names.'
@@ -193,6 +195,7 @@ config tool 'get_wlan_ifname_list'
 
 config tool 'echo'
     option enable '1'
+    option conflict '0'
     option server 'oasis.util.tool.server'
     option type 'function'
     option description 'Echoes back the received parameters.'
@@ -270,6 +273,8 @@ end
 
 local function function_call(response)
     -- Todo: write some ai service code
+
+    -- OpenAI
     local choice = response.choices[1]
     if choice and choice.message and choice.message.function_call then
         local tool_name = choice.message.function_call.name
