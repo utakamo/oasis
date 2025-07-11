@@ -1,0 +1,15 @@
+#!/usr/bin/env lua
+
+-- olt: Oasis Local Tool
+local common        = require("oasis.common")
+local olt_client    = require("oasis.local.tool.client")
+local uci           = require("luci.model.uci").cursor()
+
+if arg[1] == "init" then
+    olt_client.update_server_info()
+elseif arg[1] == "delete" then
+    uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "0")
+    uci:set(common.db.uci.cfg, common.db.uci.sect.support, "remote_mcp_server", "0")
+    uci:delete_all(common.db.uci.cfg, common.db.uci.sect.tool)
+    uci:commit(common.db.uci.cfg)
+end

@@ -3,5 +3,9 @@
 START=99
 
 start() {
-    lua oasis-tool-setup
+    lua /usr/bin/oasis_tool_setup init
+}
+
+stop() {
+    lua /usr/bin/oasis_tool_setup delete
 }
