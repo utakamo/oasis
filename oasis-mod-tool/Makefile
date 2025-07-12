@@ -34,7 +34,7 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_BIN) ./files/usr/bin/oasis_tool_setup $(1)$(USR_BIN_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/olt_tool.init $(1)$(INIT_DIR)/olt_tool
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.lua.tool.server $(1)$(LUA_UBUS_SERVER_APP_DIR)/oasis.lua.tool.server
-	$(INSTALL_DATA) ./files/usr/share/rpcd/ucode/sample_server.uc $(1)$(UCODE_UBUS_SERVER_APP_DIR)/sample_server.uc
+	$(INSTALL_DATA) ./files/usr/share/rpcd/ucode/oasis_plugin_server.uc $(1)$(UCODE_UBUS_SERVER_APP_DIR)/oasis_plugin_server.uc
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/client.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/client.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/server.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/server.lua
 	$(INSTALL_DATA) ./files/usr/share/ucode/oasis/local/tool/server.uc $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool/server.uc

@@ -7,7 +7,7 @@
  root@OpenWrt:~# /usr/libexec/rpcd/oasis.lua.tool.server meta
 
  2. Execute (uCode Script Ver):
- root@OpenWrt:~# ucode /usr/share/rpcd/ucode/plugin-for-oasis.uc
+ root@OpenWrt:~# ucode /usr/share/rpcd/ucode/oasis_plugin_server.uc
 
  Output(Example):
     {
