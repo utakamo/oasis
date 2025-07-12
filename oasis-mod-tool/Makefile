@@ -4,10 +4,12 @@ PKG_NAME:=oasis-mod-tool
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
+USR_BIN_DIR = /usr/bin
 INIT_DIR = /etc/init.d
-LIBRARY_DIR = /usr/lib/lua
-UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
-
+LUA_LIBRARY_DIR = /usr/lib/lua
+UCODE_LIBRARY_DIR = /usr/share/ucode
+LUA_UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
+UCODE_UBUS_SERVER_APP_DIR = /usr/share/rpcd/ucode
 include $(INCLUDE_DIR)/package.mk
 
 define Package/oasis-mod-tool
@@ -22,24 +24,29 @@ define Build/Compile
 endef
 
 define Package/oasis-mod-tool/install
+	$(INSTALL_DIR) $(1)$(USR_BIN_DIR)
 	$(INSTALL_DIR) $(1)$(INIT_DIR)
-	$(INSTALL_DIR) $(1)$(UBUS_SERVER_APP_DIR)
-	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service
-	$(INSTALL_DIR) $(1)$(LIBRARY_DIR)/oasis/local/tool
+	$(INSTALL_DIR) $(1)$(LUA_UBUS_SERVER_APP_DIR)
+	$(INSTALL_DIR) $(1)$(UCODE_UBUS_SERVER_APP_DIR)
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool
+	$(INSTALL_DIR) $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool
+	$(INSTALL_BIN) ./files/usr/bin/oasis_tool_setup $(1)$(USR_BIN_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/olt_tool.init $(1)$(INIT_DIR)/olt_tool
-	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.util.tool.server $(1)$(UBUS_SERVER_APP_DIR)/oasis.util.tool.server
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/function_calling.lua $(1)$(LIBRARY_DIR)/oasis/local/function_calling.lua
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/client.lua $(1)$(LIBRARY_DIR)/oasis/local/tool/client.lua
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/server.lua $(1)$(LIBRARY_DIR)/oasis/local/tool/server.lua
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/anthropic.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/anthropic.lua
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/google.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/google.lua
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/ollama.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/ollama.lua
-	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/openai.lua $(1)$(LIBRARY_DIR)/oasis/remote/mcp/service/openai.lua
+	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.lua.tool.server $(1)$(LUA_UBUS_SERVER_APP_DIR)/oasis.lua.tool.server
+	$(INSTALL_DATA) ./files/usr/share/rpcd/ucode/sample_server.uc $(1)$(UCODE_UBUS_SERVER_APP_DIR)/sample_server.uc
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/client.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/client.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/server.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/server.lua
+	$(INSTALL_DATA) ./files/usr/share/ucode/oasis/local/tool/server.uc $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool/server.uc
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/anthropic.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/anthropic.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/google.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/google.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/ollama.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/ollama.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/openai.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/openai.lua
 endef
 
 define Package/oasis-mod-tool/postinst
 	#!/bin/sh
-	uci set oasis.support.local_tools=1
+	uci set oasis.support.local_tool=1
 	uci set oasis.support.remote_mcp_server=1
 	uci commit oasis
 	#TODO: Check below
