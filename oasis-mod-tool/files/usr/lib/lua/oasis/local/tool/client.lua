@@ -45,6 +45,7 @@ local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
 
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
+local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
 
 local setup_lua_server_config = function(server_name)
     local server_path = lua_ubus_server_app_dir .. server_name
@@ -98,8 +99,66 @@ local setup_lua_server_config = function(server_name)
     uci:commit(common.db.uci.cfg)
 end
 
-local listup_server_candidate = function()
-  local files = fs.dir(ubus_server_app_dir)
+local setup_ucode_server_config = function(server_name)
+
+    local server_path = ucode_ubus_server_app_dir .. server_name
+    local meta = sys.exec("ucode " .. server_path)
+    debug:log("oasis-mod-tool.log", meta)
+
+    local data = jsonc.parse(meta)
+
+    if not data then
+        debug:log("oasis-mod-tool.log", "Script: " .. server_name .. " is not olt server...")
+        return
+    end
+
+    local created_sections = {}
+
+    for server, tbl in pairs(data) do
+        for tool, def in pairs(tbl) do
+            local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
+            uci:set(common.db.uci.cfg, s, "name", tool)
+            uci:set(common.db.uci.cfg, s, "server", server)
+            uci:set(common.db.uci.cfg, s, "enable", "1")
+            uci:set(common.db.uci.cfg, s, "type", "function")
+            uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
+            uci:set(common.db.uci.cfg, s, "conflict", "0")
+
+            -- required parameter
+            if def.args then
+                for param, _ in pairs(def.args) do
+                    uci:set(common.db.uci.cfg, s, "required", param)
+                end
+            end
+            uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
+
+            -- properties
+            if def.args then
+                for param, typ in pairs(def.args) do
+                    local desc = ""
+                    if def.args_desc and type(def.args_desc) == "table" then
+                        desc = def.args_desc[1] or ""
+                    end
+                    local type_map = {}
+                    type_map["8"] = "number"
+                    type_map["16"] = "number"
+                    type_map["32"] = "number"
+                    type_map["64"] = "number"
+                    type_map["true"] = "boolean"
+                    type_map["false"] = "boolean"
+                    type_map["string"] = "string"
+                    local param_type = type_map[typ] or type_map.string
+                    uci:set(common.db.uci.cfg, s, "property", string.format("%s:%s:%s", param, param_type, desc))
+                end
+            end
+            table.insert(created_sections, {section = s, name = tool})
+        end
+    end
+    uci:commit(common.db.uci.cfg)
+end
+
+local listup_server_candidate = function(dir)
+  local files = fs.dir(dir)
   if not files then
     return nil
   end
@@ -143,6 +202,15 @@ local update_server_info = function()
             setup_lua_server_config(server_name)
         end
     end
+
+    -- rpcd ubus server (uCode Script Ver)
+    local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
+    if ucode_servers then
+        for _, server_name in ipairs(ucode_servers) do
+            setup_ucode_server_config(server_name)
+        end
+    end
+
     check_tool_name_conflict()
 end
 
