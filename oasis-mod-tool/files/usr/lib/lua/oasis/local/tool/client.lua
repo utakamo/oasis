@@ -1,11 +1,15 @@
 --[[
 # Note: How to retrieve tool list infomation
- Target Tool Server ---> "oasis.util.tool.server"
+ - Ex1: Lua Script Ver) Target Tool Server ---> "oasis.lua.tool.server"
+ - Ex2: uCode Script Ver) Target Tool Server ---> "oasis.ucode.tool.server1" and "oasis.ucode.tool.server2"
 
- Execute:
- root@OpenWrt:~# /usr/libexec/rpcd/oasis.util.tool.server meta
+ 1. Execute (Lua Script Ver):
+ root@OpenWrt:~# /usr/libexec/rpcd/oasis.lua.tool.server meta
 
- Output:
+ 2. Execute (uCode Script Ver):
+ root@OpenWrt:~# ucode /usr/share/rpcd/ucode/plugin-for-oasis.uc
+
+ Output(Example):
     {
         "get_weather": {
             "tool_desc": "Get current temperature for a given location.",
