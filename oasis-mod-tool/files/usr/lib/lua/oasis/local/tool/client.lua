@@ -57,21 +57,21 @@ local setup_server_config = function(server_name)
     local created_sections = {}
 
     for tool_name, tool in pairs(data) do
-        local s = uci:section("oasis", "tool")
-        uci:set("oasis", s, "name", tool_name)
-        uci:set("oasis", s, "server", server_name)
-        uci:set("oasis", s, "enable", "1")
-        uci:set("oasis", s, "type", "function")
-        uci:set("oasis", s, "description", tool.tool_desc or "")
-        uci:set("oasis", s, "conflict", "0")
+        local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
+        uci:set(common.db.uci.cfg, s, "name", tool_name)
+        uci:set(common.db.uci.cfg, s, "server", server_name)
+        uci:set(common.db.uci.cfg, s, "enable", "1")
+        uci:set(common.db.uci.cfg, s, "type", "function")
+        uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
+        uci:set(common.db.uci.cfg, s, "conflict", "0")
 
         -- required parameter
         if tool.args then
             for param, _ in pairs(tool.args) do
-                uci:add("oasis", s, "required", param)
+                uci:set(common.db.uci.cfg, s, "required", param)
             end
         end
-        uci:set("oasis", s, "additionalProperties", "0")
+        uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
 
         -- properties
         if tool.args then
@@ -82,12 +82,12 @@ local setup_server_config = function(server_name)
                 end
                 local type_map = { a_string = "string", integer = "number", boolean = "boolean" }
                 local uci_type = type_map[typ] or typ
-                uci:add("oasis", s, "property", string.format("%s:%s:%s", param, uci_type, desc))
+                uci:set(common.db.uci.cfg, s, "property", string.format("%s:%s:%s", param, uci_type, desc))
             end
         end
         table.insert(created_sections, {section = s, name = tool_name})
     end
-    uci:commit("oasis")
+    uci:commit(common.db.uci.cfg)
 end
 
 local listup_server_candidate = function()
@@ -107,7 +107,7 @@ local check_tool_name_conflict = function()
     -- Check Conflict Tool Name
     -- If the value of the conflict option is set to 1, usage will be prohibited.
     local name_to_sections = {}
-    uci:foreach("oasis", "tool", function(s)
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         if s.name then
             name_to_sections[s.name] = name_to_sections[s.name] or {}
             table.insert(name_to_sections[s.name], s[".name"])
@@ -116,7 +116,7 @@ local check_tool_name_conflict = function()
     for _, sections in pairs(name_to_sections) do
         if #sections > 1 then
             for _, sec in ipairs(sections) do
-                uci:set("oasis", sec, "conflict", "1")
+                uci:set(common.db.uci.cfg, sec, "conflict", "1")
             end
         end
     end
@@ -136,7 +136,7 @@ end
 local get_function_call_schema = function()
     local tools = {}
 
-    uci:foreach(common.db.uci.config, common.db.uci.sect.tool, function(s)
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         if s.enable == "1" then
             local required = s.required or {}
             if type(required) == "string" then
@@ -281,7 +281,7 @@ config tool
 local exec_server_tool = function(tool_name, data)
     local found = false
     local result = {}
-    uci:foreach("oasis", "tool", function(s)
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         if s[".name"] == tool_name and s.enable == "1" then
             found = true
             local server = s.server
