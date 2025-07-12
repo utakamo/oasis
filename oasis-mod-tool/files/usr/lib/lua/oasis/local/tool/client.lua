@@ -44,16 +44,24 @@ local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
 
-local ubus_server_app_dir = "/usr/libexec/rpcd"
+local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 
-local setup_server_config = function(server_name)
-    local server_path = ubus_server_app_dir .. server_name
+local setup_lua_server_config = function(server_name)
+    local server_path = lua_ubus_server_app_dir .. server_name
     local meta = sys.exec(server_path .. " meta")
 
     -- Todo:
     -- Check meta command success
 
     local data = jsonc.parse(meta)
+
+    if not data then
+        debug:log("oasis-mod-tool.log", server_name .. " is not olt server...")
+        return
+    end
+
+    debug:log("oasis-mod-tool.log", server_name .. " is olt server!!")
+
     local created_sections = {}
 
     for tool_name, tool in pairs(data) do
@@ -123,10 +131,16 @@ local check_tool_name_conflict = function()
 end
 
 local update_server_info = function()
-    local servers = listup_server_candidate()
-    if servers then
-        for _, server_name in ipairs(servers) do
-            setup_server_config(server_name)
+
+    -- Initialize: delete all tool section
+    uci:delete_all(common.db.uci.cfg, common.db.uci.sect.tool)
+    uci:commit(common.db.uci.cfg)
+
+    -- rpcd ubus server (Lua Script Ver)
+    local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
+    if lua_servers then
+        for _, server_name in ipairs(lua_servers) do
+            setup_lua_server_config(server_name)
         end
     end
     check_tool_name_conflict()
@@ -202,7 +216,7 @@ config tool
     option name 'get_weather'
     option enable '1'
     option conflict '0'
-    option server 'oasis.util.tool.server'
+    option server 'oasis.lua.tool.server'
     option type 'function'
     option description 'Get current temperature for a given location.'
     list required 'location'
@@ -213,7 +227,7 @@ config tool
     option name 'get_wlan_ifname_list'
     option enable '1'
     option conflict '0'
-    option server 'oasis.util.tool.server'
+    option server 'oasis.lua.tool.server'
     option type 'function'
     option description 'Get the list of WLAN interface names.'
     option additionalProperties '0'
@@ -222,7 +236,7 @@ config tool
     option name 'echo'
     option enable '1'
     option conflict '0'
-    option server 'oasis.util.tool.server'
+    option server 'oasis.lua.tool.server'
     option type 'function'
     option description 'Echoes back the received parameters.'
     list required 'param1'
@@ -331,7 +345,7 @@ local function check_server_loaded(server_name)
 end
 
 return {
-    setup_server_config = setup_server_config,
+    setup_lua_server_config = setup_lua_server_config,
     update_server_info = update_server_info,
     get_function_call_schema = get_function_call_schema,
     function_call = function_call,
