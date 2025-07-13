@@ -72,6 +72,7 @@ local setup_lua_server_config = function(server_name)
     for tool_name, tool in pairs(data) do
         local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
         uci:set(common.db.uci.cfg, s, "name", tool_name)
+        uci:set(common.db.uci.cfg, s, "type", "lua")
         uci:set(common.db.uci.cfg, s, "server", server_name)
         uci:set(common.db.uci.cfg, s, "enable", "1")
         uci:set(common.db.uci.cfg, s, "type", "function")
@@ -122,6 +123,7 @@ local setup_ucode_server_config = function(server_name)
         for tool, def in pairs(tbl) do
             local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
             uci:set(common.db.uci.cfg, s, "name", tool)
+            uci:set(common.db.uci.cfg, s, "type", "ucode")
             uci:set(common.db.uci.cfg, s, "server", server)
             uci:set(common.db.uci.cfg, s, "enable", "1")
             uci:set(common.db.uci.cfg, s, "type", "function")
@@ -418,6 +420,7 @@ end
 
 return {
     setup_lua_server_config = setup_lua_server_config,
+    setup_ucode_server_config = setup_ucode_server_config,
     update_server_info = update_server_info,
     get_function_call_schema = get_function_call_schema,
     function_call = function_call,
