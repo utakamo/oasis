@@ -18,8 +18,8 @@ module("luci.controller.luci-app-oasis.module", package.seeall)
 function index()
     entry({"admin", "network", "oasis"}, firstchild(), "Oasis", 30).dependent=false
     entry({"admin", "network", "oasis", "icons"}, template("luci-app-oasis/icons"), "Icon", 60).dependent=false
-    entry({"admin", "network", "oasis", "rollback-list"}, template("luci-app-oasis/rollback-list"), "Rollback List", 50).dependent=false
-    entry({"admin", "network", "oasis", "tools"}, template("luci-app-oasis/tools"), "Tools", 40).dependent=false
+    entry({"admin", "network", "oasis", "tools"}, template("luci-app-oasis/tools"), "Tools", 50).dependent=false
+    entry({"admin", "network", "oasis", "rollback-list"}, template("luci-app-oasis/rollback-list"), "Rollback List", 40).dependent=false
     entry({"admin", "network", "oasis", "sysmsg"}, template("luci-app-oasis/sysmsg"), "System Message", 30).dependent=false
     entry({"admin", "network", "oasis", "setting"}, cbi("luci-app-oasis/setting"), "General Setting", 20).dependent=false
     entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 10).dependent=false
@@ -852,47 +852,50 @@ end
 
 function load_server_info()
 
-    local list = {}
+    --[[
+    local tools = {}
 
-    uci:foreach(common.db.uci.config, common.db.uci.sect.tool, function(s)
-
-        if not list[s.server] then
-            list[s.server] = {}
-            list[s.server].status = "loading"
-        end
-
-        if not list[s.server].funcs then
-            list[s.server].funcs = {}      
-        end
-
-        list[s.server].funcs[#list[s.server].funcs + 1] = {}
-        list[s.server].funcs[#list[s.server].funcs].name = s.name
-        list[s.server].funcs[#list[s.server].funcs].enable = s.enable
-
-        if s.description then
-            list[s.server].funcs[#list[s.server].funcs].description = s.description
-        end
-
-        if s.property then
-            for _, prop in ipairs(s.property) do
-                if not list[s.server].funcs[#list[s.server].funcs].property then
-                    list[s.server].funcs[#list[s.server].funcs].property = {}
-                end
-                local name, typ, desc = prop:match("([^:]+):([^:]+):(.+)")
-                if name and typ then
-                    local idx = #list[s.server].funcs[#list[s.server].funcs].property + 1
-                    list[s.server].funcs[#list[s.server].funcs].property[idx] = { name = name, type = typ, description = desc or "" }
-                end
-            end
-        end
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(tbl)
+        tools[#tools + 1] = tbl
     end)
+    ]]
 
-    for server, _ in pairs(list) do
-        if client.check_server_loaded(server) then
-            list[server].status = "loaded"
+    local tools = uci:get_all(common.db.uci.cfg)
+
+    -- Delete unnecessary information
+    tools.debug      = nil
+    tools.rpc        = nil
+    tools.storage    = nil
+    tools.role       = nil
+    tools.support    = nil
+    tools.assist     = nil
+    tools.rollback   = nil
+
+    local server_list = {}
+    local seen = {}
+
+    for _, tool in pairs(tools) do
+        if not seen[tool.server] then
+            server_list[#server_list + 1] = tool.server
+            seen[tool.server] = true
         end
     end
 
+    local server_info = {}
+    for _, name in pairs(server_list) do
+            server_info[#server_info + 1] = {}
+            server_info[#server_info].name = name
+        if client.check_server_loaded(name) then
+            server_info[#server_info].status = "loaded"
+        else
+            server_info[#server_info].status = "loding"
+        end
+    end
+
+    local info = {}
+    info.tools = tools
+    info.server_info = server_info
+
     luci_http.prepare_content("application/json")
-    luci_http.write_json(list)
+    luci_http.write_json(info)
 end
