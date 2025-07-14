@@ -5,8 +5,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
     font-family: sans-serif;
   }
 
@@ -15,14 +13,17 @@
     padding: 5px 0;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+  .server-block {
     width: 400px;
-    height: 400px;
+    margin-top: 30px;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    margin-top: 20px;
+    width: 100%;
+    margin-top: 10px;
   }
 
   .cell {
@@ -36,6 +37,7 @@
   }
 
   .cell-title {
+    color: #666;
     font-weight: bold;
     font-size: 1.2em;
     margin-bottom: 5px;
@@ -58,72 +60,117 @@
     padding: 5px 10px;
     border: none;
     border-radius: 4px;
-    background-color: #4CAF50;
-    color: white;
     cursor: pointer;
     font-size: 0.9em;
+    transition: background-color 0.2s;
+  }
+
+  .toggle-button.enabled {
+    background-color: #4CAF50;
+    color: white;
   }
 
   .toggle-button.disabled {
     background-color: #888;
+    color: #fff;
   }
 </style>
 
 <h2>Local Tools</h2>
+<div id="oasis-tool-container"></div>
 
-<div id="oasis-tool-container">
-  <!--
-  <h3>ServerA</h3>
-  <div class="grid">
-    <div class="cell">
-      <div class="cell-title">Function 1</div>
-      <div class="cell-description">This function performs action A.</div>
-      <div class="cell-footer">
-        <button class="toggle-button">Enable</button>
-      </div>
-    </div>
-
-    <div class="cell">
-      <div class="cell-title">Function 2</div>
-      <div class="cell-description">This function handles process B.</div>
-      <div class="cell-footer">
-        <button class="toggle-button">Enable</button>
-      </div>
-    </div>
-
-    <div class="cell">
-      <div class="cell-title">Function 3</div>
-      <div class="cell-description">This function manages task C.</div>
-      <div class="cell-footer">
-        <button class="toggle-button">Enable</button>
-      </div>
-    </div>
-
-    <div class="cell">
-      <div class="cell-title">Function 4</div>
-      <div class="cell-description">This function executes operation D.</div>
-      <div class="cell-footer">
-        <button class="toggle-button">Enable</button>
-      </div>
-    </div>
-  </div>
-  -->
-</div>
-
+<!--
 <h2>Remote MCP Server</h2>
-
-<div id="oasis-mcp-containe">
-  <!-- Remote tools will be added here -->
-</div>
+<div id="oasis-mcp-containe"></div>
+-->
 
 <script>
-  document.querySelectorAll('.toggle-button').forEach(button => {
-    button.addEventListener('click', () => {
-      const isEnabled = button.textContent === 'Enable';
-      button.textContent = isEnabled ? 'Disable' : 'Enable';
-      button.classList.toggle('disabled', isEnabled);
+(function() {
+  const container = document.getElementById('oasis-tool-container');
+
+  function createServerBlock(serverName, tools) {
+    const block = document.createElement('div');
+    block.className = 'server-block';
+
+    const header = document.createElement('h3');
+    header.textContent = serverName;
+    block.appendChild(header);
+
+    const list = document.createElement('div');
+    list.className = 'list';
+
+    tools.forEach(tool => {
+      list.appendChild(createCard(tool));
     });
-  });
+
+    block.appendChild(list);
+    return block;
+  }
+
+  function createCard(tool) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+
+    const title = document.createElement('div');
+    title.className = 'cell-title';
+    title.textContent = tool.name || 'Unknown';
+
+    const desc = document.createElement('div');
+    desc.className = 'cell-description';
+    desc.textContent = tool.description || 'No description.';
+
+    const footer = document.createElement('div');
+    footer.className = 'cell-footer';
+
+    const btn = document.createElement('button');
+    btn.className = 'toggle-button';
+
+    let isEnabled = tool.enable === '1';
+    btn.textContent = isEnabled ? 'Enable' : 'Disable';
+    btn.classList.add(isEnabled ? 'enabled' : 'disabled');
+
+    btn.addEventListener('click', () => {
+      isEnabled = !isEnabled;
+      btn.textContent = isEnabled ? 'Enable' : 'Disable';
+      btn.classList.toggle('enabled', isEnabled);
+      btn.classList.toggle('disabled', !isEnabled);
+    });
+
+    footer.appendChild(btn);
+    cell.appendChild(title);
+    cell.appendChild(desc);
+    cell.appendChild(footer);
+
+    return cell;
+  }
+
+  function loadTools() {
+    fetch('<%=build_url("admin", "network", "oasis", "load-server-info")%>')
+      .then(response => response.json())
+      .then(data => {
+        const tools = data.tools || {};
+        const serverMap = {};
+
+        Object.values(tools).forEach(tool => {
+          if (tool[".type"] === "tool" && tool.type === "function") {
+            const server = tool.server || 'Unknown Server';
+            if (!serverMap[server]) serverMap[server] = [];
+            serverMap[server].push(tool);
+          }
+        });
+
+        Object.entries(serverMap).forEach(([server, serverTools]) => {
+          const block = createServerBlock(server, serverTools);
+          container.appendChild(block);
+        });
+      })
+      .catch(err => {
+        console.error('Failed to load server info:', err);
+      });
+  }
+
+  loadTools();
+})();
 </script>
 
 <%+footer%>
