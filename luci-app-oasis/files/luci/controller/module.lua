@@ -871,6 +871,12 @@ function load_server_info()
     tools.assist     = nil
     tools.rollback   = nil
 
+    for key, tbl in pairs(tools) do
+        if (tbl[".type"] == "service") or ( tbl[".type"] == "chat") then
+            tools[key] = nil
+        end
+    end
+
     local server_list = {}
     local seen = {}
 
