@@ -1,5 +1,6 @@
 #!/usr/bin/env lua
 
+local ubus  = require("ubus")
 local uci   = require("luci.model.uci").cursor()
 local sys   = require("luci.sys")
 -- local debug = require("oasis.chat.debug")
@@ -324,6 +325,26 @@ local check_chat_format = function(chat)
     return true
 end
 
+local function check_server_loaded(server_name)
+
+    -- timeout: 1000ms
+    local conn = ubus.connect(nil, 1000)
+    if not conn then
+        return false
+    end
+
+    local objects = conn:objects()
+    for _, obj in ipairs(objects) do
+        if obj == server_name then
+            conn:close()
+            return true
+        end
+    end
+
+    conn:close()
+    return false
+end
+
 return {
     db = db,
     ai = ai,
@@ -340,4 +361,5 @@ return {
     generate_chat_id = generate_chat_id,
     generate_service_id = generate_service_id,
     check_chat_format = check_chat_format,
+    check_server_loaded = check_server_loaded,
 }

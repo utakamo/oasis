@@ -883,7 +883,7 @@ function load_server_info()
     for _, name in pairs(server_list) do
             server_info[#server_info + 1] = {}
             server_info[#server_info].name = name
-        if client.check_server_loaded(name) then
+        if common.check_server_loaded(name) then
             server_info[#server_info].status = "loaded"
         else
             server_info[#server_info].status = "loding"

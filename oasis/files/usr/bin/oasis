@@ -1,6 +1,15 @@
 #!/usr/bin/env lua
 
-local oasis = require("oasis.chat.main")
+local common = require("oasis.common")
+
+if  (not common.check_server_loaded("oasis"))
+        or (not common.check_server_loaded("oasis.chat")) 
+        or (not common.check_server_loaded("oasis.title")) then
+    print("Oasis is initializing. Please wait...")
+    return
+end
+
+local oasis  = require("oasis.chat.main")
 
 local options_spec = {
     ["-n"] = "n",

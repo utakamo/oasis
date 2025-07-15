@@ -43,7 +43,6 @@ local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local debug     = require("oasis.chat.debug")
 local util      = require("luci.util")
-local ubus      = require("ubus")
 local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
@@ -399,30 +398,10 @@ local function function_call(response)
     end
 end
 
-local function check_server_loaded(server_name)
-
-    local conn = ubus.connect()
-    if not conn then
-        return false
-    end
-
-    local objects = conn:objects()
-    for _, obj in ipairs(objects) do
-        if obj == server_name then
-            conn:close()
-            return true
-        end
-    end
-
-    conn:close()
-    return false
-end
-
 return {
     setup_lua_server_config = setup_lua_server_config,
     setup_ucode_server_config = setup_ucode_server_config,
     update_server_info = update_server_info,
     get_function_call_schema = get_function_call_schema,
     function_call = function_call,
-    check_server_loaded = check_server_loaded,
 }
