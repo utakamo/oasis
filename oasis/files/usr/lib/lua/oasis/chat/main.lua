@@ -119,7 +119,7 @@ local add = function(args)
     output.type = string.format(output.type, val.type.disable, val.type.enable)
     output.budget_tokens = string.format(output.budget_tokens, val.budget_tokens.min, val.budget_tokens.max)
 
-    setup.identifier = common.generate_service_id()
+    setup.identifier = common.generate_service_id("seed")
 
     if (not args.service) then
         repeat

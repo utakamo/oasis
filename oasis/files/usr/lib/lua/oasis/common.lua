@@ -256,7 +256,7 @@ local generate_chat_id = function()
     return id
 end
 
-local generate_service_id = function()
+local generate_service_id = function(method)
 
     local oasis_cfg_tbl = uci:get_all(db.uci.cfg)
 
@@ -286,8 +286,7 @@ local generate_service_id = function()
     repeat
         retry = retry - 1
 
-        id = generate_random_id("urandom")
-        -- id = generate_random_id("seed")
+        id = generate_random_id(method)
 
         -- debug:log("oasis.log", "id = " .. id)
 

@@ -39,7 +39,7 @@ service.anonymous = true
 service.title = "SERVICE"
 
 identifier = service:option(Value, "identifier", "Identifier")
-identifier.default = common.generate_service_id()
+identifier.default = common.generate_service_id("urandom")
 identifier.rmempty = false
 identifier.description = "This value is automatically set and cannot be changed."
 
