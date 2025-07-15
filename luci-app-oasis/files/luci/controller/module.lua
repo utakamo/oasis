@@ -852,14 +852,6 @@ end
 
 function load_server_info()
 
-    --[[
-    local tools = {}
-
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(tbl)
-        tools[#tools + 1] = tbl
-    end)
-    ]]
-
     local tools = uci:get_all(common.db.uci.cfg)
 
     -- Delete unnecessary information
