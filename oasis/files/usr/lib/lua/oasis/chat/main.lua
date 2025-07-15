@@ -95,7 +95,6 @@ local add = function(args)
     local output = {}
     output.format_1        = "%-64s >> "
     output.format_2        = "%-64s >> %s"
-    output.identifier       = "Identifer Name (Please enter your preferred name.)"
     -- output.service         = "Service (\"Ollama\" or \"OpenAI\" or \"Anthropic\" or \"Google Gemini\")"
     output.service         = "Service (\"Ollama\" or \"OpenAI\")"
     output.endpoint        = "Endpoint"
@@ -120,14 +119,7 @@ local add = function(args)
     output.type = string.format(output.type, val.type.disable, val.type.enable)
     output.budget_tokens = string.format(output.budget_tokens, val.budget_tokens.min, val.budget_tokens.max)
 
-    if (not args.identifier) then
-        io.write(string.format(output.format_1, output.identifier))
-        io.flush()
-        setup.identifier = io.read()
-    else
-        print(string.format(output.format_2, output.identifier, args.service))
-        setup.identifier = args.identifier
-    end
+    setup.identifier = common.generate_service_id()
 
     if (not args.service) then
         repeat

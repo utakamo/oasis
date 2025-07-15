@@ -76,7 +76,6 @@ commands.add = function(args)
         endpoint = args[3],
         api_key  = args[4],
         model    = args[5],
-        storage  = args[6]
     })
 end
 
