@@ -532,6 +532,8 @@ local delchat = function(arg)
         end
     end)
 
+    uci:commit(common.db.uci.cfg)
+
     print("Delete chat data id=" .. arg.id)
 end
 
