@@ -53,11 +53,27 @@ ollama.new = function()
             -- The first message is data that has not been assigned a chat ID.
             if (not self.cfg.id) or (#self.cfg.id == 0) then
                 -- System message(rule or knowledge) for chat
-                if self.format == common.ai.format.chat then
-                    table.insert(chat.messages, 1, {
-                        role = common.role.system,
-                        content = string.gsub(sysrole.default.chat, "\\n", "\n")
-                    })
+                if (self.format == common.ai.format.chat) then
+                    local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or nil
+                    if (not target_sysmsg_key) then
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                        })
+                    else
+                        local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
+                        if (category and target) and (sysrole[category][target])then
+                            table.insert(chat.messages, 1, {
+                                role = common.role.system,
+                                content = string.gsub(sysrole[category][target], "\\n", "\n")
+                            })
+                        else
+                            table.insert(chat.messages, 1, {
+                                role = common.role.system,
+                                content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                            })
+                        end
+                    end
                     return
                 end
 
@@ -80,10 +96,26 @@ ollama.new = function()
             end
 
             if self.format == common.ai.format.prompt then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.prompt, "\\n", "\n")
-                })
+                local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt") or nil
+                if (not target_sysmsg_key) then
+                    table.insert(chat.messages, 1, {
+                        role = common.role.system,
+                        content = string.gsub(sysrole.default.prompt, "\\n", "\n")
+                    })
+                else
+                    local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
+                    if (category and target) and (sysrole[category][target])then
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysrole[category][target], "\\n", "\n")
+                        })
+                    else
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysrole.default.prompt, "\\n", "\n")
+                        })
+                    end
+                end
                 return
             end
 

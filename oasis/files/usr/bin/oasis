@@ -37,7 +37,7 @@ Commands:
  delete <service-id>
  chat [id=<chat-id>]
  prompt <message>
- sysrole [[<chat|prompt|call> [<options>] [<system message>]]
+ sysrole [[<chat|prompt> [[-c] [<system message name>]]]
  delchat id=<chat-id>
  rename id=<chat-id> <title>
  list
@@ -129,6 +129,14 @@ commands.prompt = function(args)
     if args[2] then
         oasis.prompt({ message = args[2] })
     end
+end
+
+commands.sysrole = function(args)
+    oasis.sysrole({
+        cmd                 = args[2],
+        option              = args[3],
+        sysmsg_key          = args[4]
+    })
 end
 
 commands.rename = function(args)

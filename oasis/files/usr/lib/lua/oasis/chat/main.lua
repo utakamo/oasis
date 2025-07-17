@@ -557,6 +557,65 @@ local prompt = function(arg)
     end
 end
 
+local sysrole = function(arg)
+
+    local sysrole = common.load_conf_file("/etc/oasis/oasis.conf")
+
+    if (not arg) or (#arg == 0) or (arg.cmd ~= "chat") or (arg.cmd ~= "prompt") or (arg.option ~= "-c") then
+
+        -- General system Message
+        print("--- General ---")
+
+        print("\27[33mSystem message for generating a chat title: \27[34m[general.auto_title] \27[0m")
+        print(sysrole.general.auto_title)
+        print()
+
+        -- Default System Messages
+        print("--- Default ---")
+        print("\27[33mSystem message for chat command: \27[34m[default.chat] \27[0m")
+        print(sysrole.default.chat)
+        print()
+
+        print("\27[33mSystem message for prompt command: \27[34m[default.prompt] \27[0m")
+        print(sysrole.default.prompt)
+        print()
+
+        for key, system_message_tbl in pairs(sysrole) do
+            local suffix = key:match("^custom_(%d+)$")
+            if suffix then
+                print("--- CUSTOM " .. suffix .. " ---")
+                for cmd, system_message in pairs(system_message_tbl) do
+                    if cmd == "chat" then
+                        print("\27[33mSystem message for chat command: \27[34m[custom_" .. suffix .. ".chat] \27[0m")
+                        print(system_message)
+                        print()
+                    elseif cmd == "prompt" then
+                        print("\27[33mSystem message for prompt command: \27[34m[custom_" .. suffix .. ".prompt] \27[0m")
+                        print(system_message)
+                        print()
+                    end
+                end
+            end
+        end
+
+        print()
+        print("=============== Current Setting ===============")
+        print("chat command ------> " .. "\27[34mdefault.chat\27[0m")
+        print("prompt command ----> " .. "\27[34mdefault.prompt\27[0m")
+        print("===============================================")
+    end
+
+    if arg.sysmsg_key then
+        local category, target = arg.sysmsg_key:match("^([^.]+)%.([^.]+)$")
+        if (category and target) and (sysrole[category][target])then
+            uci:set(common.db.uci.cfg, common.db.uci.sect.console, cmd, arg.sysmsg_key)
+            uci:commit(common.db.uci.cfg)
+        else
+            print("Not Found ...")
+        end
+    end
+end
+
 local output = function(arg)
 
     -- debug:log("oasis.log", "\n--- [main.lua][output] ---")
@@ -696,6 +755,7 @@ return {
     chat = chat,
     delchat = delchat,
     prompt = prompt,
+    sysrole = sysrole,
     output = output,
     rpc_output = rpc_output,
     rename = rename,

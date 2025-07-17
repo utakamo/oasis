@@ -19,6 +19,7 @@ db.uci.sect.rpc              = "rpc"
 db.uci.sect.support          = "support"
 db.uci.sect.tool             = "tool"
 db.uci.sect.remote_mcp       = "remote_mcp"
+db.uci.sect.console          = "console"
 
 db.ubus                             = {}
 db.ubus.object                      = {}
