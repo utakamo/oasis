@@ -246,7 +246,7 @@ local get_function_call_schema = function()
             end
             local tool = {
                 type = s.type or "function",
-                name = s[".name"],
+                name = s["name"],
                 description = s.description or "",
                 parameters = {
                     type = "object",
@@ -385,10 +385,9 @@ local exec_server_tool = function(tool_name, data)
 end
 
 local function function_call(response)
-    -- Todo: write some ai service code
 
-    -- OpenAI
     local choice = response.choices[1]
+
     if choice and choice.message and choice.message.function_call then
         local tool_name = choice.message.function_call.name
         local args_json = choice.message.function_call.arguments
@@ -396,6 +395,9 @@ local function function_call(response)
         local result = exec_server_tool(tool_name, args)
         return result
     end
+
+    -- Todo: write some ai service code
+
 end
 
 return {
