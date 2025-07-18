@@ -27,7 +27,9 @@ Options:
  -u <Endpoint>          Set the  AI Service Endpoint(URL)
  -k <api-key>           Set the API key
  -m <model>             Set the LLM model
- -s <storage>           Set the storage path
+ -p <storage>           Set the storage path
+ -s <system message>    Set the new system message (for sysrole command)
+ -c <sysmsg key>        Set the system message key (for sysrole command)
 
 Commands:
  storage <path> [<chat-max>]
@@ -135,7 +137,7 @@ commands.sysrole = function(args)
     oasis.sysrole({
         cmd                 = args[2],
         option              = args[3],
-        sysmsg_key          = args[4]
+        param               = args[4]
     })
 end
 
