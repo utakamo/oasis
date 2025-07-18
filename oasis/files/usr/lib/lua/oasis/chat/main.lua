@@ -561,14 +561,30 @@ local sysrole = function(arg)
 
     local sysrole = common.load_conf_file("/etc/oasis/oasis.conf")
 
-    if (not arg) or (#arg == 0) or (arg.cmd ~= "chat") or (arg.cmd ~= "prompt") or (arg.option ~= "-c") then
+    if arg then
+
+        if arg.cmd then
+            debug:log("sysrole.log", "arg.cmd = " .. arg.cmd)
+        end
+
+        if arg.option then
+            debug:log("sysrole.log", "arg.option = " .. arg.option)
+        end
+
+        if arg.param then
+            debug:log("sysrole.log", "arg.param = " .. arg.param)
+        end
+    end
+
+    if (not arg) or (not arg.cmd) or (not arg.option) or (not arg.param)
+         or ((arg.cmd ~= "chat") and (arg.cmd ~= "prompt"))
+         or ((arg.option ~= "-c") and (arg.option ~= "-s")) then
 
         -- General system Message
-        print("--- General ---")
-
-        print("\27[33mSystem message for generating a chat title: \27[34m[general.auto_title] \27[0m")
-        print(sysrole.general.auto_title)
-        print()
+        -- print("--- General ---")
+        -- print("\27[33mSystem message for generating a chat title: \27[34m[general.auto_title] \27[0m")
+        -- print(sysrole.general.auto_title)
+        -- print()
 
         -- Default System Messages
         print("--- Default ---")
@@ -598,21 +614,54 @@ local sysrole = function(arg)
             end
         end
 
+        local sysmsg_key_for_chat   = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat")
+        local sysmsg_key_for_prompt = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt")
+
         print()
         print("=============== Current Setting ===============")
-        print("chat command ------> " .. "\27[34mdefault.chat\27[0m")
-        print("prompt command ----> " .. "\27[34mdefault.prompt\27[0m")
+        print("chat command ------> " .. "\27[34m" .. sysmsg_key_for_chat .. "\27[0m")
+        print("prompt command ----> " .. "\27[34m" .. sysmsg_key_for_prompt .. "\27[0m")
         print("===============================================")
+        return
     end
 
-    if arg.sysmsg_key then
-        local category, target = arg.sysmsg_key:match("^([^.]+)%.([^.]+)$")
-        if (category and target) and (sysrole[category][target])then
-            uci:set(common.db.uci.cfg, common.db.uci.sect.console, cmd, arg.sysmsg_key)
+    if (arg.option == "-s") and arg.param then
+        local category, target = arg.param:match("^([^.]+)%.([^.]+)$")
+        if (category and target) and (sysrole[category]) and (sysrole[category][target]) then
+            uci:set(common.db.uci.cfg, common.db.uci.sect.console, arg.cmd, arg.param)
             uci:commit(common.db.uci.cfg)
+            print(arg.cmd .. " command ---> " .. arg.param)
         else
             print("Not Found ...")
         end
+    elseif (arg.option == "-c") and (arg.param) then
+
+        local target_idx = 1
+
+        for key, _ in pairs(sysrole) do
+            local suffix_str = key:match("^custom_(%d+)$")
+            if suffix_str then
+                local suffix_int = tonumber(suffix_str)
+                if (suffix_int) and (target_idx > suffix_int) then
+                    target_idx = suffix_int
+                end
+            end
+        end
+
+        local category = "custom_" .. target_idx
+
+        if not sysrole[category] then
+            sysrole[category] = {}
+        end
+
+        sysrole[category][arg.cmd] = arg.param
+        local is_update = common.update_conf_file("/etc/oasis/oasis.conf", sysrole)
+
+        if not is_update then
+            print("error!")
+        end
+
+        print("Update Success!!")
     end
 end
 
