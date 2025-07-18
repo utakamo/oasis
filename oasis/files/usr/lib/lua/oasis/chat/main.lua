@@ -775,25 +775,6 @@ local list = function()
     end
 end
 
-local call = function(arg)
-
-    local service = common.select_service_obj()
-
-    if not service then
-        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
-        return
-    end
-
-    service:initialize(nil, common.ai.format.call)
-    local call = datactrl.load_chat_data(service)
-
-    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-    if service:setup_msg(call, { role = common.role.user, message = arg.message}) then
-        datactrl.record_chat_data(service, call)
-        transfer.chat_with_ai(service, call)
-    end
-end
-
 return {
     storage = storage,
     add = add,
@@ -809,5 +790,4 @@ return {
     rpc_output = rpc_output,
     rename = rename,
     list = list,
-    call =  call,
 }

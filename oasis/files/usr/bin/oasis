@@ -154,12 +154,6 @@ commands.list = function()
     oasis.list()
 end
 
-commands.call = function(args)
-    if args[2] and args[3] then
-        oasis.cmd_call({ cmd = args[2], message = args[3] })
-    end
-end
-
 local main_cmd = arg[1]
 if not main_cmd or not commands[main_cmd] then
     help()
