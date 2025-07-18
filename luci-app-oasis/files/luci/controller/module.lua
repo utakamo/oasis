@@ -855,13 +855,14 @@ function load_server_info()
     local tools = uci:get_all(common.db.uci.cfg)
 
     -- Delete unnecessary information
-    tools.debug      = nil
-    tools.rpc        = nil
-    tools.storage    = nil
-    tools.role       = nil
-    tools.support    = nil
-    tools.assist     = nil
-    tools.rollback   = nil
+    tools.debug     = nil
+    tools.rpc       = nil
+    tools.storage   = nil
+    tools.role      = nil
+    tools.support   = nil
+    tools.assist    = nil
+    tools.rollback  = nil
+    tools.console   = nil
 
     for key, tbl in pairs(tools) do
         if (tbl[".type"] == "service") or ( tbl[".type"] == "chat") then
