@@ -66,4 +66,10 @@ define Package/oasis-mod-spring/postinst
 	#touch /tmp/oasis/reboot_required
 endef
 
+define Package/oasis-mod-spring/postinst
+	#!/bin/sh
+	mkdir -p /tmp/oasis
+	touch /tmp/oasis/reboot_required_for_oasis-mod-spring
+endef
+
 $(eval $(call BuildPackage,oasis-mod-spring))
