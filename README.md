@@ -168,26 +168,28 @@ root@OpenWrt:~# oasis
 Usage: oasis <command> [[<options>] arguments]...
 
 Options:
- -u <url>               Set the url or ipaddr for ai service
- -k <api-key>           Set the api-key for ai service
- -m <model>             Set the llm model for ai service
+ -u <Endpoint>          Set the  AI Service Endpoint(URL)
+ -k <api-key>           Set the API key
+ -m <model>             Set the LLM model
+ -p <storage>           Set the storage path
+ -s <system message>    Set the new system message (for sysmsg command)
+ -c <sysmsg key>        Set the system message key (for sysmsg command)
 
 Commands:
- - storage <path> [<chat-max>] (default: chat-max = 30)
- - add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
- - change <service-id> [<options> <argument>]...
- - select [<service-id>]
- - delete <service-id>
- - chat [id=<chat-id>]
- - prompt <message>
- - delchat id=<chat-id>
- - sysrole [[<chat|prompt|call> [<options>] [<system message>]]
- - rename id=<chat-id> <title> 
- - list
- - call <script> <messsage>
+ storage <path> [<chat-max>]
+ add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
+ change <service-id> [<options> <value>]...
+ select [<service-id>]
+ delete <service-id>
+ chat [id=<chat-id>]
+ prompt <message>
+ sysmsg [<chat|prompt> <options> <value>]
+ delchat id=<chat-id>
+ rename id=<chat-id> <title>
+ list
 
-Docs
-        https://utakamo.com
+Docs:
+ https://utakamo.com
 ```
 ## Usage
 ### Step1: Setting up ai service  
