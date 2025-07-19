@@ -3,6 +3,7 @@
 local ubus  = require("ubus")
 local uci   = require("luci.model.uci").cursor()
 local sys   = require("luci.sys")
+local misc  = require("oasis.chat.misc")
 -- local debug = require("oasis.chat.debug")
 
 local db                     = {}
@@ -81,6 +82,8 @@ local flag = {}
 flag.apply = {}
 flag.apply.complete = "/tmp/oasis/apply/complete"
 flag.apply.rollback = "/tmp/oasis/apply/rollback"
+flag.unload = {}
+flag.unload.plugin = "/tmp/oasis/reboot_required"
 
 local role = {}
 role.system      = "system"
@@ -346,6 +349,10 @@ local function check_server_loaded(server_name)
     return false
 end
 
+local check_unloaded_plugin = function()
+    return misc.check_file_exist(flag.unload.plugin)
+end
+
 local check_prepare_oasis = function()
 
     -- Check standard ubus server
@@ -353,6 +360,10 @@ local check_prepare_oasis = function()
             or (not check_server_loaded("oasis.chat")) 
             or (not check_server_loaded("oasis.title")) then
         return false
+    end
+
+    if check_unloaded_plugin() then
+        return true
     end
 
     -- Check plugin ubus server
@@ -388,4 +399,5 @@ return {
     check_chat_format = check_chat_format,
     check_server_loaded = check_server_loaded,
     check_prepare_oasis = check_prepare_oasis,
+    check_unloaded_plugin = check_unloaded_plugin,
 }

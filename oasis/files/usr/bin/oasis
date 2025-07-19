@@ -2,6 +2,12 @@
 
 local common = require("oasis.common")
 
+if common.check_unloaded_plugin() then
+    print("\27[31mInstalled plugin modules have been detected.\27[0m")
+    print("\27[31mThe OpenWrt system must be rebooted to use them.\27[0m")
+    print()
+end
+
 if not common.check_prepare_oasis() then
     print("Oasis is initializing. Please wait...")
     return
