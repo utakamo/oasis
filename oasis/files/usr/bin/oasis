@@ -2,9 +2,7 @@
 
 local common = require("oasis.common")
 
-if  (not common.check_server_loaded("oasis"))
-        or (not common.check_server_loaded("oasis.chat")) 
-        or (not common.check_server_loaded("oasis.title")) then
+if not common.check_prepare_oasis() then
     print("Oasis is initializing. Please wait...")
     return
 end
