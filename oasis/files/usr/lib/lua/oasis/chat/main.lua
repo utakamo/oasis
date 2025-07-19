@@ -557,22 +557,22 @@ local prompt = function(arg)
     end
 end
 
-local sysrole = function(arg)
+local sysmsg = function(arg)
 
-    local sysrole = common.load_conf_file("/etc/oasis/oasis.conf")
+    local sysmsg = common.load_conf_file("/etc/oasis/oasis.conf")
 
     if arg then
 
         if arg.cmd then
-            debug:log("sysrole.log", "arg.cmd = " .. arg.cmd)
+            debug:log("sysmsg.log", "arg.cmd = " .. arg.cmd)
         end
 
         if arg.option then
-            debug:log("sysrole.log", "arg.option = " .. arg.option)
+            debug:log("sysmsg.log", "arg.option = " .. arg.option)
         end
 
         if arg.param then
-            debug:log("sysrole.log", "arg.param = " .. arg.param)
+            debug:log("sysmsg.log", "arg.param = " .. arg.param)
         end
     end
 
@@ -583,23 +583,23 @@ local sysrole = function(arg)
         -- General system Message
         -- print("--- General ---")
         -- print("\27[33mSystem message for generating a chat title: \27[34m[general.auto_title] \27[0m")
-        -- print(sysrole.general.auto_title)
+        -- print(sysmsg.general.auto_title)
         -- print()
 
         -- Default System Messages
-        print("--- Default ---")
+        print("\27[32m--- Default ---\27[0m")
         print("\27[33mSystem message for chat command: \27[34m[default.chat] \27[0m")
-        print(sysrole.default.chat)
+        print(sysmsg.default.chat)
         print()
 
         print("\27[33mSystem message for prompt command: \27[34m[default.prompt] \27[0m")
-        print(sysrole.default.prompt)
+        print(sysmsg.default.prompt)
         print()
 
-        for key, system_message_tbl in pairs(sysrole) do
+        for key, system_message_tbl in pairs(sysmsg) do
             local suffix = key:match("^custom_(%d+)$")
             if suffix then
-                print("--- CUSTOM " .. suffix .. " ---")
+                print("\27[32m--- CUSTOM " .. suffix .. " ---\27[0m")
                 for cmd, system_message in pairs(system_message_tbl) do
                     if cmd == "chat" then
                         print("\27[33mSystem message for chat command: \27[34m[custom_" .. suffix .. ".chat] \27[0m")
@@ -618,7 +618,7 @@ local sysrole = function(arg)
         local sysmsg_key_for_prompt = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt")
 
         print()
-        print("=============== Current Setting ===============")
+        print("=============== \27[32mCurrent Setting\27[0m ===============")
         print("chat command ------> " .. "\27[34m" .. sysmsg_key_for_chat .. "\27[0m")
         print("prompt command ----> " .. "\27[34m" .. sysmsg_key_for_prompt .. "\27[0m")
         print("===============================================")
@@ -627,7 +627,7 @@ local sysrole = function(arg)
 
     if (arg.option == "-s") and arg.param then
         local category, target = arg.param:match("^([^.]+)%.([^.]+)$")
-        if (category and target) and (sysrole[category]) and (sysrole[category][target]) then
+        if (category and target) and (sysmsg[category]) and (sysmsg[category][target]) then
             uci:set(common.db.uci.cfg, common.db.uci.sect.console, arg.cmd, arg.param)
             uci:commit(common.db.uci.cfg)
             print(arg.cmd .. " command ---> " .. arg.param)
@@ -638,7 +638,7 @@ local sysrole = function(arg)
 
         local target_idx = 1
 
-        for key, _ in pairs(sysrole) do
+        for key, _ in pairs(sysmsg) do
             local suffix_str = key:match("^custom_(%d+)$")
             if suffix_str then
                 local suffix_int = tonumber(suffix_str)
@@ -650,12 +650,12 @@ local sysrole = function(arg)
 
         local category = "custom_" .. target_idx
 
-        if not sysrole[category] then
-            sysrole[category] = {}
+        if not sysmsg[category] then
+            sysmsg[category] = {}
         end
 
-        sysrole[category][arg.cmd] = arg.param
-        local is_update = common.update_conf_file("/etc/oasis/oasis.conf", sysrole)
+        sysmsg[category][arg.cmd] = arg.param
+        local is_update = common.update_conf_file("/etc/oasis/oasis.conf", sysmsg)
 
         if not is_update then
             print("error!")
@@ -785,7 +785,7 @@ return {
     chat = chat,
     delchat = delchat,
     prompt = prompt,
-    sysrole = sysrole,
+    sysmsg = sysmsg,
     output = output,
     rpc_output = rpc_output,
     rename = rename,

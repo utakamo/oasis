@@ -37,7 +37,7 @@ openrouter.new = function()
         obj.setup_system_msg = function(self, chat)
 
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-            local sysrole = common.load_conf_file(spath)
+            local sysmsg = common.load_conf_file(spath)
 
             -- debug:log("oasis.log", "\n--- [openrouter.lua][setup_system_msg] ---");
             -- debug:log("oasis.log", "format = " .. self.format)
@@ -47,17 +47,33 @@ openrouter.new = function()
             if (not self.cfg.id) or (#self.cfg.id == 0) then
                 -- System message(rule or knowledge) for chat
                 if (self.format == common.ai.format.chat) then
-                    table.insert(chat.messages, 1, {
-                        role = common.role.system,
-                        content = string.gsub(sysrole.default.chat, "\\n", "\n")
-                    })
+                    local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or nil
+                    if (not target_sysmsg_key) then
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysmsg.default.chat, "\\n", "\n")
+                        })
+                    else
+                        local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
+                        if (category and target) and (sysmsg[category][target])then
+                            table.insert(chat.messages, 1, {
+                                role = common.role.system,
+                                content = string.gsub(sysmsg[category][target], "\\n", "\n")
+                            })
+                        else
+                            table.insert(chat.messages, 1, {
+                                role = common.role.system,
+                                content = string.gsub(sysmsg.default.chat, "\\n", "\n")
+                            })
+                        end
+                    end
                     return
                 end
 
                 if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
-                        content = string.gsub(sysrole[self.cfg.sysmsg_key].chat, "\\n", "\n")
+                        content = string.gsub(sysmsg[self.cfg.sysmsg_key].chat, "\\n", "\n")
                     })
                     return
                 end
@@ -66,24 +82,40 @@ openrouter.new = function()
                 if (self.format == common.ai.format.title) then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
-                        content = string.gsub(sysrole.general.auto_title, "\\n", "\n")
+                        content = string.gsub(sysmsg.general.auto_title, "\\n", "\n")
                     })
                     return
                 end
             end
 
             if self.format == common.ai.format.prompt then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysrole.default.prompt, "\\n", "\n")
-                })
+                local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt") or nil
+                if (not target_sysmsg_key) then
+                    table.insert(chat.messages, 1, {
+                        role = common.role.system,
+                        content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
+                    })
+                else
+                    local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
+                    if (category and target) and (sysmsg[category][target])then
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysmsg[category][target], "\\n", "\n")
+                        })
+                    else
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
+                        })
+                    end
+                end
                 return
             end
 
             if self.format == common.ai.format.call then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
-                    content = string.gsub(sysrole.default.call, "\\n", "\n")
+                    content = string.gsub(sysmsg.default.call, "\\n", "\n")
                 })
                 return
             end

@@ -36,7 +36,7 @@ ollama.new = function()
         obj.setup_system_msg = function(self, chat)
 
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-            local sysrole = common.load_conf_file(spath)
+            local sysmsg = common.load_conf_file(spath)
 
             -- debug:log("oasis.log", "\n--- [ollama.lua][setup_system_msg] ---");
             -- debug:log("oasis.log", "format = " .. self.format)
@@ -58,19 +58,19 @@ ollama.new = function()
                     if (not target_sysmsg_key) then
                         table.insert(chat.messages, 1, {
                             role = common.role.system,
-                            content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                            content = string.gsub(sysmsg.default.chat, "\\n", "\n")
                         })
                     else
                         local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
-                        if (category and target) and (sysrole[category][target])then
+                        if (category and target) and (sysmsg[category][target])then
                             table.insert(chat.messages, 1, {
                                 role = common.role.system,
-                                content = string.gsub(sysrole[category][target], "\\n", "\n")
+                                content = string.gsub(sysmsg[category][target], "\\n", "\n")
                             })
                         else
                             table.insert(chat.messages, 1, {
                                 role = common.role.system,
-                                content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                                content = string.gsub(sysmsg.default.chat, "\\n", "\n")
                             })
                         end
                     end
@@ -80,7 +80,7 @@ ollama.new = function()
                 if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
-                        content = string.gsub(sysrole[self.cfg.sysmsg_key].chat, "\\n", "\n")
+                        content = string.gsub(sysmsg[self.cfg.sysmsg_key].chat, "\\n", "\n")
                     })
                     return
                 end
@@ -89,7 +89,7 @@ ollama.new = function()
                 if self.format == common.ai.format.title then
                     table.insert(chat.messages, #chat.messages + 1, {
                         role = common.role.system,
-                        content = string.gsub(sysrole.general.auto_title, "\\n", "\n")
+                        content = string.gsub(sysmsg.general.auto_title, "\\n", "\n")
                     })
                     return
                 end
@@ -100,19 +100,19 @@ ollama.new = function()
                 if (not target_sysmsg_key) then
                     table.insert(chat.messages, 1, {
                         role = common.role.system,
-                        content = string.gsub(sysrole.default.prompt, "\\n", "\n")
+                        content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
                     })
                 else
                     local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
-                    if (category and target) and (sysrole[category][target])then
+                    if (category and target) and (sysmsg[category][target])then
                         table.insert(chat.messages, 1, {
                             role = common.role.system,
-                            content = string.gsub(sysrole[category][target], "\\n", "\n")
+                            content = string.gsub(sysmsg[category][target], "\\n", "\n")
                         })
                     else
                         table.insert(chat.messages, 1, {
                             role = common.role.system,
-                            content = string.gsub(sysrole.default.prompt, "\\n", "\n")
+                            content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
                         })
                     end
                 end
@@ -122,7 +122,7 @@ ollama.new = function()
             if self.format == common.ai.format.call then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
-                    content = string.gsub(sysrole.default.call, "\\n", "\n")
+                    content = string.gsub(sysmsg.default.call, "\\n", "\n")
                 })
                 return
             end

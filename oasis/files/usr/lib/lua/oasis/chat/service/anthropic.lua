@@ -36,27 +36,27 @@ anthropic.new = function()
         obj.setup_system_msg = function(self, chat)
 
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-            local sysrole = common.load_conf_file(spath)
+            local sysmsg = common.load_conf_file(spath)
 
             if (self.format == common.ai.format.chat) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
-                    content = string.gsub(sysrole.default.chat, "\\n", "\n")
+                    content = string.gsub(sysmsg.default.chat, "\\n", "\n")
                 })
             elseif ((self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output)) and ((not self.cfg.id) or (#self.cfg.id == 0)) then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
-                    content = string.gsub(sysrole.default.output, "\\n", "\n")
+                    content = string.gsub(sysmsg.default.output, "\\n", "\n")
                 })
             elseif self.format == common.ai.format.prompt then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
-                    content = string.gsub(sysrole.default.prompt, "\\n", "\n")
+                    content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
                 })
             elseif self.format == common.ai.format.call then
                 table.insert(chat.messages, 1, {
                     role = common.role.system,
-                    content = string.gsub(sysrole.default.call, "\\n", "\n")
+                    content = string.gsub(sysmsg.default.call, "\\n", "\n")
                 })
             end
         end

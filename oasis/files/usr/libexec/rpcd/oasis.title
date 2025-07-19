@@ -55,7 +55,7 @@ local methods = {
             local file_path = misc.normalize_path(cfg.path) .. file_name
 
             local rpath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-            local sysrole = common.load_conf_file(rpath)
+            local sysmsg = common.load_conf_file(rpath)
 
             local service = common.select_service_obj()
 

@@ -28,8 +28,8 @@ Options:
  -k <api-key>           Set the API key
  -m <model>             Set the LLM model
  -p <storage>           Set the storage path
- -s <system message>    Set the new system message (for sysrole command)
- -c <sysmsg key>        Set the system message key (for sysrole command)
+ -s <system message>    Set the new system message (for sysmsg command)
+ -c <sysmsg key>        Set the system message key (for sysmsg command)
 
 Commands:
  storage <path> [<chat-max>]
@@ -39,11 +39,10 @@ Commands:
  delete <service-id>
  chat [id=<chat-id>]
  prompt <message>
- sysrole [[<chat|prompt> [[-c] [<system message name>]]]
+ sysmsg [<chat|prompt> <options> <value>]
  delchat id=<chat-id>
  rename id=<chat-id> <title>
  list
- call <script> <message>
 
 Docs:
  https://utakamo.com
@@ -133,8 +132,8 @@ commands.prompt = function(args)
     end
 end
 
-commands.sysrole = function(args)
-    oasis.sysrole({
+commands.sysmsg = function(args)
+    oasis.sysmsg({
         cmd                 = args[2],
         option              = args[3],
         param               = args[4]
