@@ -50,7 +50,7 @@ define Package/oasis-mod-tool/postinst
 	uci set oasis.support.remote_mcp_server=1
 	uci commit oasis
 	mkdir -p /tmp/oasis
-	touch /tmp/oasis/reboot_required
+	touch /tmp/oasis/reboot_required_for_oasis-mod-tool
 endef
 
 $(eval $(call BuildPackage,oasis-mod-tool))
