@@ -83,7 +83,9 @@ flag.apply = {}
 flag.apply.complete = "/tmp/oasis/apply/complete"
 flag.apply.rollback = "/tmp/oasis/apply/rollback"
 flag.unload = {}
-flag.unload.plugin = "/tmp/oasis/reboot_required"
+flag.unload.oasis               = "/tmp/oasis/reboot_required_oasis"
+flag.unload.oasis_mod_tool      = "/tmp/oasis/reboot_required_oasis_mod_tool"
+flag.unload.oasis_mod_spring    = "/tmp/oasis/reboot_required_oasis_mod_spring"
 
 local role = {}
 role.system      = "system"
@@ -349,8 +351,19 @@ local function check_server_loaded(server_name)
     return false
 end
 
-local check_unloaded_plugin = function()
-    return misc.check_file_exist(flag.unload.plugin)
+local check_unloaded_plugin = function(target)
+    
+    local result = false
+
+    if target == "osais" then
+        result = misc.check_file_exist(flag.unload.oasis)
+    elseif target == "oasis-mod-tool" then
+        result = misc.check_file_exist(flag.unload.oasis_mod_tool)
+    elseif target == "oasis-mod-spring" then
+        result = misc.check_file_exist(flag.unload.oasis_mod_spring)
+    end
+
+    return result
 end
 
 local check_prepare_oasis = function()
