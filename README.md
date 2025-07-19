@@ -189,7 +189,7 @@ Commands:
  list
 
 Docs:
- https://utakamo.com
+ https://github.com/utakamo/oasis
 ```
 ## Usage
 ### Step1: Setting up ai service  
