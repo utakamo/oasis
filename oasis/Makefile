@@ -72,4 +72,10 @@ define Package/oasis/install
 	$(INSTALL_DATA) ./files/etc/oasis/oasis.conf $(1)$(OASIS_DIR)
 endef
 
+define Package/oasis/postinst
+	#!/bin/sh
+	mkdir -p /tmp/oasis
+	touch /tmp/oasis/reboot_required_for_oasis
+endef
+
 $(eval $(call BuildPackage,oasis))
