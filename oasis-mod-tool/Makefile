@@ -16,7 +16,7 @@ define Package/oasis-mod-tool
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= Remote MCP and Local Tool Plugin Module for oasis
-    DEPENDS:=+oasis
+    DEPENDS:=+oasis +ucode
     PKGARCH:=all
 endef
 
