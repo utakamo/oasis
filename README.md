@@ -29,9 +29,8 @@ root@OpenWrt:~# wget -O luci-app-oasis_2.0.1-r1_all.ipk https://github.com/utaka
 root@OpenWrt:~# opkg update
 root@OpenWrt:~# opkg install oasis_2.0.1-r1_all.ipk
 root@OpenWrt:~# opkg install luci-app-oasis_2.0.1-r1_all.ipk
-root@OpenWrt:~# service rpcd reload
+root@OpenWrt:~# reboot
 ```
-Rebooting the system after installation is also fine.
 
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
