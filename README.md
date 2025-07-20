@@ -160,9 +160,6 @@ root@OpenWrt:~# service rpcd reload
 ```
 
 ## Commands
-> [!IMPORTANT]
-> Some commands may not be available.
-
 ```
 root@OpenWrt:~# oasis
 Usage: oasis <command> [[<options>] arguments]...
