@@ -9,7 +9,53 @@ After installing oasis-mod-tool, you can create Lua or uCode scripts using the s
 
 ## Lua Script Sample
 ```
+#!/usr/bin/env lua
 
+local server = require("oasis.local.tool.server")
+
+-- Sample tool "get_weather"
+server.tool("get_weather", {
+    -- args_desc: Description of parameters specified when invoking the tool.
+    args_desc   = { "City and country e.g. Bogotá, Colombia" },
+    args        = { location = "a_string" },
+
+    -- tool_desc: Description of the tool's functionality.
+    tool_desc   = "Get current temperature for a given location.",
+    call = function(args)
+        -- Mock: Returns a fake temperature for the given location
+        local res = server.response({ location = args.location, temperature = "25°C", condition = "Sunny" })
+        return res
+    end
+})
+
+server.tool("get_wlan_ifname_list", {
+    -- tool_desc: Description of the tool's functionality.
+    tool_desc = "Get the list of WLAN interface names.",
+    call = function()
+        -- Mock: Returns a fake temperature for the given location
+        local res = server.response({ ifname1 = "wlan0", ifname2 = "wlan1" })
+        return res
+    end
+})
+
+server.tool("echo", {
+    -- args_desc: Description of parameters specified when invoking the tool.
+    args_desc = { "Parameter 1 (string)", "Parameter 2 (string)" },
+    args = { param1 = "a_string", param2 = "a_string" },
+
+    -- tool_desc: Description of the tool's functionality.
+    tool_desc = "Echoes back the received parameters.",
+    call = function(args)
+        -- Mock: Returns the received parameters as is
+        local res = server.response({
+            received_param1 = args.param1,
+            received_param2 = args.param2
+        })
+        return res
+    end
+})
+
+server.run(arg)
 ```
 
 ## uCode Script Sample
