@@ -55,7 +55,16 @@ end
 local send_user_msg = function(service, chat)
 
     local recv_raw_msg = ""
+
+    -- current
     local usr_msg_json = jsonc.stringify(chat, false)
+
+    --local usr_msg_json = service:convert_schema(chat)
+
+    -- Debug Message Json Log
+    -- local debug_msg_json = jsonc.stringify(chat, true)
+    -- debug:log("debug_msg_json.log", debug_msg_json)
+
     local format = service:get_format()
 
     service:init_msg_buffer()
