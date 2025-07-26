@@ -9,21 +9,30 @@ local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 
 local check_tool_call_response = function(self, response)
-    if not response or not response.choices or #response.choices == 0 then
+
+    if not response or type(response) ~= "table" then
         return false
     end
 
-    local message = response.choices[1].message
-    if not message then
+    local choices = response.choices
+    if not choices or type(choices) ~= "table" or #choices == 0 then
         return false
     end
+
+    local choice = choices[1]
+    if not choice.message or type(choice.message) ~= "table" then
+        return false
+    end
+
+    local message = choice.message
 
     if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
-        return true
-    end
-
-    if response.choices[1].finish_reason == "tool_calls" then
-        return true
+        local tool = message.tool_calls[1]
+        if tool["function"] and type(tool["function"]) == "table" then
+            if tool["function"].name and tool["function"].arguments then
+                return true
+            end
+        end
     end
 
     return false
