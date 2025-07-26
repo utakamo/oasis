@@ -365,20 +365,19 @@ config tool
     }
 ]]
 
-local exec_server_tool = function(tool_name, data)
+local exec_server_tool = function(tool, data)
     local found = false
     local result = {}
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if s[".name"] == tool_name and s.enable == "1" then
+        if s[".name"] == tool and s.enable == "1" then
             found = true
             local server = s.server
-            result = util.ubus(server, tool_name, data)
-            debug:log("oasis-mod-tool.log", string.format("Result for tool '%s': %s", tool_name, tostring(result)))
-            return false
+            result = util.ubus(server, tool, data)
+            debug:log("oasis-mod-tool.log", string.format("Result for tool '%s': %s", tool, tostring(result)))
         end
     end)
     if not found then
-        debug:log("oasis-mod-tool.log", string.format("Tool '%s' not found or not enabled.", tool_name))
+        debug:log("oasis-mod-tool.log", string.format("Tool '%s' not found or not enabled.", tool))
     end
 
     return result
