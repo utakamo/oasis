@@ -200,6 +200,11 @@ ollama.new = function()
             return self.format
         end
 
+        obj.convert_schema = function(self, user_msg)
+            local user_msg_json = jsonc.stringify(user_msg, false)
+            return user_msg_json
+        end
+
         return obj
 end
 

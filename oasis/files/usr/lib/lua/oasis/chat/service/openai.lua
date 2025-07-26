@@ -6,7 +6,28 @@ local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
--- local debug     = require("oasis.chat.debug")
+local debug     = require("oasis.chat.debug")
+
+local check_tool_call_response = function(self, response)
+    if not response or not response.choices or #response.choices == 0 then
+        return false
+    end
+
+    local message = response.choices[1].message
+    if not message then
+        return false
+    end
+
+    if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
+        return true
+    end
+
+    if response.choices[1].finish_reason == "tool_calls" then
+        return true
+    end
+
+    return false
+end
 
 local openai = {}
 openai.new = function()
@@ -159,7 +180,19 @@ openai.new = function()
                 return "", "", self.recv_ai_msg
             end
 
-            -- debug:log("oasis.log", self.chunk_all)
+            -- Function Calling
+            if check_tool_call_response(self.chunk_all) then
+                local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+                if is_tool then
+                    local client = require("oasis.local.tool.client")
+                    local message = chunk_all.choices[1].message
+                    local tool = message.tool_calls[1]
+                    local func = tool["function"]
+                    client.exec_server_tool(func.name, func.arguments)
+                end
+            end
+
+            debug:log("openai_ai_message.log", self.chunk_all)
 
             self.chunk_all = ""
 
@@ -200,6 +233,35 @@ openai.new = function()
 
         obj.get_format = function(self)
             return self.format
+        end
+
+        obj.convert_schema = function(self, user_msg)
+            local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+
+            -- Function Calling Schema
+            if is_use_tool then
+                local client = require("oasis.local.tool.client")
+                local schema = client.get_function_call_schema()
+
+                user_msg["tools"] = {}
+
+                for _, tool_def in ipairs(schema) do
+                    table.insert(user_msg["tools"], {
+                        type = "function",
+                        ["function"] = {
+                            name = tool_def.name,
+                            description = tool_def.description or "",
+                            parameters = tool_def.parameters
+                        }
+                    })
+                end
+
+                user_msg["tool_choice"] = "auto"
+            end
+
+            local user_msg_json = jsonc.stringify(user_msg, false)
+            user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
+            return user_msg_json
         end
 
         return obj
