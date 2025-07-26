@@ -60,8 +60,58 @@ server.run(arg)
 ```
 
 ## uCode Script Sample
+Script location: /usr/rpcd/ucode
 ```
+'use strict';
 
+let ubus = require('ubus').connect();
+let server = require('oasis.local.tool.server');
+
+server.tool("oasis.ucode.tool.server1", "method_1", {
+    tool_desc: "This is test tool No.1",
+    call: function() {
+        return { response: "oasis.ucode.tool.server1 --- No.1"};
+    }
+});
+
+server.tool("oasis.ucode.tool.server1", "method_2", {
+    tool_desc: "This is test tool No.2",
+
+    args_desc: [
+        "sample Integer parameter.",
+        "sample boolean parameter.",
+        "sample string parameter.",
+    ],
+
+    args: {
+        foo: 32,
+        baz: true,
+        qrx: "example"
+    },
+
+    call: function() {
+        return {
+            got_args: request.args,
+            got_info: request.info
+        };
+    }
+});
+
+server.tool("oasis.ucode.tool.server2", "method_3", {
+    tool_desc: "This is test tool No.1",
+    call: function() {
+        return { response: "oasis.ucode.tool.server2 --- No.1"};
+    }
+});
+
+server.tool("oasis.ucode.tool.server2", "method_4", {
+    tool_desc: "This is test tool No.2",
+    call: function() {
+        return { response: "oasis.ucode.tool.server2 --- No.2"};
+    }
+});
+
+return server.submit();
 ```
 
 ## How to Apply the Script
