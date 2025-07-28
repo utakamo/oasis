@@ -8,7 +8,9 @@ The oasis-mod-tool utilizes Lua and uCode scripts that can run as ubus server ap
 After installing oasis-mod-tool, you can create Lua or uCode scripts using the syntax rules shown in the examples below. By placing the scripts in the appropriate directory, AI will detect the functionalities defined within them and recognize them as tools.  
 
 ## Lua Example
-Script location: /usr/libexec/rpcd  
+This section presents an example of managing three tools within the tool group oasis.lua.local.tool.server.
+In Lua, the tool group name corresponds to the script’s filename.
+To apply the Lua script, place it in /usr/libexec/rpcd.
 ```
 #!/usr/bin/env lua
 
@@ -60,7 +62,9 @@ server.run(arg)
 ```
 
 ## uCode Example
-Script location: /usr/rpcd/ucode
+This section explains how to write a script that manages tools named oasis.ucode.local.tool.server1 and oasis.ucode.local.tool.server2.
+Unlike Lua, uCode does not use the script’s filename as the tool group name—instead, the tool group must be explicitly declared when defining each tool.
+To apply the script, place it in /usr/rpcd/ucode.
 ```
 'use strict';
 
