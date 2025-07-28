@@ -185,19 +185,6 @@ Send Message Example (OpenAI Function Calling)
       },
       "type": "function"
     },
-    {
-      "function": {
-        "description": "This is test tool No.2",
-        "name": "method_4",
-        "parameters": {
-          "additionalProperties": false,
-          "type": "object",
-          "required": [],
-          "properties": []
-        }
-      },
-      "type": "function"
-    }
   ],
   "tool_choice": "auto",
   "messages": [
