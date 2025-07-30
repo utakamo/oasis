@@ -1,4 +1,4 @@
-# Oasis Local Tool (OLT) Server System
+# Oasis Local Tool (OLT) Client Server System
 > [!IMPORTANT]
 > >
 > As of July 2025, the oasis-mod-tool cannot run properly. Therefore, you'll need to wait for its official release before using it.
