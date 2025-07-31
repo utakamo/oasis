@@ -9,7 +9,7 @@ After installing oasis-mod-tool, you can create Lua or uCode scripts using the s
 
 <img width="789" height="254" alt="Image" src="https://github.com/user-attachments/assets/a5f616a4-d899-459f-814a-a915796f1aa8" />
 
-## Lua Example
+## Lua OLT Server Example
 This section presents an example of managing three tools within the tool group oasis.lua.local.tool.server.
 In Lua, the tool group name corresponds to the script’s filename.
 To apply the Lua script, place it in /usr/libexec/rpcd.
@@ -63,7 +63,7 @@ server.tool("echo", {
 server.run(arg)
 ```
 
-## uCode Example
+## uCode OLT Server Example
 This section explains how to write a script that manages tools named oasis.ucode.local.tool.server1 and oasis.ucode.local.tool.server2.
 Unlike Lua, uCode does not use the script’s filename as the tool group name—instead, the tool group must be explicitly declared when defining each tool.
 To apply the script, place it in /usr/rpcd/ucode.
