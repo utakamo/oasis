@@ -369,11 +369,14 @@ local exec_server_tool = function(tool, data)
     local found = false
     local result = {}
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if s[".name"] == tool and s.enable == "1" then
+        debug:log("oasis-mod-tool.log", "s.server = " .. s.server)
+        debug:log("oasis-mod-tool.log", "s.name   = " .. s.name)
+        debug:log("oasis-mod-tool.log", "s.enable = " .. s.enable)
+        if s.name == tool and s.enable == "1" then
             found = true
-            local server = s.server
-            result = util.ubus(server, tool, data)
-            debug:log("oasis-mod-tool.log", string.format("Result for tool '%s': %s", tool, tostring(result)))
+            debug:log("oasis-mod-tool-data.log", jsonc.stringify(data, false))
+            result = util.ubus(s.server, s.name, data)
+            debug:log("oasis-mod-tool-final.log", string.format("Result for tool '%s': %s", s.name, tostring(jsonc.stringify(result, false))))
         end
     end)
     if not found then
@@ -389,14 +392,13 @@ local function function_call(response)
 
     if choice and choice.message and choice.message.function_call then
         local tool_name = choice.message.function_call.name
-        local args_json = choice.message.function_call.arguments
-        local args = jsonc.parse(args_json)
+        local args = choice.message.function_call.arguments
+        -- local args = jsonc.parse(args_json)
         local result = exec_server_tool(tool_name, args)
         return result
     end
 
     -- Todo: write some ai service code
-
 end
 
 return {
@@ -405,4 +407,5 @@ return {
     update_server_info = update_server_info,
     get_function_call_schema = get_function_call_schema,
     function_call = function_call,
+    exec_server_tool = exec_server_tool,
 }
