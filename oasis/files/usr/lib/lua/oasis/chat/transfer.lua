@@ -57,13 +57,13 @@ local send_user_msg = function(service, chat)
     local recv_raw_msg = ""
 
     -- current
-    local usr_msg_json = jsonc.stringify(chat, false)
+    -- local usr_msg_json = jsonc.stringify(chat, false)
 
-    --local usr_msg_json = service:convert_schema(chat)
+    local usr_msg_json = service:convert_schema(chat)
 
     -- Debug Message Json Log
-    -- local debug_msg_json = jsonc.stringify(chat, true)
-    -- debug:log("debug_msg_json.log", debug_msg_json)
+    local debug_msg_json = jsonc.stringify(chat, true)
+    debug:log("debug_msg_json.log", debug_msg_json)
 
     local format = service:get_format()
 
@@ -76,6 +76,9 @@ local send_user_msg = function(service, chat)
         local text_for_webui
 
         text_for_console, text_for_webui, recv_raw_msg = service:recv_ai_msg(chunk)
+
+        debug:log("post_to_server.log", text_for_console)
+        debug:log("post_to_server.log", text_for_webui)
 
         -- output console
         if (format == common.ai.format.chat)
