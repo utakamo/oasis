@@ -8,19 +8,22 @@ local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 
-local check_tool_call_response = function(self, response)
+local check_tool_call_response = function(response)
 
     if not response or type(response) ~= "table" then
+        debug:log("check_tool_call_response.log", "1")
         return false
     end
 
     local choices = response.choices
     if not choices or type(choices) ~= "table" or #choices == 0 then
+        debug:log("check_tool_call_response.log", "2")
         return false
     end
 
     local choice = choices[1]
     if not choice.message or type(choice.message) ~= "table" then
+        debug:log("check_tool_call_response.log", "3")
         return false
     end
 
@@ -30,11 +33,13 @@ local check_tool_call_response = function(self, response)
         local tool = message.tool_calls[1]
         if tool["function"] and type(tool["function"]) == "table" then
             if tool["function"].name and tool["function"].arguments then
+                debug:log("check_tool_call_response.log", "4")
                 return true
             end
         end
     end
 
+    debug:log("check_tool_call_response.log", "5")
     return false
 end
 
@@ -189,19 +194,38 @@ openai.new = function()
                 return "", "", self.recv_ai_msg
             end
 
-            -- Function Calling
-            if check_tool_call_response(self.chunk_all) then
+            debug:log("openai-ai-recv.log", self.chunk_all)
+
+            -- Function Calling For OpenAI
+            if check_tool_call_response(chunk_json) then
+                debug:log("function_call.log", "check_tool_call_response")
                 local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
                 if is_tool then
+                    debug:log("function_call.log", "is_tool")
                     local client = require("oasis.local.tool.client")
-                    local message = chunk_all.choices[1].message
+                    local message = chunk_json.choices[1].message
+                    local tool_call_id = message.tool_calls[1].id
                     local tool = message.tool_calls[1]
-                    local func = tool["function"]
-                    client.exec_server_tool(func.name, func.arguments)
+                    local func = message.tool_calls[1]["function"].name
+                    local args = jsonc.parse(message.tool_calls[1]["function"].arguments)
+                    debug:log("function_call.log", "func = " .. func)
+                    -- debug:log("function_call.log", "args = " .. jsonc.stringify(args, false))
+                    local result = client.exec_server_tool(func, args)
+                    debug:log("function_call_result.log", jsonc.stringify(result, true))
+
+                    -- https://platform.openai.com/docs/api-reference/runs/submitToolOutputs
+                    local output = jsonc.stringify(result, false)
+                    local function_call = {}
+                    function_call.tool_outputs[1] = {}
+                    function_call.tool_outputs[1].tool_call_id = tool_call_id
+                    function_call.tool_outputs[1].output = output
+
+                    local plain_text_for_console = function_call.tool_outputs[1].output
+                    local json_text_for_webui    = jsonc.stringify(function_call, false)
+                    
+                    return plain_text_for_console, json_text_for_webui, function_call
                 end
             end
-
-            debug:log("openai_ai_message.log", self.chunk_all)
 
             self.chunk_all = ""
 
