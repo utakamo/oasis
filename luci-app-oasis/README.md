@@ -102,23 +102,7 @@ fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
 }
 `
 
-#### 2.2 Export Chat Data
-- **URL**: `/cgi-bin/luci/admin/network/oasis/export-chat-data`
-- **Method**: POST
-- **Parameters**:
-  - `params` (string): Chat ID [ex: 6690019588] 
-- **Response**: JSON
-- **Description**: Export chat data
-
-**Example**: POST request with form data
-```
-POST /cgi-bin/luci/admin/network/oasis/export-chat-data
-Content-Type: application/x-www-form-urlencoded
-
-params=1234567890
-```
-
-#### 2.3 Import Chat Data
+#### 2.2 Import Chat Data
 - **URL**: `/cgi-bin/luci/admin/network/oasis/import-chat-data`
 - **Method**: POST
 - **Parameters**:
@@ -134,7 +118,7 @@ Content-Type: application/x-www-form-urlencoded
 chat_data=eyJtZXNzYWdlcyI6W3sicm9sZSI6InVzZXIiLCJjb250ZW50IjoiSGVsbG8ifV19
 ```
 
-#### 2.4 Delete Chat Data
+#### 2.3 Delete Chat Data
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-chat-data`
 - **Method**: POST
 - **Parameters**:
@@ -150,7 +134,7 @@ Content-Type: application/x-www-form-urlencoded
 params=1234567890
 ```
 
-#### 2.5 Rename Chat
+#### 2.4 Rename Chat
 - **URL**: `/cgi-bin/luci/admin/network/oasis/rename-chat`
 - **Method**: POST
 - **Parameters**:
