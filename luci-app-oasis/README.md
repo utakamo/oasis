@@ -1,6 +1,3 @@
-> [!IMPORTANT]
-> This Web API documentation is currently under development, so it may contain errors.
-
 # Oasis Web API
 
 This document describes the WebAPI specifications defined in `module.lua` managed by `luci-app-oasis`.
@@ -65,6 +62,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Load data for the specified chat ID
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/load-chat-data
+Content-Type: application/x-www-form-urlencoded
+
+params=1234567890
+```
+
 #### 2.2 Export Chat Data
 - **URL**: `/cgi-bin/luci/admin/network/oasis/export-chat-data`
 - **Method**: POST
@@ -72,6 +77,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `params` (string): Chat ID
 - **Response**: JSON
 - **Description**: Export chat data
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/export-chat-data
+Content-Type: application/x-www-form-urlencoded
+
+params=1234567890
+```
 
 #### 2.3 Import Chat Data
 - **URL**: `/cgi-bin/luci/admin/network/oasis/import-chat-data`
@@ -81,6 +94,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Import chat data
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/import-chat-data
+Content-Type: application/x-www-form-urlencoded
+
+chat_data=eyJtZXNzYWdlcyI6W3sicm9sZSI6InVzZXIiLCJjb250ZW50IjoiSGVsbG8ifV19
+```
+
 #### 2.4 Delete Chat Data
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-chat-data`
 - **Method**: POST
@@ -88,6 +109,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `params` (string): Chat ID
 - **Response**: JSON
 - **Description**: Delete the specified chat data
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/delete-chat-data
+Content-Type: application/x-www-form-urlencoded
+
+params=1234567890
+```
 
 #### 2.5 Rename Chat
 - **URL**: `/cgi-bin/luci/admin/network/oasis/rename-chat`
@@ -97,6 +126,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `title` (string): New title
 - **Response**: JSON
 - **Description**: Change the chat title
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/rename-chat
+Content-Type: application/x-www-form-urlencoded
+
+id=1234567890&title=My%20New%20Chat%20Title
+```
 
 ### 3. UCI Configuration Related APIs
 
@@ -109,6 +146,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `type` (string): Application type ("commit" or "normal")
 - **Response**: JSON
 - **Description**: Apply UCI commands proposed by AI
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/apply-uci-cmd
+Content-Type: application/x-www-form-urlencoded
+
+uci_list=[{"command":"uci set system.@system[0].hostname=test","config":"system"}]&id=1234567890&type=normal
+```
 
 #### 3.2 Confirm Configuration
 - **URL**: `/cgi-bin/luci/admin/network/oasis/confirm`
@@ -139,6 +184,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Display the content of the specified UCI configuration
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/uci-show
+Content-Type: application/x-www-form-urlencoded
+
+target=network
+```
+
 ### 4. System Message Related APIs
 
 #### 4.1 Load System Messages
@@ -158,6 +211,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Update system message
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/update-sysmsg
+Content-Type: application/x-www-form-urlencoded
+
+target=custom_1&title=Updated%20Title&message=Updated%20message%20content
+```
+
 #### 4.3 Add System Message
 - **URL**: `/cgi-bin/luci/admin/network/oasis/add-sysmsg`
 - **Method**: POST
@@ -167,6 +228,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Add new system message
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/add-sysmsg
+Content-Type: application/x-www-form-urlencoded
+
+title=New%20System%20Message&message=This%20is%20a%20new%20system%20message
+```
+
 #### 4.4 Delete System Message
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-sysmsg`
 - **Method**: POST
@@ -175,6 +244,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Delete system message
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/delete-sysmsg
+Content-Type: application/x-www-form-urlencoded
+
+target=custom_1
+```
+
 #### 4.5 Load External System Message
 - **URL**: `/cgi-bin/luci/admin/network/oasis/load-extra-sysmsg`
 - **Method**: POST
@@ -182,6 +259,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `url` (string): External URL
 - **Response**: JSON
 - **Description**: Load system message from external URL
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/load-extra-sysmsg
+Content-Type: application/x-www-form-urlencoded
+
+url=https://example.com/system-message.json
+```
 
 ### 5. Icon Related APIs
 
@@ -200,6 +285,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Select icon to use in AI chat
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/select-icon
+Content-Type: application/x-www-form-urlencoded
+
+using=icon_1
+```
+
 #### 5.3 Upload Icon
 - **URL**: `/cgi-bin/luci/admin/network/oasis/upload-icon-data`
 - **Method**: POST
@@ -209,6 +302,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Upload new icon image
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/upload-icon-data
+Content-Type: application/x-www-form-urlencoded
+
+filename=my_icon.png&image=iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==
+```
+
 #### 5.4 Delete Icon
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-icon-data`
 - **Method**: POST
@@ -216,6 +317,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `key` (string): Icon key to delete
 - **Response**: JSON
 - **Description**: Delete icon
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/delete-icon-data
+Content-Type: application/x-www-form-urlencoded
+
+key=icon_2
+```
 
 ### 6. AI Service Related APIs
 
@@ -228,6 +337,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `model` (string): Model name
 - **Response**: JSON
 - **Description**: Select AI service to use
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/select-ai-service
+Content-Type: application/x-www-form-urlencoded
+
+identifier=1270318202&name=OpenAI&model=gpt-4
+```
 
 ### 7. Rollback Related APIs
 
@@ -245,6 +362,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `index` (string): Rollback target index
 - **Response**: JSON
 - **Description**: Rollback to specified data (reboot will be executed)
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/rollback-target-data
+Content-Type: application/x-www-form-urlencoded
+
+index=1
+```
 
 ### 8. Basic Information APIs
 
@@ -273,6 +398,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Toggle tool enable/disable status
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/change-tool-enable
+Content-Type: application/x-www-form-urlencoded
+
+name=get_weather&enable=1
+```
+
 #### 9.3 Add Remote MCP Server
 - **URL**: `/cgi-bin/luci/admin/network/oasis/add-remote-mcp-server`
 - **Method**: POST
@@ -286,6 +419,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Add remote MCP server
 
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/add-remote-mcp-server
+Content-Type: application/x-www-form-urlencoded
+
+name=my_server&server_label=My%20MCP%20Server&type=http&server_url=http://192.168.1.100:8080&require_approval=1&allowed_tools=get_weather&allowed_tools=get_time
+```
+
 #### 9.4 Remove Remote MCP Server
 - **URL**: `/cgi-bin/luci/admin/network/oasis/remove-remote-mcp-server`
 - **Method**: POST
@@ -293,6 +434,14 @@ This document describes the WebAPI specifications defined in `module.lua` manage
   - `name` (string): Server name to remove
 - **Response**: JSON
 - **Description**: Remove remote MCP server
+
+**Example**: POST request with form data
+```
+POST /cgi-bin/luci/admin/network/oasis/remove-remote-mcp-server
+Content-Type: application/x-www-form-urlencoded
+
+name=my_server
+```
 
 #### 9.5 Load Server Information
 - **URL**: `/cgi-bin/luci/admin/network/oasis/load-server-info`
@@ -320,3 +469,4 @@ All APIs use the LuCI authentication system and can only be accessed by users wi
 - OpenWrt LuCI framework
 - oasis core library
 - ubus RPC system
+
