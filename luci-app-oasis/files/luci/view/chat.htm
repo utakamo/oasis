@@ -1,6 +1,6 @@
 <%+header%>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/luci-app-oasis/chat.css">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/chat.css">
 
 <div class="oasis-container">
     <div class="chat-list-container">
@@ -115,7 +115,7 @@
                 font-family: 'Material Icons';
                 font-style: normal;
                 font-weight: 400;
-                src: url('${resourcePath}/luci-app-oasis/fonts/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2') format('woff2');
+                src: url('${resourcePath}/oasis/fonts/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2') format('woff2');
             }
             .material-icons {
                 font-family: 'Material Icons';
@@ -846,7 +846,7 @@
         const receivedMessageContainer = document.createElement('div');
         receivedMessageContainer.className = 'message received';
 
-        const iconPath = `${resourcePath}/luci-app-oasis/${icon_name}`;
+        const iconPath = `${resourcePath}/oasis/${icon_name}`;
         const receivedIconContainer = document.createElement('div');
         receivedIconContainer.className = 'icon';
         receivedIconContainer.style.backgroundImage = `url(${iconPath})`;
@@ -1344,7 +1344,7 @@
                     } else if (message.role === 'assistant') {
                         messageDiv.className = 'message received';
 
-                        const iconPath = `${resourcePath}/luci-app-oasis/${icon_name}`;
+                        const iconPath = `${resourcePath}/oasis/${icon_name}`;
                         const iconDiv = document.createElement('div');
                         iconDiv.className = 'icon';
                         iconDiv.style.backgroundImage = `url(${iconPath})`;

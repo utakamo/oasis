@@ -10,19 +10,18 @@ local misc          = require("oasis.chat.misc")
 local datactrl      = require("oasis.chat.datactrl")
 local nixio         = require("nixio")
 local oasis_ubus    = require("oasis.ubus.util")
-local client        = require("oasis.local.tool.client")
 local debug         = require("oasis.chat.debug")
 
-module("luci.controller.luci-app-oasis.module", package.seeall)
+module("luci.controller.oasis.module", package.seeall)
 
 function index()
     entry({"admin", "network", "oasis"}, firstchild(), "Oasis", 30).dependent=false
-    entry({"admin", "network", "oasis", "icons"}, template("luci-app-oasis/icons"), "Icon", 60).dependent=false
-    entry({"admin", "network", "oasis", "tools"}, template("luci-app-oasis/tools"), "Tools", 50).dependent=false
-    entry({"admin", "network", "oasis", "rollback-list"}, template("luci-app-oasis/rollback-list"), "Rollback List", 40).dependent=false
-    entry({"admin", "network", "oasis", "sysmsg"}, template("luci-app-oasis/sysmsg"), "System Message", 30).dependent=false
-    entry({"admin", "network", "oasis", "setting"}, cbi("luci-app-oasis/setting"), "General Setting", 20).dependent=false
-    entry({"admin", "network", "oasis", "chat"}, template("luci-app-oasis/chat"), "Chat with AI", 10).dependent=false
+    entry({"admin", "network", "oasis", "icons"}, template("oasis/icons"), "Icon", 60).dependent=false
+    entry({"admin", "network", "oasis", "tools"}, template("oasis/tools"), "Tools", 50).dependent=false
+    entry({"admin", "network", "oasis", "rollback-list"}, template("oasis/rollback-list"), "Rollback List", 40).dependent=false
+    entry({"admin", "network", "oasis", "sysmsg"}, template("oasis/sysmsg"), "System Message", 30).dependent=false
+    entry({"admin", "network", "oasis", "setting"}, cbi("oasis/setting"), "General Setting", 20).dependent=false
+    entry({"admin", "network", "oasis", "chat"}, template("oasis/chat"), "Chat with AI", 10).dependent=false
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "export-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "import-chat-data"}, call("import_chat_data"), nil).leaf = true
@@ -170,7 +169,7 @@ end
 
 function load_chat_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_chat_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][load_chat_data] ---")
 
     local params = luci_http.formvalue("params")
 
@@ -191,7 +190,7 @@ end
 
 function import_chat_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][import_chat_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][import_chat_data] ---")
     local chat_data = luci_http.formvalue("chat_data")
 
     if not chat_data then
@@ -244,7 +243,7 @@ end
 
 function delete_chat_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_chat_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][delete_chat_data] ---")
 
     local params = luci_http.formvalue("params")
 
@@ -265,7 +264,7 @@ end
 
 function rename()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][rename] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][rename] ---")
 
     local id = luci_http.formvalue("id")
     local title = luci_http.formvalue("title")
@@ -286,7 +285,7 @@ end
 
 function apply_uci_cmd()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][apply_uci_cmd] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][apply_uci_cmd] ---")
 
     local uci_list_json = luci_http.formvalue("uci_list")
     local chat_id = luci_http.formvalue("id")
@@ -298,8 +297,8 @@ function apply_uci_cmd()
         return
     end
 
-    -- debug:log("luci-app-oasis.log", "chat id = " .. chat_id)
-    -- debug:log("luci-app-oasis.log", "uci_list_json = " .. uci_list_json)
+    -- debug:log("oasis.log", "chat id = " .. chat_id)
+    -- debug:log("oasis.log", "uci_list_json = " .. uci_list_json)
 
     local uci_list = jsonc.parse(uci_list_json)
 
@@ -319,7 +318,7 @@ function apply_uci_cmd()
 end
 
 function confirm()
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][confirm] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][confirm] ---")
     local result = util.ubus("oasis", "confirm")
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
@@ -327,7 +326,7 @@ end
 
 function finalize()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][finalize] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][finalize] ---")
     local result = sys.exec("touch /tmp/oasis/apply/complete;echo $?")
 
     luci_http.prepare_content("application/json")
@@ -340,7 +339,7 @@ function finalize()
 end
 
 function rollback()
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][rollback] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][rollback] ---")
     local result = sys.exec("touch /tmp/oasis/apply/rollback;echo $?")
 
     luci_http.prepare_content("application/json")
@@ -354,7 +353,7 @@ end
 
 function load_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_sysmsg_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][load_sysmsg_data] ---")
 
     local result = util.ubus("oasis", "load_sysmsg_data", {})
 
@@ -364,7 +363,7 @@ end
 
 function update_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][update_sysmsg_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][update_sysmsg_data] ---")
 
     local target = luci_http.formvalue("target")
     local title = luci_http.formvalue("title")
@@ -386,7 +385,7 @@ end
 
 function add_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][add_sysmsg_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][add_sysmsg_data] ---")
 
     local title = luci_http.formvalue("title")
     local message = luci_http.formvalue("message")
@@ -407,7 +406,7 @@ end
 
 function delete_sysmsg_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_sysmsg_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][delete_sysmsg_data] ---")
 
     local target = luci_http.formvalue("target")
 
@@ -427,7 +426,7 @@ end
 
 function load_icon_info()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_icon_info] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][load_icon_info] ---")
 
     local result = util.ubus("oasis", "load_icon_info", {})
 
@@ -437,7 +436,7 @@ end
 
 function select_icon()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][select_icon] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][select_icon] ---")
     local using = luci_http.formvalue("using")
 
     if not using then
@@ -456,7 +455,7 @@ end
 
 function upload_icon_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][upload_icon_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][upload_icon_data] ---")
     local filename = luci_http.formvalue("filename")
     local image = luci_http.formvalue("image")
 
@@ -512,7 +511,7 @@ end
 
 function delete_icon_data()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][delete_icon_data] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][delete_icon_data] ---")
     local icon_key = luci_http.formvalue("key")
 
     if not icon_key then
@@ -547,7 +546,7 @@ end
 
 function uci_show()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][uci_show] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][uci_show] ---")
     local target = luci_http.formvalue("target")
 
     local list = util.ubus("uci", "configs", {})
@@ -582,7 +581,7 @@ end
 
 function load_extra_sysmsg()
 
-    -- debug:log("luci-app-oasis.log", "\n--- [module.lua][load_extra_sysmsg] ---")
+    -- debug:log("oasis.log", "\n--- [module.lua][load_extra_sysmsg] ---")
     local url = luci_http.formvalue("url")
 
     if (#url == 0) or (url == nil) then

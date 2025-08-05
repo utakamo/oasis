@@ -10,17 +10,17 @@ local request_method = os.getenv("REQUEST_METHOD")
 
 print("Content-Type: text/plain\n")
 
--- debug:log("luci-app-oasis.log",  "\n--- [cgi] ---")
+-- debug:log("oasis.log",  "\n--- [cgi] ---")
 
 if request_method == "POST" then
     local content_length = tonumber(os.getenv("CONTENT_LENGTH") or 0)
     local post_data = io.read(content_length)
-    -- debug:log("luci-app-oasis.log", "content length = " .. content_length)
-    -- debug:log("luci-app-oasis.log", "message = " .. post_data)
+    -- debug:log("oasis.log", "content length = " .. content_length)
+    -- debug:log("oasis.log", "message = " .. post_data)
 
     local json_tbl = jsonc.parse(post_data)
 
-    -- debug:dump("luci-app-oasis.log", json_tbl)
+    -- debug:dump("oasis.log", json_tbl)
 
     if not json_tbl then
         io.write("Message Format Error.")
@@ -40,12 +40,12 @@ if request_method == "POST" then
             io.flush()
             os.execute("sleep 1")
         -- else
-            -- debug:log("luci-app-oasis.log", "no uci list")
+            -- debug:log("oasis.log", "no uci list")
         end
     end
 
     if #new_chat_info > 0 then
-        -- debug:log("luci-app-oasis.log", "new_chat_info = " .. new_chat_info)
+        -- debug:log("oasis.log", "new_chat_info = " .. new_chat_info)
         io.write(new_chat_info)
     end
 else
