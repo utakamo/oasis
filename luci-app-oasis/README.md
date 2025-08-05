@@ -112,10 +112,15 @@ fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
 
 **Example**: POST request with form data
 ```
-POST /cgi-bin/luci/admin/network/oasis/import-chat-data
-Content-Type: application/x-www-form-urlencoded
+const base64Data = <file data>
 
-chat_data=eyJtZXNzYWdlcyI6W3sicm9sZSI6InVzZXIiLCJjb250ZW50IjoiSGVsbG8ifV19
+fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ chat_data: base64Data })
+})
 ```
 
 #### 2.3 Delete Chat Data
