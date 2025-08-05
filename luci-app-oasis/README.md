@@ -58,23 +58,55 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **URL**: `/cgi-bin/luci/admin/network/oasis/load-chat-data`
 - **Method**: POST
 - **Parameters**:
-  - `params` (string): Chat ID
+  - `params` (string): Chat ID [ex: 6690019588] *It's an 11-digit number.
 - **Response**: JSON
 - **Description**: Load data for the specified chat ID
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/load-chat-data
-Content-Type: application/x-www-form-urlencoded
+let chatID = "6690019588"
 
-params=1234567890
+fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ params: chatId })
+})
 ```
+**Output**
+`
+{
+        "messages": [
+                {
+                        "content": "Feel free to talk with the user.",
+                        "role": "system"
+                },
+                {
+                        "content": "Hello",
+                        "role": "user"
+                },
+                {
+                        "content": "Hey there! 👋 What's going on?  😄 \n",
+                        "role": "assistant"
+                },
+                {
+                        "content": "I'm a developer of Oasis. Nice to meet you.",
+                        "role": "user"
+                },
+                {
+                        "content": "That's awesome! 😊 It's great to meet another developer, especially one working on something as cool as Oasis!  \n\nWhat kind of projects are you working on within the project?  Are you focusing on specific areas like blockchain, smart contracts, or user experience? \n\n\nI'd love to hear more about your work! ✨  \n",
+                        "role": "assistant"
+                }
+        ]
+}
+`
 
 #### 2.2 Export Chat Data
 - **URL**: `/cgi-bin/luci/admin/network/oasis/export-chat-data`
 - **Method**: POST
 - **Parameters**:
-  - `params` (string): Chat ID
+  - `params` (string): Chat ID [ex: 6690019588] 
 - **Response**: JSON
 - **Description**: Export chat data
 
