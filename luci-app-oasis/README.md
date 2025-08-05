@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This Web API documentation is currently under development, so it may contain errors.
+
 # Oasis Web API
 
 This document describes the WebAPI specifications defined in `module.lua` managed by `luci-app-oasis`.
