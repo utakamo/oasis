@@ -122,6 +122,15 @@ fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
     body: new URLSearchParams({ chat_data: base64Data })
 })
 ```
+**Output**  
+`
+{
+  "id": "5574518533",
+  "title": "--"
+}
+`
+> [!NOTE]
+> When chat data is successfully imported, it is assigned an 11-digit ID and saved with the title name '--'.
 
 #### 2.3 Delete Chat Data
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-chat-data`
