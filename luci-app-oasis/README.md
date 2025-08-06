@@ -195,17 +195,24 @@ fetch('<%=build_url("admin", "network", "oasis", "rename-chat")%>', {
 - **Method**: POST
 - **Parameters**:
   - `uci_list` (string): JSON formatted UCI command list
-  - `id` (string): Chat ID
+  - `id` (string): Chat ID [ex: 6690019588] *It's an 11-digit number.
   - `type` (string): Application type ("commit" or "normal")
 - **Response**: JSON
 - **Description**: Apply UCI commands proposed by AI
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/apply-uci-cmd
-Content-Type: application/x-www-form-urlencoded
+let uci_list = JSON.stringify(jsonResponse.uci_list);
+let chatId = "6690019588";
+let type = "commit"
 
-uci_list=[{"command":"uci set system.@system[0].hostname=test","config":"system"}]&id=1234567890&type=normal
+fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({uci_list : uci_list, id : chatId, type : type})
+})
 ```
 
 #### 3.2 Confirm Configuration
