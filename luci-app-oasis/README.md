@@ -325,7 +325,13 @@ fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
 
 **POST request**  
 ```
-
+fetch('<%=build_url("admin", "network", "oasis", "update-sysmsg")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ target: target, title: title, message: message }),
+})
 ```
 
 #### 4.3 Add System Message
