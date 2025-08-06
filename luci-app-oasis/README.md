@@ -368,8 +368,21 @@ fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
 
 **POST request**  
 ```
-
+let target = "custom_1";
+fetch('<%=build_url("admin", "network", "oasis", "delete-sysmsg")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ target: target }),
+})
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
 
 #### 4.5 Load External System Message
 - **URL**: `/cgi-bin/luci/admin/network/oasis/load-extra-sysmsg`
@@ -396,6 +409,25 @@ url=https://example.com/system-message.json
 - **Response**: JSON
 - **Description**: Get available icon list
 
+**POST request**  
+```
+fetch('<%=build_url("admin", "network", "oasis", "load-icon-info")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+})
+```
+**Output**  
+`
+{
+  "using": "icon_1",
+  "path": "/www/luci-static/resources/oasis/",
+  "icon_1": "openwrt.png",
+  "icon_2": "operator.png"
+}
+`
+
 #### 5.2 Select Icon
 - **URL**: `/cgi-bin/luci/admin/network/oasis/select-icon`
 - **Method**: POST
@@ -406,8 +438,21 @@ url=https://example.com/system-message.json
 
 **POST request**  
 ```
-
+let using = "icon_2";
+fetch('<%=build_url("admin", "network", "oasis", "select-icon")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ using: using })
+})
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
 
 #### 5.3 Upload Icon
 - **URL**: `/cgi-bin/luci/admin/network/oasis/upload-icon-data`
@@ -420,8 +465,26 @@ url=https://example.com/system-message.json
 
 **POST request**  
 ```
+let filename = "my_icon.png";
+let image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="; // Base64 encoded image
 
+fetch('<%=build_url("admin", "network", "oasis", "upload-icon-data")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ 
+        filename: filename, 
+        image: image 
+    })
+})
 ```
+**Output**  
+`
+{
+  "key": "icon_3"
+}
+`
 
 #### 5.4 Delete Icon
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-icon-data`
@@ -433,8 +496,21 @@ url=https://example.com/system-message.json
 
 **POST request**  
 ```
-
+let key = "icon_2";
+fetch('<%=build_url("admin", "network", "oasis", "delete-icon-data")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ key: key })
+})
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
 
 ### 6. AI Service Related APIs
 
@@ -450,8 +526,28 @@ url=https://example.com/system-message.json
 
 **POST request**  
 ```
+let identifier = "7594872593";
+let name = "Ollama";
+let model = "gemma2:2b";
 
+fetch('<%=build_url("admin", "network", "oasis", "select-ai-service")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ 
+        identifier: identifier, 
+        name: name, 
+        model: model 
+    })
+})
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
 
 ### 7. Rollback Related APIs
 
@@ -461,6 +557,31 @@ url=https://example.com/system-message.json
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Get list of rollbackable data
+
+**POST request**  
+```
+fetch('<%=build_url("admin", "network", "oasis", "load-rollback-list")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+})
+```
+**Output**  
+`
+[
+  {
+    "index": "0",
+    "timestamp": "2024-01-15 10:30:00",
+    "description": "Network configuration backup"
+  },
+  {
+    "index": "1", 
+    "timestamp": "2024-01-14 15:45:00",
+    "description": "System settings backup"
+  }
+]
+`
 
 #### 7.2 Execute Rollback
 - **URL**: `/cgi-bin/luci/admin/network/oasis/rollback-target-data`
@@ -472,8 +593,23 @@ url=https://example.com/system-message.json
 
 **POST request**  
 ```
-
+let index = "0";
+fetch('<%=build_url("admin", "network", "oasis", "rollback-target-data")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ index: index })
+})
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
+> [!WARNING]
+> This operation will trigger a system reboot after successful rollback.
 
 ### 8. Basic Information APIs
 
@@ -535,8 +671,26 @@ name=get_weather&enable=1
 
 **POST request**  
 ```
+let formData = new FormData();
+formData.append('name', 'my_server');
+formData.append('server_label', 'My Custom Server');
+formData.append('type', 'http');
+formData.append('server_url', 'https://example.com/mcp');
+formData.append('require_approval', '1');
+formData.append('allowed_tools', 'tool1');
+formData.append('allowed_tools', 'tool2');
 
+fetch('<%=build_url("admin", "network", "oasis", "add-remote-mcp-server")%>', {
+    method: 'POST',
+    body: formData
+})
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
 
 #### 9.4 Remove Remote MCP Server
 - **URL**: `/cgi-bin/luci/admin/network/oasis/remove-remote-mcp-server`
@@ -546,10 +700,23 @@ name=get_weather&enable=1
 - **Response**: JSON
 - **Description**: Remove remote MCP server
 
-**POST request**   with form data
+**POST request**  
 ```
-
+let name = "my_server";
+fetch('<%=build_url("admin", "network", "oasis", "remove-remote-mcp-server")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ name: name })
+})
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
 
 #### 9.5 Load Server Information
 - **URL**: `/cgi-bin/luci/admin/network/oasis/load-server-info`
