@@ -482,6 +482,16 @@ index=1
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Get basic information about icons, system messages, chats, services, and UCI configurations
+**Example**: POST request
+```
+fetch('<%=build_url("admin", "network", "oasis", "base-info")%>', {
+    method: 'POST'
+})
+```
+**Output**  
+`
+{ "sysmsg": [ { "key": "default", "title": "OpenWrt Teacher (for High-Performance LLM)" }, { "key": "custom_1", "title": "OpenWrt System Knowledge (Sample)" }, { "key": "custom_2", "title": "OpenWrt Network Knowledge (Sample)" }, { "key": "custom_3", "title": "free" } ], "configs": [ "dhcp", "dropbear", "firewall", "luci", "network", "system", "ubihealthd", "ubootenv", "uhttpd", "wireless" ], "service": [ { "identifier": "7594872593", "name": "Ollama", "model": "gemma2:2b" } ], "icon": { "list": { "icon_1": "openwrt.png", "icon_2": "operator.png" }, "ctrl": { "using": "icon_1", "path": "/www/luci-static/resources/oasis/" } }, "chat": { "item": [ { "id": "3496377892", "title": "はじめてのOpenWrt" }, { "id": "6690019588", "title": "ConversationwithaNewFriend😊" }, { "id": "4607706843", "title": "SettingHostnameandUITheme" } ] } }
+`
 
 ### 9. Tool Related APIs
 
