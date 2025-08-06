@@ -332,7 +332,17 @@ fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
 
 **Example**: POST request
 ```
+let title = "Computer Science Teacher"
+let message =  "You are a computer science teacher. Please answer users' computer-related questions politely.";
+message = message.replace(/"/g, '\\"');
 
+fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ title: title, message: message }),
+})
 ```
 
 #### 4.4 Delete System Message
