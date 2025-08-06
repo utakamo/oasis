@@ -216,7 +216,9 @@ fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
 ```
 **Output**  
 `
-
+{
+  "OK"
+}
 `
 
 #### 3.2 Confirm Configuration
@@ -237,7 +239,7 @@ fetch('<%=build_url("admin", "network", "oasis", "confirm")%>', {
 ```
 **Output**  
 `
-
+{ "status": "OK", "uci_list": "{\"delete\":[],\"set\":[{\"param\":\"system.@system[0].hostname=duck\",\"class\":{\"option\":\"hostname\",\"config\":\"system\",\"value\":\"duck\",\"section\":\"@system[0]\"}}],\"del_list\":[],\"add\":[],\"reorder\":[],\"add_list\":[]}" }
 `
 
 #### 3.3 Finalize Configuration
@@ -246,6 +248,21 @@ fetch('<%=build_url("admin", "network", "oasis", "confirm")%>', {
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Finalize configuration changes
+**Example**: POST Request
+```
+fetch('<%=build_url("admin", "network", "oasis", "finalize")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+})
+```
+**Output**
+`
+{
+  "OK"
+}
+`
 
 #### 3.4 Rollback Configuration
 - **URL**: `/cgi-bin/luci/admin/network/oasis/rollback`
