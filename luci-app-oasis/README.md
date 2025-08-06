@@ -62,7 +62,7 @@ This document describes the WebAPI specifications defined in `module.lua` manage
 - **Response**: JSON
 - **Description**: Load data for the specified chat ID
 
-**Example**: POST request
+**POST request**  
 ```
 let chatID = "6690019588"
 
@@ -110,7 +110,7 @@ fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
 - **Response**: JSON
 - **Description**: Import chat data
 
-**Example**: POST request
+**POST request**  
 ```
 const base64Data = <file data>
 
@@ -140,9 +140,16 @@ fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
 - **Response**: JSON
 - **Description**: Delete the specified chat data
 
-**Example**: POST request
+**POST request**  
 ```
-
+let chatId = "6690019588";
+fetch('<%=build_url("admin", "network", "oasis", "delete-chat-data")%>', {
+    method: "POST",
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ params: chatId }),
+})
 ```
 **Output**  
 `
@@ -160,7 +167,7 @@ fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
 - **Response**: JSON
 - **Description**: Change the chat title
 
-**Example**: POST request
+**POST request**  
 ```
 let chatId = "6690019588";
 let newTitle = "new title!!"
@@ -192,7 +199,7 @@ fetch('<%=build_url("admin", "network", "oasis", "rename-chat")%>', {
 - **Response**: JSON
 - **Description**: Apply UCI commands proposed by AI
 
-**Example**: POST request
+**POST request**  
 ```
 let uci_list = JSON.stringify(jsonResponse.uci_list);
 let chatId = "6690019588";
@@ -220,7 +227,7 @@ fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
 - **Response**: JSON
 - **Description**: Get configuration change confirmation status
 
-**Example**: POST request
+**POST request**  
 ```
 fetch('<%=build_url("admin", "network", "oasis", "confirm")%>', {
     method: 'POST',
@@ -240,7 +247,7 @@ fetch('<%=build_url("admin", "network", "oasis", "confirm")%>', {
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Finalize configuration changes
-**Example**: POST Request
+**POST request**  
 ```
 fetch('<%=build_url("admin", "network", "oasis", "finalize")%>', {
     method: 'POST',
@@ -271,7 +278,7 @@ fetch('<%=build_url("admin", "network", "oasis", "finalize")%>', {
 - **Response**: JSON
 - **Description**: Display the content of the specified UCI configuration
 
-**Example**: POST request
+**POST request**  
 ```
 let target = "network";
 fetch('<%=build_url("admin", "network", "oasis", "uci-show")%>', {
@@ -295,7 +302,7 @@ fetch('<%=build_url("admin", "network", "oasis", "uci-show")%>', {
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Get system message list
-**Example**: Post request
+**POST request**  
 ```
 fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
     method: 'POST',
@@ -316,7 +323,7 @@ fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
 - **Response**: JSON
 - **Description**: Update system message
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -330,7 +337,7 @@ fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
 - **Response**: JSON
 - **Description**: Add new system message
 
-**Example**: POST request
+**POST request**  
 ```
 let title = "Computer Science Teacher"
 let message =  "You are a computer science teacher. Please answer users' computer-related questions politely.";
@@ -353,7 +360,7 @@ fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
 - **Response**: JSON
 - **Description**: Delete system message
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -366,7 +373,7 @@ fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
 - **Response**: JSON
 - **Description**: Load system message from external URL
 
-**Example**: POST request
+**POST request**  
 ```
 POST /cgi-bin/luci/admin/network/oasis/load-extra-sysmsg
 Content-Type: application/x-www-form-urlencoded
@@ -391,7 +398,7 @@ url=https://example.com/system-message.json
 - **Response**: JSON
 - **Description**: Select icon to use in AI chat
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -405,7 +412,7 @@ url=https://example.com/system-message.json
 - **Response**: JSON
 - **Description**: Upload new icon image
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -418,7 +425,7 @@ url=https://example.com/system-message.json
 - **Response**: JSON
 - **Description**: Delete icon
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -435,7 +442,7 @@ url=https://example.com/system-message.json
 - **Response**: JSON
 - **Description**: Select AI service to use
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -457,7 +464,7 @@ url=https://example.com/system-message.json
 - **Response**: JSON
 - **Description**: Rollback to specified data (reboot will be executed)
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -470,7 +477,7 @@ url=https://example.com/system-message.json
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Get basic information about icons, system messages, chats, services, and UCI configurations
-**Example**: POST request
+**POST request**  
 ```
 fetch('<%=build_url("admin", "network", "oasis", "base-info")%>', {
     method: 'POST'
@@ -499,7 +506,7 @@ fetch('<%=build_url("admin", "network", "oasis", "base-info")%>', {
 - **Response**: JSON
 - **Description**: Toggle tool enable/disable status
 
-**Example**: POST request
+**POST request**  
 ```
 POST /cgi-bin/luci/admin/network/oasis/change-tool-enable
 Content-Type: application/x-www-form-urlencoded
@@ -520,7 +527,7 @@ name=get_weather&enable=1
 - **Response**: JSON
 - **Description**: Add remote MCP server
 
-**Example**: POST request
+**POST request**  
 ```
 
 ```
@@ -533,7 +540,7 @@ name=get_weather&enable=1
 - **Response**: JSON
 - **Description**: Remove remote MCP server
 
-**Example**: POST request with form data
+**POST request**   with form data
 ```
 
 ```
@@ -544,7 +551,7 @@ name=get_weather&enable=1
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Get tool server information
-**Example**: Post request
+**POST request**  
 ```
 fetch('<%=build_url("admin", "network", "oasis", "load-server-info")%>')
 ```
