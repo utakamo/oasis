@@ -264,11 +264,19 @@ fetch('<%=build_url("admin", "network", "oasis", "confirm")%>', {
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/uci-show
-Content-Type: application/x-www-form-urlencoded
-
-target=network
+let target = "network";
+fetch('<%=build_url("admin", "network", "oasis", "uci-show")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ target: target })
+});
 ```
+**Output**  
+`
+[ "network.@device[0]=device", "network.@device[0].name=br-lan", "network.@device[0].ports=lan1 lan2 lan3 lan4 ", "network.@device[0].type=bridge", "network.globals=globals", "network.globals.ula_prefix=fd97:fa3d:38ff::/48", "network.lan.ipaddr=192.168.1.1", "network.lan.device=br-lan", "network.lan.ip6assign=60", "network.lan=interface", "network.lan.netmask=255.255.255.0", "network.lan.proto=static", "network.loopback=interface", "network.loopback.ipaddr=127.0.0.1", "network.loopback.netmask=255.0.0.0", "network.loopback.device=lo", "network.loopback.proto=static", "network.wan=interface", "network.wan.device=wan", "network.wan.proto=dhcp", "network.wan6=interface", "network.wan6.device=wan", "network.wan6.proto=dhcpv6" ]
+`
 
 ### 4. System Message Related APIs
 
