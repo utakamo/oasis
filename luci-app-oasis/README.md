@@ -215,6 +215,20 @@ uci_list=[{"command":"uci set system.@system[0].hostname=test","config":"system"
 - **Response**: JSON
 - **Description**: Get configuration change confirmation status
 
+**Example**: POST request
+```
+fetch('<%=build_url("admin", "network", "oasis", "confirm")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+})
+```
+**Output**  
+`
+
+`
+
 #### 3.3 Finalize Configuration
 - **URL**: `/cgi-bin/luci/admin/network/oasis/finalize`
 - **Method**: POST
