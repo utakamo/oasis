@@ -200,7 +200,7 @@ fetch('<%=build_url("admin", "network", "oasis", "rename-chat")%>', {
 - **Response**: JSON
 - **Description**: Apply UCI commands proposed by AI
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/apply-uci-cmd
 Content-Type: application/x-www-form-urlencoded
@@ -237,7 +237,7 @@ uci_list=[{"command":"uci set system.@system[0].hostname=test","config":"system"
 - **Response**: JSON
 - **Description**: Display the content of the specified UCI configuration
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/uci-show
 Content-Type: application/x-www-form-urlencoded
@@ -264,7 +264,7 @@ target=network
 - **Response**: JSON
 - **Description**: Update system message
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/update-sysmsg
 Content-Type: application/x-www-form-urlencoded
@@ -281,7 +281,7 @@ target=custom_1&title=Updated%20Title&message=Updated%20message%20content
 - **Response**: JSON
 - **Description**: Add new system message
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/add-sysmsg
 Content-Type: application/x-www-form-urlencoded
@@ -297,7 +297,7 @@ title=New%20System%20Message&message=This%20is%20a%20new%20system%20message
 - **Response**: JSON
 - **Description**: Delete system message
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/delete-sysmsg
 Content-Type: application/x-www-form-urlencoded
@@ -313,7 +313,7 @@ target=custom_1
 - **Response**: JSON
 - **Description**: Load system message from external URL
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/load-extra-sysmsg
 Content-Type: application/x-www-form-urlencoded
@@ -338,7 +338,7 @@ url=https://example.com/system-message.json
 - **Response**: JSON
 - **Description**: Select icon to use in AI chat
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/select-icon
 Content-Type: application/x-www-form-urlencoded
@@ -355,7 +355,7 @@ using=icon_1
 - **Response**: JSON
 - **Description**: Upload new icon image
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/upload-icon-data
 Content-Type: application/x-www-form-urlencoded
@@ -371,7 +371,7 @@ filename=my_icon.png&image=iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQ
 - **Response**: JSON
 - **Description**: Delete icon
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/delete-icon-data
 Content-Type: application/x-www-form-urlencoded
@@ -391,7 +391,7 @@ key=icon_2
 - **Response**: JSON
 - **Description**: Select AI service to use
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/select-ai-service
 Content-Type: application/x-www-form-urlencoded
@@ -416,7 +416,7 @@ identifier=1270318202&name=OpenAI&model=gpt-4
 - **Response**: JSON
 - **Description**: Rollback to specified data (reboot will be executed)
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/rollback-target-data
 Content-Type: application/x-www-form-urlencoded
@@ -451,7 +451,7 @@ index=1
 - **Response**: JSON
 - **Description**: Toggle tool enable/disable status
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/change-tool-enable
 Content-Type: application/x-www-form-urlencoded
@@ -472,7 +472,7 @@ name=get_weather&enable=1
 - **Response**: JSON
 - **Description**: Add remote MCP server
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 POST /cgi-bin/luci/admin/network/oasis/add-remote-mcp-server
 Content-Type: application/x-www-form-urlencoded
@@ -516,10 +516,3 @@ All APIs return the following format when an error occurs:
 ## Authentication
 
 All APIs use the LuCI authentication system and can only be accessed by users with appropriate permissions.
-
-## Dependencies
-
-- OpenWrt LuCI framework
-- oasis core library
-- ubus RPC system
-
