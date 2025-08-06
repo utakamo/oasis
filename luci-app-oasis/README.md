@@ -274,6 +274,24 @@ fetch('<%=build_url("admin", "network", "oasis", "finalize")%>', {
 - **Response**: JSON
 - **Description**: Rollback configuration changes
 
+**POST request**  
+```
+fetch('<%=build_url("admin", "network", "oasis", "rollback")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+})
+```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
+> [!NOTE]
+> This API returns a fixed JSON object with status "OK" on success.
+
 #### 3.5 Show UCI Configuration
 - **URL**: `/cgi-bin/luci/admin/network/oasis/uci-show`
 - **Method**: POST
@@ -337,6 +355,14 @@ fetch('<%=build_url("admin", "network", "oasis", "update-sysmsg")%>', {
     body: new URLSearchParams({ target: target, title: title, message: message }),
 })
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
+> [!NOTE]
+> This API returns a fixed JSON object with status "OK" on success.
 
 #### 4.3 Add System Message
 - **URL**: `/cgi-bin/luci/admin/network/oasis/add-sysmsg`
@@ -361,6 +387,14 @@ fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
     body: new URLSearchParams({ title: title, message: message }),
 })
 ```
+**Output**  
+`
+{
+  "status": "OK"
+}
+`
+> [!NOTE]
+> This API returns a fixed JSON object with status "OK" on success.
 
 #### 4.4 Delete System Message
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-sysmsg`
@@ -400,11 +434,21 @@ fetch('<%=build_url("admin", "network", "oasis", "delete-sysmsg")%>', {
 
 **POST request**  
 ```
-POST /cgi-bin/luci/admin/network/oasis/load-extra-sysmsg
-Content-Type: application/x-www-form-urlencoded
-
-url=https://example.com/system-message.json
+let url = "https://example.com/system-message.json";
+fetch('<%=build_url("admin", "network", "oasis", "load-extra-sysmsg")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ url: url })
+})
 ```
+**Output**  
+`
+{
+  "sysmsg": "External system message content"
+}
+`
 
 ### 5. Icon Related APIs
 
@@ -651,6 +695,27 @@ fetch('<%=build_url("admin", "network", "oasis", "base-info")%>', {
 - **Response**: JSON
 - **Description**: Get list of local tools
 
+**POST request**  
+```
+fetch('<%=build_url("admin", "network", "oasis", "load-local-tools-info")%>', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+})
+```
+**Output**  
+`
+[
+  {
+    "name": "get_weather",
+    "description": "Get current temperature for a given location.",
+    "enable": "1",
+    "type": "function"
+  }
+]
+`
+
 #### 9.2 Toggle Tool Enable/Disable
 - **URL**: `/cgi-bin/luci/admin/network/oasis/change-tool-enable`
 - **Method**: POST
@@ -770,4 +835,3 @@ All APIs return the following format when an error occurs:
 ## Authentication
 
 All APIs use the LuCI authentication system and can only be accessed by users with appropriate permissions.
-
