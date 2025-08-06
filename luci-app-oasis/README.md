@@ -110,7 +110,7 @@ fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
 - **Response**: JSON
 - **Description**: Import chat data
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 const base64Data = <file data>
 
@@ -140,7 +140,7 @@ fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
 - **Response**: JSON
 - **Description**: Delete the specified chat data
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
 let chatId = "6690019588"
 
@@ -163,18 +163,30 @@ fetch('<%=build_url("admin", "network", "oasis", "delete-chat-data")%>', {
 - **URL**: `/cgi-bin/luci/admin/network/oasis/rename-chat`
 - **Method**: POST
 - **Parameters**:
-  - `id` (string): Chat ID
+  - `id` (string): Chat ID [ex: 6690019588] *It's an 11-digit number.
   - `title` (string): New title
 - **Response**: JSON
 - **Description**: Change the chat title
 
-**Example**: POST request with form data
+**Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/rename-chat
-Content-Type: application/x-www-form-urlencoded
-
-id=1234567890&title=My%20New%20Chat%20Title
+let chatId = "6690019588";
+let newTitle = "new title!!"
+fetch('<%=build_url("admin", "network", "oasis", "rename-chat")%>', {
+    method: "POST",
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ id: chatId, title: newTitle })
+})
 ```
+**Output**  
+`
+{
+        "status": "OK",
+        "title": "new title!!"
+}
+`
 
 ### 3. UCI Configuration Related APIs
 
