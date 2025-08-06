@@ -74,7 +74,7 @@ fetch('<%=build_url("admin", "network", "oasis", "load-chat-data")%>', {
     body: new URLSearchParams({ params: chatId })
 })
 ```
-**Output**
+**Output**  
 `
 {
         "messages": [
@@ -136,17 +136,28 @@ fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
 - **URL**: `/cgi-bin/luci/admin/network/oasis/delete-chat-data`
 - **Method**: POST
 - **Parameters**:
-  - `params` (string): Chat ID
+  - `params` (string): Chat ID [ex: 6690019588] *It's an 11-digit number.
 - **Response**: JSON
 - **Description**: Delete the specified chat data
 
 **Example**: POST request with form data
 ```
-POST /cgi-bin/luci/admin/network/oasis/delete-chat-data
-Content-Type: application/x-www-form-urlencoded
+let chatId = "6690019588"
 
-params=1234567890
+fetch('<%=build_url("admin", "network", "oasis", "delete-chat-data")%>', {
+    method: "POST",
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ params: chatId }),
+})
 ```
+**Output**  
+`
+{
+        "status": "OK"
+}
+`
 
 #### 2.4 Rename Chat
 - **URL**: `/cgi-bin/luci/admin/network/oasis/rename-chat`
