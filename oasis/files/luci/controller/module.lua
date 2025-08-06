@@ -23,7 +23,6 @@ function index()
     entry({"admin", "network", "oasis", "setting"}, cbi("oasis/setting"), "General Setting", 20).dependent=false
     entry({"admin", "network", "oasis", "chat"}, template("oasis/chat"), "Chat with AI", 10).dependent=false
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
-    entry({"admin", "network", "oasis", "export-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "import-chat-data"}, call("import_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-chat-data"}, call("delete_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "rename-chat"}, call("rename"), nil).leaf = true
