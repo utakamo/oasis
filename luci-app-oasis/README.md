@@ -572,6 +572,14 @@ name=my_server
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Get tool server information
+**Example**: Post request
+```
+fetch('<%=build_url("admin", "network", "oasis", "load-server-info")%>')
+```
+**Output**
+`
+{ "tools": { "cfg129263": { ".name": "cfg129263", ".anonymous": true, "script": "ucode", "enable": "1", "type": "function", "additionalProperties": "0", "required": "foo", ".index": 17, "name": "method_2", "description": "This is test tool No.2", "conflict": "0", "property": "foo:string:sample Integer parameter.", ".type": "tool", "server": "oasis.ucode.tool.server1" }, "cfg0f9263": { ".name": "cfg0f9263", ".anonymous": true, "script": "lua", "enable": "1", "additionalProperties": "0", ".index": 14, "name": "get_wlan_ifname_list", "description": "Get the list of WLAN interface names.", "conflict": "0", "type": "function", ".type": "tool", "server": "oasis.lua.tool.server" }, "cfg0d9263": { ".name": "cfg0d9263", ".anonymous": true, "script": "lua", "enable": "1", "type": "function", "additionalProperties": "0", "required": "param2", ".index": 12, "name": "echo", "description": "Echoes back the received parameters.", "conflict": "0", "property": "param2:string:Parameter 1 (string)", ".type": "tool", "server": "oasis.lua.tool.server" }, "cfg119263": { ".name": "cfg119263", ".anonymous": true, "script": "ucode", "enable": "1", "additionalProperties": "0", ".index": 16, "name": "method_3", "description": "This is test tool No.1", "conflict": "0", "type": "function", ".type": "tool", "server": "oasis.ucode.tool.server2" }, "cfg0e9263": { ".name": "cfg0e9263", ".anonymous": true, "script": "lua", "enable": "1", "type": "function", "additionalProperties": "0", "required": "location", ".index": 13, "name": "get_weather", "description": "Get current temperature for a given location.", "conflict": "0", "property": "location:string:City and country e.g. Bogotá, Colombia", ".type": "tool", "server": "oasis.lua.tool.server" }, "cfg139263": { ".name": "cfg139263", ".anonymous": true, "script": "ucode", "enable": "1", "additionalProperties": "0", ".index": 18, "name": "method_1", "description": "This is test tool No.1", "conflict": "0", "type": "function", ".type": "tool", "server": "oasis.ucode.tool.server1" }, "cfg109263": { ".name": "cfg109263", ".anonymous": true, "script": "ucode", "enable": "1", "additionalProperties": "0", ".index": 15, "name": "method_4", "description": "This is test tool No.2", "conflict": "0", "type": "function", ".type": "tool", "server": "oasis.ucode.tool.server2" } }, "server_info": [ { "name": "oasis.ucode.tool.server1", "status": "loaded" }, { "name": "oasis.lua.tool.server", "status": "loaded" }, { "name": "oasis.ucode.tool.server2", "status": "loaded" } ] }
+`
 
 ## Error Responses
 
