@@ -214,6 +214,10 @@ fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
     body: new URLSearchParams({uci_list : uci_list, id : chatId, type : type})
 })
 ```
+**Output**  
+`
+
+`
 
 #### 3.2 Confirm Configuration
 - **URL**: `/cgi-bin/luci/admin/network/oasis/confirm`
