@@ -215,10 +215,12 @@ fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
 ```
 **Output**  
 `
-"OK"
+{
+  "status": "OK"
+}
 `
 > [!NOTE]
-> This API returns a fixed string "OK" on success.
+> This API returns a fixed JSON object with status "OK" on success.
 
 #### 3.2 Confirm Configuration
 - **URL**: `/cgi-bin/luci/admin/network/oasis/confirm`
@@ -258,10 +260,12 @@ fetch('<%=build_url("admin", "network", "oasis", "finalize")%>', {
 ```
 **Output**
 `
-"OK"
+{
+  "status": "OK"
+}
 `
 > [!NOTE]
-> This API returns a fixed string "OK" on success.
+> This API returns a fixed JSON object with status "OK" on success.
 
 #### 3.4 Rollback Configuration
 - **URL**: `/cgi-bin/luci/admin/network/oasis/rollback`
@@ -511,10 +515,12 @@ fetch('<%=build_url("admin", "network", "oasis", "delete-icon-data")%>', {
 ```
 **Output**  
 `
-"OK"
+{
+  "status": "OK"
+}
 `
 > [!NOTE]
-> This API returns a fixed string "OK" on success.
+> This API returns a fixed JSON object with status "OK" on success.
 
 ### 6. AI Service Related APIs
 
@@ -764,3 +770,4 @@ All APIs return the following format when an error occurs:
 ## Authentication
 
 All APIs use the LuCI authentication system and can only be accessed by users with appropriate permissions.
+
