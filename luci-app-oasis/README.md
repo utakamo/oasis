@@ -142,15 +142,7 @@ fetch('<%=build_url("admin", "network", "oasis", "import-chat-data")%>', {
 
 **Example**: POST request
 ```
-let chatId = "6690019588"
 
-fetch('<%=build_url("admin", "network", "oasis", "delete-chat-data")%>', {
-    method: "POST",
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({ params: chatId }),
-})
 ```
 **Output**  
 `
@@ -326,10 +318,7 @@ fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/update-sysmsg
-Content-Type: application/x-www-form-urlencoded
 
-target=custom_1&title=Updated%20Title&message=Updated%20message%20content
 ```
 
 #### 4.3 Add System Message
@@ -343,10 +332,7 @@ target=custom_1&title=Updated%20Title&message=Updated%20message%20content
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/add-sysmsg
-Content-Type: application/x-www-form-urlencoded
 
-title=New%20System%20Message&message=This%20is%20a%20new%20system%20message
 ```
 
 #### 4.4 Delete System Message
@@ -359,10 +345,7 @@ title=New%20System%20Message&message=This%20is%20a%20new%20system%20message
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/delete-sysmsg
-Content-Type: application/x-www-form-urlencoded
 
-target=custom_1
 ```
 
 #### 4.5 Load External System Message
@@ -400,10 +383,7 @@ url=https://example.com/system-message.json
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/select-icon
-Content-Type: application/x-www-form-urlencoded
 
-using=icon_1
 ```
 
 #### 5.3 Upload Icon
@@ -417,10 +397,7 @@ using=icon_1
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/upload-icon-data
-Content-Type: application/x-www-form-urlencoded
 
-filename=my_icon.png&image=iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==
 ```
 
 #### 5.4 Delete Icon
@@ -433,10 +410,7 @@ filename=my_icon.png&image=iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQ
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/delete-icon-data
-Content-Type: application/x-www-form-urlencoded
 
-key=icon_2
 ```
 
 ### 6. AI Service Related APIs
@@ -453,10 +427,7 @@ key=icon_2
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/select-ai-service
-Content-Type: application/x-www-form-urlencoded
 
-identifier=1270318202&name=OpenAI&model=gpt-4
 ```
 
 ### 7. Rollback Related APIs
@@ -478,10 +449,7 @@ identifier=1270318202&name=OpenAI&model=gpt-4
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/rollback-target-data
-Content-Type: application/x-www-form-urlencoded
 
-index=1
 ```
 
 ### 8. Basic Information APIs
@@ -544,10 +512,7 @@ name=get_weather&enable=1
 
 **Example**: POST request
 ```
-POST /cgi-bin/luci/admin/network/oasis/add-remote-mcp-server
-Content-Type: application/x-www-form-urlencoded
 
-name=my_server&server_label=My%20MCP%20Server&type=http&server_url=http://192.168.1.100:8080&require_approval=1&allowed_tools=get_weather&allowed_tools=get_time
 ```
 
 #### 9.4 Remove Remote MCP Server
@@ -560,10 +525,7 @@ name=my_server&server_label=My%20MCP%20Server&type=http&server_url=http://192.16
 
 **Example**: POST request with form data
 ```
-POST /cgi-bin/luci/admin/network/oasis/remove-remote-mcp-server
-Content-Type: application/x-www-form-urlencoded
 
-name=my_server
 ```
 
 #### 9.5 Load Server Information
