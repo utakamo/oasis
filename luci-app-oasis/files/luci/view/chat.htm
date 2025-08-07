@@ -96,7 +96,7 @@
 
 <script>
 
-    const chatItems = null;
+    
     let activeConversation = false;
     let targetChatItemId = null;
     let chatList = null;
@@ -322,6 +322,85 @@
         });
     }
 
+    // Global: チャットリスト項目の生成とイベント付与（どこからでも呼べるように）
+    function addChatListEntry(id, title) {
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+        const chatListContainer = document.getElementById("chat-list");
+        const smpChatListContainer = document.getElementById("smp-chat-item-dropdown");
+        const dropdown = document.getElementById("oasis-dropdown");
+
+        const li = document.createElement("li");
+        const smp_li = document.createElement("li");
+
+        li.setAttribute("data-id", id);
+        smp_li.setAttribute("data-id-for-smp", id);
+        smp_li.classList.add("smp-dropdown-item");
+
+        const span = document.createElement("span");
+        span.textContent = title;
+        li.appendChild(span);
+
+        const smp_span = document.createElement("span");
+        smp_span.textContent = title;
+        smp_li.appendChild(smp_span);
+
+        const menuContainer = document.createElement("div");
+        menuContainer.classList.add("oasis-hamburger-menu");
+        const menuButton = document.createElement("button");
+        menuButton.classList.add("oasis-menu-btn");
+        menuButton.textContent = "⋮";
+        menuButton.addEventListener("click", function (event) {
+            targetChatItemId = event.target.closest("li").getAttribute("data-id");
+            event.stopPropagation();
+            const rect = this.getBoundingClientRect();
+            dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+            dropdown.style.left = `${rect.left + window.scrollX}px`;
+            dropdown.style.display = "block";
+        });
+        menuContainer.appendChild(menuButton);
+        li.appendChild(menuContainer);
+        chatListContainer.appendChild(li);
+
+        const smp_menuContainer = document.createElement("div");
+        smp_menuContainer.classList.add("oasis-hamburger-menu");
+        const smp_menuButton = document.createElement("button");
+        smp_menuButton.classList.add("oasis-menu-btn");
+        smp_menuButton.textContent = "⋮";
+        smp_menuButton.addEventListener("click", function (event) {
+            targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
+            event.stopPropagation();
+            dropdown.style.display = "block";
+        });
+        smp_menuContainer.appendChild(smp_menuButton);
+        smp_li.appendChild(smp_menuContainer);
+        smpChatListContainer.appendChild(smp_li);
+
+        li.addEventListener('click', function (event) {
+            const systemMessage = document.getElementById("oasis-system");
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
+            targetChatItemId = event.target.closest("li").getAttribute("data-id");
+            if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
+                return;
+            }
+            handleChatItemClick(targetChatItemId);
+        });
+
+        smp_li.addEventListener('click', function (event) {
+            const systemMessage = document.getElementById("oasis-system");
+            if (systemMessage !== null) {
+                chatMessagesContainer.removeChild(systemMessage);
+            }
+            targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
+            if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
+                return;
+            }
+            handleChatItemClick(targetChatItemId);
+            smpChatListContainer.style.display = "none";
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
 
         loadPaperPlane();
@@ -331,6 +410,8 @@
         const dropdown = document.getElementById("oasis-dropdown");
 
         check_temporary_setting();
+        
+        // addChatListEntry はグローバル関数として上に定義
 
         fetch('<%=build_url("admin", "network", "oasis", "base-info")%>', {
             method: 'POST'
@@ -347,90 +428,7 @@
                 : (data.chat.item ? [data.chat.item] : []);
 
             chatItems.forEach(chat => {
-                const li = document.createElement("li");
-                const smp_li = document.createElement("li");
-
-                li.setAttribute("data-id", chat.id);
-                smp_li.setAttribute("data-id-for-smp", chat.id);
-
-                const span = document.createElement("span");
-                span.textContent = chat.title;
-                li.appendChild(span);
-
-                const smp_span = document.createElement("span");
-                smp_span.textContent = chat.title;
-                smp_li.appendChild(smp_span);
-
-                smp_li.classList.add("smp-dropdown-item");
-
-                const menuContainer = document.createElement("div");
-                menuContainer.classList.add("oasis-hamburger-menu");
-
-                const smp_menuContainer = document.createElement("div");
-                smp_menuContainer.classList.add("oasis-hamburger-menu");
-
-                const menuButton = document.createElement("button");
-                menuButton.classList.add("oasis-menu-btn");
-                menuButton.textContent = "⋮";
-
-                const smp_menuButton = document.createElement("button");
-                smp_menuButton.classList.add("oasis-menu-btn");
-                smp_menuButton.textContent = "⋮";
-
-                menuButton.addEventListener("click", function (event) {
-                    targetChatItemId = event.target.closest("li").getAttribute("data-id");
-                    event.stopPropagation();
-                    const rect = this.getBoundingClientRect();
-                    dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-                    dropdown.style.left = `${rect.left + window.scrollX}px`;
-                    dropdown.style.display = "block";
-                });
-
-                smp_menuButton.addEventListener("click", function (event) {
-                    targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                    event.stopPropagation();
-                    dropdown.style.display = "block";
-                });
-
-                li.addEventListener('click', function (event) {
-                    const systemMessage = document.getElementById("oasis-system");
-
-                    if (systemMessage !== null) {
-                        chatMessagesContainer.removeChild(systemMessage);
-                    }
-
-                    targetChatItemId = event.target.closest("li").getAttribute("data-id");
-                    if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                        return;
-                    }
-
-                    handleChatItemClick(targetChatItemId);
-                });
-
-                smp_li.addEventListener('click', function (event) {
-                    const systemMessage = document.getElementById("oasis-system");
-
-                    if (systemMessage !== null) {
-                        chatMessagesContainer.removeChild(systemMessage);
-                    }
-
-                    targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                    if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                        return;
-                    }
-
-                    handleChatItemClick(targetChatItemId);
-
-                    smpChatListContainer.style.display = "none";
-                });
-
-                menuContainer.appendChild(menuButton);
-                li.appendChild(menuContainer);
-                chatListContainer.appendChild(li);
-
-                smp_menuContainer.appendChild(smp_menuButton);
-                smp_li.appendChild(smp_menuContainer);
-                smpChatListContainer.appendChild(smp_li);
+                addChatListEntry(chat.id, chat.title);
             });
 
             let using_icon = data.icon.ctrl.using;
@@ -629,14 +627,15 @@
             popup.style.display = 'block';
             overlay.style.display = 'block';
 
-            const rename = document.getElementById("rename");
+        const rename = document.getElementById("rename");
 
-            chatList.item.forEach(chat => {
-                //console.log("chat.id = " + chat.id);
-                if (chat.id === targetChatItemId) {
-                    title = chat.title;
-                }
-            });
+        let title = "";
+        chatList.item.forEach(chat => {
+            //console.log("chat.id = " + chat.id);
+            if (chat.id === targetChatItemId) {
+                title = chat.title;
+            }
+        });
 
             renameLineBox.setAttribute('placeholder', title);
             renameLineBox.setAttribute('autocomplete', 'off');
@@ -788,10 +787,7 @@
                 closeExportPopup();
             });
 
-            text_export.addEventListener('click', function() {
-                //console.log("Push TEXT!!");
-                closeExportPopup();
-            });
+            // 二重ハンドラは削除済み
         }
     });
 
@@ -921,95 +917,8 @@
 
         chatList.item.push({id: jsonResponse.id, title: jsonResponse.title})
         
-        // New Chat List Item
-        const chatMessagesContainer = document.querySelector('.chat-messages');
-        const chatListContainer = document.getElementById("chat-list");
-        const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
-        const li = document.createElement("li");
-        const smp_li = document.createElement("li")
-
-        li.setAttribute("data-id", targetChatId);
-
-        smp_li.setAttribute("data-id-for-smp", targetChatId);
-        smp_li.classList.add("smp-dropdown-item");
-
-        const span = document.createElement("span");
-        span.textContent = jsonResponse.title;
-
-        const smp_span = document.createElement("span");
-        smp_span.textContent = jsonResponse.title;
-
-        const menuContainer = document.createElement("div");
-        menuContainer.classList.add("oasis-hamburger-menu");
-
-        const smp_menuContainer = document.createElement("div");
-        smp_menuContainer.classList.add("oasis-hamburger-menu");
-
-        const menuButton = document.createElement("button");
-        menuButton.classList.add("oasis-menu-btn");
-        menuButton.textContent = "⋮";
-        menuContainer.appendChild(menuButton);
-
-        li.appendChild(span);
-        li.appendChild(menuContainer);
-        chatListContainer.appendChild(li);
-
-        const smp_menuButton = document.createElement("button");
-        smp_menuButton.classList.add("oasis-menu-btn");
-        smp_menuButton.textContent = "⋮";
-        smp_menuContainer.appendChild(smp_menuButton);
-        smp_li.appendChild(smp_span);
-        smp_li.appendChild(smp_menuContainer);
-        smpChatListContainer.appendChild(smp_li);
-
-        li.addEventListener('click', function (event) {
-            const systemMessage = document.getElementById("oasis-system");
-
-            if (systemMessage !== null) {
-                chatMessagesContainer.removeChild(systemMessage);
-            }
-
-            targetChatItemId = event.target.closest("li").getAttribute("data-id");
-            if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                return;
-            }
-
-            handleChatItemClick(targetChatItemId);
-        });
-
-        smp_li.addEventListener('click', function (event) {
-            const systemMessage = document.getElementById("oasis-system");
-
-            if (systemMessage !== null) {
-                chatMessagesContainer.removeChild(systemMessage);
-            }
-
-            //console.log("click 2");
-            targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-
-            handleChatItemClick(targetChatItemId);
-
-            smpChatListContainer.style.display = "none";
-        });
-
-        menuButton.addEventListener("click", function (event) {
-            //console.log("click 3");
-            const dropdown = document.getElementById("oasis-dropdown");
-            targetChatItemId = event.target.closest("li").getAttribute("data-id");
-            event.stopPropagation();
-            const rect = this.getBoundingClientRect();
-            dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-            dropdown.style.left = `${rect.left + window.scrollX}px`;
-            dropdown.style.display = "block";
-        });
-
-        smp_menuButton.addEventListener("click", function (event) {
-            //console.log("click 4");
-            const dropdown = document.getElementById("oasis-dropdown");
-            targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-            event.stopPropagation();
-            dropdown.style.display = "block";
-        });
+        // New Chat List Item (refactored)
+        addChatListEntry(jsonResponse.id, jsonResponse.title);
     }
 
     function save_apply_proc(jsonResponse, type) {
@@ -1191,27 +1100,73 @@
         activeConversation = true;
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
         let fullMessage = '';
-        let finalResponse = null;
         let is_notify = false;
 
-        //console.log("send message: " + messageText);
+        // 完全なJSONオブジェクトをバッファから切り出すユーティリティ
+        function extractJsonObjects(text) {
+            const objects = [];
+            let startIndex = -1;
+            let depth = 0;
+            let inString = false;
+            let escapeNext = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+
+                if (inString) {
+                    if (escapeNext) {
+                        escapeNext = false;
+                    } else if (ch === '\\') {
+                        escapeNext = true;
+                    } else if (ch === '"') {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (ch === '"') {
+                    inString = true;
+                    continue;
+                }
+
+                if (ch === '{') {
+                    if (depth === 0) startIndex = i;
+                    depth++;
+                } else if (ch === '}') {
+                    depth--;
+                    if (depth === 0 && startIndex !== -1) {
+                        objects.push(text.slice(startIndex, i + 1));
+                        startIndex = -1;
+                    }
+                }
+            }
+
+            let remaining = '';
+            if (depth > 0 && startIndex !== -1) {
+                remaining = text.slice(startIndex);
+            } else if (startIndex === -1) {
+                // 余った非JSONテキスト（SSEのプレフィクスなど）は保持しない
+                remaining = '';
+            }
+
+            return { objects, remaining };
+        }
 
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    cmd: "chat",
+                    cmd: 'chat',
                     id: targetChatId,
                     message: messageText,
-                    sysmsg_key: sysmsg_key, 
+                    sysmsg_key: sysmsg_key,
                 })
             });
 
             if (!response.ok) {
-                console.error('Error:', response.statusText);
+                console.error('HTTP Error:', response.status, response.statusText);
+                receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('A network error occurred. Please try again later.');
                 return;
             }
 
@@ -1224,73 +1179,55 @@
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                buffer += chunk;
+                buffer += decoder.decode(value, { stream: true });
 
-                const parts = buffer.split(/(?<=})\s*(?={)/g);
-                buffer = parts.pop() || '';
+                // NDJSON / SSE 前置きが混在しても、{}の深さで安全に抽出
+                const { objects, remaining } = extractJsonObjects(buffer);
+                buffer = remaining; // 解析済み以外を保持
 
-                for (const part of parts) {
+                for (const jsonText of objects) {
+                    let evt = null;
                     try {
-                        const jsonResponse = JSON.parse(part.trim());
-
-                        if (jsonResponse.message?.content) {
-                            fullMessage += jsonResponse.message.content;
-                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }
-
-                        if (jsonResponse.id && isNumeric(jsonResponse.id)) {
-                            show_chat_popup(jsonResponse);
-                        }
-
-                        if (jsonResponse.uci_notify && !is_notify) {
-                            show_notify_popup(jsonResponse);
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                            is_notify = true;
-                        }
+                        evt = JSON.parse(jsonText);
                     } catch (e) {
-                        fullMessage = "Json Parse Error";
-                        receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
-                        receivedMessageTextContainer.style.color = "red";
+                        // 部分的に壊れた場合はスキップ（残りを待つ）
+                        continue;
+                    }
+
+                    if (evt.message && typeof evt.message.content === 'string') {
+                        fullMessage += evt.message.content;
+                        receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+
+                    if (evt.id && isNumeric(evt.id)) {
+                        show_chat_popup(evt);
+                    }
+
+                    if (evt.uci_notify && !is_notify) {
+                        show_notify_popup(evt);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        is_notify = true;
                     }
                 }
             }
 
-            if (buffer.trim()) {
+            // 単発レスポンス型（全体が1 JSON）の場合、残りバッファを試行
+            const trimmed = (buffer || '').trim();
+            if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
                 try {
-                    finalResponse = JSON.parse(buffer.trim());
-
-                    if (finalResponse.id && isNumeric(finalResponse.id)) {
-                        show_chat_popup(finalResponse);
+                    const evt = JSON.parse(trimmed);
+                    if (evt.message && typeof evt.message.content === 'string') {
+                        fullMessage += evt.message.content;
                     }
-
-                    if (finalResponse.uci_notify && !is_notify) {
-                        show_notify_popup(finalResponse);
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                        is_notify = true;
+                    if (evt.id && isNumeric(evt.id)) {
+                        show_chat_popup(evt);
                     }
-
-                    if (finalResponse.message?.content) {
-                        fullMessage += finalResponse.message.content;
+                    if (evt.uci_notify && !is_notify) {
+                        show_notify_popup(evt);
                     }
-                } catch (e) {
-                    console.error('JSON Parse Error', e);
-                    console.error(buffer.trim());
-                    fullMessage = "Error!\n";
-                    fullMessage += "The network might be disconnected, or the AI service settings might be incorrect.\n\n";
-                    fullMessage += "[OpenAI]\n";
-                    fullMessage += "If you want to use OpenAI, you need to set the Endpoint to the following Endpoint.\n\n";
-                    fullMessage += "Endpoint:\n";
-                    fullMessage += "```\nhttps://api.openai.com/v1/chat/completions\n```\n";
-                    fullMessage += "You can create an API Key from your OpenAI account page. Please use that.\n\n";
-                    fullMessage += "[Ollama]\n";
-                    fullMessage += "If you want to use Ollama, you need to set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.\n";
-                    fullMessage += "```\nOLLAMA_HOST=0.0.0.0\nOLLAMA_ORIGINS=*\n```\n";
-                    fullMessage += "Change the Ollama parameter configuration file (Linux) or environment variables (Windows) that exist on the PC where Ollama is installed to the above values.\n\n";
-                    fullMessage += "Endpoint:\n";
-                    fullMessage += "```\nhttp://[Your Ollama PC Address]:11434/api/chat\n```\n";
-                    fullMessage += "When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.";
+                } catch (_) {
+                    // 無視: 最終断片が不完全な場合
                 }
             }
 
@@ -1298,6 +1235,7 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         } catch (error) {
             console.error('Request failed', error);
+            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('A network error occurred. Please check your network connection and AI service settings.');
         } finally {
             message_outputing = false;
             activeConversation = false;
@@ -1395,22 +1333,7 @@
     }
 
     document.getElementById('smp-new-button').addEventListener('click', async function() {
-        if (activeConversation || message_outputing) {
-            return;
-        }
-
-        targetChatId = "";
-
-        const chatMessagesContainer = document.querySelector('.chat-messages');
-
-        if (chatMessagesContainer) {
-            const systemMessage = document.getElementById("oasis-system");
-            if (systemMessage !== null) {
-                chatMessagesContainer.removeChild(systemMessage);
-            }
-            const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
-            messages.forEach(message => message.remove());
-        }
+        await new_chat_action();
 
         const dropdown = document.getElementById('menu-trigger').nextElementSibling;
         const isVisible = dropdown.style.display === "block";
@@ -1419,22 +1342,7 @@
     });
 
     document.getElementById('new-button').addEventListener('click', async function() {
-        if (activeConversation || message_outputing) {
-            return;
-        }
-
-        targetChatId = "";
-
-        const chatMessagesContainer = document.querySelector('.chat-messages');
-
-        if (chatMessagesContainer) {
-            const systemMessage = document.getElementById("oasis-system");
-            if (systemMessage !== null) {
-                chatMessagesContainer.removeChild(systemMessage);
-            }
-            const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
-            messages.forEach(message => message.remove());
-        }
+        await new_chat_action();
     });
 
     document.getElementById('import-chat-data').addEventListener('change', function(event) {
@@ -1460,110 +1368,14 @@
                         return;
                     }
 
-                    //console.log('Success:', data);
-                    const chatMessagesContainer = document.querySelector('.chat-messages');
-                    const chatListContainer = document.getElementById("chat-list");
-                    const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
-                    const dropdown = document.getElementById("oasis-dropdown");
-
-                    const li = document.createElement("li");
-                    const smp_li = document.createElement("li");
-
-                    li.setAttribute("data-id", data.id);
-                    smp_li.setAttribute("data-id-for-smp", data.id);
-
-                    const span = document.createElement("span");
-                    span.textContent = data.title;
-                    li.appendChild(span);
-
-                    const smp_span = document.createElement("span");
-                    smp_span.textContent = data.title;
-                    smp_li.appendChild(smp_span);
-
-                    smp_li.classList.add("smp-dropdown-item");
-
-                    const menuContainer = document.createElement("div");
-                    menuContainer.classList.add("oasis-hamburger-menu");
-
-                    const smp_menuContainer = document.createElement("div");
-                    smp_menuContainer.classList.add("oasis-hamburger-menu");
-
-                    const menuButton = document.createElement("button");
-                    menuButton.classList.add("oasis-menu-btn");
-                    menuButton.textContent = "⋮";
-
-                    const smp_menuButton = document.createElement("button");
-                    smp_menuButton.classList.add("oasis-menu-btn");
-                    smp_menuButton.textContent = "⋮";
-
-                    menuButton.addEventListener("click", function (event) {
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id");
-                        event.stopPropagation();
-                        const rect = this.getBoundingClientRect();
-                        dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-                        dropdown.style.left = `${rect.left + window.scrollX}px`;
-                        dropdown.style.display = "block";
-                    });
-
-                    smp_menuButton.addEventListener("click", function (event) {
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                        event.stopPropagation();
-                        //const rect = this.getBoundingClientRect();
-                        //dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-                        //dropdown.style.left = `${rect.left + window.scrollX}px`;
-                        dropdown.style.display = "block";
-                    });
-
-                    li.addEventListener('click', function (event) {
-                        const systemMessage = document.getElementById("oasis-system");
-
-                        if (systemMessage !== null) {
-                            chatMessagesContainer.removeChild(systemMessage);
-                        }
-
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id");
-                        if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                            return;
-                        }
-
-                        handleChatItemClick(targetChatItemId);
-                    });
-
-                    smp_li.addEventListener('click', function (event) {
-
-                        const systemMessage = document.getElementById("oasis-system");
-
-                        if (systemMessage !== null) {
-                            chatMessagesContainer.removeChild(systemMessage);
-                        }
-
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                        if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                            return;
-                        }
-
-                        handleChatItemClick(targetChatItemId);
-
-                        //console.log("smp = " + targetChatItemId);
-
-                        smpChatListContainer.style.display = "none";
-                    });
-
-                    menuContainer.appendChild(menuButton);
-                    li.appendChild(menuContainer);
-                    chatListContainer.appendChild(li);
-
-                    smp_menuContainer.appendChild(smp_menuButton);
-                    smp_li.appendChild(smp_menuContainer)
-                    smpChatListContainer.appendChild(smp_li);
+                    // 追加されたチャットをリストに反映（共通関数）
+                    addChatListEntry(data.id, data.title);
 
                     const itemCount = (chatList !== null) ? chatList.item.length : 0;
-        
                     if (itemCount === 0) {
                         chatList = { item:[] };  
                     }
-
-                    chatList.item.push({id: data.id, title: data.title})
+                    chatList.item.push({id: data.id, title: data.title});
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -1597,110 +1409,14 @@
                         return;
                     }
 
-                    //console.log('Success:', data);
-                    const chatMessagesContainer = document.querySelector('.chat-messages');
-                    const chatListContainer = document.getElementById("chat-list");
-                    const smpChatListContainer = document.getElementById("smp-chat-item-dropdown")
-                    const dropdown = document.getElementById("oasis-dropdown");
-
-                    const li = document.createElement("li");
-                    const smp_li = document.createElement("li");
-
-                    li.setAttribute("data-id", data.id);
-                    smp_li.setAttribute("data-id-for-smp", data.id);
-
-                    const span = document.createElement("span");
-                    span.textContent = data.title;
-                    li.appendChild(span);
-
-                    const smp_span = document.createElement("span");
-                    smp_span.textContent = data.title;
-                    smp_li.appendChild(smp_span);
-
-                    smp_li.classList.add("smp-dropdown-item");
-
-                    const menuContainer = document.createElement("div");
-                    menuContainer.classList.add("oasis-hamburger-menu");
-
-                    const smp_menuContainer = document.createElement("div");
-                    smp_menuContainer.classList.add("oasis-hamburger-menu");
-
-                    const menuButton = document.createElement("button");
-                    menuButton.classList.add("oasis-menu-btn");
-                    menuButton.textContent = "⋮";
-
-                    const smp_menuButton = document.createElement("button");
-                    smp_menuButton.classList.add("oasis-menu-btn");
-                    smp_menuButton.textContent = "⋮";
-
-                    menuButton.addEventListener("click", function (event) {
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id");
-                        event.stopPropagation();
-                        const rect = this.getBoundingClientRect();
-                        dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-                        dropdown.style.left = `${rect.left + window.scrollX}px`;
-                        dropdown.style.display = "block";
-                    });
-
-                    smp_menuButton.addEventListener("click", function (event) {
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                        event.stopPropagation();
-                        //const rect = this.getBoundingClientRect();
-                        //dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-                        //dropdown.style.left = `${rect.left + window.scrollX}px`;
-                        dropdown.style.display = "block";
-                    });
-
-                    li.addEventListener('click', function (event) {
-                        const systemMessage = document.getElementById("oasis-system");
-
-                        if (systemMessage !== null) {
-                            chatMessagesContainer.removeChild(systemMessage);
-                        }
-
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id");
-                        if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                            return;
-                        }
-
-                        handleChatItemClick(targetChatItemId);
-                    });
-
-                    smp_li.addEventListener('click', function (event) {
-
-                        const systemMessage = document.getElementById("oasis-system");
-
-                        if (systemMessage !== null) {
-                            chatMessagesContainer.removeChild(systemMessage);
-                        }
-
-                        targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                        if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                            return;
-                        }
-
-                        handleChatItemClick(targetChatItemId);
-
-                        //console.log("smp = " + targetChatItemId);
-
-                        smpChatListContainer.style.display = "none";
-                    });
-
-                    menuContainer.appendChild(menuButton);
-                    li.appendChild(menuContainer);
-                    chatListContainer.appendChild(li);
-
-                    smp_menuContainer.appendChild(smp_menuButton);
-                    smp_li.appendChild(smp_menuContainer)
-                    smpChatListContainer.appendChild(smp_li);
+                    // 追加されたチャットをリストに反映（共通関数）
+                    addChatListEntry(data.id, data.title);
 
                     const itemCount = (chatList !== null) ? chatList.item.length : 0;
-        
                     if (itemCount === 0) {
                         chatList = { item:[] };  
                     }
-
-                    chatList.item.push({id: data.id, title: data.title})
+                    chatList.item.push({id: data.id, title: data.title});
                 })
                 .catch(error => {
                     console.error('Error:', error);
