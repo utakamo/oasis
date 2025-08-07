@@ -1,51 +1,14 @@
 #!/usr/bin/env lua
 
-local sys           = require("luci.sys")
 local jsonc         = require("luci.jsonc")
-local uci           = require("luci.model.uci").cursor()
-local common        = require("oasis.common")
-local misc          = require("oasis.chat.misc")
-local datactrl      = require("oasis.chat.datactrl")
-local oasis_ubus    = require("oasis.ubus.util")
 -- local debug     = require("oasis.chat.debug")
-
-local read_chat_data = function(file_path)
-
-    -- debug:log("oasis.log", "\n--- [oasis.chat][read_chat_data] ---")
-    -- debug:log("oasis.log", "file path = " .. file_path)
-
-    local file = io.open(file_path, "r")
-
-    if not file then
-        return ""
-    end
-
-    local chat_data = file:read("*a")
-    file:close()
-
-    -- debug:log("oasis.log", "chat data = " .. chat_data)
-
-    return chat_data
-end
-
-local write_chat_data = function(file_path, str)
-
-    local file = io.open(file_path, "w")
-
-    if not file then
-        return false
-    end
-
-    file:write(str)
-    file:close()
-
-    return true
-end
 
 local methods = {
 
     list = {
         call = function()
+            local oasis_ubus    = require("oasis.ubus.util")
+
             local r = {}
             r.result = oasis_ubus.retrieve_chat_info("json")
             return r
@@ -56,6 +19,9 @@ local methods = {
         args = { id = "a_string", sysmsg_key = "a_string", message = "a_string" },
 
         call = function(args)
+            local uci           = require("luci.model.uci").cursor()
+            local oasis_ubus    = require("oasis.ubus.util")
+            local common        = require("oasis.common")
             -- debug:log("oasis.log", "\n--- [oasis.chat][send] ---")
 
             local r = {}
@@ -112,6 +78,9 @@ local methods = {
         args = { id = "a_string" },
 
         call = function(args)
+            local datactrl      = require("oasis.chat.datactrl")
+            local misc          = require("oasis.chat.misc")
+            local common        = require("oasis.common")
             -- debug:log("oasis.log", "\n--- [oasis.chat][load] ---")
 
             local r = {}
@@ -126,6 +95,26 @@ local methods = {
             end
 
             local full_file_path = misc.normalize_path(conf.path) .. file_name
+
+            local read_chat_data = function(file_path)
+
+                -- debug:log("oasis.log", "\n--- [oasis.chat][read_chat_data] ---")
+                -- debug:log("oasis.log", "file path = " .. file_path)
+
+                local file = io.open(file_path, "r")
+
+                if not file then
+                    return ""
+                end
+
+                local chat_data = file:read("*a")
+                file:close()
+
+                -- debug:log("oasis.log", "chat data = " .. chat_data)
+
+                return chat_data
+            end
+
             local chat_data = read_chat_data(full_file_path)
 
             if #chat_data == 0 then
@@ -144,7 +133,12 @@ local methods = {
         args = { role1 = "a_string", content1 = "a_string", role2 = "a_string", content2 = "a_string", role3 = "a_string", content3 = "a_string" },
 
         call = function(args)
+            local uci           = require("luci.model.uci").cursor()
+            local datactrl      = require("oasis.chat.datactrl")
+            local misc          = require("oasis.chat.misc")
+            local common        = require("oasis.common")
             -- debug:log("oasis.log", "\n--- [oasis.chat][create] ---")
+            
             local r = {}
 
             local id = common.generate_chat_id()
@@ -171,6 +165,20 @@ local methods = {
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
 
+            local write_chat_data = function(file_path, str)
+
+                local file = io.open(file_path, "w")
+
+                if not file then
+                    return false
+                end
+
+                file:write(str)
+                file:close()
+
+                return true
+            end
+
             write_chat_data(full_file_path, chat_json_str)
 
             local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.chat)
@@ -191,6 +199,10 @@ local methods = {
         },
 
         call = function(args)
+            local datactrl      = require("oasis.chat.datactrl")
+            local misc          = require("oasis.chat.misc")
+            local common        = require("oasis.common")
+
             -- debug:log("oasis.log", "\n--- [oasis.chat][append] ---")
             local r = {}
             local is_same_id = common.search_chat_id(args.id)
@@ -247,6 +259,11 @@ local methods = {
         args = { id = "a_string" },
 
         call = function(args)
+            local uci           = require("luci.model.uci").cursor()
+            local datactrl      = require("oasis.chat.datactrl")
+            local misc          = require("oasis.chat.misc")
+            local common        = require("oasis.common")
+
             -- debug:log("oasis.log", "\n--- [oasis.chat][delete] ---")
 
             local r = {}

@@ -1,45 +1,7 @@
 #!/usr/bin/env lua
 
-local uci       = require("luci.model.uci").cursor()
 local jsonc     = require("luci.jsonc")
-local transfer  = require("oasis.chat.transfer")
-local common    = require("oasis.common")
-local misc      = require("oasis.chat.misc")
-local datactrl  = require("oasis.chat.datactrl")
 -- local debug     = require("oasis.chat.debug")
-
-local load_chat_data = function(file_path)
-
-    -- debug:log("oasis.log", "\n--- [oasis.title][load_chat_data] ---")
-    -- debug:log("oasis.log", "file path = " .. file_path)
-
-    local file = io.open(file_path, "r")
-
-    if not file then
-        return ""
-    end
-
-    local chat_data = file:read("*a")
-    file:close()
-
-    -- debug:log("oasis.log", chat_data)
-
-    return jsonc.parse(chat_data)
-end
-
-local save_chat_title = function(id, title)
-
-    local unnamed_section = common.get_target_id_section(id)
-
-    if #unnamed_section == 0 then
-        return false
-    end
-
-    uci:set(common.db.uci.cfg, unnamed_section, "title", title)
-    uci:commit(common.db.uci.cfg)
-
-    return true
-end
 
 local methods = {
 
@@ -47,9 +9,14 @@ local methods = {
         args = { id = "a_string" },
 
         call = function(args)
+            local uci       = require("luci.model.uci").cursor()
+            local datactrl  = require("oasis.chat.datactrl")
+            local misc      = require("oasis.chat.misc")
+            local common    = require("oasis.common")
+            local transfer  = require("oasis.chat.transfer")
+
             -- debug:log("oasis.log", "\n--- [oasis.title][auto_set] ---")
             local r = {}
-
             local cfg = datactrl.get_ai_service_cfg(nil, {with_storage = true})
             local file_name = cfg.prefix .. args.id
             local file_path = misc.normalize_path(cfg.path) .. file_name
@@ -76,6 +43,25 @@ local methods = {
 
             -- debug:log("oasis.log", "file path = " .. file_path)
 
+            local load_chat_data = function(file_path)
+
+                -- debug:log("oasis.log", "\n--- [oasis.title][load_chat_data] ---")
+                -- debug:log("oasis.log", "file path = " .. file_path)
+
+                local file = io.open(file_path, "r")
+
+                if not file then
+                    return ""
+                end
+
+                local chat_data = file:read("*a")
+                file:close()
+
+                -- debug:log("oasis.log", chat_data)
+
+                return jsonc.parse(chat_data)
+            end
+
             local chat = load_chat_data(file_path)
             chat.model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
 
@@ -86,6 +72,20 @@ local methods = {
             if (not title) or (#title == 0) then
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
+            end
+
+            local save_chat_title = function(id, title)
+
+                local unnamed_section = common.get_target_id_section(id)
+
+                if #unnamed_section == 0 then
+                    return false
+                end
+
+                uci:set(common.db.uci.cfg, unnamed_section, "title", title)
+                uci:commit(common.db.uci.cfg)
+
+                return true
             end
 
             local is_set = save_chat_title(args.id, title)
@@ -106,8 +106,25 @@ local methods = {
         args = { id = "a_string", title = "a_string" },
 
         call = function(args)
+            local uci       = require("luci.model.uci").cursor()
+            local common    = require("oasis.common")
+
             local r = {}
             local is_set = false
+
+            local save_chat_title = function(id, title)
+
+                local unnamed_section = common.get_target_id_section(id)
+
+                if #unnamed_section == 0 then
+                    return false
+                end
+
+                uci:set(common.db.uci.cfg, unnamed_section, "title", title)
+                uci:commit(common.db.uci.cfg)
+
+                return true
+            end
 
             if #args.title ~= 0 then
                 is_set = save_chat_title(args.id, args.title)
