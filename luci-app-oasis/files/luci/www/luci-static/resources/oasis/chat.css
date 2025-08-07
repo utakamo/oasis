@@ -146,6 +146,8 @@
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     overflow: hidden;
+    font-size: 15px;
+    line-height: 1.6;
 }
 
 #keyboard-padding {
@@ -211,6 +213,18 @@
     border-radius: 14px;
     word-wrap: break-word;
     line-height: 1.6;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.message .message-meta {
+    display: block;
+    margin-top: 4px;
+    text-align: right;
+    font-size: 11px;
+    color: #999;
+}
+.message .message-text:hover .message-meta {
+    color: #666;
 }
 
 .message.sent .message-text {
@@ -270,9 +284,21 @@
     min-height: 3rem;
 }
 
+#send-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 #uci-config-list {
     display: block;
     width: 100%;
+}
+
+select:focus-visible,
+button:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13,110,253,0.3);
 }
 
 #apply-button {
@@ -576,6 +602,11 @@
         padding: 0px;
     }
 
+    .chat-input {
+        position: sticky;
+        bottom: 0;
+    }
+
     .oasis-hamburger-menu {
         position: absolute;
         right: 10px;
@@ -814,3 +845,4 @@ pre {
 #export-cancel:hover, #rename-cancel:hover, #uci-cancel:hover {
     background-color: #7A828C;
 }
+

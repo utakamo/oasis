@@ -413,6 +413,46 @@
 
         check_temporary_setting();
         
+        // 入力欄: Enter送信/Shift+Enter改行 + 5行まで自動リサイズ + 空時はSEND無効
+        function initMessageInputAutoResizeAndEnterSend() {
+            const messageInputEl = document.getElementById('message-input');
+            const sendBtn = document.getElementById('send-button');
+            const lineHeightPx = 20;
+            const maxLines = 5;
+
+            function autoResizeTextarea() {
+                messageInputEl.style.height = 'auto';
+                const computed = window.getComputedStyle(messageInputEl);
+                const border = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
+                const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+                const contentHeight = messageInputEl.scrollHeight;
+                const maxHeight = (lineHeightPx * maxLines) + padding + border;
+                const newHeight = Math.min(contentHeight, maxHeight);
+                messageInputEl.style.height = newHeight + 'px';
+                messageInputEl.style.overflowY = (contentHeight > maxHeight) ? 'auto' : 'hidden';
+            }
+
+            function toggleSendDisabled() {
+                const text = messageInputEl.value.trim();
+                sendBtn.disabled = text.length === 0;
+            }
+
+            messageInputEl.placeholder = 'Your Message (Enter to send, Shift+Enter for newline)';
+            messageInputEl.addEventListener('input', function() {
+                autoResizeTextarea();
+                toggleSendDisabled();
+            });
+            messageInputEl.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendBtn.click();
+                }
+            });
+
+            autoResizeTextarea();
+            toggleSendDisabled();
+        }
+
         // addChatListEntry はグローバル関数として上に定義
 
         fetch('<%=build_url("admin", "network", "oasis", "base-info")%>', {
@@ -953,31 +993,7 @@
         });
 
         // Enterで送信、Shift+Enterで改行、かつ5行まで自動リサイズ
-        const messageInputEl = document.getElementById('message-input');
-        const lineHeightPx = 20; // 推定ラインハイト（CSSと合わせる）
-        const maxLines = 5;
-
-        function autoResizeTextarea() {
-            messageInputEl.style.height = 'auto';
-            const computed = window.getComputedStyle(messageInputEl);
-            const border = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
-            const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
-            const contentHeight = messageInputEl.scrollHeight;
-            const maxHeight = (lineHeightPx * maxLines) + padding + border;
-            const newHeight = Math.min(contentHeight, maxHeight);
-            messageInputEl.style.height = newHeight + 'px';
-            messageInputEl.style.overflowY = (contentHeight > maxHeight) ? 'auto' : 'hidden';
-        }
-
-        messageInputEl.addEventListener('input', autoResizeTextarea);
-        messageInputEl.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                document.getElementById('send-button').click();
-            }
-        });
-        // 初期サイズ調整
-        autoResizeTextarea();
+        initMessageInputAutoResizeAndEnterSend();
 
         const systemMessage = document.getElementById("oasis-system");
         if (systemMessage !== null) {
