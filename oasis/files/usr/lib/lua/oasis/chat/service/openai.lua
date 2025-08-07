@@ -216,13 +216,14 @@ openai.new = function()
                     -- https://platform.openai.com/docs/api-reference/runs/submitToolOutputs
                     local output = jsonc.stringify(result, false)
                     local function_call = {}
+                    function_call.tool_outputs = {}
                     function_call.tool_outputs[1] = {}
                     function_call.tool_outputs[1].tool_call_id = tool_call_id
                     function_call.tool_outputs[1].output = output
 
                     local plain_text_for_console = function_call.tool_outputs[1].output
                     local json_text_for_webui    = jsonc.stringify(function_call, false)
-                    
+                    debug:log("json_text_for_webui.log", json_text_for_webui)
                     return plain_text_for_console, json_text_for_webui, function_call
                 end
             end
