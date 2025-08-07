@@ -153,10 +153,10 @@ local add = function(args)
     if (not args.endpoint) then
         io.write(string.format(output.format_1, output.endpoint))
         io.flush()
-        setup.endpoint = io.read()
+        setup.endpoint = io.read() or ""
     else
         print(string.format(output.format_2, output.endpoint, args.endpoint))
-        setup.endpoint = args.endponit
+        setup.endpoint = args.endpoint or ""
     end
 
     if setup.service == common.ai.service.anthropic.name then
@@ -186,19 +186,19 @@ local add = function(args)
     if (not args.api_key) then
         io.write(string.format(output.format_1, output.api_key))
         io.flush()
-        setup.api_key = io.read()
+        setup.api_key = io.read() or ""
     else
         print(string.format(output.format_2, output.api_key, args.api_key))
-        setup.api_key = args.api_key
+        setup.api_key = args.api_key or ""
     end
 
     if (not args.model) then
         io.write(string.format(output.format_1, output.model))
         io.flush()
-        setup.model = io.read()
+        setup.model = io.read() or ""
     else
         print(string.format(output.format_2, output.model, args.model))
-        setup.model = args.model
+        setup.model = args.model or ""
     end
 
     local endpoint_op_name = "unknown"
@@ -307,7 +307,8 @@ local show_service_list = function()
     end
 
     output.item = function(name, value)
-        io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, value))
+        local display_value = value or "(not set)"
+        io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, display_value))
         io.flush()
     end
 
@@ -350,13 +351,8 @@ local show_service_list = function()
                 end
             end
 
-            if tbl.api_key then
-                output.item("API KEY", tbl.api_key)
-            end
-
-            if tbl.model then
-                output.item("MODEL", tbl.model)
-            end
+            output.item("API KEY", tbl.api_key)
+            output.item("MODEL", tbl.model)
         end
     end)
 end
