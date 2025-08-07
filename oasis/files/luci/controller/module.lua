@@ -313,7 +313,7 @@ function apply_uci_cmd()
     end
 
     luci_http.prepare_content("application/json")
-    luci_http.write_json("OK")
+    luci_http.write_json({status = "OK"})
 end
 
 function confirm()
@@ -331,9 +331,9 @@ function finalize()
     luci_http.prepare_content("application/json")
 
     if result == 0 then
-        luci_http.write_json("ERROR")
+        luci_http.write_json({status = "ERROR"})
     else
-        luci_http.write_json("OK")
+        luci_http.write_json({status = "OK"})
     end
 end
 
@@ -344,9 +344,9 @@ function rollback()
     luci_http.prepare_content("application/json")
 
     if result == 0 then
-        luci_http.write_json("ERROR")
+        luci_http.write_json({status = "ERROR"})
     else
-        luci_http.write_json("OK")
+        luci_http.write_json({status = "OK"})
     end
 end
 
@@ -540,7 +540,7 @@ function delete_icon_data()
     end
 
     luci_http.prepare_content("application/json")
-    luci_http.write_json("OK")
+    luci_http.write_json({status = "OK"})
 end
 
 function uci_show()
