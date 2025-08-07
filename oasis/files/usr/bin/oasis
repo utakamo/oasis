@@ -15,7 +15,22 @@ if common.check_unloaded_plugin("oasis-mod-tool") or common.check_unloaded_plugi
 end
 
 if not common.check_prepare_oasis() then
-    print("Oasis is initializing. Please wait...")
+
+    print([=[
+============================================================
+                    REBOOT REQUIRED
+============================================================
+Oasis or plugin module has been installed.
+
+please choose one of the following options:
+1. Reboot OpenWrt:
+        root@OpenWrt:~# reboot
+2. Restart rpcd service:
+        root@OpenWrt:~# service rpcd restart
+
+============================================================
+    ]=])
+
     return
 end
 
