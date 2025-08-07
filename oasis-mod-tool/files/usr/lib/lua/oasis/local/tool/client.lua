@@ -65,6 +65,7 @@ local setup_lua_server_config = function(server_name)
     end
 
     debug:log("oasis-mod-tool.log", server_name .. " is olt server!!")
+    uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
 
     local created_sections = {}
 
@@ -115,6 +116,9 @@ local setup_ucode_server_config = function(server_name)
         debug:log("oasis-mod-tool.log", "Script: " .. server_name .. " is not olt server...")
         return
     end
+
+    debug:log("oasis-mod-tool.log", server_name .. " is olt server!!")
+    uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
 
     local created_sections = {}
 
