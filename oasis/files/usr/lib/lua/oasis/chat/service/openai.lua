@@ -196,6 +196,33 @@ openai.new = function()
 
             debug:log("openai-ai-recv.log", self.chunk_all)
 
+            -- check error message
+            if chunk_json.error then
+                local error_message = chunk_json.error.message or "Unknown error"
+
+                debug:log("openai-error.log", "API Error: " .. error_message)
+
+                local error_response = {
+                    message = {
+                        role = "assistant",
+                        content = error_message
+                    }
+                }
+
+                local plain_text_for_console = error_message
+                local json_text_for_webui = jsonc.stringify(error_response, false)
+
+                self.chunk_all = ""
+                return plain_text_for_console, json_text_for_webui, self.recv_raw_msg
+            end
+
+            -- check choices field
+            if not chunk_json.choices or type(chunk_json.choices) ~= "table" or #chunk_json.choices == 0 then
+                debug:log("openai-error.log", "Invalid response format: missing or empty choices field")
+                self.chunk_all = ""
+                return "", "", self.recv_ai_msg
+            end
+
             -- Function Calling For OpenAI
             if check_tool_call_response(chunk_json) then
                 debug:log("function_call.log", "check_tool_call_response")
@@ -232,6 +259,12 @@ openai.new = function()
 
             local plain_text_for_console
             local json_text_for_webui
+
+            -- check choices table
+            if not chunk_json.choices[1] or not chunk_json.choices[1].message then
+                debug:log("openai-error.log", "Invalid response format: missing message in choices[1]")
+                return "", "", self.recv_ai_msg
+            end
 
             self.recv_raw_msg.role = chunk_json.choices[1].message.role
             self.recv_raw_msg.message = self.recv_raw_msg.message .. chunk_json.choices[1].message.content
