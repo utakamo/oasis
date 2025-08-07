@@ -7,6 +7,12 @@
         <label for="import-chat-data" id="import-button" style="width:100%;">Import Chat Data +</label>
         <input type="file" id="import-chat-data" accept=".json" style="display: none;">
         <!--<button type="button" id="import-button">Import Chat Data</button>-->
+            <button id="new-button">New</button>
+            <div class="sidebar-label">Attach UCI info</div>
+            <select id="uci-config-list" name="uci-config-list">
+                <option value="---">---</option>
+            </select>
+            <div class="sidebar-label">History</div>
         <ul id="chat-list"></ul>
     </div>
 
@@ -27,15 +33,11 @@
         <select id="ai-service-list"></select>
         <div class="chat-messages"></div>
         <div class="chat-input">
-            <div class="chat-messages">
+            <div class="chat-input-fields">
                 <textarea id="message-input" placeholder="Your Message"></textarea>
-                <select id="uci-config-list" name="uci-config-list">
-                    <option value="---">---</option>
-                </select>
             </div>
             <div class="chat-buttons">
                 <button id="send-button">Send</button>
-                <button id="new-button">New</button>
                 <button id="smp-send-button" style="border: none; background: none; cursor: pointer;">
                     <span class="material-icons send-icon">send</span>
                 </button>
@@ -538,7 +540,8 @@
 
         if (isMobile()) {
             document.getElementById("message-input").addEventListener("keydown", function(event) {
-                if (event.key === "ArrowRight") {
+                // モバイルでもEnter送信/Shift+Enter改行に合わせる
+                if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
                     document.getElementById("send-button").click();
                 }
@@ -878,7 +881,8 @@
         document.getElementById("send-button").click();
     });
 
-    document.getElementById('send-button').addEventListener('click', async function() {
+        // 送信ボタン
+        document.getElementById('send-button').addEventListener('click', async function() {
 
         const systemMessage = document.getElementById("oasis-system");
         const messageInput = document.getElementById('message-input');
@@ -947,6 +951,33 @@
         .catch(error => {
             console.error('Error:', error);
         });
+
+        // Enterで送信、Shift+Enterで改行、かつ5行まで自動リサイズ
+        const messageInputEl = document.getElementById('message-input');
+        const lineHeightPx = 20; // 推定ラインハイト（CSSと合わせる）
+        const maxLines = 5;
+
+        function autoResizeTextarea() {
+            messageInputEl.style.height = 'auto';
+            const computed = window.getComputedStyle(messageInputEl);
+            const border = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
+            const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+            const contentHeight = messageInputEl.scrollHeight;
+            const maxHeight = (lineHeightPx * maxLines) + padding + border;
+            const newHeight = Math.min(contentHeight, maxHeight);
+            messageInputEl.style.height = newHeight + 'px';
+            messageInputEl.style.overflowY = (contentHeight > maxHeight) ? 'auto' : 'hidden';
+        }
+
+        messageInputEl.addEventListener('input', autoResizeTextarea);
+        messageInputEl.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                document.getElementById('send-button').click();
+            }
+        });
+        // 初期サイズ調整
+        autoResizeTextarea();
 
         const systemMessage = document.getElementById("oasis-system");
         if (systemMessage !== null) {
