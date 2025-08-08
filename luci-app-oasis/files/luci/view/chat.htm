@@ -202,6 +202,14 @@
                 line = line.replace(/^# (.+)$/gm, '<h1>$1</h1>');
                 line = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
                 line = line.replace(/\*(.+?)\*/g, '<i>$1</i>');
+                // Blockquote
+                line = line.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+                // Inline code
+                line = line.replace(/`([^`]+)`/g, '<code class="inline-code">$1<\/code>');
+                // Markdown links [text](url)
+                line = line.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1<\/a>');
+                // Autolink bare URLs
+                line = line.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1<\/a>');
                 html += line + '<br>';
             }
         }

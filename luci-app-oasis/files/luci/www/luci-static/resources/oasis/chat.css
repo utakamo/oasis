@@ -749,6 +749,46 @@ textarea:focus-visible {
     color: #ffffff;
 }
 
+/* Message content enhancements */
+.message-text h1,
+.message-text h2,
+.message-text h3,
+.message-text h4,
+.message-text h5,
+.message-text h6 {
+    margin: 8px 0 6px;
+    line-height: 1.3;
+}
+
+.message-text p {
+    margin: 6px 0;
+}
+
+.message-text a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+.message-text a:hover {
+    text-decoration: underline;
+}
+
+.message-text blockquote {
+    margin: 6px 0;
+    padding: 6px 10px;
+    border-left: 3px solid #cfe7ff;
+    background: #f7fbff;
+    color: #444;
+}
+
+.inline-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    background: #f6f8fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+    padding: 0 .25em;
+    color: #24292e;
+}
+
 pre {
     display: block;
     line-height: 1.4;
