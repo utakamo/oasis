@@ -271,7 +271,7 @@
 
 #message-input {
     display: block;
-    height: 5.0rem;
+    height: 2.5rem;
     width: 100%;
     resize: none;
     overflow-y: auto;
@@ -279,9 +279,9 @@
     border: 1px solid #ddd;
     border-radius: 10px;
     box-sizing: border-box;
-    padding: 10px 12px;
+    padding: 8px 12px;
     line-height: 1.4;
-    min-height: 3rem;
+    min-height: 2.5rem;
 }
 
 #send-button:disabled {
@@ -327,10 +327,10 @@ textarea:focus-visible {
 }
 
 #send-button {
-    padding: 10px 20px;
+    padding: 0 14px;
     margin-left: 10px;
     width: 5rem;
-    height: 3rem;
+    height: 2.5rem;
     background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
     color: white;
     border: none;
@@ -349,24 +349,24 @@ textarea:focus-visible {
 #import-button {
     display: block;
     text-align: center;
-    padding: 0;
-    height: 3rem;
+    padding: 0 14px;
+    height: 2.5rem;
     width: 100%;
     background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
     color: #ffffff;
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    line-height: 3rem;
+    line-height: 2.5rem;
 }
 
 #new-button {
     display: block;
-    padding: 10px 20px;
+    padding: 0 14px;
     margin: 8px 0;
     width: 100%;
-    height: 3rem;
-    background: linear-gradient(180deg, #00df6f 0%, #00c35f 100%);
+    height: 2.5rem;
+    background-color: #00c35f;
     color: white;
     border: none;
     border-radius: 10px;
@@ -520,6 +520,11 @@ textarea:focus-visible {
     background-color: #888;
     border-radius: 50%;
     animation: wave 1.5s infinite ease-in-out;
+}
+.typing-text {
+    margin-left: 8px;
+    color: #888;
+    font-size: 12px;
 }
 
 .typing-dots span:nth-child(1) { animation-delay: 0s; }
@@ -797,14 +802,23 @@ pre {
 }
 
 .export-popup button, .rename-popup button, .uci-popup button, .confirm-popup-buttons button {
-    padding: 10px 20px;
+    height: 2.5rem;
+    padding: 0 14px;
     border: none;
     cursor: pointer;
     font-size: 16px;
-    border-radius: 5px;
+    border-radius: 10px;
     white-space: nowrap;
     width: 120px;
     text-align: center;
+}
+
+/* Active feedback */
+#import-button:active, #new-button:active, #send-button:active {
+    transform: translateY(1px);
+}
+.export-popup button:active, .rename-popup button:active, .uci-popup button:active, .confirm-popup-buttons button:active {
+    transform: translateY(1px);
 }
 
 #rename-line-box {
@@ -849,4 +863,3 @@ pre {
 #export-cancel:hover, #rename-cancel:hover, #uci-cancel:hover {
     background-color: #7A828C;
 }
-
