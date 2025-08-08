@@ -443,14 +443,17 @@
         function initMessageInputAutoResizeAndEnterSend() {
             const messageInputEl = document.getElementById('message-input');
             const sendBtn = document.getElementById('send-button');
-            const lineHeightPx = 20;
+            // 行高は動的に取得（normal の場合はフォールバック）
+            const computed = window.getComputedStyle(messageInputEl);
+            const parsedLine = parseFloat(computed.lineHeight);
+            const lineHeightPx = isNaN(parsedLine) ? 20 : parsedLine;
             const maxLines = 5;
 
             function autoResizeTextarea() {
                 messageInputEl.style.height = 'auto';
-                const computed = window.getComputedStyle(messageInputEl);
-                const border = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
-                const padding = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+                const cs = window.getComputedStyle(messageInputEl);
+                const border = parseInt(cs.borderTopWidth) + parseInt(cs.borderBottomWidth);
+                const padding = parseInt(cs.paddingTop) + parseInt(cs.paddingBottom);
                 const contentHeight = messageInputEl.scrollHeight;
                 const maxHeight = (lineHeightPx * maxLines) + padding + border;
                 const newHeight = Math.min(contentHeight, maxHeight);
@@ -478,6 +481,9 @@
             autoResizeTextarea();
             toggleSendDisabled();
         }
+
+        // 初期化を実行（DOMContentLoaded内で要素が存在するため安全）
+        initMessageInputAutoResizeAndEnterSend();
 
         // addChatListEntry はグローバル関数として上に定義
 
