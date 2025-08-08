@@ -8,6 +8,8 @@
         <input type="file" id="import-chat-data" accept=".json" style="display: none;">
         <!--<button type="button" id="import-button">Import Chat Data</button>-->
             <button id="new-button">New</button>
+            <div class="sidebar-label">System Message</div>
+            <select id="sysmsg-select" name="sysmsg-select"></select>
             <div class="sidebar-label">Attach UCI info</div>
             <select id="uci-config-list" name="uci-config-list">
                 <option value="---">---</option>
@@ -90,10 +92,7 @@
         </div>
     </div>
 
-    <div class="sysmsg-list-popup" id="sysmsg-list-popup">
-        <h2>Select AI System Message<h2>
-        <div id="sysmsg-list-popup-buttons"></div>
-    </div>
+    <!-- System Message popup removed -->
 </div>
 
 <script>
@@ -109,6 +108,32 @@
     let message_outputing = false;
     const resourcePath = '<%= resource %>';
     let ai_service_list = [];
+
+    // 右カラム（.chat-container）の中央にポップアップを配置
+    function centerElementInChat(element) {
+        const chatContainer = document.querySelector('.chat-container');
+        if (!element || !chatContainer) return;
+        const rect = chatContainer.getBoundingClientRect();
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
+        element.style.position = 'fixed';
+        element.style.left = `${centerX}px`;
+        element.style.top = `${centerY}px`;
+        element.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function recenterVisiblePopups() {
+        const applying = document.getElementById('applying-popup');
+        if (applying && getComputedStyle(applying).display !== 'none') {
+            centerElementInChat(applying);
+        }
+        const confirm = document.getElementById('confirm-popup');
+        if (confirm && getComputedStyle(confirm).display !== 'none') {
+            centerElementInChat(confirm);
+        }
+    }
+
+    window.addEventListener('resize', recenterVisiblePopups);
 
     function loadPaperPlane() {
         const style = document.createElement('style');
@@ -235,6 +260,7 @@
                 const finalizeButton = document.getElementById("finalize");
                 const rollbackButton = document.getElementById("rollback");
                 popup.style.display = 'block';
+                centerElementInChat(popup);
 
                 const uci_list = JSON.parse(data.uci_list);
 
@@ -469,65 +495,53 @@
                 : (typeof data.chat.item === 'object' && data.chat.item !== null && !('id' in data.chat.item)) ? []
                 : (data.chat.item ? [data.chat.item] : []);
 
+            // chatList を初期化して内部状態と同期
+            chatList = { item: [] };
+
             chatItems.forEach(chat => {
+                chatList.item.push({ id: chat.id, title: chat.title });
                 addChatListEntry(chat.id, chat.title);
             });
 
             let using_icon = data.icon.ctrl.using;
             icon_name = data.icon.list[using_icon];
 
+            // System Message select に変換
             sysmsg_list = data.sysmsg;
-            const sysmsg_button_container = document.getElementById('sysmsg-list-popup-buttons');
-            sysmsg_button_container.innerHTML = '';  // clear existing buttons
+            const sysmsgSelect = document.getElementById('sysmsg-select');
+            if (sysmsgSelect) {
+                sysmsgSelect.innerHTML = '';
+                const sortedSysmsgList = sysmsg_list
+                    .map(item => {
+                        if (!item.key || typeof item.key !== 'string') return null;
+                        if (item.key === 'default') {
+                            return { key: item.key, title: item.title || 'Default', number: -1 };
+                        }
+                        const match = item.key.match(/^custom_(\d+)$/);
+                        if (!match) return null;
+                        return { key: item.key, title: item.title || 'No Title', number: parseInt(match[1], 10) };
+                    })
+                    .filter(Boolean)
+                    .sort((a, b) => a.number - b.number);
 
-            const sortedSysmsgList = sysmsg_list
-                .map(item => {
-                    if (!item.key || typeof item.key !== "string") return null;
-
-                    if (item.key === "default") {
-                        return {
-                            key: item.key,
-                            title: item.title || "Default",
-                            number: -1
-                        };
-                    }
-
-                    const match = item.key.match(/^custom_(\d+)$/);
-                    if (!match) return null;
-
-                    return {
-                        key: item.key,
-                        title: item.title || "No Title",
-                        number: parseInt(match[1], 10)
-                    };
-                })
-                .filter(item => item !== null)
-                .sort((a, b) => a.number - b.number);
-
-            sortedSysmsgList.forEach(item => {
-                const sysmsg_select_button = document.createElement('input');
-                sysmsg_select_button.type = 'button';
-                sysmsg_select_button.value = item.title;
-                sysmsg_select_button.className = 'sysmsg-select-button';
-
-                sysmsg_select_button.addEventListener('click', function() {
-                    sysmsg_key = item.key;
-                    const sysmsg_list_popup = document.getElementById('sysmsg-list-popup');
-                    sysmsg_list_popup.style.display = 'none';
-
-                    const systemMessage = document.getElementById("oasis-system");
-                    const messageInput = document.getElementById('message-input');
-                    const messageText = messageInput.value.trim().replace(/\\n/g, '\n');
-
-                    if (!messageText) {
-                        return;
-                    }
-
-                    send_chat_data(systemMessage, messageInput, messageText);
+                sortedSysmsgList.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.key;
+                    opt.textContent = item.title;
+                    sysmsgSelect.appendChild(opt);
                 });
 
-                sysmsg_button_container.appendChild(sysmsg_select_button);
-            });
+                // 既定選択とグローバルキー更新
+                if (sortedSysmsgList.length > 0) {
+                    const defaultEntry = sortedSysmsgList.find(x => x.key === 'default') || sortedSysmsgList[0];
+                    sysmsgSelect.value = defaultEntry.key;
+                    sysmsg_key = defaultEntry.key;
+                }
+
+                sysmsgSelect.addEventListener('change', function (e) {
+                    sysmsg_key = e.target.value;
+                });
+            }
 
             ai_service_list = Array.isArray(data.service) ? data.service : [];
             const aiServiceSelect = document.getElementById("ai-service-list");
@@ -673,12 +687,13 @@
         const rename = document.getElementById("rename");
 
         let title = "";
-        chatList.item.forEach(chat => {
-            //console.log("chat.id = " + chat.id);
-            if (chat.id === targetChatItemId) {
-                title = chat.title;
-            }
-        });
+        if (chatList && Array.isArray(chatList.item)) {
+            chatList.item.forEach(chat => {
+                if (chat.id === targetChatItemId) {
+                    title = chat.title;
+                }
+            });
+        }
 
             renameLineBox.setAttribute('placeholder', title);
             renameLineBox.setAttribute('autocomplete', 'off');
@@ -715,16 +730,17 @@
                 const smp_listItem = document.querySelector(`li[data-id-for-smp="${targetChatItemId}"]`);
                 const spanElement = listItem.querySelector("span");
                 const smp_spanElement = smp_listItem.querySelector("span");
-                spanElement.textContent = new_title;
-                smp_spanElement.textContent = new_title;
+                if (spanElement) spanElement.textContent = new_title;
+                if (smp_spanElement) smp_spanElement.textContent = new_title;
                 rename_box.value = "";
 
-                chatList.item.forEach(chat => {
-                    if (chat.id === targetChatItemId) {
-                        chat.title = new_title;
-                        //console.log("chat.title = " + chat.title);
-                    }
-                });
+                if (chatList && Array.isArray(chatList.item)) {
+                    chatList.item.forEach(chat => {
+                        if (chat.id === targetChatItemId) {
+                            chat.title = new_title;
+                        }
+                    });
+                }
 
                 closeRenamePopup();
             }, { once: true })
@@ -938,11 +954,7 @@
 
         message_outputing = true;
 
-        if (targetChatId.length === 0) {
-            const sysmsg_list_popup = document.getElementById("sysmsg-list-popup");
-            sysmsg_list_popup.style.display = "block";
-            return;
-        }
+        // 新規チャット時でもポップアップは出さず、左カラムの System Message セレクトの値を使用する
 
         send_chat_data(systemMessage, messageInput, messageText);
     });
@@ -981,19 +993,18 @@
             },
             body: new URLSearchParams({uci_list : uci_list_json, id : targetChatId, type : type})
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                console.error("Error from server:", data.error);
-                return;
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
             }
+            return response.text();
         })
+        .then(_ => { /* ignore body */ })
         .catch(error => {
             console.error('Error:', error);
         });
 
-        // Enterで送信、Shift+Enterで改行、かつ5行まで自動リサイズ
-        initMessageInputAutoResizeAndEnterSend();
+        // Note: 入力欄の初期化はページロード時に実行済み
 
         const systemMessage = document.getElementById("oasis-system");
         if (systemMessage !== null) {
@@ -1002,6 +1013,7 @@
 
         title.textContent = "Applying the settings...";
         popup.style.display = 'block';
+        centerElementInChat(popup);
         progressBar.style.width = '0';
 
         setTimeout(() => {
