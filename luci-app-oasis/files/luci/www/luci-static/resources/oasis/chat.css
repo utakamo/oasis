@@ -426,11 +426,11 @@ textarea:focus-visible {
     position: fixed;
     background-color: white;
     border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    width: 300px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    width: min(480px, calc(100vw - 32px));
     text-align: center;
-    padding: 20px;
+    padding: 20px 24px;
 }
 
 .confirm-popup {
@@ -438,12 +438,14 @@ textarea:focus-visible {
     position: fixed;
     background-color: white;
     border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    width: min(480px, calc(100vw - 32px));
     text-align: center;
-    padding: 20px;
+    padding: 20px 24px;
 }
+
+/* overlay removed */
 
 .sysmsg-list-popup {
     display: none;
@@ -478,20 +480,60 @@ textarea:focus-visible {
 }
 
 .applying-progress {
-    margin: 20px 0;
+    margin: 16px 0;
     height: 10px;
     width: 100%;
-    background-color: #e0e0e0;
-    border-radius: 5px;
+    background-color: #eceff3;
+    border-radius: 6px;
     overflow: hidden;
     position: relative;
 }
 
 .progress-bar {
     height: 100%;
-    width: 0;
-    background-color: #28a745;
-    transition: width 10s ease;
+    width: 0%;
+    background: linear-gradient(90deg, #0d6efd 0%, #6ea8fe 50%, #0d6efd 100%);
+    background-size: 200% 100%;
+    transition: width .2s ease;
+}
+
+@keyframes progress-stripes {
+    0% { background-position: 200% 0; }
+    100% { background-position: 0 0; }
+}
+
+.progress-info {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #666;
+}
+
+#confirm-popup-pre {
+    max-height: 40vh;
+    overflow: auto;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.confirm-popup-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.copy-btn {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    height: 2rem;
+    padding: 0 10px;
+    border: none;
+    background: #e9ecef;
+    color: #333;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 .close-applying-popup {
@@ -806,14 +848,11 @@ pre {
 .export-popup, .rename-popup {
     display: none;
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     background-color: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
+    padding: 20px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    z-index: 1001;
 }
 
 .export-popup h3, .rename-popup h3 {
@@ -903,3 +942,4 @@ pre {
 #export-cancel:hover, #rename-cancel:hover, #uci-cancel:hover {
     background-color: #7A828C;
 }
+

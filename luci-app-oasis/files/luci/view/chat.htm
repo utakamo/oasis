@@ -74,17 +74,20 @@
         </div>
     </div>
 
-    <div class="applying-popup" id="applying-popup">
+    
+
+    <div class="applying-popup" id="applying-popup" role="dialog" aria-modal="true" aria-labelledby="applying-popup-title">
         <h2 id="applying-popup-title"></h2>
         <div class="applying-progress">
             <div class="progress-bar" id="progressBar"></div>
         </div>
+        <div class="progress-info" id="progressInfo"></div>
         <div id="reboot_announce" style="display: none; color: #00cc06">Executed reboot system!!</div>
         <!-- <button class="close-applying-popup" id="close-applying-popup">Reload</button> -->
     </div>
 
-    <div class="confirm-popup" id="confirm-popup">
-        <h2>Finalize this settings?</h2>
+    <div class="confirm-popup" id="confirm-popup" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-popup-pre">
+        <h2 id="confirm-title">Finalize this settings?</h2>
         <pre class="console-command-color" id="confirm-popup-pre"></pre>
         <div class="confirm-popup-buttons">
             <button id="finalize">Finalize</button>
@@ -109,7 +112,7 @@
     const resourcePath = '<%= resource %>';
     let ai_service_list = [];
 
-    // 右カラム（.chat-container）の中央にポップアップを配置
+    // Center popups within the right column (.chat-container)
     function centerElementInChat(element) {
         const chatContainer = document.querySelector('.chat-container');
         if (!element || !chatContainer) return;
@@ -447,11 +450,11 @@
 
         check_temporary_setting();
         
-        // 入力欄: Enter送信/Shift+Enter改行 + 5行まで自動リサイズ + 空時はSEND無効
+        // Input: Enter to send / Shift+Enter for newline + auto-resize up to 5 lines + disable SEND when empty
         function initMessageInputAutoResizeAndEnterSend() {
             const messageInputEl = document.getElementById('message-input');
             const sendBtn = document.getElementById('send-button');
-            // 行高は動的に取得（normal の場合はフォールバック）
+            // Determine line-height dynamically (fallback when 'normal')
             const computed = window.getComputedStyle(messageInputEl);
             const parsedLine = parseFloat(computed.lineHeight);
             const lineHeightPx = isNaN(parsedLine) ? 20 : parsedLine;
@@ -490,10 +493,10 @@
             toggleSendDisabled();
         }
 
-        // 初期化を実行（DOMContentLoaded内で要素が存在するため安全）
+        // Run initialization (safe after DOMContentLoaded)
         initMessageInputAutoResizeAndEnterSend();
 
-        // addChatListEntry はグローバル関数として上に定義
+        // addChatListEntry is defined globally above
 
         fetch('<%=build_url("admin", "network", "oasis", "base-info")%>', {
             method: 'POST'
@@ -509,7 +512,7 @@
                 : (typeof data.chat.item === 'object' && data.chat.item !== null && !('id' in data.chat.item)) ? []
                 : (data.chat.item ? [data.chat.item] : []);
 
-            // chatList を初期化して内部状態と同期
+            // Initialize chatList and sync internal state
             chatList = { item: [] };
 
             chatItems.forEach(chat => {
@@ -520,7 +523,7 @@
             let using_icon = data.icon.ctrl.using;
             icon_name = data.icon.list[using_icon];
 
-            // System Message select に変換
+            // Populate System Message <select>
             sysmsg_list = data.sysmsg;
             const sysmsgSelect = document.getElementById('sysmsg-select');
             if (sysmsgSelect) {
@@ -545,7 +548,7 @@
                     sysmsgSelect.appendChild(opt);
                 });
 
-                // 既定選択とグローバルキー更新
+                // Set default selection and update global key
                 if (sortedSysmsgList.length > 0) {
                     const defaultEntry = sortedSysmsgList.find(x => x.key === 'default') || sortedSysmsgList[0];
                     sysmsgSelect.value = defaultEntry.key;
@@ -608,7 +611,7 @@
 
         if (isMobile()) {
             document.getElementById("message-input").addEventListener("keydown", function(event) {
-                // モバイルでもEnter送信/Shift+Enter改行に合わせる
+                // On mobile, also use Enter to send / Shift+Enter for newline
                 if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
                     document.getElementById("send-button").click();
@@ -622,8 +625,16 @@
             });
         }
 
-        document.addEventListener("click", function () {
+        document.addEventListener("click", function (e) {
             dropdown.style.display = 'none';
+            const overlay = document.getElementById('modal-overlay');
+            const confirm = document.getElementById('confirm-popup');
+            if (!overlay || getComputedStyle(overlay).display === 'none') return;
+            // Do not close Applying dialog on background click
+            if (confirm && getComputedStyle(confirm).display !== 'none') {
+                overlay.style.display = 'none';
+                confirm.style.display = 'none';
+            }
         });
 
         document.addEventListener("click", function (event) {
@@ -756,7 +767,9 @@
                 });
                 }
 
-                closeRenamePopup();
+        closeRenamePopup();
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) overlay.style.display = 'none';
             }, { once: true })
         }
 
@@ -860,7 +873,7 @@
                 closeExportPopup();
             });
 
-            // 二重ハンドラは削除済み
+            // Duplicate handler removed
         }
     });
 
@@ -938,7 +951,7 @@
         receivedMessageTextContainer.appendChild(typingDots);
         receivedMessageTextContainer.appendChild(typingText);
 
-        // タイピングの明滅のみ（Thinking...固定）
+        // Typing indicator only (fixed "Thinking...")
     
         receivedMessageContainer.appendChild(receivedIconContainer);
         receivedMessageContainer.appendChild(receivedMessageTextContainer);
@@ -958,7 +971,7 @@
         document.getElementById("send-button").click();
     });
 
-        // 送信ボタン
+        // Send button
     document.getElementById('send-button').addEventListener('click', async function() {
 
         const systemMessage = document.getElementById("oasis-system");
@@ -975,7 +988,7 @@
 
         message_outputing = true;
 
-        // 新規チャット時でもポップアップは出さず、左カラムの System Message セレクトの値を使用する
+        // For new chats, do not show popup; use System Message selected in left column
 
         send_chat_data(systemMessage, messageInput, messageText);
     });
@@ -1025,7 +1038,7 @@
             console.error('Error:', error);
         });
 
-        // Note: 入力欄の初期化はページロード時に実行済み
+        // Note: Input init already executed on page load
 
         const systemMessage = document.getElementById("oasis-system");
         if (systemMessage !== null) {
@@ -1035,15 +1048,33 @@
         title.textContent = "Applying the settings...";
         popup.style.display = 'block';
         centerElementInChat(popup);
-        progressBar.style.width = '0';
+        progressBar.style.width = '0%';
 
-        setTimeout(() => {
-            progressBar.style.width = '100%';
-        }, 100);
+        const progressInfo = document.getElementById('progressInfo');
+        const totalMs = 10000; // reload after 10 seconds
+        const startTs = Date.now();
 
-        setTimeout(() => {
-            window.location.reload();
-        }, 10000);
+        const tick = () => {
+            const elapsed = Date.now() - startTs;
+            const pct = Math.min(100, Math.round((elapsed / totalMs) * 100));
+            progressBar.style.width = pct + '%';
+            if (progressInfo) {
+                const remainMs = Math.max(0, totalMs - elapsed);
+                const remainSec = Math.ceil(remainMs / 1000);
+                progressInfo.textContent = `Reloading in ${remainSec}s (${pct}%)`;
+            }
+            if (elapsed >= totalMs) {
+                window.location.reload();
+            } else {
+                requestAnimationFrame(tick);
+            }
+        };
+        requestAnimationFrame(tick);
+
+        // Copy button: copy contents of confirm-popup-pre (works after element creation)
+        // No copy button needed on Applying
+
+        // Applying dialog cannot be closed by clicking background
 
         /*
         closePopupButton.addEventListener('click', () => {
@@ -1108,14 +1139,33 @@
             save_apply_proc(jsonResponse, "commit");
         });
 
+        // Add Copy button
+        const copyButton = document.createElement("button");
+        copyButton.className = "copy-btn";
+        copyButton.textContent = "Copy";
+        copyButton.addEventListener('click', async function () {
+            try {
+                await navigator.clipboard.writeText(preElement.textContent || '');
+                copyButton.textContent = 'Copied!';
+                setTimeout(() => copyButton.textContent = 'Copy', 1500);
+            } catch (e) {
+                console.error('Clipboard failed', e);
+                copyButton.textContent = 'Failed';
+                setTimeout(() => copyButton.textContent = 'Copy', 1500);
+            }
+        });
+
         popupDiv.appendChild(applyButton);
+        popupDiv.appendChild(copyButton);
 
         const cancelButton = document.createElement("button");
         cancelButton.id = "uci-cancel";
         cancelButton.textContent = "Cancel";
         cancelButton.addEventListener('click', function (event) {
             const systemMessage = document.getElementById("oasis-system");
-            chatMessagesContainer.removeChild(systemMessage);
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) overlay.style.display = 'none';
+            if (systemMessage) chatMessagesContainer.removeChild(systemMessage);
         });
 
         popupDiv.appendChild(cancelButton);
@@ -1124,6 +1174,9 @@
         messageTextDiv.appendChild(popupButtonsDiv);
         systemMessage.appendChild(messageTextDiv);
         chatMessagesContainer.appendChild(systemMessage);
+        // Show overlay when opening confirm (overlay removed)
+        const overlay = document.getElementById('modal-overlay');
+        if (overlay) overlay.style.display = 'block';
     }
 
 
