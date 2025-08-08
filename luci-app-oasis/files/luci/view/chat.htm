@@ -7,7 +7,7 @@
         <label for="import-chat-data" id="import-button" style="width:100%;">Import Chat Data +</label>
         <input type="file" id="import-chat-data" accept=".json" style="display: none;">
         <!--<button type="button" id="import-button">Import Chat Data</button>-->
-            <button id="new-button">New</button>
+            <button id="new-button">New Chat</button>
             <div class="sidebar-label">System Message</div>
             <select id="sysmsg-select" name="sysmsg-select"></select>
             <div class="sidebar-label">Attach UCI info</div>
@@ -558,6 +558,8 @@
                 sysmsgSelect.addEventListener('change', function (e) {
                     sysmsg_key = e.target.value;
                 });
+                // Enable only for a new chat (no targetChatId yet)
+                sysmsgSelect.disabled = (targetChatId && targetChatId.length > 0);
             }
 
             ai_service_list = Array.isArray(data.service) ? data.service : [];
@@ -767,7 +769,7 @@
                 });
                 }
 
-        closeRenamePopup();
+                closeRenamePopup();
         const overlay = document.getElementById('modal-overlay');
         if (overlay) overlay.style.display = 'none';
             }, { once: true })
@@ -990,6 +992,12 @@
 
         // For new chats, do not show popup; use System Message selected in left column
 
+        // Lock System Message selection once the very first message of a new chat is sent
+        if (!targetChatId || targetChatId.length === 0) {
+            const sysmsgSelect = document.getElementById('sysmsg-select');
+            if (sysmsgSelect) sysmsgSelect.disabled = true;
+        }
+
         send_chat_data(systemMessage, messageInput, messageText);
     });
 
@@ -1064,7 +1072,7 @@
                 progressInfo.textContent = `Reloading in ${remainSec}s (${pct}%)`;
             }
             if (elapsed >= totalMs) {
-                window.location.reload();
+            window.location.reload();
             } else {
                 requestAnimationFrame(tick);
             }
@@ -1335,8 +1343,8 @@
                             clearInterval(receivedMessageTextContainer._typingTimer);
                             delete receivedMessageTextContainer._typingTimer;
                         }
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                    }
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
 
                     if (evt.id && isNumeric(evt.id)) {
                         show_chat_popup(evt);
@@ -1453,6 +1461,9 @@
             console.error('Error:', error);
         });
         targetChatId = chatId;
+        // Lock System Message selection once a chat is active
+        const sysmsgSelect = document.getElementById('sysmsg-select');
+        if (sysmsgSelect) sysmsgSelect.disabled = true;
     }
 
     async function new_chat_action() {
@@ -1461,6 +1472,9 @@
         }
 
         targetChatId = "";
+        // Re-enable System Message selection only for new chat
+        const sysmsgSelect = document.getElementById('sysmsg-select');
+        if (sysmsgSelect) sysmsgSelect.disabled = false;
 
         const chatMessagesContainer = document.querySelector('.chat-messages');
 

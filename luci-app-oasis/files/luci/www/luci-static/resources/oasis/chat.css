@@ -93,32 +93,35 @@
     display: none;
     position: absolute;
     background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    overflow: hidden;
-    z-index: 1000;
-    padding: 5px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    overflow: auto;
+    z-index: 1100;
+    padding: 6px;
     width: auto;
-    min-width: 10rem;
+    min-width: 11rem;
+    max-width: 16rem;
+    max-height: 50vh;
 }
 
 .oasis-dropdown .oasis-menu-item {
     display: block;
-    width: 10rem;
-    padding: 10px;
+    width: 100%;
+    padding: 8px 12px;
     text-align: left;
     border: none;
-    background: none;
+    background: transparent;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.15s ease;
     box-sizing: border-box;
-    color: #fff;
-    background-color: #333333;
+    color: #222;
+    border-radius: 8px;
 }
 
-.oasis-hamburger-menu:hover .oasis-dropdown {
-    display: block;
+.oasis-dropdown .oasis-menu-item:hover {
+    background-color: #f2f4f8;
 }
 
 .chat-config-container {
@@ -848,6 +851,9 @@ pre {
 .export-popup, .rename-popup {
     display: none;
     position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background-color: white;
     padding: 20px 24px;
     border-radius: 12px;
