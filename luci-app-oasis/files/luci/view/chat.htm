@@ -26,6 +26,16 @@
                     <label for="smp-import-chat-data" id="smp-import-button" style="width: 100%;">Import Chat Data +</label>
                     <input type="file" id="smp-import-chat-data" accept=".json" style="display: none;">
                 </li>
+                <li class="smp-field">
+                    <div class="sidebar-label">System Message</div>
+                    <select id="smp-sysmsg-select" name="smp-sysmsg-select"></select>
+                </li>
+                <li class="smp-field">
+                    <div class="sidebar-label">Attach UCI info</div>
+                    <select id="smp-uci-config-list" name="smp-uci-config-list">
+                        <option value="---">---</option>
+                    </select>
+                </li>
                 <li id="smp-new-button-item">
                     <button id="smp-new-button">New Chat</button>
                 </li>
@@ -42,6 +52,9 @@
                 <button id="send-button">Send</button>
                 <button id="smp-send-button" style="border: none; background: none; cursor: pointer;">
                     <span class="material-icons send-icon">send</span>
+                </button>
+                <button id="smp-new-mini" style="border: none; background: none; cursor: pointer; display:none;">
+                    <span class="material-icons send-icon">add_comment</span>
                 </button>
             </div>
         </div>
@@ -137,6 +150,27 @@
     }
 
     window.addEventListener('resize', recenterVisiblePopups);
+    // Show compact New Chat icon on small viewports (desktop included)
+    function updateCompactNewButtonForViewport() {
+        const smpNewBtn = document.getElementById('smp-new-button');
+        const smpNewMini = document.getElementById('smp-new-mini');
+        if (!smpNewMini) return;
+        const isSmall = window.innerWidth <= 768;
+        if (isSmall) {
+            smpNewMini.style.display = 'block';
+            if (smpNewBtn) smpNewBtn.style.display = 'none';
+            if (!smpNewMini.dataset.bound) {
+                smpNewMini.addEventListener('click', async function() {
+                    await new_chat_action();
+                });
+                smpNewMini.dataset.bound = '1';
+            }
+        } else {
+            smpNewMini.style.display = 'none';
+            if (smpNewBtn) smpNewBtn.style.display = '';
+        }
+    }
+    window.addEventListener('resize', updateCompactNewButtonForViewport);
 
     function loadPaperPlane() {
         const style = document.createElement('style');
@@ -449,6 +483,8 @@
         const dropdown = document.getElementById("oasis-dropdown");
 
         check_temporary_setting();
+        // Initialize compact New Chat icon state based on viewport
+        updateCompactNewButtonForViewport();
         
         // Input: Enter to send / Shift+Enter for newline + auto-resize up to 5 lines + disable SEND when empty
         function initMessageInputAutoResizeAndEnterSend() {
@@ -599,6 +635,61 @@
                 uciConfigSelect.appendChild(option);
             });
 
+            // Smartphone selects mirror (System Message & UCI)
+            const smpSysmsgSelect = document.getElementById('smp-sysmsg-select');
+            if (smpSysmsgSelect) {
+                smpSysmsgSelect.innerHTML = '';
+                const sortedSysmsgListSmp = sysmsg_list
+                    .map(item => {
+                        if (!item.key || typeof item.key !== 'string') return null;
+                        if (item.key === 'default') {
+                            return { key: item.key, title: item.title || 'Default', number: -1 };
+                        }
+                        const match = item.key.match(/^custom_(\d+)$/);
+                        if (!match) return null;
+                        return { key: item.key, title: item.title || 'No Title', number: parseInt(match[1], 10) };
+                    })
+                    .filter(Boolean)
+                    .sort((a, b) => a.number - b.number);
+                sortedSysmsgListSmp.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.key;
+                    opt.textContent = item.title;
+                    smpSysmsgSelect.appendChild(opt);
+                });
+                // sync initial value
+                const desktopSys = document.getElementById('sysmsg-select');
+                if (desktopSys) smpSysmsgSelect.value = desktopSys.value;
+                smpSysmsgSelect.addEventListener('change', (e) => {
+                    if (desktopSys) desktopSys.value = e.target.value;
+                    sysmsg_key = e.target.value;
+                });
+                // lock state mirrors desktop
+                smpSysmsgSelect.disabled = (targetChatId && targetChatId.length > 0);
+            }
+
+            const smpUciSelect = document.getElementById('smp-uci-config-list');
+            if (smpUciSelect) {
+                smpUciSelect.innerHTML = '';
+                const def2 = document.createElement('option');
+                def2.value = '---';
+                def2.textContent = '---';
+                smpUciSelect.appendChild(def2);
+                data.configs.forEach(config => {
+                    const opt = document.createElement('option');
+                    opt.value = config;
+                    opt.textContent = config;
+                    smpUciSelect.appendChild(opt);
+                });
+                // keep desktop and mobile UCI selects in sync
+                smpUciSelect.addEventListener('change', (e) => {
+                    uciConfigSelect.value = e.target.value;
+                });
+                uciConfigSelect.addEventListener('change', (e) => {
+                    smpUciSelect.value = e.target.value;
+                });
+            }
+
         })
         .catch(error => {
             console.error('Error:', error);
@@ -625,6 +716,64 @@
                     this.scrollIntoView({ behavior: "smooth", block: "center" });
                 }, 300);
             });
+
+        // Mirror lock state of System Message select on mobile
+        const smpSysmsgSelect = document.getElementById('smp-sysmsg-select');
+        const desktopSys = document.getElementById('sysmsg-select');
+        if (smpSysmsgSelect && desktopSys) {
+            smpSysmsgSelect.disabled = desktopSys.disabled;
+        }
+
+        // Replace New Chat button in hamburger with compact icon under send icon (vertical stack)
+        const smpNewBtn = document.getElementById('smp-new-button');
+        const smpNewMini = document.getElementById('smp-new-mini');
+        if (smpNewBtn && smpNewMini) {
+            smpNewBtn.style.display = 'none';
+            smpNewMini.style.display = 'block';
+            smpNewMini.addEventListener('click', async function() {
+                await new_chat_action();
+            });
+        }
+
+        // Setup mobile bottom sheet
+        const fab = document.getElementById('open-bottom-sheet');
+        const sheet = document.getElementById('mobile-bottom-sheet');
+        if (fab && sheet) {
+            fab.classList.add('show');
+            fab.addEventListener('click', () => {
+                sheet.style.display = 'block';
+                requestAnimationFrame(() => sheet.classList.add('show'));
+            });
+            const closeBtn = document.getElementById('mobile-sheet-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    sheet.classList.remove('show');
+                    setTimeout(() => sheet.style.display = 'none', 250);
+                });
+            }
+            // Mirror selects into bottom sheet
+            const mbSys = document.getElementById('mb-sysmsg-select');
+            const mbUci = document.getElementById('mb-uci-config-list');
+            const desktopSys = document.getElementById('sysmsg-select');
+            const desktopUci = document.getElementById('uci-config-list');
+            if (mbSys && desktopSys) {
+                mbSys.innerHTML = desktopSys.innerHTML;
+                mbSys.value = desktopSys.value;
+                mbSys.disabled = desktopSys.disabled;
+                mbSys.addEventListener('change', (e) => {
+                    desktopSys.value = e.target.value;
+                    desktopSys.dispatchEvent(new Event('change'));
+                });
+            }
+            if (mbUci && desktopUci) {
+                mbUci.innerHTML = desktopUci.innerHTML;
+                mbUci.value = desktopUci.value;
+                mbUci.addEventListener('change', (e) => {
+                    desktopUci.value = e.target.value;
+                    desktopUci.dispatchEvent(new Event('change'));
+                });
+            }
+        }
         }
 
         document.addEventListener("click", function (e) {
