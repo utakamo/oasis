@@ -1,4 +1,3 @@
-
 <%+header%>
 
 <style>
@@ -36,6 +35,15 @@
     .toast.success { background:#198754; }
     .toast.error { background:#dc3545; }
     .toast.info { background:#0d6efd; }
+
+    /* Confirm dialog */
+    .confirm-modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1300; }
+    .confirm-modal.show { display: flex; }
+    .confirm-card { background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 18px 20px; width: min(92vw, 420px); }
+    .confirm-card p { margin: 0 0 12px; font-weight: 600; text-align: center; font-size: 1.1rem; }
+    .cancel-button { display:inline-block; padding: 0 14px; width: 7.5rem; height: 2.5rem; line-height: 2.5rem; color:#ffffff; border:none; border-radius:10px; cursor:pointer; font-weight:600; background: linear-gradient(180deg, #6c757d 0%, #495057 100%); }
+    .confirm-card .form-actions { justify-content: center; gap: 12px; width: 100%; }
+    .confirm-card .delete-button { margin-left: 0; }
 </style>
 
 <div id="sysmsg-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
@@ -73,6 +81,18 @@
 
 <h2 style="margin-top: 20px;">System Message List</h2>
 <div id="system-message-list"></div>
+
+<!-- Delete confirm modal -->
+<div id="delete-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="confirm-card">
+    <p>Delete this system message?</p>
+    <div class="form-actions" style="justify-content:space-between; width:100%;">
+        <button type="button" class="load-button" id="confirm-yes">Yes</button>
+        <button type="button" class="delete-button" id="confirm-no">No</button>
+    </div>
+  </div>
+  
+</div>
 
 <!--TODO: External System Message (via Repository Server) -->
 
@@ -134,6 +154,25 @@
         }
     }
 
+    // Delete confirm modal helpers
+    function openDeleteConfirm(targetKey) {
+        window._pendingDeleteKey = targetKey;
+        const modal = document.getElementById('delete-confirm');
+        if (!modal) return;
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        const yesBtn = document.getElementById('confirm-yes');
+        if (yesBtn) yesBtn.focus();
+    }
+
+    function closeDeleteConfirm() {
+        const modal = document.getElementById('delete-confirm');
+        if (!modal) return;
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        delete window._pendingDeleteKey;
+    }
+
     function create_sysmsg_info(key, value) {
 
         let is_error = false;
@@ -146,6 +185,7 @@
 
         // Create the span element
         const span = document.createElement('label');
+        span.className = 'field-row';
         span.textContent = '#' + name_cnt + ' TITLE:';
 
         // Create the input element
@@ -244,33 +284,7 @@
         deleteButton.textContent = 'Delete';
 
         deleteButton.addEventListener('click', function() {
-            if (!confirm('Delete this system message?')) return;
-            fetch('<%=build_url("admin", "network", "oasis", "delete-sysmsg")%>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({ target: key }),
-            })
-            .then(response => response.json())
-            .then(data => {
-
-                if (data.error) {
-                    console.error("Error from server:", data.error);
-                    showToast('Delete failed', 'error');
-                    return;
-                }
-
-                const parent = document.getElementById("system-message-list");
-                const child = document.getElementById(key);
-                parent.removeChild(child);
-                showToast('Deleted', 'success');
-                updateLastItemBorder();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Network error', 'error');
-            });
+            openDeleteConfirm(key);
         });
 
         // Append the elements to the container
@@ -431,6 +445,43 @@
             extra_sysmsg_container.style.display = "block";
             showToast('Loaded', 'success');
             setLoading(loadBtn, false);
+        });
+    });
+
+    // Wire confirm modal buttons
+    document.getElementById('confirm-no').addEventListener('click', function() {
+        closeDeleteConfirm();
+    });
+
+    document.getElementById('confirm-yes').addEventListener('click', function() {
+        const key = window._pendingDeleteKey;
+        if (!key) { closeDeleteConfirm(); return; }
+        fetch('<%=build_url("admin", "network", "oasis", "delete-sysmsg")%>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ target: key }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error("Error from server:", data.error);
+                showToast('Delete failed', 'error');
+                closeDeleteConfirm();
+                return;
+            }
+            const parent = document.getElementById('system-message-list');
+            const child = document.getElementById(key);
+            if (parent && child) parent.removeChild(child);
+            showToast('Deleted', 'success');
+            updateLastItemBorder();
+            closeDeleteConfirm();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Network error', 'error');
+            closeDeleteConfirm();
         });
     });
 
