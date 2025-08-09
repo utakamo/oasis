@@ -56,10 +56,6 @@
                 </select>
                 <div class="sidebar-label" style="margin-top:10px;">History</div>
                 <ul id="mb-chat-list"></ul>
-                <div class="sheet-actions">
-                    <button id="mobile-sheet-close" type="button">Close</button>
-                    <button id="mb-new-button" type="button">New Chat</button>
-                </div>
             </div>
         </div>
     </div>
@@ -452,6 +448,21 @@
         menuContainer.appendChild(menuButton);
         li.appendChild(menuContainer);
         chatListContainer.appendChild(li);
+        // Sync mobile bottom sheet list whenever a new item is added on desktop
+        try {
+            if (typeof updateMobileBottomSheetFromDesktop === 'function') {
+                updateMobileBottomSheetFromDesktop();
+                const mbList = document.getElementById('mb-chat-list');
+                if (mbList && mbList.lastElementChild) {
+                    mbList.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                const sheetContent = document.querySelector('#mobile-bottom-sheet .sheet-content');
+                const sheet = document.getElementById('mobile-bottom-sheet');
+                if (sheet && sheet.classList.contains('show') && sheetContent) {
+                    sheetContent.scrollTop = sheetContent.scrollHeight;
+                }
+            }
+        } catch (_) {}
 
         const smp_menuContainer = document.createElement("div");
         smp_menuContainer.classList.add("oasis-hamburger-menu");
@@ -587,6 +598,8 @@
                 });
             }
         }
+        // Expose for global callers (e.g., import handlers defined outside this scope)
+        window.updateMobileBottomSheetFromDesktop = updateMobileBottomSheetFromDesktop;
         // Initialize compact New Chat icon state based on viewport
         updateCompactNewButtonForViewport();
         // Initialize mobile bottom sheet bindings if present
@@ -610,14 +623,7 @@
                     if (focusTarget && focusTarget.focus) focusTarget.focus();
                 });
             });
-            const closeBtn = document.getElementById('mobile-sheet-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    sheet.classList.remove('show');
-                    sheet.setAttribute('aria-hidden', 'true');
-                    setTimeout(() => sheet.style.display = 'none', 250);
-                });
-            }
+            // close button removed
             // First population
             updateMobileBottomSheetFromDesktop();
             const mbNewBtn = document.getElementById('mb-new-button');
@@ -645,14 +651,30 @@
             // Remove textarea-height tracking to avoid following input height
         })();
         
-        // Close bottom sheet when clicking outside, but keep it open if user interacts with oasis-dropdown
+        // Close bottom sheet when clicking outside, but keep it open if user interacts with dialogs/menus
         document.addEventListener('click', function (ev) {
             const sheet = document.getElementById('mobile-bottom-sheet');
             const fab = document.getElementById('open-bottom-sheet');
             const dropdown = document.getElementById('oasis-dropdown');
+            const renamePopup = document.getElementById('rename-popup');
+            const renameOverlay = document.getElementById('rename-popup-overlay');
+            const exportPopup = document.getElementById('export-popup');
+            const exportOverlay = document.getElementById('export-popup-overlay');
+            const confirmPopup = document.getElementById('confirm-popup');
+            const applyingPopup = document.getElementById('applying-popup');
             if (!sheet || getComputedStyle(sheet).display === 'none') return;
-            // If click is inside the sheet, the FAB, or the dropdown menu, do not close the sheet
-            if (sheet.contains(ev.target) || (fab && fab.contains(ev.target)) || (dropdown && dropdown.style.display === 'block' && dropdown.contains(ev.target))) return;
+            // If click is inside the sheet, FAB, dropdown, or any foreground dialog/overlay, do not close the sheet
+            if (
+                sheet.contains(ev.target) ||
+                (fab && fab.contains(ev.target)) ||
+                (dropdown && dropdown.style.display === 'block' && dropdown.contains(ev.target)) ||
+                (renamePopup && renamePopup.contains(ev.target)) ||
+                (renameOverlay && renameOverlay.contains(ev.target)) ||
+                (exportPopup && exportPopup.contains(ev.target)) ||
+                (exportOverlay && exportOverlay.contains(ev.target)) ||
+                (confirmPopup && confirmPopup.contains(ev.target)) ||
+                (applyingPopup && applyingPopup.contains(ev.target))
+            ) return;
             sheet.classList.remove('show');
             sheet.setAttribute('aria-hidden', 'true');
             setTimeout(() => sheet.style.display = 'none', 250);
@@ -923,13 +945,6 @@
                 sheet.style.display = 'block';
                 requestAnimationFrame(() => sheet.classList.add('show'));
             });
-            const closeBtn = document.getElementById('mobile-sheet-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    sheet.classList.remove('show');
-                    setTimeout(() => sheet.style.display = 'none', 250);
-                });
-            }
             // Mirror selects into bottom sheet
             const mbSys = document.getElementById('mb-sysmsg-select');
             const mbUci = document.getElementById('mb-uci-config-list');
@@ -1101,12 +1116,17 @@
                     //alert("Failed to rename chat. Please try again.");
                 });
 
-                const listItem = document.querySelector(`li[data-id="${targetChatItemId}"]`);
-                const smp_listItem = document.querySelector(`li[data-id-for-smp="${targetChatItemId}"]`);
-                const spanElement = listItem.querySelector("span");
-                const smp_spanElement = smp_listItem.querySelector("span");
-                if (spanElement) spanElement.textContent = new_title;
-                if (smp_spanElement) smp_spanElement.textContent = new_title;
+                const desktopItem = document.querySelector(`#chat-list li[data-id='${targetChatItemId}']`);
+                const smpItem = document.querySelector(`#smp-chat-item-dropdown li[data-id-for-smp='${targetChatItemId}']`);
+                const mbItem = document.querySelector(`#mb-chat-list li[data-id='${targetChatItemId}'], #mb-chat-list li[data-id-for-smp='${targetChatItemId}']`);
+
+                const desktopSpan = desktopItem ? desktopItem.querySelector('span') : null;
+                const smpSpan = smpItem ? smpItem.querySelector('span') : null;
+                const mbSpan = mbItem ? mbItem.querySelector('span') : null;
+
+                if (desktopSpan) desktopSpan.textContent = new_title;
+                if (smpSpan) smpSpan.textContent = new_title;
+                if (mbSpan) mbSpan.textContent = new_title;
                 rename_box.value = "";
 
                 if (chatList && Array.isArray(chatList.item)) {
@@ -1120,6 +1140,10 @@
                 closeRenamePopup();
         const overlay = document.getElementById('modal-overlay');
         if (overlay) overlay.style.display = 'none';
+                // Refresh mobile list mirror after rename
+                if (typeof updateMobileBottomSheetFromDesktop === 'function') {
+                    updateMobileBottomSheetFromDesktop();
+                }
             }, { once: true })
         }
 
@@ -1830,7 +1854,15 @@
         targetChatId = "";
         // Re-enable System Message selection only for new chat
         const sysmsgSelect = document.getElementById('sysmsg-select');
+        const inlineSys = document.getElementById('inline-sysmsg-select');
+        const mbSys = document.getElementById('mb-sysmsg-select');
         if (sysmsgSelect) sysmsgSelect.disabled = false;
+        if (inlineSys) inlineSys.disabled = false;
+        if (mbSys) mbSys.disabled = false;
+        // Sync mirrors (inline/mobile) with desktop state
+        if (typeof updateMobileBottomSheetFromDesktop === 'function') {
+            updateMobileBottomSheetFromDesktop();
+        }
 
         const chatMessagesContainer = document.querySelector('.chat-messages');
 
@@ -1881,13 +1913,27 @@
                     }
 
                     // 追加されたチャットをリストに反映（共通関数）
-                    addChatListEntry(data.id, data.title);
+                    const importedTitle = (data.title && String(data.title).length) ? data.title : '--';
+                    addChatListEntry(data.id, importedTitle);
 
                     const itemCount = (chatList !== null) ? chatList.item.length : 0;
                     if (itemCount === 0) {
                         chatList = { item:[] };  
                     }
-                    chatList.item.push({id: data.id, title: data.title});
+                    chatList.item.push({id: data.id, title: importedTitle});
+                    // Refresh mobile bottom sheet list after import
+                    if (typeof window.updateMobileBottomSheetFromDesktop === 'function') {
+                        window.updateMobileBottomSheetFromDesktop();
+                        const mbList = document.getElementById('mb-chat-list');
+                        if (mbList && mbList.lastElementChild) {
+                            mbList.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                        const sheetContent = document.querySelector('#mobile-bottom-sheet .sheet-content');
+                        const sheet = document.getElementById('mobile-bottom-sheet');
+                        if (sheet && sheet.classList.contains('show') && sheetContent) {
+                            sheetContent.scrollTop = sheetContent.scrollHeight;
+                        }
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -1923,13 +1969,27 @@
                     }
 
                     // 追加されたチャットをリストに反映（共通関数）
-                    addChatListEntry(data.id, data.title);
+                    const importedTitle = (data.title && String(data.title).length) ? data.title : '--';
+                    addChatListEntry(data.id, importedTitle);
 
                     const itemCount = (chatList !== null) ? chatList.item.length : 0;
                     if (itemCount === 0) {
                         chatList = { item:[] };  
                     }
-                    chatList.item.push({id: data.id, title: data.title});
+                    chatList.item.push({id: data.id, title: importedTitle});
+                    // Refresh mobile bottom sheet list after import (from sheet)
+                    if (typeof window.updateMobileBottomSheetFromDesktop === 'function') {
+                        window.updateMobileBottomSheetFromDesktop();
+                        const mbList = document.getElementById('mb-chat-list');
+                        if (mbList && mbList.lastElementChild) {
+                            mbList.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                        const sheetContent = document.querySelector('#mobile-bottom-sheet .sheet-content');
+                        const sheet = document.getElementById('mobile-bottom-sheet');
+                        if (sheet && sheet.classList.contains('show') && sheetContent) {
+                            sheetContent.scrollTop = sheetContent.scrollHeight;
+                        }
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);

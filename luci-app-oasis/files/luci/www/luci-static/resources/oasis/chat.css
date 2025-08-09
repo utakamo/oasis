@@ -837,8 +837,9 @@ textarea:focus-visible {
 }
 .mobile-bottom-sheet {
     position: fixed;
-    left: 10px; right: 10px; bottom: -50vh;
-    height: 40vh;
+    left: 10px; right: 10px; bottom: -60vh;
+    height: 60vh;
+    max-height: calc(100vh - 20px);
     background: #fff;
     border-radius: 12px 12px 0 0;
     box-shadow: 0 -8px 20px rgba(0,0,0,.12);
@@ -848,6 +849,9 @@ textarea:focus-visible {
     padding: 12px 16px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;                 /* make entire sheet scrollable */
+    -webkit-overflow-scrolling: touch;/* iOS smooth scrolling */
+    overscroll-behavior: contain;     /* prevent body scroll chaining */
 }
 .mobile-bottom-sheet.show { bottom: 0; }
 /* show toggle only on small screens */
@@ -864,12 +868,8 @@ textarea:focus-visible {
     margin: 10px 0;
 }
 
-/* Make whole sheet content scrollable */
-.mobile-bottom-sheet .sheet-content {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
+/* Content fills sheet; scrolling handled by sheet itself */
+.mobile-bottom-sheet .sheet-content { flex: 1 1 auto; }
 
 /* Bottom sheet history list styling */
 .mobile-bottom-sheet #mb-chat-list {
@@ -995,7 +995,7 @@ pre {
     padding: 20px 24px;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,.12);
-    z-index: 1001;
+    z-index: 1300; /* ensure above bottom sheet */
 }
 
 .export-popup h3, .rename-popup h3 {
