@@ -442,8 +442,11 @@
                     targetChatItemId = event.target.closest("li").getAttribute("data-id");
                     event.stopPropagation();
                     const rect = this.getBoundingClientRect();
-                    dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-                    dropdown.style.left = `${rect.left + window.scrollX}px`;
+                    // Two-column (desktop) layout: place dialog's top-left at the right side of kebab
+                    dropdown.style.position = 'absolute';
+                    dropdown.style.transform = 'none';
+                    dropdown.style.top = `${rect.top + window.scrollY}px`;
+                    dropdown.style.left = `${rect.right + window.scrollX}px`;
                     dropdown.style.display = "block";
                 });
         menuContainer.appendChild(menuButton);

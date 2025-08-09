@@ -740,17 +740,16 @@ textarea:focus-visible {
         padding: 10px;
         text-align: left;
         border: none;
-        background: none;
+        background: transparent; /* remove gray fill */
         cursor: pointer;
         font-size: 14px;
         transition: background-color 0.2s ease;
         box-sizing: border-box;
-        color: #fff;
-        background-color: #333333;
+        color: #222; /* match desktop */
     }
     
     .oasis-dropdown .oasis-menu-item:hover {
-        background-color: #555;
+        background-color: transparent; /* no hover gray on mobile */
     }
 
     .chat-list-container {
