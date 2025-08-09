@@ -1,3 +1,4 @@
+
 <%+header%>
 
 <style>
@@ -18,35 +19,53 @@
         background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
     }
     .update-button { background: linear-gradient(180deg, #ff5bbd 0%, #ff1493 100%); }
+    .update-button.done { background: linear-gradient(180deg, #ffd24d 0%, #ffbf00 100%); color: #ffffff; }
     .delete-button { background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%); margin-left: 10px; }
     .add-button:active, .load-button:active, .update-button:active, .delete-button:active { transform: translateY(1px); }
+
+    /* Layout unify */
+    .section { margin-top: 12px; border-bottom: 1px solid #bbbbbb; padding-bottom: 12px; }
+    .field-row { display:block; margin: 6px 0; }
+    .input-text { padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; }
+    .sysmsg-textarea { margin-top:10px; width:100%; resize:none; border: 1px solid #ddd; border-radius: 10px; padding: 10px 12px; box-sizing: border-box; line-height: 1.4; }
+    .form-actions { margin: 10px 0; display:flex; gap:10px; flex-wrap: wrap; }
+
+    /* Toast */
+    .toast { position: sticky; top: 8px; background:#212529; color:#fff; padding:10px 12px; border-radius:8px; margin-bottom:8px; display:none; z-index: 10; }
+    .toast.show { display:block; }
+    .toast.success { background:#198754; }
+    .toast.error { background:#dc3545; }
+    .toast.info { background:#0d6efd; }
 </style>
 
-<p>
-    You can register and modify system messages for AI.
-</p>
+<div id="sysmsg-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
+
+<p>You can register and modify system messages for AI.</p>
 
 <h2>Create New System Message</h2>
 
-<div style="margin-top: 5px; border-bottom: 1px solid #bbbbbb;">
-    <span>TITLE:&nbsp;</span><input id="new-sysmsg-title" type="text" size="15">
-    <textarea id="new-sysmsg-data" rows="10" style="margin-top:10px; width:100%; resize:none;"></textarea>
-    <div style="margin: 10px;">
+<div class="section">
+    <label class="field-row" for="new-sysmsg-title">TITLE:</label>
+    <input id="new-sysmsg-title" class="input-text" type="text" size="15" aria-label="New system message title">
+    <textarea id="new-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="New system message body"></textarea>
+    <div class="form-actions">
         <button id="add-button" class="add-button" type="button">Add</button>
     </div>
 </div>
 
 <h2>Load Extra System Message</h2>
 
-<div style="margin-top: 5px; border-bottom: 1px solid #bbbbbb;">
-    <span>URL:&nbsp;</span><input id="extra-sysmsg-url" name="extra-sysmsg-url" placeholder=" Please enter the server's url" type="text" style="width:80%;">
-    <div style="margin: 10px;">
+<div class="section">
+    <label class="field-row" for="extra-sysmsg-url">URL:</label>
+    <input id="extra-sysmsg-url" class="input-text" name="extra-sysmsg-url" placeholder=" Please enter the server's url" type="text" style="width:80%;" aria-label="External system message URL">
+    <div class="form-actions">
         <button id="load-button" class="load-button" type="button">Load</button>
     </div>
     <div id="extra-sysmsg" style="display: none;">
-        <span>TITLE:&nbsp;</span><input id="extra-sysmsg-title" type="text" size="15">
-        <textarea id="extra-sysmsg-data" rows="10" style="margin-top:10px; width:100%; resize:none;"></textarea>
-        <div style="margin: 10px;">
+        <label class="field-row" for="extra-sysmsg-title">TITLE:</label>
+        <input id="extra-sysmsg-title" class="input-text" type="text" size="15" aria-label="External system message title">
+        <textarea id="extra-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="External system message body"></textarea>
+        <div class="form-actions">
             <button id="extra-add-button" class="add-button" type="button">Add</button>
         </div>
     </div>
@@ -71,6 +90,50 @@
 <script>
     let name_cnt = 1;
 
+    function showToast(message, type = 'info', timeout = 2000) {
+        const t = document.getElementById('sysmsg-toast');
+        if (!t) return;
+        t.textContent = message;
+        t.className = `toast show ${type}`;
+        setTimeout(() => { t.className = 'toast'; t.textContent = ''; }, timeout);
+    }
+
+    function setLoading(btn, loading) {
+        if (!btn) return;
+        btn.disabled = !!loading;
+        if (loading) {
+            btn.dataset.prevText = btn.textContent;
+            btn.textContent = 'Loading...';
+        } else if (btn.dataset.prevText) {
+            btn.textContent = btn.dataset.prevText;
+            delete btn.dataset.prevText;
+        }
+    }
+
+    function autoResizeTextarea(el, maxRows = 20) {
+        if (!el) return;
+        const style = window.getComputedStyle(el);
+        const lh = parseFloat(style.lineHeight) || 20;
+        const border = parseInt(style.borderTopWidth) + parseInt(style.borderBottomWidth);
+        const padding = parseInt(style.paddingTop) + parseInt(style.paddingBottom);
+        el.style.height = 'auto';
+        const content = el.scrollHeight;
+        const maxH = lh * maxRows + border + padding;
+        el.style.height = Math.min(content, maxH) + 'px';
+        el.style.overflowY = content > maxH ? 'auto' : 'hidden';
+    }
+
+    function updateLastItemBorder() {
+        const list = document.getElementById('system-message-list');
+        if (!list) return;
+        const visibleItems = Array.from(list.children).filter(el => el.style.display !== 'none');
+        // reset all to have border
+        Array.from(list.children).forEach(el => { el.style.borderBottom = '1px solid #bbbbbb'; });
+        if (visibleItems.length > 0) {
+            visibleItems[visibleItems.length - 1].style.borderBottom = 'none';
+        }
+    }
+
     function create_sysmsg_info(key, value) {
 
         let is_error = false;
@@ -79,22 +142,22 @@
         // Create the container div
         const container = document.createElement('div');
         container.id = key;
-        container.style.borderBottom = '1px solid #bbbbbb';
+        container.className = 'section';
 
         // Create the span element
-        const span = document.createElement('span');
-        span.textContent = '#' + name_cnt + ' TITLE: ';
+        const span = document.createElement('label');
+        span.textContent = '#' + name_cnt + ' TITLE:';
 
         // Create the input element
         const input = document.createElement('input');
         input.type = 'text';
         input.value = value.title;
         input.size = 15;
+        input.className = 'input-text';
 
         // Create the buttons container
         const buttonsContainer = document.createElement('div');
-        //buttonsContainer.id = key;
-        buttonsContainer.style.margin = '10px';
+        buttonsContainer.className = 'form-actions';
 
         // Create the Update button
         const updateButton = document.createElement('button');
@@ -121,6 +184,7 @@
             let update_sysmsg_data = textarea.value;
             update_sysmsg_data = update_sysmsg_data.replace(/"/g, '\\"');
 
+            setLoading(updateButton, true);
             fetch('<%=build_url("admin", "network", "oasis", "update-sysmsg")%>', {
                 method: 'POST',
                 headers: {
@@ -133,17 +197,23 @@
 
                 if (data.error) {
                     is_error = true;
-                    updateButton.style.backgroundColor = "#FF0000";
-                    updateButton.textContent = "ERROR";
+                    showToast('Update failed', 'error');
+                    setLoading(updateButton, false);
                     return;
                 }
 
                 is_update = true;
-                updateButton.style.backgroundColor = "#FFBF00";
-                updateButton.textContent = "Done";
+                showToast('Updated', 'success');
+                setLoading(updateButton, false);
+                updateButton.textContent = 'Done';
+                updateButton.classList.add('done');
             })
             .catch(error => {
                 console.error('Error:', error);
+                showToast('Network error', 'error');
+                setLoading(updateButton, false);
+                updateButton.textContent = 'Update';
+                updateButton.classList.remove('done');
             });
         });
 
@@ -151,19 +221,20 @@
         const textarea = document.createElement('textarea');
         textarea.id = 'system-message-' + name_cnt;
         textarea.rows = 10;
-        textarea.style.marginTop = '10px';
-        textarea.style.width = '100%';
-        textarea.style.resize = 'none';     
+        textarea.className = 'sysmsg-textarea';
         textarea.value = value.chat.replace(/\\"/g, '"').replace(/\\n/g, '\n');   
          
         textarea.addEventListener('input', function() {
             // After entering something, activate the update button.
             if (is_update) {
                 is_update = false;
-                updateButton.style.backgroundColor = "#FF1493";
-                updateButton.textContent = "Update";
+                updateButton.textContent = 'Update';
+                updateButton.classList.remove('done');
             }
+            autoResizeTextarea(textarea);
         });
+        // initial autosize
+        setTimeout(() => autoResizeTextarea(textarea), 0);
         name_cnt += 1;
 
         // Create the Delete button
@@ -173,6 +244,7 @@
         deleteButton.textContent = 'Delete';
 
         deleteButton.addEventListener('click', function() {
+            if (!confirm('Delete this system message?')) return;
             fetch('<%=build_url("admin", "network", "oasis", "delete-sysmsg")%>', {
                 method: 'POST',
                 headers: {
@@ -185,15 +257,19 @@
 
                 if (data.error) {
                     console.error("Error from server:", data.error);
+                    showToast('Delete failed', 'error');
                     return;
                 }
 
                 const parent = document.getElementById("system-message-list");
                 const child = document.getElementById(key);
                 parent.removeChild(child);
+                showToast('Deleted', 'success');
+                updateLastItemBorder();
             })
             .catch(error => {
                 console.error('Error:', error);
+                showToast('Network error', 'error');
             });
         });
 
@@ -212,6 +288,7 @@
         // Get the parent element by id and append the container to it
         const parentElement = document.getElementById('system-message-list');
         parentElement.appendChild(container);
+        updateLastItemBorder();
     }
 
     document.getElementById('add-button').addEventListener('click', function() {
@@ -236,6 +313,8 @@
         let add_sysmsg_data =  new_sysmsg_data.value;
         add_sysmsg_data = add_sysmsg_data.replace(/"/g, '\\"');
 
+        const addBtn = document.getElementById('add-button');
+        setLoading(addBtn, true);
         fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
             method: 'POST',
             headers: {
@@ -249,9 +328,8 @@
             //console.log(data);
 
             if (data.error) {
-                add_button.disabled = true;
-                add_button.style.backgroundColor = "#FF0000";
-                add_button.textContent = "ERROR";
+                showToast('Add failed', 'error');
+                setLoading(addBtn, false);
                 return;
             }
 
@@ -263,6 +341,9 @@
             });
 
             new_sysmsg_data.value = '';
+            new_sysmsg_title.value = '';
+            showToast('Added', 'success');
+            setLoading(addBtn, false);
         });
     });
 
@@ -288,6 +369,8 @@
         let add_sysmsg_data =  extra_sysmsg_data.value;
         add_sysmsg_data = add_sysmsg_data.replace(/"/g, '\\"');
 
+        const extraAddBtn = document.getElementById('extra-add-button');
+        setLoading(extraAddBtn, true);
         fetch('<%=build_url("admin", "network", "oasis", "add-sysmsg")%>', {
             method: 'POST',
             headers: {
@@ -301,9 +384,8 @@
             //console.log(data);
 
             if (data.error) {
-                add_button.disabled = true;
-                add_button.style.backgroundColor = "#FF0000";
-                add_button.textContent = "ERROR";
+                showToast('Add failed', 'error');
+                setLoading(extraAddBtn, false);
                 return;
             }
 
@@ -315,6 +397,9 @@
             });
 
             extra_sysmsg_data.value = '';
+            extra_sysmsg_title.value = '';
+            showToast('Added', 'success');
+            setLoading(extraAddBtn, false);
         });
     });
 
@@ -330,6 +415,8 @@
             return;
         }
 
+        const loadBtn = document.getElementById('load-button');
+        setLoading(loadBtn, true);
         fetch('<%=build_url("admin", "network", "oasis", "load-extra-sysmsg")%>', {
             method: 'POST',
             headers: {
@@ -342,8 +429,12 @@
             //console.log(data);
             extra_sysmsg_textarea.value = data.sysmsg;
             extra_sysmsg_container.style.display = "block";
+            showToast('Loaded', 'success');
+            setLoading(loadBtn, false);
         });
     });
+
+    
 
     document.addEventListener('DOMContentLoaded', function () {
         fetch('<%=build_url("admin", "network", "oasis", "load-sysmsg")%>', {
