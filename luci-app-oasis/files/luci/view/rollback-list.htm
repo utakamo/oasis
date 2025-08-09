@@ -1,100 +1,44 @@
 <%+header%>
 
 <style>
-    .rollback-list {
-        max-width: 600px;
-        margin: 0 auto;
-    }
+    /* Layout */
+    .rollback-list { max-width: 800px; margin: 0 auto; }
+    .rollback-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06); padding: 16px 20px; margin-bottom: 22px; color: #333 }
+    .text-box { margin-top: 5px; margin-bottom: 12px; border-left: 4px solid #FFA500; padding-left: 12px; }
 
-    .rollback-card {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-        padding: 16px 20px;
-        margin-bottom: 30px;
-        color: #333
-    }
-
-    .rollback-button {
-        padding: 10px 16px;
-        background-color: #0078D4;
-        color: white;
+    /* Unified buttons (chat/sysmsg準拠) */
+    .add-button, .load-button, .update-button, .delete-button, .cancel-button {
+        display: inline-block;
+        padding: 0 14px;
+        width: 7.5rem;
+        height: 2.5rem;
+        line-height: 2.5rem;
+        color: #ffffff;
         border: none;
-        border-radius: 4px;
-        margin-bottom: 5px;
-        font-size: 14px;
+        border-radius: 10px;
+        cursor: pointer;
         font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
     }
+    .add-button, .load-button { background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%); }
+    .update-button { background: linear-gradient(180deg, #ff5bbd 0%, #ff1493 100%); }
+    .delete-button, .cancel-button { background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%); }
+    .add-button:active, .load-button:active, .update-button:active, .delete-button:active, .cancel-button:active { transform: translateY(1px); }
 
-    .rollback-button:hover {
-        background-color: #005a9e;
-    }
+    .form-actions { margin: 10px 0; display:flex; gap:10px; flex-wrap: wrap; }
 
-    .rollback-button.selected {
-        background-color: #FFD700;
-        /* color: #333; */
-    }
+    /* Toast */
+    .toast { position: sticky; top: 8px; background:#212529; color:#fff; padding:10px 12px; border-radius:8px; margin-bottom:8px; display:none; z-index: 10; }
+    .toast.show { display:block; }
+    .toast.success { background:#198754; }
+    .toast.error { background:#dc3545; }
+    .toast.info { background:#0d6efd; }
 
-    .text-box {
-        margin-top: 5px;
-        margin-bottom: 12px;
-        border-left: 4px solid #FFA500;
-        padding-left: 12px;
-    }
-
-    /* Overlay */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background-color: rgba(0, 0, 0, 0.4);
-        z-index: 999;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .modal {
-        background: white;
-        padding: 24px 32px;
-        border-radius: 8px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-        text-align: center;
-        color:#333;
-        max-width: 300px;
-        width: 90%;
-    }
-
-    .modal p {
-        margin-bottom: 20px;
-        font-size: 16px;
-    }
-
-    .modal-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-    }
-
-    .modal-button {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .modal-button.ok {
-        background-color: #0056b3;
-        color: white;
-    }
-
-    .modal-button.cancel {
-        background-color: #ccc;
-        color: #333;
-    }
+    /* Confirm dialog */
+    .confirm-modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1300; }
+    .confirm-modal.show { display: flex; }
+    .confirm-card { background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 18px 20px; width: min(92vw, 420px); }
+    .confirm-card p { margin: 0 0 12px; font-weight: 600; text-align: center; font-size: 1.1rem; }
+    .confirm-card .form-actions { justify-content: center; gap: 12px; width: 100%; }
 </style>
 
 <div id="loadingOverlay" style="
@@ -114,23 +58,34 @@
     <div>Rollback in progress...</div>
 </div>
 
+<div id="rollback-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
+
 <div class="rollback-list" id="rollbackContainer"></div>
 
-<div class="modal-overlay" id="modalOverlay">
-<div class="modal">
+<!-- Confirm modal -->
+<div id="rollback-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="confirm-card">
     <p>Would you like to execute the rollback?</p>
-    <div class="modal-buttons">
-    <button class="modal-button ok" id="confirmOk">OK</button>
-    <button class="modal-button cancel" id="confirmCancel">Cancel</button>
+    <div class="form-actions">
+        <button type="button" class="load-button" id="confirmOk">Yes</button>
+        <button type="button" class="delete-button" id="confirmCancel">No</button>
     </div>
-</div>
+  </div>
 </div>
 
 <script>
     const container = document.getElementById('rollbackContainer');
-    const modalOverlay = document.getElementById('modalOverlay');
+    const confirmModal = document.getElementById('rollback-confirm');
     const confirmOk = document.getElementById('confirmOk');
     const confirmCancel = document.getElementById('confirmCancel');
+    const toastEl = document.getElementById('rollback-toast');
+
+    function showToast(message, type = 'info', timeout = 2000) {
+        if (!toastEl) return;
+        toastEl.textContent = message;
+        toastEl.className = `toast show ${type}`;
+        setTimeout(() => { toastEl.className = 'toast'; toastEl.textContent = ''; }, timeout);
+    }
 
     let currentRollbackId = null;
     let currentButton = null;
@@ -149,7 +104,7 @@
             textBox.innerHTML = entry.text.replace(/\n/g, '<br>');
 
             const button = document.createElement('button');
-            button.className = 'rollback-button';
+            button.className = 'rollback-button load-button';
             button.dataset.id = entry.id;
             button.textContent = 'Rollback';
 
@@ -212,12 +167,14 @@
             });
             currentButton.classList.add('selected');
 
-            modalOverlay.style.display = 'flex';
+            confirmModal.classList.add('show');
+            confirmModal.setAttribute('aria-hidden', 'false');
         }
     });
 
     confirmOk.onclick = function () {
-        modalOverlay.style.display = 'none';
+        confirmModal.classList.remove('show');
+        confirmModal.setAttribute('aria-hidden', 'true');
 
         showLoadingOverlay("Rollback in progress...");
 
@@ -231,17 +188,18 @@
         .then(response => response.json())
         .then(result => {
             hideLoadingOverlay();
-            alert(`Rollback ID ${currentRollbackId} has been completed.`);
+            showToast(`Rollback ID ${currentRollbackId} completed`, 'success');
         })
         .catch(error => {
             hideLoadingOverlay();
             console.error("Error during rollback process:", error);
-            alert("Rollback failed.");
+            showToast('Rollback failed', 'error');
         });
     };
 
     confirmCancel.onclick = function () {
-        modalOverlay.style.display = 'none';
+        confirmModal.classList.remove('show');
+        confirmModal.setAttribute('aria-hidden', 'true');
         if (currentButton) {
             currentButton.classList.remove('selected');
         }
