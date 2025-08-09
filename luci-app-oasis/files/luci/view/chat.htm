@@ -999,21 +999,36 @@
             .then((response) => response.json())
             .then((data) => {
                 if (data.status === "OK") {
-                    const listItem = document.querySelector(`#chat-list li[data-id='${targetChatItemId}']`);
-                    const smp_listItem = document.querySelector(`#smp-chat-item-dropdown li[data-id-for-smp='${targetChatItemId}']`);
-                    if (listItem && smp_listItem) {
-                        listItem.remove();
-                        smp_listItem.remove();
+                    const deletedId = targetChatItemId;
+                    const desktopItem = document.querySelector(`#chat-list li[data-id='${deletedId}']`);
+                    const smpItem = document.querySelector(`#smp-chat-item-dropdown li[data-id-for-smp='${deletedId}']`);
+                    const mbItem = document.querySelector(`#mb-chat-list li[data-id='${deletedId}'], #mb-chat-list li[data-id-for-smp='${deletedId}']`);
 
+                    let removed = false;
+                    if (desktopItem) { desktopItem.remove(); removed = true; }
+                    if (smpItem) { smpItem.remove(); removed = true; }
+                    if (mbItem) { mbItem.remove(); removed = true; }
+
+                    if (removed) {
                         const chatMessagesContainer = document.querySelector('.chat-messages');
-
                         if (chatMessagesContainer) {
                             const messages = chatMessagesContainer.querySelectorAll('.message.sent, .message.received');
                             messages.forEach(message => message.remove());
                         }
+                        // Remove from in-memory chatList
+                        if (chatList && Array.isArray(chatList.item)) {
+                            chatList.item = chatList.item.filter(entry => String(entry.id) !== String(deletedId));
+                        }
                         targetChatId = ""; // clear target id
+                        // Hide dropdown if visible
+                        const dropdownEl = document.getElementById('oasis-dropdown');
+                        if (dropdownEl) dropdownEl.style.display = 'none';
+                        // Refresh mobile sheet list from desktop
+                        if (typeof updateMobileBottomSheetFromDesktop === 'function') {
+                            updateMobileBottomSheetFromDesktop();
+                        }
                     } else {
-                        console.error("Could not find the list item with ID:", targetChatItemId);
+                        console.error("Could not find the list item with ID:", deletedId);
                     }
                 } else {
                     console.error("Error deleting chat:", data.error);
