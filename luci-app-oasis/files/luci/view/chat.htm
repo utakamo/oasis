@@ -25,10 +25,17 @@
         <div class="chat-messages"></div>
         <div class="chat-input">
             <div class="chat-input-fields">
+                <div class="inline-sysmsg-field">
+                    <div class="sidebar-label">System Message</div>
+                    <select id="inline-sysmsg-select" name="inline-sysmsg-select"></select>
+                </div>
                 <textarea id="message-input" placeholder="Your Message"></textarea>
             </div>
             <div class="chat-buttons">
                 <button id="send-button">Send</button>
+                <button id="open-bottom-sheet" class="mobile-fab" aria-label="Open options">
+                    <span class="material-icons">tune</span>
+                </button>
                 <button id="smp-send-button" style="border: none; background: none; cursor: pointer;">
                     <span class="material-icons send-icon">send</span>
                 </button>
@@ -37,17 +44,12 @@
                 </button>
             </div>
         </div>
-        <!-- Mobile bottom sheet trigger & container -->
-        <button id="open-bottom-sheet" class="mobile-fab" aria-label="Open options">
-            <span class="material-icons">tune</span>
-        </button>
+        <!-- Mobile bottom sheet container -->
         <div class="mobile-bottom-sheet" id="mobile-bottom-sheet" aria-hidden="true">
             <div class="sheet-handle"></div>
             <div class="sheet-content">
                 <label for="smp-import-chat-data" id="smp-import-button" style="width: 100%;">Import Chat Data +</label>
                 <input type="file" id="smp-import-chat-data" accept=".json" style="display: none;">
-                <div class="sidebar-label">System Message</div>
-                <select id="mb-sysmsg-select" name="mb-sysmsg-select"></select>
                 <div class="sidebar-label" style="margin-top:10px;">Attach UCI info</div>
                 <select id="mb-uci-config-list" name="mb-uci-config-list">
                     <option value="---">---</option>
@@ -174,6 +176,14 @@
     }
     window.addEventListener('resize', updateCompactNewButtonForViewport);
 
+    // Hide transient overlays/menus when viewport changes to avoid lingering UI
+    window.addEventListener('resize', function () {
+        const dropdown = document.getElementById('oasis-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+        const legacySmpDropdown = document.getElementById('smp-chat-item-dropdown');
+        if (legacySmpDropdown) legacySmpDropdown.style.display = 'none';
+    });
+
     function loadPaperPlane() {
         const style = document.createElement('style');
         style.textContent = `
@@ -207,11 +217,11 @@
         const menuTrigger = document.getElementById("menu-trigger");
         if (!menuTrigger) return;
         menuTrigger.addEventListener("click", function () {
-            const dropdown = this.nextElementSibling;
+        const dropdown = this.nextElementSibling;
             if (!dropdown) return;
-            const isVisible = dropdown.style.display === "block";
-            dropdown.style.display = isVisible ? "none" : "block";
-        });
+        const isVisible = dropdown.style.display === "block";
+        dropdown.style.display = isVisible ? "none" : "block";
+    });
     })();
 
     function convertMarkdownToHTML(input) {
@@ -468,7 +478,7 @@
                     handleChatItemClick(targetChatItemId);
                 });
 
-        smp_li.addEventListener('click', function (event) {
+                smp_li.addEventListener('click', function (event) {
                     const systemMessage = document.getElementById("oasis-system");
                     if (systemMessage !== null) {
                         chatMessagesContainer.removeChild(systemMessage);
@@ -495,17 +505,31 @@
         // Helper: populate mobile bottom sheet controls from desktop controls
         function updateMobileBottomSheetFromDesktop() {
             const mbSys = document.getElementById('mb-sysmsg-select');
+            const inlineSys = document.getElementById('inline-sysmsg-select');
             const mbUci = document.getElementById('mb-uci-config-list');
             const mbList = document.getElementById('mb-chat-list');
             const desktopSys = document.getElementById('sysmsg-select');
             const desktopUci = document.getElementById('uci-config-list');
             const desktopList = document.getElementById('chat-list');
 
+            // Populate inline System Message (above textarea)
+            if (inlineSys && desktopSys) {
+                inlineSys.innerHTML = desktopSys.innerHTML;
+                inlineSys.value = desktopSys.value;
+                inlineSys.disabled = desktopSys.disabled;
+                const inlineClone = inlineSys.cloneNode(true);
+                inlineSys.parentNode.replaceChild(inlineClone, inlineSys);
+                inlineClone.addEventListener('change', (e) => {
+                    desktopSys.value = e.target.value;
+                    desktopSys.dispatchEvent(new Event('change'));
+                });
+            }
+
+            // Populate mobile sheet System Message (kept for mobile flow)
             if (mbSys && desktopSys) {
                 mbSys.innerHTML = desktopSys.innerHTML;
                 mbSys.value = desktopSys.value;
                 mbSys.disabled = desktopSys.disabled;
-                // Remove old listeners by cloning
                 const mbSysClone = mbSys.cloneNode(true);
                 mbSys.parentNode.replaceChild(mbSysClone, mbSys);
                 mbSysClone.addEventListener('change', (e) => {
@@ -528,7 +552,12 @@
             if (mbList && desktopList) {
                 mbList.innerHTML = desktopList.innerHTML;
                 mbList.querySelectorAll('li').forEach(li => {
+                    // Open chat when tapping the row (but not the kebab)
                     li.addEventListener('click', (ev) => {
+                        if ((ev.target && (ev.target.closest && ev.target.closest('.oasis-hamburger-menu'))) ||
+                            (ev.target && (ev.target.closest && ev.target.closest('.oasis-menu-btn')))) {
+                            return; // handled by kebab
+                        }
                         const id = ev.currentTarget.getAttribute('data-id');
                         if (id) {
                             handleChatItemClick(id);
@@ -539,6 +568,19 @@
                             }
                         }
                     });
+                    // Kebab menu in bottom sheet: open oasis-dropdown
+                    const menuBtn = li.querySelector('.oasis-menu-btn');
+                    if (menuBtn) {
+                        menuBtn.addEventListener('click', function (event) {
+                            event.stopPropagation();
+                            const dropdown = document.getElementById('oasis-dropdown');
+                            targetChatItemId = this.closest('li').getAttribute('data-id');
+                            // Show and center the dropdown as a foreground dialog
+                            dropdown.style.display = 'block';
+                            dropdown.style.position = 'fixed';
+                            centerElementInChat(dropdown);
+                        });
+                    }
                 });
             }
         }
@@ -549,10 +591,11 @@
             const fab = document.getElementById('open-bottom-sheet');
             const sheet = document.getElementById('mobile-bottom-sheet');
             if (!fab || !sheet) return;
-            // Move FAB and sheet to <body> to avoid overflow/stacking clipping by .chat-container
-            if (fab.parentNode !== document.body) document.body.appendChild(fab);
+            // Keep FAB inline within chat input buttons; only move sheet to body to avoid clipping
             if (sheet.parentNode !== document.body) document.body.appendChild(sheet);
-            fab.classList.add('show');
+
+            // No dynamic repositioning needed since FAB is inline in chat-buttons
+
             fab.addEventListener('click', () => {
                 // Ensure content is up-to-date every time before showing
                 updateMobileBottomSheetFromDesktop();
@@ -576,8 +619,40 @@
             updateMobileBottomSheetFromDesktop();
             const mbNewBtn = document.getElementById('mb-new-button');
             if (mbNewBtn) mbNewBtn.addEventListener('click', async () => { await new_chat_action(); });
+
+            // No need to track scroll/resize for FAB inline placement
+            // Hide bottom sheet and FAB on desktop viewport
+            function updateBottomSheetVisibilityForViewport() {
+                const isSmall = window.innerWidth <= 768;
+                if (!isSmall) {
+                    // Hide sheet if visible
+                    sheet.classList.remove('show');
+                    sheet.setAttribute('aria-hidden', 'true');
+                    sheet.style.display = 'none';
+                    // Hide FAB
+                    fab.style.display = 'none';
+                } else {
+                    // Show FAB on small viewport
+                    fab.style.display = '';
+                }
+            }
+            window.addEventListener('resize', updateBottomSheetVisibilityForViewport);
+            // Initial state
+            updateBottomSheetVisibilityForViewport();
+            // Remove textarea-height tracking to avoid following input height
         })();
         
+        // Close bottom sheet when clicking outside
+        document.addEventListener('click', function (ev) {
+            const sheet = document.getElementById('mobile-bottom-sheet');
+            const fab = document.getElementById('open-bottom-sheet');
+            if (!sheet || getComputedStyle(sheet).display === 'none') return;
+            if (sheet.contains(ev.target) || (fab && fab.contains(ev.target))) return;
+            sheet.classList.remove('show');
+            sheet.setAttribute('aria-hidden', 'true');
+            setTimeout(() => sheet.style.display = 'none', 250);
+        });
+
         // Input: Enter to send / Shift+Enter for newline + auto-resize up to 5 lines + disable SEND when empty
         function initMessageInputAutoResizeAndEnterSend() {
             const messageInputEl = document.getElementById('message-input');
@@ -1243,7 +1318,11 @@
         // Lock System Message selection once the very first message of a new chat is sent
         if (!targetChatId || targetChatId.length === 0) {
             const sysmsgSelect = document.getElementById('sysmsg-select');
+            const inlineSys = document.getElementById('inline-sysmsg-select');
+            const mbSys = document.getElementById('mb-sysmsg-select');
             if (sysmsgSelect) sysmsgSelect.disabled = true;
+            if (inlineSys) inlineSys.disabled = true;
+            if (mbSys) mbSys.disabled = true;
         }
 
         send_chat_data(systemMessage, messageInput, messageText);
@@ -1711,7 +1790,11 @@
         targetChatId = chatId;
         // Lock System Message selection once a chat is active
         const sysmsgSelect = document.getElementById('sysmsg-select');
+        const inlineSys = document.getElementById('inline-sysmsg-select');
+        const mbSys = document.getElementById('mb-sysmsg-select');
         if (sysmsgSelect) sysmsgSelect.disabled = true;
+        if (inlineSys) inlineSys.disabled = true;
+        if (mbSys) mbSys.disabled = true;
     }
 
     async function new_chat_action() {

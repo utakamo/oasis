@@ -97,7 +97,7 @@
     border: 1px solid #e6e6e6;
     border-radius: 10px;
     overflow: auto;
-    z-index: 1100;
+    z-index: 1300; /* above bottom sheet */
     padding: 6px;
     width: auto;
     min-width: 11rem;
@@ -287,6 +287,20 @@
     min-height: 2.5rem;
 }
 
+.inline-sysmsg-field {
+    width: 100%;
+    display: none; /* hidden by default (desktop/two-column) */
+}
+.inline-sysmsg-field select {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 6px 0 8px 0;
+}
+@media (max-width: 768px) {
+    .inline-sysmsg-field { display: block; }
+    .inline-sysmsg-field .sidebar-label { display: none; }
+}
+
 #send-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -405,7 +419,7 @@ textarea:focus-visible {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    z-index: 1300; /* above bottom sheet */
     text-align: center;
     font-size: 18px;
     opacity: 1;
@@ -434,6 +448,7 @@ textarea:focus-visible {
     width: min(480px, calc(100vw - 32px));
     text-align: center;
     padding: 20px 24px;
+    z-index: 1300; /* above bottom sheet */
 }
 
 .confirm-popup {
@@ -446,6 +461,7 @@ textarea:focus-visible {
     width: min(480px, calc(100vw - 32px));
     text-align: center;
     padding: 20px 24px;
+    z-index: 1300; /* above bottom sheet */
 }
 
 /* overlay removed */
@@ -712,7 +728,7 @@ textarea:focus-visible {
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         border-radius: 4px;
         overflow: hidden;
-        z-index: 1000;
+        z-index: 1300; /* above bottom sheet */
         padding: 10px;
         width: auto;
         min-width: 10rem;
@@ -815,17 +831,10 @@ textarea:focus-visible {
 
 /* Mobile bottom sheet */
 .mobile-fab {
-    position: fixed;
-    right: 16px;
-    bottom: 16px;
-    width: 44px;
-    height: 44px;
-    border-radius: 22px;
     border: none;
-    background: #0d6efd;
-    color: #fff;
+    background: transparent;
+    color: #0d6efd;
     display: none;
-    z-index: 1100;
 }
 .mobile-bottom-sheet {
     position: fixed;
@@ -838,9 +847,11 @@ textarea:focus-visible {
     display: none;
     z-index: 1099;
     padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
 }
 .mobile-bottom-sheet.show { bottom: 0; }
-.mobile-fab.show { display: block; }
+/* show toggle only on small screens */
 .sheet-handle {
     width: 36px; height: 4px; border-radius: 2px;
     background: #ccc; margin: 0 auto 8px;
@@ -853,6 +864,68 @@ textarea:focus-visible {
     box-sizing: border-box;
     margin: 10px 0;
 }
+
+/* Make whole sheet content scrollable */
+.mobile-bottom-sheet .sheet-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Bottom sheet history list styling */
+.mobile-bottom-sheet #mb-chat-list {
+    list-style: none;
+    margin: 10px 0 0 0;
+    padding: 0;
+    border: 1px solid #e6e9ef;
+    border-radius: 8px;
+    background: #fafbfc;
+}
+.mobile-bottom-sheet #mb-chat-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eef1f6;
+    cursor: pointer;
+    position: relative;
+}
+.mobile-bottom-sheet #mb-chat-list li:last-child { border-bottom: none; }
+.mobile-bottom-sheet #mb-chat-list li:hover { background: #f2f5fa; }
+.mobile-bottom-sheet #mb-chat-list li span {
+    flex: 1 1 auto;
+    color: #222;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+/* Show kebab menu inside bottom sheet history */
+.mobile-bottom-sheet #mb-chat-list .oasis-hamburger-menu { display: inline-flex; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+.mobile-bottom-sheet #mb-chat-list .oasis-menu-btn { color: #555555; }
+
+/* Import button inside bottom sheet */
+.mobile-bottom-sheet #smp-import-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+    height: 2.2rem;
+    width: 100%;
+    background-color: #0d6efd;
+    color: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+/* Oasis dropdown (Delete/Rename/Export/Cancel) refinements */
+.oasis-dropdown {
+    padding: 8px;
+}
+.oasis-dropdown .oasis-menu-item {
+    font-weight: 500;
+}
+.oasis-dropdown .oasis-menu-item[data-action="delete"] { color: #b42318; }
+.oasis-dropdown .oasis-menu-item[data-action="delete"]:hover { background: #fee4e2; }
 
 .console-command-color {
     background-color:#333333;
