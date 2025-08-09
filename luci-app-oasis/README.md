@@ -808,14 +808,14 @@ fetch('<%=build_url("admin", "network", "oasis", "remove-remote-mcp-server")%>',
 > This API returns a fixed JSON object with status "OK" on success.
 
 #### 9.5 Load Server Information
-- **URL**: `/cgi-bin/luci/admin/network/oasis/load-server-info`
+- **URL**: `/cgi-bin/luci/admin/network/oasis/local-tool-info`
 - **Method**: POST
 - **Parameters**: None
 - **Response**: JSON
 - **Description**: Get tool server information
 **POST request**  
 ```
-fetch('<%=build_url("admin", "network", "oasis", "load-server-info")%>')
+fetch('<%=build_url("admin", "network", "oasis", "local-tool-info")%>')
 ```
 **Output**
 `
