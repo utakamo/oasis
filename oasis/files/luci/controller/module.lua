@@ -44,11 +44,9 @@ function index()
     entry({"admin", "network", "oasis", "load-rollback-list"}, call("load_rollback_list"), nil).leaf = true
     entry({"admin", "network", "oasis", "rollback-target-data"}, call("rollback_target_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "base-info"}, call("base_info"), nil).leaf = true
-    entry({"admin", "network", "oasis", "load-local-tools-info"}, call("load_local_tools_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "change-tool-enable"}, call("change_tool_enable"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
-    entry({"admin", "network", "oasis", "load-local-tools-info"}, call("load_local_tools_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "local-tool-info"}, call("local_tool_info"), nil).leaf = true
 end
 
@@ -702,28 +700,6 @@ function base_info()
     info_tbl.configs = oasis_ubus.retrieve_uci_config("table")
     luci_http.prepare_content("application/json")
     luci_http.write_json(info_tbl)
-end
-
-function load_local_tools_info()
-    local tools = {}
-    uci:foreach("oasis", "tool", function(s)
-        local entry = {}
-        for k, v in pairs(s) do
-            if k:sub(1,1) ~= "." then
-                if type(v) == "table" then
-                    entry[k] = {}
-                    for _, vv in ipairs(v) do
-                        table.insert(entry[k], vv)
-                    end
-                else
-                    entry[k] = v
-                end
-            end
-        end
-        table.insert(tools, entry)
-    end)
-    luci_http.prepare_content("application/json")
-    luci_http.write_json(tools)
 end
 
 function change_tool_enable()
