@@ -1,81 +1,39 @@
 <%+header%>
 
 <style>
-  #oasis-tool-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: sans-serif;
-  }
+  /* Layout */
+  #oasis-tool-container { display: flex; flex-direction: column; align-items: center; }
+  h2 { margin: 0 0 8px; }
+  h3 { margin: 0; font-size: 1rem; color: #555; }
+  .server-block { width: 100%; max-width: 760px; margin-top: 22px; }
+  .server-header { display:flex; align-items:center; justify-content: space-between; margin-bottom: 8px; }
+  .list { display:flex; flex-direction:column; gap: 12px; width:100%; margin-top: 8px; }
 
-  h2, h3 {
-    margin: 0;
-    padding: 5px 0;
-  }
+  /* Card */
+  .cell { background:#fff; border-radius:12px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); padding: 14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .cell-title { color:#333; font-weight:700; font-size: 1.05rem; display:flex; align-items:center; gap:8px; }
+  .status-pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; background:#e9ecef; color:#495057; }
+  .status-pill.enabled { background:#d1e7dd; color:#0f5132; }
+  .cell-description { font-size: 0.92rem; color:#444; line-height:1.45; }
+  .cell-footer { display:flex; justify-content:flex-end; align-items:center; }
 
-  .server-block {
-    width: 400px;
-    margin-top: 30px;
+  /* Unified button styles */
+  .add-button, .load-button, .update-button, .delete-button, .cancel-button {
+    display: inline-block; padding: 0 14px; width: 7.5rem; height: 2.5rem; line-height: 2.5rem; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;
   }
+  .load-button { background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%); }
+  .delete-button, .cancel-button { background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%); }
+  .load-button:active, .delete-button:active, .cancel-button:active { transform: translateY(1px); }
 
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-    margin-top: 10px;
-  }
-
-  .cell {
-    background-color: #eee;
-    border: 1px solid #666;
-    border-radius: 10px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .cell-title {
-    color: #666;
-    font-weight: bold;
-    font-size: 1.2em;
-    margin-bottom: 5px;
-  }
-
-  .cell-description {
-    flex: 1;
-    font-size: 0.9em;
-    margin-bottom: 10px;
-    color: #444;
-  }
-
-  .cell-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-  }
-
-  .toggle-button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: background-color 0.2s;
-  }
-
-  .toggle-button.enabled {
-    background-color: #4CAF50;
-    color: white;
-  }
-
-  .toggle-button.disabled {
-    background-color: #888;
-    color: #fff;
-  }
+  /* Toast */
+  .toast { position: sticky; top: 8px; background:#212529; color:#fff; padding:10px 12px; border-radius:8px; margin-bottom:8px; display:none; z-index: 10; }
+  .toast.show { display:block; }
+  .toast.success { background:#198754; }
+  .toast.error { background:#dc3545; }
+  .toast.info { background:#0d6efd; }
 </style>
 
+<div id="tools-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
 <h2>Local Tools</h2>
 <div id="oasis-tool-container"></div>
 
@@ -87,14 +45,25 @@
 <script>
 (function() {
   const container = document.getElementById('oasis-tool-container');
+  const toastEl = document.getElementById('tools-toast');
+
+  function showToast(message, type = 'info', timeout = 2000) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.className = `toast show ${type}`;
+    setTimeout(() => { toastEl.className = 'toast'; toastEl.textContent = ''; }, timeout);
+  }
 
   function createServerBlock(serverName, tools) {
     const block = document.createElement('div');
     block.className = 'server-block';
 
+    const headerWrap = document.createElement('div');
+    headerWrap.className = 'server-header';
     const header = document.createElement('h3');
     header.textContent = serverName;
-    block.appendChild(header);
+    headerWrap.appendChild(header);
+    block.appendChild(headerWrap);
 
     const list = document.createElement('div');
     list.className = 'list';
@@ -113,7 +82,13 @@
 
     const title = document.createElement('div');
     title.className = 'cell-title';
-    title.textContent = tool.name || 'Unknown';
+    const titleText = document.createElement('span');
+    titleText.textContent = tool.name || 'Unknown';
+    const status = document.createElement('span');
+    status.className = 'status-pill' + ((tool.enable === '1') ? ' enabled' : '');
+    status.textContent = (tool.enable === '1') ? 'Enabled' : 'Disabled';
+    title.appendChild(titleText);
+    title.appendChild(status);
 
     const desc = document.createElement('div');
     desc.className = 'cell-description';
@@ -123,17 +98,17 @@
     footer.className = 'cell-footer';
 
     const btn = document.createElement('button');
-    btn.className = 'toggle-button';
-
     let isEnabled = tool.enable === '1';
-    btn.textContent = isEnabled ? 'Enable' : 'Disable';
-    btn.classList.add(isEnabled ? 'enabled' : 'disabled');
+    btn.className = isEnabled ? 'delete-button' : 'load-button';
+    btn.textContent = isEnabled ? 'Disable' : 'Enable';
 
     btn.addEventListener('click', () => {
       isEnabled = !isEnabled;
-      btn.textContent = isEnabled ? 'Enable' : 'Disable';
-      btn.classList.toggle('enabled', isEnabled);
-      btn.classList.toggle('disabled', !isEnabled);
+      btn.textContent = isEnabled ? 'Disable' : 'Enable';
+      btn.className = isEnabled ? 'delete-button' : 'load-button';
+      status.textContent = isEnabled ? 'Enabled' : 'Disabled';
+      status.className = 'status-pill' + (isEnabled ? ' enabled' : '');
+      showToast(`"${tool.name}" is now ${isEnabled ? 'enabled' : 'disabled'}.`, isEnabled ? 'success' : 'info');
     });
 
     footer.appendChild(btn);
