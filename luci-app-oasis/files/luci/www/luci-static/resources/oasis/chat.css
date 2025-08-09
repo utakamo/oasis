@@ -825,16 +825,18 @@ textarea:focus-visible {
     background: #0d6efd;
     color: #fff;
     display: none;
+    z-index: 1100;
 }
 .mobile-bottom-sheet {
     position: fixed;
-    left: 0; right: 0; bottom: -50vh;
+    left: 10px; right: 10px; bottom: -50vh;
     height: 40vh;
     background: #fff;
     border-radius: 12px 12px 0 0;
     box-shadow: 0 -8px 20px rgba(0,0,0,.12);
     transition: bottom .25s ease;
     display: none;
+    z-index: 1099;
     padding: 12px 16px;
 }
 .mobile-bottom-sheet.show { bottom: 0; }
@@ -844,6 +846,13 @@ textarea:focus-visible {
     background: #ccc; margin: 0 auto 8px;
 }
 .sheet-actions { margin-top: 12px; display: flex; justify-content: flex-end; }
+
+/* Bottom sheet select full-width and spacing */
+.mobile-bottom-sheet .sheet-content select {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 10px 0;
+}
 
 .console-command-color {
     background-color:#333333;

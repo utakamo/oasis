@@ -19,28 +19,7 @@
     </div>
 
     <div class="chat-container">
-        <ul class="smp-chat-hamburger-menu">
-            <li id="menu-trigger">☰</li>
-            <ul id="smp-chat-item-dropdown">
-                <li>
-                    <label for="smp-import-chat-data" id="smp-import-button" style="width: 100%;">Import Chat Data +</label>
-                    <input type="file" id="smp-import-chat-data" accept=".json" style="display: none;">
-                </li>
-                <li class="smp-field">
-                    <div class="sidebar-label">System Message</div>
-                    <select id="smp-sysmsg-select" name="smp-sysmsg-select"></select>
-                </li>
-                <li class="smp-field">
-                    <div class="sidebar-label">Attach UCI info</div>
-                    <select id="smp-uci-config-list" name="smp-uci-config-list">
-                        <option value="---">---</option>
-                    </select>
-                </li>
-                <li id="smp-new-button-item">
-                    <button id="smp-new-button">New Chat</button>
-                </li>
-            </ul>
-        </ul>
+        
         <div id="keyboard-padding"></div>
         <select id="ai-service-list"></select>
         <div class="chat-messages"></div>
@@ -56,6 +35,29 @@
                 <button id="smp-new-mini" style="border: none; background: none; cursor: pointer; display:none;">
                     <span class="material-icons send-icon">add_comment</span>
                 </button>
+            </div>
+        </div>
+        <!-- Mobile bottom sheet trigger & container -->
+        <button id="open-bottom-sheet" class="mobile-fab" aria-label="Open options">
+            <span class="material-icons">tune</span>
+        </button>
+        <div class="mobile-bottom-sheet" id="mobile-bottom-sheet" aria-hidden="true">
+            <div class="sheet-handle"></div>
+            <div class="sheet-content">
+                <label for="smp-import-chat-data" id="smp-import-button" style="width: 100%;">Import Chat Data +</label>
+                <input type="file" id="smp-import-chat-data" accept=".json" style="display: none;">
+                <div class="sidebar-label">System Message</div>
+                <select id="mb-sysmsg-select" name="mb-sysmsg-select"></select>
+                <div class="sidebar-label" style="margin-top:10px;">Attach UCI info</div>
+                <select id="mb-uci-config-list" name="mb-uci-config-list">
+                    <option value="---">---</option>
+                </select>
+                <div class="sidebar-label" style="margin-top:10px;">History</div>
+                <ul id="mb-chat-list"></ul>
+                <div class="sheet-actions">
+                    <button id="mobile-sheet-close" type="button">Close</button>
+                    <button id="mb-new-button" type="button">New Chat</button>
+                </div>
             </div>
         </div>
     </div>
@@ -200,13 +202,17 @@
         document.head.appendChild(style);
     }
 
-    /* chat data list for smartphone */
-    document.getElementById("menu-trigger").addEventListener("click", function () {
-        const dropdown = this.nextElementSibling;
-        const isVisible = dropdown.style.display === "block";
-
-        dropdown.style.display = isVisible ? "none" : "block";
-    });
+    /* chat data list for smartphone (hamburger removed; guard for legacy code) */
+    (function () {
+        const menuTrigger = document.getElementById("menu-trigger");
+        if (!menuTrigger) return;
+        menuTrigger.addEventListener("click", function () {
+            const dropdown = this.nextElementSibling;
+            if (!dropdown) return;
+            const isVisible = dropdown.style.display === "block";
+            dropdown.style.display = isVisible ? "none" : "block";
+        });
+    })();
 
     function convertMarkdownToHTML(input) {
         let html = '';
@@ -446,7 +452,9 @@
                 });
         smp_menuContainer.appendChild(smp_menuButton);
         smp_li.appendChild(smp_menuContainer);
-        smpChatListContainer.appendChild(smp_li);
+        if (smpChatListContainer) {
+            smpChatListContainer.appendChild(smp_li);
+        }
 
                 li.addEventListener('click', function (event) {
                     const systemMessage = document.getElementById("oasis-system");
@@ -460,7 +468,7 @@
                     handleChatItemClick(targetChatItemId);
                 });
 
-                smp_li.addEventListener('click', function (event) {
+        smp_li.addEventListener('click', function (event) {
                     const systemMessage = document.getElementById("oasis-system");
                     if (systemMessage !== null) {
                         chatMessagesContainer.removeChild(systemMessage);
@@ -470,7 +478,7 @@
                         return;
                     }
                     handleChatItemClick(targetChatItemId);
-                    smpChatListContainer.style.display = "none";
+            if (smpChatListContainer) smpChatListContainer.style.display = "none";
                 });
     }
 
@@ -483,8 +491,92 @@
         const dropdown = document.getElementById("oasis-dropdown");
 
         check_temporary_setting();
+
+        // Helper: populate mobile bottom sheet controls from desktop controls
+        function updateMobileBottomSheetFromDesktop() {
+            const mbSys = document.getElementById('mb-sysmsg-select');
+            const mbUci = document.getElementById('mb-uci-config-list');
+            const mbList = document.getElementById('mb-chat-list');
+            const desktopSys = document.getElementById('sysmsg-select');
+            const desktopUci = document.getElementById('uci-config-list');
+            const desktopList = document.getElementById('chat-list');
+
+            if (mbSys && desktopSys) {
+                mbSys.innerHTML = desktopSys.innerHTML;
+                mbSys.value = desktopSys.value;
+                mbSys.disabled = desktopSys.disabled;
+                // Remove old listeners by cloning
+                const mbSysClone = mbSys.cloneNode(true);
+                mbSys.parentNode.replaceChild(mbSysClone, mbSys);
+                mbSysClone.addEventListener('change', (e) => {
+                    desktopSys.value = e.target.value;
+                    desktopSys.dispatchEvent(new Event('change'));
+                });
+            }
+
+            if (mbUci && desktopUci) {
+                mbUci.innerHTML = desktopUci.innerHTML;
+                mbUci.value = desktopUci.value;
+                const mbUciClone = mbUci.cloneNode(true);
+                mbUci.parentNode.replaceChild(mbUciClone, mbUci);
+                mbUciClone.addEventListener('change', (e) => {
+                    desktopUci.value = e.target.value;
+                    desktopUci.dispatchEvent(new Event('change'));
+                });
+            }
+
+            if (mbList && desktopList) {
+                mbList.innerHTML = desktopList.innerHTML;
+                mbList.querySelectorAll('li').forEach(li => {
+                    li.addEventListener('click', (ev) => {
+                        const id = ev.currentTarget.getAttribute('data-id');
+                        if (id) {
+                            handleChatItemClick(id);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            if (sheet) {
+                                sheet.classList.remove('show');
+                                setTimeout(() => sheet.style.display = 'none', 250);
+                            }
+                        }
+                    });
+                });
+            }
+        }
         // Initialize compact New Chat icon state based on viewport
         updateCompactNewButtonForViewport();
+        // Initialize mobile bottom sheet bindings if present
+        (function initMobileBottomSheet() {
+            const fab = document.getElementById('open-bottom-sheet');
+            const sheet = document.getElementById('mobile-bottom-sheet');
+            if (!fab || !sheet) return;
+            // Move FAB and sheet to <body> to avoid overflow/stacking clipping by .chat-container
+            if (fab.parentNode !== document.body) document.body.appendChild(fab);
+            if (sheet.parentNode !== document.body) document.body.appendChild(sheet);
+            fab.classList.add('show');
+            fab.addEventListener('click', () => {
+                // Ensure content is up-to-date every time before showing
+                updateMobileBottomSheetFromDesktop();
+                sheet.style.display = 'block';
+                sheet.setAttribute('aria-hidden', 'false');
+                requestAnimationFrame(() => {
+                    sheet.classList.add('show');
+                    const focusTarget = document.getElementById('mb-sysmsg-select') || sheet;
+                    if (focusTarget && focusTarget.focus) focusTarget.focus();
+                });
+            });
+            const closeBtn = document.getElementById('mobile-sheet-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    sheet.classList.remove('show');
+                    sheet.setAttribute('aria-hidden', 'true');
+                    setTimeout(() => sheet.style.display = 'none', 250);
+                });
+            }
+            // First population
+            updateMobileBottomSheetFromDesktop();
+            const mbNewBtn = document.getElementById('mb-new-button');
+            if (mbNewBtn) mbNewBtn.addEventListener('click', async () => { await new_chat_action(); });
+        })();
         
         // Input: Enter to send / Shift+Enter for newline + auto-resize up to 5 lines + disable SEND when empty
         function initMessageInputAutoResizeAndEnterSend() {
@@ -556,6 +648,9 @@
                 addChatListEntry(chat.id, chat.title);
             });
 
+            // After desktop controls are filled, sync to mobile bottom sheet
+            updateMobileBottomSheetFromDesktop();
+
             let using_icon = data.icon.ctrl.using;
             icon_name = data.icon.list[using_icon];
 
@@ -596,6 +691,8 @@
                 });
                 // Enable only for a new chat (no targetChatId yet)
                 sysmsgSelect.disabled = (targetChatId && targetChatId.length > 0);
+                // Sync to mobile bottom sheet now that System Message is ready
+                updateMobileBottomSheetFromDesktop();
             }
 
             ai_service_list = Array.isArray(data.service) ? data.service : [];
@@ -634,6 +731,8 @@
                 option.textContent = config;
                 uciConfigSelect.appendChild(option);
             });
+            // Sync to mobile bottom sheet now that UCI list is ready
+            updateMobileBottomSheetFromDesktop();
 
             // Smartphone selects mirror (System Message & UCI)
             const smpSysmsgSelect = document.getElementById('smp-sysmsg-select');
@@ -1637,14 +1736,14 @@
         }
     }
 
-    document.getElementById('smp-new-button').addEventListener('click', async function() {
-        await new_chat_action();
-
-        const dropdown = document.getElementById('menu-trigger').nextElementSibling;
-        const isVisible = dropdown.style.display === "block";
-
-        dropdown.style.display = isVisible ? "none" : "block";
-    });
+    (function(){
+        const smpNewButton = document.getElementById('smp-new-button');
+        if (smpNewButton) {
+            smpNewButton.addEventListener('click', async function() {
+                await new_chat_action();
+            });
+        }
+    })();
 
     document.getElementById('new-button').addEventListener('click', async function() {
         await new_chat_action();
@@ -1691,7 +1790,8 @@
     });
 
 
-    document.getElementById('smp-import-chat-data').addEventListener('change', function(event) {
+    const smpImportInput = document.getElementById('smp-import-chat-data');
+    if (smpImportInput) smpImportInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
