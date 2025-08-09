@@ -6,7 +6,7 @@
     .rollback-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06); padding: 16px 20px; margin-bottom: 22px; color: #333 }
     .text-box { margin-top: 5px; margin-bottom: 12px; border-left: 4px solid #FFA500; padding-left: 12px; }
 
-    /* Unified buttons (chat/sysmsg準拠) */
+    /* Unified buttons (aligned with chat/sysmsg) */
     .add-button, .load-button, .update-button, .delete-button, .cancel-button {
         display: inline-block;
         padding: 0 14px;
@@ -39,23 +39,34 @@
     .confirm-card { background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 18px 20px; width: min(92vw, 420px); }
     .confirm-card p { margin: 0 0 12px; font-weight: 600; text-align: center; font-size: 1.1rem; }
     .confirm-card .form-actions { justify-content: center; gap: 12px; width: 100%; }
+
+    /* Overlay message + animation */
+    #loadingOverlay .overlay-content { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 16px; }
+    #loadingOverlay .overlay-message { font-size: 16px; line-height: 1.5; text-align: center; }
+    #loadingOverlay .overlay-message .dots { display: inline-flex; gap: 2px; margin-left: 2px; }
+    #loadingOverlay .overlay-message .dots span { opacity: 0.2; animation: dots-blink 1.2s infinite; }
+    #loadingOverlay .overlay-message .dots span:nth-child(2) { animation-delay: 0.2s; }
+    #loadingOverlay .overlay-message .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dots-blink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
+
+    #loadingOverlay .overlay-progress { position: relative; width: 280px; max-width: 70vw; height: 4px; background: rgba(255,255,255,0.35); border-radius: 999px; overflow: hidden; }
+    #loadingOverlay .overlay-progress::before { content: ""; position: absolute; left: -40%; top: 0; height: 100%; width: 40%; background: rgba(255,255,255,0.9); border-radius: inherit; animation: indeterminate-slide 1.2s linear infinite; }
+    @keyframes indeterminate-slide { 0% { transform: translateX(0); } 100% { transform: translateX(350%); } }
+
+    @media (prefers-reduced-motion: reduce) {
+        #loadingOverlay .overlay-message .dots span { animation: none; opacity: 0.4; }
+        #loadingOverlay .overlay-progress::before { animation: none; left: 0; width: 100%; opacity: 0.35; }
+    }
 </style>
 
-<div id="loadingOverlay" style="
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1000;
-    color: white;
-    font-size: 20px;
-    font-weight: bold;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-">
-    <div>Rollback in progress...</div>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color: rgba(0,0,0,0.6); z-index:1000; color:white; font-weight:600; justify-content:center; align-items:center; text-align:center;">
+    <div class="overlay-content">
+        <div class="overlay-message">
+            Rollback has been executed. You can access the UI again once the system has fully restarted
+            <span class="dots"><span>.</span><span>.</span><span>.</span></span>
+        </div>
+        <div class="overlay-progress"></div>
+    </div>
 </div>
 
 <div id="rollback-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
@@ -176,24 +187,20 @@
         confirmModal.classList.remove('show');
         confirmModal.setAttribute('aria-hidden', 'true');
 
-        showLoadingOverlay("Rollback in progress...");
+        // Replace content immediately with final instruction
+        const finalMsg = 'Rollback has been executed. You can access the UI again once the system has fully restarted.';
+        container.innerHTML = '';
+        showLoadingOverlay(finalMsg);
 
+        // Fire-and-forget: rollback will likely drop connection; we don't wait UI feedback
         fetch('<%=build_url("admin", "network", "oasis", "rollback-target-data")%>', { 
             method: "POST",
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({ index: currentRollbackId }),
-        })
-        .then(response => response.json())
-        .then(result => {
-            hideLoadingOverlay();
-            showToast(`Rollback ID ${currentRollbackId} completed`, 'success');
-        })
-        .catch(error => {
-            hideLoadingOverlay();
-            console.error("Error during rollback process:", error);
-            showToast('Rollback failed', 'error');
+        }).catch(error => {
+            console.warn('Rollback may drop connection:', error);
         });
     };
 
