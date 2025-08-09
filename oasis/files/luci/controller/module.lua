@@ -49,7 +49,7 @@ function index()
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-local-tools-info"}, call("load_local_tools_info"), nil).leaf = true
-    entry({"admin", "network", "oasis", "load-server-info"}, call("load_server_info"), nil).leaf = true
+    entry({"admin", "network", "oasis", "local-tool-info"}, call("local_tool_info"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -848,7 +848,7 @@ function load_remote_mcp_server_info()
     luci_http.write_json(servers)
 end
 
-function load_server_info()
+function local_tool_info()
 
     local tools = uci:get_all(common.db.uci.cfg)
 
