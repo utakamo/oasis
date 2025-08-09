@@ -645,12 +645,14 @@
             // Remove textarea-height tracking to avoid following input height
         })();
         
-        // Close bottom sheet when clicking outside
+        // Close bottom sheet when clicking outside, but keep it open if user interacts with oasis-dropdown
         document.addEventListener('click', function (ev) {
             const sheet = document.getElementById('mobile-bottom-sheet');
             const fab = document.getElementById('open-bottom-sheet');
+            const dropdown = document.getElementById('oasis-dropdown');
             if (!sheet || getComputedStyle(sheet).display === 'none') return;
-            if (sheet.contains(ev.target) || (fab && fab.contains(ev.target))) return;
+            // If click is inside the sheet, the FAB, or the dropdown menu, do not close the sheet
+            if (sheet.contains(ev.target) || (fab && fab.contains(ev.target)) || (dropdown && dropdown.style.display === 'block' && dropdown.contains(ev.target))) return;
             sheet.classList.remove('show');
             sheet.setAttribute('aria-hidden', 'true');
             setTimeout(() => sheet.style.display = 'none', 250);
@@ -1023,6 +1025,11 @@
                         // Hide dropdown if visible
                         const dropdownEl = document.getElementById('oasis-dropdown');
                         if (dropdownEl) dropdownEl.style.display = 'none';
+                        // If deletion was triggered from the bottom sheet, keep the sheet open
+                        const sheet = document.getElementById('mobile-bottom-sheet');
+                        if (sheet && sheet.classList.contains('show')) {
+                            // no-op: do not close the sheet
+                        }
                         // Refresh mobile sheet list from desktop
                         if (typeof updateMobileBottomSheetFromDesktop === 'function') {
                             updateMobileBottomSheetFromDesktop();
