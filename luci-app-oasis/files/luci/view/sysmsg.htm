@@ -1,54 +1,25 @@
 <%+header%>
 
 <style>
-    .add-button {
+    /* Unified button style aligned with chat.css (#import-button/#new-button/#send-button) */
+    .add-button, .load-button, .update-button, .delete-button {
         display: inline-block;
-        padding: 10px 20px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #0056b3;
-        color: white;
+        padding: 0 14px;
+        width: 7.5rem;
+        height: 2.5rem;
+        line-height: 2.5rem;
+        color: #ffffff;
         border: none;
-        border-radius: 4px;
+        border-radius: 10px;
         cursor: pointer;
+        font-weight: 600;
     }
-
-    .load-button {
-        display: inline-block;
-        padding: 10px 20px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #00cc06;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
+    .add-button, .load-button {
+        background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
     }
-
-    .update-button {
-        display: inline-block;
-        padding: 10px 20px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #ff1493;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .delete-button {
-        display: inline-block;
-        padding: 10px 20px;
-        margin-left: 10px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #8e8e8e8e;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
+    .update-button { background: linear-gradient(180deg, #ff5bbd 0%, #ff1493 100%); }
+    .delete-button { background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%); margin-left: 10px; }
+    .add-button:active, .load-button:active, .update-button:active, .delete-button:active { transform: translateY(1px); }
 </style>
 
 <p>
