@@ -144,7 +144,7 @@
   }
 
   function loadTools() {
-    fetch('<%=build_url("admin", "network", "oasis", "load-server-info")%>')
+    fetch('<%=build_url("admin", "network", "oasis", "local-tool-info")%>')
       .then(response => response.json())
       .then(data => {
         const tools = data.tools || {};
