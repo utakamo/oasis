@@ -2,55 +2,24 @@
 
 <style>
 
-    #select-button {
+    /* Unified button styles */
+    .add-button, .load-button, .update-button, .delete-button, .cancel-button {
         display: inline-block;
-        padding: 10px 20px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #0056b3;
-        color: white;
+        padding: 0 14px;
+        width: 7.5rem;
+        height: 2.5rem;
+        line-height: 2.5rem;
+        color: #ffffff;
         border: none;
-        border-radius: 4px;
+        border-radius: 10px;
         cursor: pointer;
-        margin-bottom: 20px;
+        font-weight: 600;
     }
-
-    #delete-button {
-        display: inline-block;
-        padding: 10px 20px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #8e8e8e8e;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-bottom: 20px;
-    }
-
-    #upload-button {
-        display: block;
-        padding: 10px 20px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #ff1493;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    #cancel-button {
-        display: block;
-        padding: 10px 20px;
-        width: 7rem;
-        height: 2rem;
-        background-color: #8e8e8e8e;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
+    .add-button, .load-button { background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%); }
+    .update-button { background: linear-gradient(180deg, #ff5bbd 0%, #ff1493 100%); }
+    .delete-button, .cancel-button { background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%); }
+    .load-button:active, .update-button:active, .delete-button:active, .cancel-button:active { transform: translateY(1px); }
+    .load-button.done { background: linear-gradient(180deg, #ffd24d 0%, #ffbf00 100%); color: #ffffff; }
 
     .preview-buttons {
         display: flex;
@@ -81,10 +50,7 @@
         background-color: #4CAF50;
     }
 
-    .icon-container {
-      display: flex;
-      gap: 10px;
-    }
+    #oasis-icon-container { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0 18px; }
   
     .icon-label {
       cursor: pointer;
@@ -132,16 +98,28 @@
     }
 </style>
 
-<h2>Select AI Icon</h2>
+<div id="icons-toast" role="status" aria-live="polite" class="toast" aria-atomic="true" style="display:none;"></div>
+
+<h2 style="margin-bottom: 12px;">Select AI Icon</h2>
 
 <div id="oasis-icon-container"></div>
 
 <div style="margin-top: 10px;">
-    <button type="button" id="select-button">Select</button>
-    <button type="button" id="delete-button">Delete</button>
+    <button type="button" id="select-button" class="load-button">Select</button>
+    <button type="button" id="delete-button" class="delete-button">Delete</button>
 </div>
 
-<h2>Upload AI Icon</h2>
+<!-- Delete icon confirm modal -->
+<div id="icon-delete-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+  <div class="confirm-card">
+    <p>Delete this icon?</p>
+    <div class="form-actions">
+        <button type="button" class="load-button" id="icon-confirm-yes">Yes</button>
+        <button type="button" class="delete-button" id="icon-confirm-no">No</button>
+    </div>
+  </div>
+</div>
+<h2 style="margin-top: 28px;">Upload AI Icon</h2>
 
 <div id="dropArea">Drag and Drop Image Upload</div>
 <input type="file" id="imageInput" accept="image/*" style="display: none;">
@@ -150,17 +128,39 @@
     <h3>Upload this image?</h3>
     <div id="oasis-preview-container"></div>
     <div class="preview-buttons">
-        <button type="button" id="upload-button">Upload</button>
-        <button type="button" id="cancel-button">Cancel</button>
+        <button type="button" id="upload-button" class="update-button">Upload</button>
+        <button type="button" id="cancel-button" class="cancel-button">Cancel</button>
     </div>
 </div>
 
 <script>
 
     let is_select = false;
-    let using_icon_key = ""
+    let using_icon_key = "";
+    let _pendingDeleteIconKey = null;
 
     const select_button = document.getElementById('select-button');
+    const toastEl = document.getElementById('icons-toast');
+
+    function showToast(message, type = 'info', timeout = 2000) {
+        if (!toastEl) return;
+        toastEl.style.display = 'block';
+        toastEl.textContent = message;
+        toastEl.className = `toast show ${type}`;
+        setTimeout(() => { toastEl.className = 'toast'; toastEl.textContent = ''; toastEl.style.display = 'none'; }, timeout);
+    }
+
+    function setLoading(btn, loading) {
+        if (!btn) return;
+        btn.disabled = !!loading;
+        if (loading) {
+            btn.dataset.prevText = btn.textContent;
+            btn.textContent = 'Loading...';
+        } else if (btn.dataset.prevText) {
+            btn.textContent = btn.dataset.prevText;
+            delete btn.dataset.prevText;
+        }
+    }
 
     function create_icon_info(key, icon_name, is_using) {
         const resourcePath = '<%= resource %>';
@@ -184,8 +184,8 @@
         input.addEventListener('click', function() {
             if (using_icon_key !== key) {
                 is_select = false;
-                select_button.style.backgroundColor = "#0056b3";
-                select_button.textContent = "Select";
+                select_button.classList.remove('done');
+                select_button.textContent = 'Select';
             }
         });
 
@@ -207,7 +207,9 @@
         }
 
         const selected_icon = document.querySelector('input[name="icon"]:checked');
+        if (!selected_icon) { showToast('Please select an icon', 'error'); return; }
 
+        setLoading(select_button, true);
         fetch('<%=build_url("admin", "network", "oasis", "select-icon")%>', {
             method: 'POST',
             headers: {
@@ -220,15 +222,21 @@
 
             if (data.error) {
                 console.error("Error from server:", data.error);
+                showToast('Select failed', 'error');
+                setLoading(select_button, false);
                 return;
             }
 
             using_icon_key = selected_icon.value;
-            select_button.style.backgroundColor = "#FFBF00";
-            select_button.textContent = "Done";
+            select_button.textContent = 'Done';
+            select_button.classList.add('done');
+            showToast('Selected', 'success');
+            setLoading(select_button, false);
         })
         .catch(error => {
             console.error('Error:', error);
+            showToast('Network error', 'error');
+            setLoading(select_button, false);
         });
     });
 
@@ -239,30 +247,55 @@
         }
 
         const selected_icon = document.querySelector('input[name="icon"]:checked');
-        //console.log(selected_icon.value);
+        if (!selected_icon) { showToast('Please select an icon', 'error'); return; }
+        _pendingDeleteIconKey = selected_icon.value;
+        const modal = document.getElementById('icon-delete-confirm');
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    });
 
+    document.getElementById('icon-confirm-no').addEventListener('click', function() {
+        const modal = document.getElementById('icon-delete-confirm');
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        _pendingDeleteIconKey = null;
+    });
+
+    document.getElementById('icon-confirm-yes').addEventListener('click', function() {
+        if (!_pendingDeleteIconKey) return;
         fetch('<%=build_url("admin", "network", "oasis", "delete-icon-data")%>', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({ key: selected_icon.value }),
+            body: new URLSearchParams({ key: _pendingDeleteIconKey }),
         })
         .then(response => response.json())
         .then(data => {
-
+            const modal = document.getElementById('icon-delete-confirm');
             if (data.error) {
                 console.error("Error from server:", data.error);
+                showToast('Delete failed', 'error');
+                modal.classList.remove('show');
+                modal.setAttribute('aria-hidden', 'true');
+                _pendingDeleteIconKey = null;
                 return;
             }
-
             const container = document.getElementById('oasis-icon-container');
-            const label = document.getElementById(selected_icon.value);
-            container.removeChild(label);
-
+            const label = document.getElementById(_pendingDeleteIconKey);
+            if (container && label) container.removeChild(label);
+            showToast('Deleted', 'success');
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            _pendingDeleteIconKey = null;
         })
         .catch(error => {
             console.error('Error:', error);
+            showToast('Network error', 'error');
+            const modal = document.getElementById('icon-delete-confirm');
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            _pendingDeleteIconKey = null;
         });
     });
 
@@ -301,7 +334,7 @@
     function handleFile(file) {
 
         if (!file.type.startsWith('image/')) {
-            alert('Please select an image file.');
+            showToast('Please select an image file.', 'error');
             return;
         }
 
@@ -330,6 +363,8 @@
 
             const base64Data = event.target.result.split(",")[1];
 
+            const uploadBtn = document.getElementById('upload-button');
+            setLoading(uploadBtn, true);
             fetch('<%=build_url("admin", "network", "oasis", "upload-icon-data")%>', {
                 method: "POST",
                 headers: {
@@ -342,15 +377,21 @@
 
                 if (data.error) {
                     console.error("Error from server:", data.error);
+                    showToast('Upload failed', 'error');
+                    setLoading(uploadBtn, false);
                     return;
                 }
 
                 /* Upload Success */
                 create_icon_info(data.key, selectedFile.name, false);
+                showToast('Uploaded', 'success');
+                setLoading(uploadBtn, false);
             })
             .catch(error => {
                 /* Upload Failure */
-                alert("Upload failed");
+                showToast('Upload failed', 'error');
+                const uploadBtn = document.getElementById('upload-button');
+                setLoading(uploadBtn, false);
             });
         };
 
