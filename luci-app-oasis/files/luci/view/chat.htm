@@ -200,10 +200,14 @@
         if (!firstMsg) return;
         const firstRect = firstMsg.getBoundingClientRect();
         const aiRect = aiSelect.getBoundingClientRect();
-        // If first message top is above AI select bottom, push content down by the overlap margin
-        const overlap = (aiRect.bottom + 8) - firstRect.top;
-        if (overlap > 0) {
-            chatMessages.scrollTop = chatMessages.scrollTop + overlap;
+        const vp = window.visualViewport;
+        const viewportTop = vp ? vp.offsetTop : 0;
+        // desired top is at least AI select bottom plus margin, and within visual viewport
+        const desiredTop = Math.max(aiRect.bottom + 8, viewportTop + 8);
+        const delta = desiredTop - firstRect.top;
+        if (delta > 0) {
+            // Move content down into view
+            chatMessages.scrollTop = Math.max(0, chatMessages.scrollTop - delta);
         }
     }
 
@@ -216,6 +220,8 @@
         doAlign();
         setTimeout(doAlign, 50);
         setTimeout(doAlign, 150);
+        setTimeout(doAlign, 300);
+        setTimeout(doAlign, 450);
     }
 
     function setChatScrollLock(enabled) {
