@@ -124,6 +124,10 @@
     let message_outputing = false;
     const resourcePath = '<%= resource %>';
     let ai_service_list = [];
+    let scrollLockEnabled = false;
+    let isKeyboardOpen = false;
+    let pendingBottomOnKeyboardOpen = false;
+    let pendingFirstConversationAlign = false;
 
     // Center popups within the right column (.chat-container)
     function centerElementInChat(element) {
@@ -147,6 +151,89 @@
         if (confirm && getComputedStyle(confirm).display !== 'none') {
             centerElementInChat(confirm);
         }
+    }
+
+    // Ensure an element is fully visible inside a scroll container
+    function ensureElementFullyVisible(container, target, extraPadding = 24) {
+        if (!container || !target) return;
+        const cRect = container.getBoundingClientRect();
+        const tRect = target.getBoundingClientRect();
+        const overshootBottom = tRect.bottom - (cRect.bottom - extraPadding);
+        const overshootTop = (cRect.top + extraPadding) - tRect.top;
+        if (overshootBottom > 0) {
+            container.scrollTop += overshootBottom;
+        } else if (overshootTop > 0) {
+            container.scrollTop -= overshootTop;
+        }
+    }
+
+    // Keep the latest chat message visible (handles mobile soft keyboard animations)
+    // If force=false, only scroll when user is near bottom (stickToBottom=true)
+    function keepLatestMessageVisible(force = false) {
+        const chatMessages = document.querySelector('.chat-messages');
+        if (!chatMessages) return;
+        if (!force && !window.__oasisStickToBottom) return;
+        const lastReceived = chatMessages.querySelector('.message.received:last-of-type');
+        const target = lastReceived || chatMessages.querySelector('.message:last-child');
+        const doScroll = () => ensureElementFullyVisible(chatMessages, target, 24);
+        doScroll();
+        if (force) {
+            // Retry to absorb viewport/IME animation timing
+            setTimeout(doScroll, 100);
+            setTimeout(doScroll, 250);
+        }
+    }
+
+    // Align conversation start to the top of the chat viewport
+    function anchorChatToTop() {
+        const chatMessages = document.querySelector('.chat-messages');
+        if (!chatMessages) return;
+        chatMessages.scrollTop = 0;
+    }
+
+    // Ensure the first chat message is visually below the AI service select
+    function ensureFirstMessageBelowAISelect() {
+        const chatMessages = document.querySelector('.chat-messages');
+        const aiSelect = document.getElementById('ai-service-list');
+        if (!chatMessages || !aiSelect) return;
+        const firstMsg = chatMessages.querySelector('.message');
+        if (!firstMsg) return;
+        const firstRect = firstMsg.getBoundingClientRect();
+        const aiRect = aiSelect.getBoundingClientRect();
+        // If first message top is above AI select bottom, push content down by the overlap margin
+        const overlap = (aiRect.bottom + 8) - firstRect.top;
+        if (overlap > 0) {
+            chatMessages.scrollTop = chatMessages.scrollTop + overlap;
+        }
+    }
+
+    function alignFirstConversationUnderAI() {
+        // Run a few times to stabilize after keyboard layout is applied
+        const doAlign = () => {
+            anchorChatToTop();
+            ensureFirstMessageBelowAISelect();
+        };
+        doAlign();
+        setTimeout(doAlign, 50);
+        setTimeout(doAlign, 150);
+    }
+
+    function setChatScrollLock(enabled) {
+        // Always keep scrolling enabled. Only perform unlock cleanup if needed.
+        const cm = document.querySelector('.chat-messages');
+        if (!cm) return;
+        if (scrollLockEnabled) {
+            // If previously locked, remove handlers and restore overflow
+            cm.style.overflowY = cm.dataset && cm.dataset.prevOverflowY !== undefined ? cm.dataset.prevOverflowY : '';
+            if (cm._wheelHandler) { cm.removeEventListener('wheel', cm._wheelHandler); delete cm._wheelHandler; }
+            if (cm._touchHandler) { cm.removeEventListener('touchmove', cm._touchHandler); delete cm._touchHandler; }
+        }
+        scrollLockEnabled = false;
+    }
+
+    function updateScrollLockState() {
+        // No-op: scrolling is always enabled now
+        setChatScrollLock(false);
     }
 
     window.addEventListener('resize', recenterVisiblePopups);
@@ -176,8 +263,7 @@
     window.addEventListener('resize', function () {
         const dropdown = document.getElementById('oasis-dropdown');
         if (dropdown) dropdown.style.display = 'none';
-        const legacySmpDropdown = document.getElementById('smp-chat-item-dropdown');
-        if (legacySmpDropdown) legacySmpDropdown.style.display = 'none';
+        // legacy smartphone dropdown was removed
     });
 
     function loadPaperPlane() {
@@ -208,17 +294,7 @@
         document.head.appendChild(style);
     }
 
-    /* chat data list for smartphone (hamburger removed; guard for legacy code) */
-    (function () {
-        const menuTrigger = document.getElementById("menu-trigger");
-        if (!menuTrigger) return;
-        menuTrigger.addEventListener("click", function () {
-        const dropdown = this.nextElementSibling;
-            if (!dropdown) return;
-        const isVisible = dropdown.style.display === "block";
-        dropdown.style.display = isVisible ? "none" : "block";
-    });
-    })();
+    /* legacy smartphone hamburger removed */
 
     function convertMarkdownToHTML(input) {
         let html = '';
@@ -411,23 +487,16 @@
     function addChatListEntry(id, title) {
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const chatListContainer = document.getElementById("chat-list");
-        const smpChatListContainer = document.getElementById("smp-chat-item-dropdown");
+            // legacy smartphone dropdown was removed
         const dropdown = document.getElementById("oasis-dropdown");
 
-                const li = document.createElement("li");
-                const smp_li = document.createElement("li");
+        const li = document.createElement("li");
 
         li.setAttribute("data-id", id);
-        smp_li.setAttribute("data-id-for-smp", id);
-        smp_li.classList.add("smp-dropdown-item");
 
-                const span = document.createElement("span");
+        const span = document.createElement("span");
         span.textContent = title;
-                li.appendChild(span);
-
-                const smp_span = document.createElement("span");
-        smp_span.textContent = title;
-                smp_li.appendChild(smp_span);
+        li.appendChild(span);
 
                 const menuContainer = document.createElement("div");
                 menuContainer.classList.add("oasis-hamburger-menu");
@@ -464,23 +533,7 @@
             }
         } catch (_) {}
 
-        const smp_menuContainer = document.createElement("div");
-        smp_menuContainer.classList.add("oasis-hamburger-menu");
-        const smp_menuButton = document.createElement("button");
-        smp_menuButton.classList.add("oasis-menu-btn");
-        smp_menuButton.textContent = "⋮";
-                smp_menuButton.addEventListener("click", function (event) {
-                    targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                    event.stopPropagation();
-                    dropdown.style.display = "block";
-                });
-        smp_menuContainer.appendChild(smp_menuButton);
-        smp_li.appendChild(smp_menuContainer);
-        if (smpChatListContainer) {
-            smpChatListContainer.appendChild(smp_li);
-        }
-
-                li.addEventListener('click', function (event) {
+        li.addEventListener('click', function (event) {
                     const systemMessage = document.getElementById("oasis-system");
                     if (systemMessage !== null) {
                         chatMessagesContainer.removeChild(systemMessage);
@@ -490,20 +543,7 @@
                         return;
                     }
                     handleChatItemClick(targetChatItemId);
-                });
-
-                smp_li.addEventListener('click', function (event) {
-                    const systemMessage = document.getElementById("oasis-system");
-                    if (systemMessage !== null) {
-                        chatMessagesContainer.removeChild(systemMessage);
-                    }
-                    targetChatItemId = event.target.closest("li").getAttribute("data-id-for-smp");
-                    if (event.target.closest(".oasis-menu-btn") || event.target.closest(".oasis-dropdown")) {
-                        return;
-                    }
-                    handleChatItemClick(targetChatItemId);
-            if (smpChatListContainer) smpChatListContainer.style.display = "none";
-                });
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -511,14 +551,178 @@
         loadPaperPlane();
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const chatListContainer = document.getElementById("chat-list");
-        const smpChatListContainer = document.getElementById("smp-chat-item-dropdown");
+        // legacy smartphone dropdown was removed
         const dropdown = document.getElementById("oasis-dropdown");
+
+        // Mobile keyboard handling: keep latest messages visible when IME opens
+        // Smooth keyboard-follow: rAF-throttled class/variable updates
+        let __vvLast = { left: 0, width: 0, kb: 0, inputH: 0, topPad: 0, applied: false };
+        let __vvPending = null;
+        let __vvRaf = null;
+        let __kbDelayTimer = null;      // 600ms delayed apply timer
+        let __kbArmedState = null;      // last armed state to apply
+        function applyKeyboardLayout(state) {
+            const inputBar = document.querySelector('.chat-input');
+            const chatMessages = document.querySelector('.chat-messages');
+            if (!inputBar || !chatMessages) return;
+            const { isSmallViewport, kb, left, width, inputH, topPad } = state;
+            if (!isSmallViewport) {
+                if (__vvLast.applied) {
+                    inputBar.classList.remove('keyboard-open');
+                    chatMessages.classList.remove('keyboard-open');
+                    __vvLast.applied = false;
+                }
+                isKeyboardOpen = false;
+                return;
+            }
+            if (kb > 0) {
+                const nLeft = Math.round(left);
+                const nWidth = Math.round(width);
+                const nKb = Math.round(kb);
+                const nInput = Math.round(inputH);
+                const nTop = Math.round(topPad);
+                const changed = (
+                    nLeft !== __vvLast.left ||
+                    nWidth !== __vvLast.width ||
+                    nKb !== __vvLast.kb ||
+                    nInput !== __vvLast.inputH ||
+                    nTop !== __vvLast.topPad ||
+                    !__vvLast.applied
+                );
+                if (changed) {
+                    document.documentElement.style.setProperty('--vv-left', nLeft + 'px');
+                    document.documentElement.style.setProperty('--vv-width', nWidth + 'px');
+                    document.documentElement.style.setProperty('--kb-bottom', nKb + 'px');
+                    document.documentElement.style.setProperty('--input-height', nInput + 'px');
+                    document.documentElement.style.setProperty('--ai-top-padding', nTop + 'px');
+                    inputBar.classList.add('keyboard-open');
+                    chatMessages.classList.add('keyboard-open');
+                    __vvLast = { left: nLeft, width: nWidth, kb: nKb, inputH: nInput, topPad: nTop, applied: true };
+                }
+                isKeyboardOpen = true;
+            } else {
+                if (__vvLast.applied) {
+                    inputBar.classList.remove('keyboard-open');
+                    chatMessages.classList.remove('keyboard-open');
+                    __vvLast.applied = false;
+                }
+                isKeyboardOpen = false;
+            }
+        }
+        function scheduleKeyboardLayout(state) {
+            __vvPending = state;
+            if (__vvRaf) cancelAnimationFrame(__vvRaf);
+            __vvRaf = requestAnimationFrame(() => {
+                applyKeyboardLayout(__vvPending);
+                __vvRaf = null;
+            });
+        }
+
+        function releaseKeyboardLayout() {
+            const inputBar = document.querySelector('.chat-input');
+            const chatMessages = document.querySelector('.chat-messages');
+            if (!inputBar || !chatMessages) return;
+            inputBar.classList.remove('keyboard-open');
+            chatMessages.classList.remove('keyboard-open');
+            isKeyboardOpen = false;
+            __vvLast.applied = false;
+        }
+        function adjustForKeyboard() {
+            const chatMessages = document.querySelector('.chat-messages');
+            const inputBar = document.querySelector('.chat-input');
+            const aiSelect = document.getElementById('ai-service-list');
+            if (!chatMessages || !inputBar) return;
+            const isSmallViewport = window.innerWidth <= 768;
+            // On desktop (two-column), never fix input bar to viewport edges
+            if (!isSmallViewport) {
+                // reset any mobile keyboard styles just in case
+                inputBar.style.position = '';
+                inputBar.style.left = '';
+                inputBar.style.width = '';
+                inputBar.style.bottom = '';
+                inputBar.style.transform = '';
+                inputBar.style.zIndex = '';
+                chatMessages.style.paddingBottom = '';
+                chatMessages.style.paddingTop = '';
+                isKeyboardOpen = false;
+                return;
+            }
+            const vp = window.visualViewport;
+            const viewportHeight = vp ? (vp.height + vp.offsetTop) : window.innerHeight;
+            const kb = Math.max(0, window.innerHeight - viewportHeight);
+            const inputHeight = inputBar.offsetHeight || 0;
+            const topPadding = aiSelect ? (aiSelect.offsetHeight + 8) : 0;
+            const left = vp ? vp.offsetLeft : 0;
+            const width = vp ? vp.width : window.innerWidth;
+            if (kb > 0) {
+                // Arm state and delay apply by 600ms to avoid jitter while viewport animates
+                __kbArmedState = { isSmallViewport, kb, left, width, inputH: inputHeight, topPad: topPadding };
+                if (__kbDelayTimer) clearTimeout(__kbDelayTimer);
+                __kbDelayTimer = setTimeout(() => {
+                    // Apply only if still armed (keyboard likely still open)
+                    if (__kbArmedState) {
+                        scheduleKeyboardLayout(__kbArmedState);
+                        if (pendingBottomOnKeyboardOpen) {
+                            keepLatestMessageVisible(true);
+                            pendingBottomOnKeyboardOpen = false;
+                        } else if (activeConversation) {
+                            keepLatestMessageVisible(true);
+                        } else if (!targetChatId) {
+                            // First conversation on new chat: ensure first pair is under AI select
+                            alignFirstConversationUnderAI();
+                        }
+                    }
+                }, 600);
+            } else {
+                // Keyboard hidden: cancel pending and restore
+                if (__kbDelayTimer) { clearTimeout(__kbDelayTimer); __kbDelayTimer = null; }
+                __kbArmedState = null;
+                releaseKeyboardLayout();
+                anchorChatToTop();
+            }
+        }
+        // Bind visual viewport events (supported in modern mobile browsers)
+        // Track whether user intends to stick to bottom
+        function updateStickToBottomFlag() {
+            const cm = document.querySelector('.chat-messages');
+            if (!cm) return;
+            const threshold = 40; // px
+            window.__oasisStickToBottom = (cm.scrollHeight - cm.scrollTop - cm.clientHeight) < threshold;
+            // If user moved away from bottom while IME is open, restore original layout
+            if (isKeyboardOpen && !window.__oasisStickToBottom) {
+                releaseKeyboardLayout();
+            }
+        }
+        const cmInit = document.querySelector('.chat-messages');
+        if (cmInit) {
+            cmInit.addEventListener('scroll', updateStickToBottomFlag, { passive: true });
+            cmInit.addEventListener('wheel', () => { if (isKeyboardOpen) releaseKeyboardLayout(); }, { passive: true });
+            cmInit.addEventListener('touchstart', () => { if (isKeyboardOpen) releaseKeyboardLayout(); }, { passive: true });
+            // initial flag
+            updateStickToBottomFlag();
+        }
+        // Debounced scheduling to avoid thrashing during IME animations
+        let __vvDebounceTimer = null;
+        function scheduleAdjust(forceBottom = false) {
+            if (__vvDebounceTimer) clearTimeout(__vvDebounceTimer);
+            __vvDebounceTimer = setTimeout(() => {
+                adjustForKeyboard();
+                if (forceBottom || activeConversation) keepLatestMessageVisible(true);
+                updateScrollLockState();
+            }, 60);
+        }
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => scheduleAdjust(false));
+            window.visualViewport.addEventListener('scroll', () => scheduleAdjust(false));
+        }
+        window.addEventListener('resize', () => scheduleAdjust(false));
+        window.addEventListener('orientationchange', () => scheduleAdjust(false));
 
         check_temporary_setting();
 
         // Helper: populate mobile bottom sheet controls from desktop controls
         function updateMobileBottomSheetFromDesktop() {
-            const mbSys = document.getElementById('mb-sysmsg-select');
+            const mbSys = null; // removed from bottom sheet
             const inlineSys = document.getElementById('inline-sysmsg-select');
             const mbUci = document.getElementById('mb-uci-config-list');
             const mbList = document.getElementById('mb-chat-list');
@@ -540,17 +744,7 @@
             }
 
             // Populate mobile sheet System Message (kept for mobile flow)
-            if (mbSys && desktopSys) {
-                mbSys.innerHTML = desktopSys.innerHTML;
-                mbSys.value = desktopSys.value;
-                mbSys.disabled = desktopSys.disabled;
-                const mbSysClone = mbSys.cloneNode(true);
-                mbSys.parentNode.replaceChild(mbSysClone, mbSys);
-                mbSysClone.addEventListener('change', (e) => {
-                    desktopSys.value = e.target.value;
-                    desktopSys.dispatchEvent(new Event('change'));
-                });
-            }
+            // mb-sysmsg-select was removed
 
             if (mbUci && desktopUci) {
                 mbUci.innerHTML = desktopUci.innerHTML;
@@ -619,7 +813,7 @@
                 sheet.setAttribute('aria-hidden', 'false');
                 requestAnimationFrame(() => {
                     sheet.classList.add('show');
-                    const focusTarget = document.getElementById('mb-sysmsg-select') || sheet;
+                    const focusTarget = sheet;
                     if (focusTarget && focusTarget.focus) focusTarget.focus();
                 });
             });
@@ -711,6 +905,7 @@
             messageInputEl.addEventListener('input', function() {
                 autoResizeTextarea();
                 toggleSendDisabled();
+                if (isKeyboardOpen) keepLatestMessageVisible();
             });
             messageInputEl.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter' && !event.shiftKey) {
@@ -721,6 +916,13 @@
 
             autoResizeTextarea();
             toggleSendDisabled();
+            // Initial adjust for mobile keyboard when focusing the input
+            messageInputEl.addEventListener('focus', () => {
+                // 次にIMEが開いたら末尾へ寄せるフラグ
+                pendingBottomOnKeyboardOpen = true;
+                setTimeout(() => { if (isKeyboardOpen) keepLatestMessageVisible(true); }, 50);
+                setTimeout(() => { if (isKeyboardOpen) keepLatestMessageVisible(true); }, 200);
+            });
         }
 
         // Run initialization (safe after DOMContentLoaded)
@@ -837,59 +1039,9 @@
             updateMobileBottomSheetFromDesktop();
 
             // Smartphone selects mirror (System Message & UCI)
-            const smpSysmsgSelect = document.getElementById('smp-sysmsg-select');
-            if (smpSysmsgSelect) {
-                smpSysmsgSelect.innerHTML = '';
-                const sortedSysmsgListSmp = sysmsg_list
-                    .map(item => {
-                        if (!item.key || typeof item.key !== 'string') return null;
-                        if (item.key === 'default') {
-                            return { key: item.key, title: item.title || 'Default', number: -1 };
-                        }
-                        const match = item.key.match(/^custom_(\d+)$/);
-                        if (!match) return null;
-                        return { key: item.key, title: item.title || 'No Title', number: parseInt(match[1], 10) };
-                    })
-                    .filter(Boolean)
-                    .sort((a, b) => a.number - b.number);
-                sortedSysmsgListSmp.forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item.key;
-                    opt.textContent = item.title;
-                    smpSysmsgSelect.appendChild(opt);
-                });
-                // sync initial value
-                const desktopSys = document.getElementById('sysmsg-select');
-                if (desktopSys) smpSysmsgSelect.value = desktopSys.value;
-                smpSysmsgSelect.addEventListener('change', (e) => {
-                    if (desktopSys) desktopSys.value = e.target.value;
-                    sysmsg_key = e.target.value;
-                });
-                // lock state mirrors desktop
-                smpSysmsgSelect.disabled = (targetChatId && targetChatId.length > 0);
-            }
+            // smp-sysmsg-select removed
 
-            const smpUciSelect = document.getElementById('smp-uci-config-list');
-            if (smpUciSelect) {
-                smpUciSelect.innerHTML = '';
-                const def2 = document.createElement('option');
-                def2.value = '---';
-                def2.textContent = '---';
-                smpUciSelect.appendChild(def2);
-                data.configs.forEach(config => {
-                    const opt = document.createElement('option');
-                    opt.value = config;
-                    opt.textContent = config;
-                    smpUciSelect.appendChild(opt);
-                });
-                // keep desktop and mobile UCI selects in sync
-                smpUciSelect.addEventListener('change', (e) => {
-                    uciConfigSelect.value = e.target.value;
-                });
-                uciConfigSelect.addEventListener('change', (e) => {
-                    smpUciSelect.value = e.target.value;
-                });
-            }
+            // smp-uci-config-list removed
 
         })
         .catch(error => {
@@ -918,12 +1070,7 @@
                 }, 300);
             });
 
-        // Mirror lock state of System Message select on mobile
-        const smpSysmsgSelect = document.getElementById('smp-sysmsg-select');
-        const desktopSys = document.getElementById('sysmsg-select');
-        if (smpSysmsgSelect && desktopSys) {
-            smpSysmsgSelect.disabled = desktopSys.disabled;
-        }
+        // Mirror lock state of System Message select on mobile (legacy removed)
 
         // Replace New Chat button in hamburger with compact icon under send icon (vertical stack)
         const smpNewBtn = document.getElementById('smp-new-button');
@@ -945,20 +1092,9 @@
                 sheet.style.display = 'block';
                 requestAnimationFrame(() => sheet.classList.add('show'));
             });
-            // Mirror selects into bottom sheet
-            const mbSys = document.getElementById('mb-sysmsg-select');
+            // Mirror selects into bottom sheet (System Message select removed on mobile)
             const mbUci = document.getElementById('mb-uci-config-list');
-            const desktopSys = document.getElementById('sysmsg-select');
             const desktopUci = document.getElementById('uci-config-list');
-            if (mbSys && desktopSys) {
-                mbSys.innerHTML = desktopSys.innerHTML;
-                mbSys.value = desktopSys.value;
-                mbSys.disabled = desktopSys.disabled;
-                mbSys.addEventListener('change', (e) => {
-                    desktopSys.value = e.target.value;
-                    desktopSys.dispatchEvent(new Event('change'));
-                });
-            }
             if (mbUci && desktopUci) {
                 mbUci.innerHTML = desktopUci.innerHTML;
                 mbUci.value = desktopUci.value;
@@ -972,14 +1108,6 @@
 
         document.addEventListener("click", function (e) {
             dropdown.style.display = 'none';
-            const overlay = document.getElementById('modal-overlay');
-            const confirm = document.getElementById('confirm-popup');
-            if (!overlay || getComputedStyle(overlay).display === 'none') return;
-            // Do not close Applying dialog on background click
-            if (confirm && getComputedStyle(confirm).display !== 'none') {
-                overlay.style.display = 'none';
-                confirm.style.display = 'none';
-            }
         });
 
         document.addEventListener("click", function (event) {
@@ -1018,12 +1146,10 @@
                 if (data.status === "OK") {
                     const deletedId = targetChatItemId;
                     const desktopItem = document.querySelector(`#chat-list li[data-id='${deletedId}']`);
-                    const smpItem = document.querySelector(`#smp-chat-item-dropdown li[data-id-for-smp='${deletedId}']`);
-                    const mbItem = document.querySelector(`#mb-chat-list li[data-id='${deletedId}'], #mb-chat-list li[data-id-for-smp='${deletedId}']`);
+                    const mbItem = document.querySelector(`#mb-chat-list li[data-id='${deletedId}']`);
 
                     let removed = false;
                     if (desktopItem) { desktopItem.remove(); removed = true; }
-                    if (smpItem) { smpItem.remove(); removed = true; }
                     if (mbItem) { mbItem.remove(); removed = true; }
 
                     if (removed) {
@@ -1117,15 +1243,12 @@
                 });
 
                 const desktopItem = document.querySelector(`#chat-list li[data-id='${targetChatItemId}']`);
-                const smpItem = document.querySelector(`#smp-chat-item-dropdown li[data-id-for-smp='${targetChatItemId}']`);
-                const mbItem = document.querySelector(`#mb-chat-list li[data-id='${targetChatItemId}'], #mb-chat-list li[data-id-for-smp='${targetChatItemId}']`);
+                const mbItem = document.querySelector(`#mb-chat-list li[data-id='${targetChatItemId}']`);
 
                 const desktopSpan = desktopItem ? desktopItem.querySelector('span') : null;
-                const smpSpan = smpItem ? smpItem.querySelector('span') : null;
                 const mbSpan = mbItem ? mbItem.querySelector('span') : null;
 
                 if (desktopSpan) desktopSpan.textContent = new_title;
-                if (smpSpan) smpSpan.textContent = new_title;
                 if (mbSpan) mbSpan.textContent = new_title;
                 rename_box.value = "";
 
@@ -1287,7 +1410,9 @@
 
         messageContainer.appendChild(messageTextContainer);
 
-        document.querySelector('.chat-messages').appendChild(messageContainer);
+        const chatMessagesRoot = document.querySelector('.chat-messages');
+        const hasExisting = !!chatMessagesRoot.querySelector('.message');
+        chatMessagesRoot.appendChild(messageContainer);
 
         if (systemMessage !== null) {
             document.querySelector('.chat-messages').removeChild(systemMessage);
@@ -1330,9 +1455,21 @@
         receivedMessageContainer.appendChild(receivedIconContainer);
         receivedMessageContainer.appendChild(receivedMessageTextContainer);
 
-        document.querySelector('.chat-messages').appendChild(receivedMessageContainer);
-        
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessagesRoot.appendChild(receivedMessageContainer);
+        // If this is the very first conversation while IME is open, anchor start to top
+        const vp = window.visualViewport;
+        const keyboardShown = vp ? (window.innerHeight - vp.height - vp.offsetTop) > 0 : false;
+        if (!hasExisting && keyboardShown) {
+            // Position the first pair at the top of the viewport
+            const firstMessage = chatMessagesRoot.querySelector('.message');
+            if (firstMessage && firstMessage.scrollIntoView) {
+                try { firstMessage.scrollIntoView({ block: 'start' }); } catch (_) {}
+            }
+            chatMessages.scrollTop = 0;
+            ensureFirstMessageBelowAISelect();
+        } else {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
 
         let uci_info = await retrieve_uci_show_result(messageTextContainer);
         messageText += uci_info;
@@ -1340,7 +1477,7 @@
         send_message(receivedMessageTextContainer, messageText);
     }
 
-    document.getElementById('smp-send-button').addEventListener('click', function(event) {
+        document.getElementById('smp-send-button').addEventListener('click', function(event) {
         event.preventDefault();
         document.getElementById("send-button").click();
     });
@@ -1375,6 +1512,8 @@
         }
 
         send_chat_data(systemMessage, messageInput, messageText);
+        // Ensure the newly appended messages are visible even when IME is open
+        keepLatestMessageVisible();
     });
 
     function show_chat_popup(jsonResponse) {
@@ -1547,8 +1686,7 @@
         cancelButton.textContent = "Cancel";
         cancelButton.addEventListener('click', function (event) {
             const systemMessage = document.getElementById("oasis-system");
-            const overlay = document.getElementById('modal-overlay');
-            if (overlay) overlay.style.display = 'none';
+            // overlay removed
             if (systemMessage) chatMessagesContainer.removeChild(systemMessage);
         });
 
@@ -1559,8 +1697,7 @@
         systemMessage.appendChild(messageTextDiv);
         chatMessagesContainer.appendChild(systemMessage);
         // Show overlay when opening confirm (overlay removed)
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) overlay.style.display = 'block';
+        // overlay removed
     }
 
 
@@ -1688,6 +1825,7 @@
             }
 
             const chatMessages = document.querySelector('.chat-messages');
+            const isSmallViewport = window.innerWidth <= 768;
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
@@ -1713,14 +1851,23 @@
 
                     if (evt.message && typeof evt.message.content === 'string') {
                         fullMessage += evt.message.content;
-                        receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
-                        // タイピングローテーション停止
-                        if (receivedMessageTextContainer._typingTimer) {
-                            clearInterval(receivedMessageTextContainer._typingTimer);
-                            delete receivedMessageTextContainer._typingTimer;
+                        if (!isSmallViewport) {
+                            // Desktop/two-column: progressive rendering
+                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
+                            // タイピングローテーション停止
+                            if (receivedMessageTextContainer._typingTimer) {
+                                clearInterval(receivedMessageTextContainer._typingTimer);
+                                delete receivedMessageTextContainer._typingTimer;
+                            }
+                            // During streaming: keyboard open → force bottom; otherwise near-bottom only
+                            if (isKeyboardOpen) {
+                                keepLatestMessageVisible(true);
+                                setChatScrollLock(true);
+                            } else {
+                                keepLatestMessageVisible(false);
+                            }
                         }
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }
+                    }
 
                     if (evt.id && isNumeric(evt.id)) {
                         show_chat_popup(evt);
@@ -1753,18 +1900,31 @@
                 }
             }
 
+            // Final output: on mobile、初めて表示（それまではタイピングのみ）
             receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
             if (receivedMessageTextContainer._typingTimer) {
                 clearInterval(receivedMessageTextContainer._typingTimer);
                 delete receivedMessageTextContainer._typingTimer;
             }
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Finalize scroll behavior
+            if (isSmallViewport) {
+                // Mobile: after full render, ensure visibility once
+                keepLatestMessageVisible(true);
+            } else {
+                if (isKeyboardOpen) {
+                    keepLatestMessageVisible(true);
+                } else {
+                    keepLatestMessageVisible(false);
+                }
+            }
         } catch (error) {
             console.error('Request failed', error);
             receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('A network error occurred. Please check your network connection and AI service settings.');
         } finally {
             message_outputing = false;
             activeConversation = false;
+            // Unlock scroll after streaming finished
+            setChatScrollLock(false);
         }
     }
 
@@ -1840,10 +2000,8 @@
         // Lock System Message selection once a chat is active
         const sysmsgSelect = document.getElementById('sysmsg-select');
         const inlineSys = document.getElementById('inline-sysmsg-select');
-        const mbSys = document.getElementById('mb-sysmsg-select');
         if (sysmsgSelect) sysmsgSelect.disabled = true;
         if (inlineSys) inlineSys.disabled = true;
-        if (mbSys) mbSys.disabled = true;
     }
 
     async function new_chat_action() {
@@ -1855,10 +2013,8 @@
         // Re-enable System Message selection only for new chat
         const sysmsgSelect = document.getElementById('sysmsg-select');
         const inlineSys = document.getElementById('inline-sysmsg-select');
-        const mbSys = document.getElementById('mb-sysmsg-select');
         if (sysmsgSelect) sysmsgSelect.disabled = false;
         if (inlineSys) inlineSys.disabled = false;
-        if (mbSys) mbSys.disabled = false;
         // Sync mirrors (inline/mobile) with desktop state
         if (typeof updateMobileBottomSheetFromDesktop === 'function') {
             updateMobileBottomSheetFromDesktop();

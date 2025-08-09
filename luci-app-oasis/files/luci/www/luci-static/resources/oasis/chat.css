@@ -185,6 +185,7 @@
     overflow-y: auto;
     border-bottom: 1px solid #eee;
     padding: 12px 16px;
+    overflow-anchor: none; /* avoid jumpy auto-anchoring on mobile */
 }
 
 .message {
@@ -929,6 +930,20 @@ textarea:focus-visible {
 .console-command-color {
     background-color:#333333;
     color: #ffffff;
+}
+
+/* Keyboard-open state (mobile): class-based, variables driven */
+.chat-input.keyboard-open {
+    position: fixed;
+    left: var(--vv-left, 0px);
+    width: var(--vv-width, 100vw);
+    bottom: var(--kb-bottom, 0px);
+    transform: none;
+    z-index: 1200;
+}
+.chat-messages.keyboard-open {
+    padding-bottom: calc(var(--input-height, 56px) + 16px + env(safe-area-inset-bottom));
+    padding-top: var(--ai-top-padding, 0px);
 }
 
 /* Message content enhancements */
