@@ -14,6 +14,10 @@
   .cell-title { color:#333; font-weight:700; font-size: 1.05rem; display:flex; align-items:center; gap:8px; }
   .status-pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; background:#e9ecef; color:#495057; }
   .status-pill.enabled { background:#d1e7dd; color:#0f5132; }
+  .pill-conflict { font-size: 12px; padding: 2px 8px; border-radius: 999px; background:#ff4da6; color:#ffffff; }
+  .pill-script { font-size: 12px; padding: 2px 8px; border-radius: 999px; color:#ffffff; }
+  .pill-script.script-lua { background:#2a84ff; }
+  .pill-script.script-ucode { background:#7b61ff; }
   .cell-description { font-size: 0.92rem; color:#444; line-height:1.45; }
   .cell-footer { display:flex; justify-content:flex-end; align-items:center; }
 
@@ -88,6 +92,22 @@
     status.className = 'status-pill' + ((tool.enable === '1') ? ' enabled' : '');
     status.textContent = (tool.enable === '1') ? 'Enabled' : 'Disabled';
     title.appendChild(titleText);
+    // script badge (lua -> blue, ucode -> purple)
+    if (tool.script === 'lua' || tool.script === 'ucode') {
+      const script = document.createElement('span');
+      script.className = 'pill-script ' + (tool.script === 'lua' ? 'script-lua' : 'script-ucode');
+      script.textContent = tool.script;
+      title.appendChild(script);
+    }
+    // Show conflict badge when conflict === '1'
+    const isConflict = (tool.conflict === '1');
+    if (isConflict) {
+      const conflict = document.createElement('span');
+      conflict.className = 'pill-conflict';
+      conflict.textContent = 'conflict';
+      title.appendChild(conflict);
+    }
+    // enable/disable status at the end
     title.appendChild(status);
 
     const desc = document.createElement('div');
@@ -101,6 +121,10 @@
     let isEnabled = tool.enable === '1';
     btn.className = isEnabled ? 'delete-button' : 'load-button';
     btn.textContent = isEnabled ? 'Disable' : 'Enable';
+    if (isConflict) {
+      btn.disabled = true;
+      btn.title = 'Conflict: cannot change state';
+    }
 
     btn.addEventListener('click', () => {
       isEnabled = !isEnabled;
