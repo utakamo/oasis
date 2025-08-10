@@ -243,6 +243,7 @@ openai.new = function()
                     -- https://platform.openai.com/docs/api-reference/runs/submitToolOutputs
                     local output = jsonc.stringify(result, false)
                     local function_call = {}
+                    function_call.service = "OpenAI"
                     function_call.tool_outputs = {}
                     function_call.tool_outputs[1] = {}
                     function_call.tool_outputs[1].tool_call_id = tool_call_id
