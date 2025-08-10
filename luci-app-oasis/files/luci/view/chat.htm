@@ -1847,11 +1847,41 @@
                             // Auto passthrough tool result to server (fire-and-forget)
                             if (!toolPassthroughSent) {
                                 try {
+                                    // Show secondary Thinking... while waiting server response
+                                    const chatRoot = document.querySelector('.chat-messages');
+                                    const tpContainer = document.createElement('div');
+                                    tpContainer.className = 'message received';
+                                    const tpIcon = document.createElement('div');
+                                    tpIcon.className = 'icon';
+                                    tpIcon.style.backgroundImage = `url(${resourcePath}/oasis/${icon_name})`;
+                                    const tpText = document.createElement('div');
+                                    tpText.className = 'message-text chat-bubble';
+                                    const tpDots = document.createElement('span');
+                                    tpDots.classList.add('typing-dots');
+                                    for (let i = 0; i < 3; i++) { tpDots.appendChild(document.createElement('span')); }
+                                    const tpLabel = document.createElement('span');
+                                    tpLabel.classList.add('typing-text');
+                                    tpLabel.textContent = 'Thinking...';
+                                    tpText.appendChild(tpDots);
+                                    tpText.appendChild(tpLabel);
+                                    tpContainer.appendChild(tpIcon);
+                                    tpContainer.appendChild(tpText);
+                                    chatRoot.appendChild(tpContainer);
+                                    keepLatestMessageVisible(true);
+
                                     fetch(`${baseUrl}/cgi-bin/oasis`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify(evt)
-                                    }).catch(() => {});
+                                    })
+                                    .then(res => res.text())
+                                    .then(text => {
+                                        tpText.innerHTML = convertMarkdownToHTML(text || '');
+                                        keepLatestMessageVisible(true);
+                                    })
+                                    .catch(() => {
+                                        tpText.innerHTML = convertMarkdownToHTML('Tool submission failed.');
+                                    });
                                 } catch (_) {}
                                 toolPassthroughSent = true;
                             }
@@ -1931,11 +1961,40 @@
                             // Auto passthrough tool result to server (fire-and-forget)
                             if (!toolPassthroughSent) {
                                 try {
+                                    const chatRoot = document.querySelector('.chat-messages');
+                                    const tpContainer = document.createElement('div');
+                                    tpContainer.className = 'message received';
+                                    const tpIcon = document.createElement('div');
+                                    tpIcon.className = 'icon';
+                                    tpIcon.style.backgroundImage = `url(${resourcePath}/oasis/${icon_name})`;
+                                    const tpText = document.createElement('div');
+                                    tpText.className = 'message-text chat-bubble';
+                                    const tpDots = document.createElement('span');
+                                    tpDots.classList.add('typing-dots');
+                                    for (let i = 0; i < 3; i++) { tpDots.appendChild(document.createElement('span')); }
+                                    const tpLabel = document.createElement('span');
+                                    tpLabel.classList.add('typing-text');
+                                    tpLabel.textContent = 'Thinking...';
+                                    tpText.appendChild(tpDots);
+                                    tpText.appendChild(tpLabel);
+                                    tpContainer.appendChild(tpIcon);
+                                    tpContainer.appendChild(tpText);
+                                    chatRoot.appendChild(tpContainer);
+                                    keepLatestMessageVisible(true);
+
                                     fetch(`${baseUrl}/cgi-bin/oasis`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify(evt)
-                                    }).catch(() => {});
+                                    })
+                                    .then(res => res.text())
+                                    .then(text => {
+                                        tpText.innerHTML = convertMarkdownToHTML(text || '');
+                                        keepLatestMessageVisible(true);
+                                    })
+                                    .catch(() => {
+                                        tpText.innerHTML = convertMarkdownToHTML('Tool submission failed.');
+                                    });
                                 } catch (_) {}
                                 toolPassthroughSent = true;
                             }
