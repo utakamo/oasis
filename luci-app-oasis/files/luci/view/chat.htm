@@ -127,7 +127,6 @@
     let scrollLockEnabled = false;
     let isKeyboardOpen = false;
     let pendingBottomOnKeyboardOpen = false;
-    let pendingFirstConversationAlign = false;
 
     // Center popups within the right column (.chat-container)
     function centerElementInChat(element) {
@@ -803,7 +802,7 @@
         // Initialize compact New Chat icon state based on viewport
         updateCompactNewButtonForViewport();
         // Initialize mobile bottom sheet bindings if present
-        (function initMobileBottomSheet() {
+(function initMobileBottomSheet() {
             const fab = document.getElementById('open-bottom-sheet');
             const sheet = document.getElementById('mobile-bottom-sheet');
             if (!fab || !sheet) return;
@@ -826,8 +825,6 @@
             // close button removed
             // First population
             updateMobileBottomSheetFromDesktop();
-            const mbNewBtn = document.getElementById('mb-new-button');
-            if (mbNewBtn) mbNewBtn.addEventListener('click', async () => { await new_chat_action(); });
 
             // No need to track scroll/resize for FAB inline placement
             // Hide bottom sheet and FAB on desktop viewport
@@ -1380,29 +1377,7 @@
         }
     });
 
-    function showTitlePopup(title) {
-        if (title) {
-            const popup = document.createElement('div');
-            popup.textContent = title;
-            popup.classList.add('popup');
-
-            document.body.appendChild(popup);
-
-            setTimeout(() => {
-                popup.classList.add('show');
-            }, 10);
-
-            setTimeout(() => {
-                popup.classList.remove('show');
-                popup.classList.add('hide');
-                setTimeout(() => {
-                    popup.remove();
-                }, 500);
-            }, 5000);
-        } else {
-            console.error('Title not found in JSON data.');
-        }
-    }
+// removed: showTitlePopup (unused)
 
     async function send_chat_data(systemMessage, messageInput, messageText) {
 
@@ -1526,7 +1501,7 @@
         message_outputing = false;
         targetChatId = jsonResponse.id;
         //console.log("targetChatId = " + targetChatId);
-        //showTitlePopup(jsonResponse.title);
+        // removed: showTitlePopup(jsonResponse.title);
 
         const itemCount = (chatList !== null) ? chatList.item.length : 0;
         
@@ -1762,6 +1737,7 @@
         let fullMessage = '';
         let is_notify = false;
         let toolNoticesHtml = '';
+        let errorNoticesHtml = '';
 
         // 完全なJSONオブジェクトをバッファから切り出すユーティリティ
         function extractJsonObjects(text) {
@@ -1856,17 +1832,29 @@
                         continue;
                     }
 
-                    // ツール実行通知（専用バッジを先頭に表示）
-                    // 例: {"tool_outputs":[...], "service":"OpenAI", "name":"get_wlan_if_list"}
+                    // ツール実行通知（専用バッジを先頭に表示）+ 必須フィールド検証
+                    // 期待JSON例: {"tool_outputs":[{"tool_call_id":"...","output":"..."}], "service":"OpenAI", "name":"get_wlan_if_list"}
                     if (evt && Array.isArray(evt.tool_outputs)) {
-                        const displayName = (typeof evt.name === 'string' && evt.name.length)
-                            ? `: ${escapeHTML(evt.name)}`
-                            : '';
-                        toolNoticesHtml += `<div class="tool-notice">Tool used${displayName}</div>`;
+                        const hasName = (typeof evt.name === 'string' && evt.name.length > 0);
+                        const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
+                        const hasOutputs = (evt.tool_outputs.length > 0);
+                        const first = hasOutputs ? evt.tool_outputs[0] : null;
+                        const hasOutputFields = !!(first && typeof first.tool_call_id === 'string' && ("output" in first));
+
+                        if (hasName && hasService && hasOutputs && hasOutputFields) {
+                            toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(evt.name)}</span></div>`;
+                        } else {
+                            const missing = [];
+                            if (!hasName) missing.push('name');
+                            if (!hasService) missing.push('service');
+                            if (!hasOutputs) missing.push('tool_outputs');
+                            else if (!hasOutputFields) missing.push('tool_outputs[0].tool_call_id/output');
+                            errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
+                        }
 
                         // デスクトップ時は逐次描画
                         if (!isSmallViewport) {
-                            receivedMessageTextContainer.innerHTML = toolNoticesHtml + convertMarkdownToHTML(fullMessage);
+                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + toolNoticesHtml + convertMarkdownToHTML(fullMessage);
                             if (receivedMessageTextContainer._typingTimer) {
                                 clearInterval(receivedMessageTextContainer._typingTimer);
                                 delete receivedMessageTextContainer._typingTimer;
@@ -1884,7 +1872,7 @@
                         fullMessage += evt.message.content;
                         if (!isSmallViewport) {
                             // Desktop/two-column: progressive rendering
-                            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage);
+                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + toolNoticesHtml + convertMarkdownToHTML(fullMessage);
                             // タイピングローテーション停止
                             if (receivedMessageTextContainer._typingTimer) {
                                 clearInterval(receivedMessageTextContainer._typingTimer);
@@ -1918,12 +1906,24 @@
                 try {
                     const evt = JSON.parse(trimmed);
 
-                    // ツール実行通知（単発レスポンスの最後にも対応）
+                    // ツール実行通知（単発レスポンスの最後にも対応）+ 必須フィールド検証
                     if (evt && Array.isArray(evt.tool_outputs)) {
-                        const displayName = (typeof evt.name === 'string' && evt.name.length)
-                            ? `: ${escapeHTML(evt.name)}`
-                            : '';
-                        toolNoticesHtml += `<div class=\"tool-notice\">Tool used${displayName}</div>`;
+                        const hasName = (typeof evt.name === 'string' && evt.name.length > 0);
+                        const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
+                        const hasOutputs = (evt.tool_outputs.length > 0);
+                        const first = hasOutputs ? evt.tool_outputs[0] : null;
+                        const hasOutputFields = !!(first && typeof first.tool_call_id === 'string' && ("output" in first));
+
+                        if (hasName && hasService && hasOutputs && hasOutputFields) {
+                            toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(evt.name)}</span></div>`;
+                        } else {
+                            const missing = [];
+                            if (!hasName) missing.push('name');
+                            if (!hasService) missing.push('service');
+                            if (!hasOutputs) missing.push('tool_outputs');
+                            else if (!hasOutputFields) missing.push('tool_outputs[0].tool_call_id/output');
+                            errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
+                        }
                     }
 
                     if (evt.message && typeof evt.message.content === 'string') {
@@ -1942,12 +1942,13 @@
 
             // Final output: on mobile、初めて表示（それまではタイピングのみ）
             const __hasToolNotice = !!(toolNoticesHtml && toolNoticesHtml.length > 0);
+            const __hasErrorNotice = !!(errorNoticesHtml && errorNoticesHtml.length > 0);
             const __finalText = (fullMessage || '').trim();
-            if (!__hasToolNotice && __finalText.length === 0) {
+            if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
                 // Fallback: No AI service or no response
                 receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('No response from AI service. Please check settings.');
             } else {
-                receivedMessageTextContainer.innerHTML = toolNoticesHtml + convertMarkdownToHTML(__finalText);
+                receivedMessageTextContainer.innerHTML = errorNoticesHtml + toolNoticesHtml + convertMarkdownToHTML(__finalText);
             }
             if (receivedMessageTextContainer._typingTimer) {
                 clearInterval(receivedMessageTextContainer._typingTimer);

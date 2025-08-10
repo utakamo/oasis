@@ -938,13 +938,40 @@ textarea:focus-visible {
     padding: 6px 10px;
     margin-bottom: 6px;
     border-radius: 10px;
-    background: #fff4e5;
+    background: linear-gradient(180deg, #fff7eb 0%, #ffe9cc 100%);
     border: 1px solid #ffd8a8;
     color: #7a4e00;
     font-weight: 600;
 }
 .message .message-text .tool-notice::before {
     content: "🛠 ";
+}
+
+/* Tool name emphasis */
+.message .message-text .tool-notice .tool-name {
+    display: inline-block;
+    padding: 1px 6px;
+    margin-left: 4px;
+    border-radius: 6px;
+    background: #fffaf3;
+    border: 1px solid #ffd8a8;
+    color: #7a4e00;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Error notice badge */
+.message .message-text .error-notice {
+    display: inline-block;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    border-radius: 10px;
+    background: #ffecec;
+    border: 1px solid #ffb3b3;
+    color: #8a1f1f;
+    font-weight: 600;
+}
+.message .message-text .error-notice::before {
+    content: "⚠ ";
 }
 
 /* Keyboard-open state (mobile): class-based, variables driven */
