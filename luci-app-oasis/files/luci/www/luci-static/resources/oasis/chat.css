@@ -932,6 +932,21 @@ textarea:focus-visible {
     color: #ffffff;
 }
 
+/* Tool-used badge: visually distinguish tool execution notices */
+.message .message-text .tool-notice {
+    display: inline-block;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    border-radius: 10px;
+    background: #fff4e5;
+    border: 1px solid #ffd8a8;
+    color: #7a4e00;
+    font-weight: 600;
+}
+.message .message-text .tool-notice::before {
+    content: "🛠 ";
+}
+
 /* Keyboard-open state (mobile): class-based, variables driven */
 .chat-input.keyboard-open {
     position: fixed;

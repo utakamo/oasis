@@ -1761,6 +1761,7 @@
         const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
         let fullMessage = '';
         let is_notify = false;
+        let toolNoticesHtml = '';
 
         // 完全なJSONオブジェクトをバッファから切り出すユーティリティ
         function extractJsonObjects(text) {
@@ -1855,6 +1856,30 @@
                         continue;
                     }
 
+                    // ツール実行通知（専用バッジを先頭に表示）
+                    // 例: {"tool_outputs":[...], "service":"OpenAI", "name":"get_wlan_if_list"}
+                    if (evt && Array.isArray(evt.tool_outputs)) {
+                        const displayName = (typeof evt.name === 'string' && evt.name.length)
+                            ? `: ${escapeHTML(evt.name)}`
+                            : '';
+                        toolNoticesHtml += `<div class="tool-notice">Tool used${displayName}</div>`;
+
+                        // デスクトップ時は逐次描画
+                        if (!isSmallViewport) {
+                            receivedMessageTextContainer.innerHTML = toolNoticesHtml + convertMarkdownToHTML(fullMessage);
+                            if (receivedMessageTextContainer._typingTimer) {
+                                clearInterval(receivedMessageTextContainer._typingTimer);
+                                delete receivedMessageTextContainer._typingTimer;
+                            }
+                            if (isKeyboardOpen) {
+                                keepLatestMessageVisible(true);
+                                setChatScrollLock(true);
+                            } else {
+                                keepLatestMessageVisible(false);
+                            }
+                        }
+                    }
+
                     if (evt.message && typeof evt.message.content === 'string') {
                         fullMessage += evt.message.content;
                         if (!isSmallViewport) {
@@ -1892,6 +1917,15 @@
             if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
                 try {
                     const evt = JSON.parse(trimmed);
+
+                    // ツール実行通知（単発レスポンスの最後にも対応）
+                    if (evt && Array.isArray(evt.tool_outputs)) {
+                        const displayName = (typeof evt.name === 'string' && evt.name.length)
+                            ? `: ${escapeHTML(evt.name)}`
+                            : '';
+                        toolNoticesHtml += `<div class=\"tool-notice\">Tool used${displayName}</div>`;
+                    }
+
                     if (evt.message && typeof evt.message.content === 'string') {
                         fullMessage += evt.message.content;
                     }
@@ -1907,7 +1941,14 @@
             }
 
             // Final output: on mobile、初めて表示（それまではタイピングのみ）
-            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML(fullMessage.trim());
+            const __hasToolNotice = !!(toolNoticesHtml && toolNoticesHtml.length > 0);
+            const __finalText = (fullMessage || '').trim();
+            if (!__hasToolNotice && __finalText.length === 0) {
+                // Fallback: No AI service or no response
+                receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('No response from AI service. Please check settings.');
+            } else {
+                receivedMessageTextContainer.innerHTML = toolNoticesHtml + convertMarkdownToHTML(__finalText);
+            }
             if (receivedMessageTextContainer._typingTimer) {
                 clearInterval(receivedMessageTextContainer._typingTimer);
                 delete receivedMessageTextContainer._typingTimer;
