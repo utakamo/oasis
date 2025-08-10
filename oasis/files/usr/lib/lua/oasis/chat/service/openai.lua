@@ -157,23 +157,25 @@ openai.new = function()
         end
 
         obj.setup_msg = function(self, chat, speaker)
-            -- debug:log("oasis.log", "\n--- [openai.lua][setup_msg] ---")
+            if not speaker or not speaker.role then return false end
 
-            if (not speaker.role)
-                or (#speaker.role == 0)
-                or (speaker.role == common.role.unknown)
-                or (not speaker.message)
-                or (#speaker.message == 0) then
-                -- debug:log("oasis.log", "false")
-                return false
+            local msg = { role = speaker.role }
+
+            if speaker.role == "tool" then
+                if not speaker.tool_call_id or not speaker.content then return false end
+                msg.tool_call_id = speaker.tool_call_id
+                msg.name = speaker.name
+                msg.content = speaker.content
+            elseif speaker.role == common.role.assistant and speaker.tool_calls then
+                -- assistant message that contains tool_calls
+                msg.tool_calls = speaker.tool_calls
+                msg.content = speaker.content or ""
+            else
+                if not speaker.message or #speaker.message == 0 then return false end
+                msg.content = speaker.message
             end
 
-            chat.messages[#chat.messages + 1] = {}
-            chat.messages[#chat.messages].role = speaker.role
-            chat.messages[#chat.messages].content = speaker.message
-
-            -- debug:dump("oasis.log", chat)
-
+            table.insert(chat.messages, msg)
             return true
         end
 
@@ -231,29 +233,48 @@ openai.new = function()
                     debug:log("function_call.log", "is_tool")
                     local client = require("oasis.local.tool.client")
                     local message = chunk_json.choices[1].message
-                    local tool_call_id = message.tool_calls[1].id
-                    local tool = message.tool_calls[1]
-                    local func = message.tool_calls[1]["function"].name
-                    local args = jsonc.parse(message.tool_calls[1]["function"].arguments)
-                    debug:log("function_call.log", "func = " .. func)
-                    -- debug:log("function_call.log", "args = " .. jsonc.stringify(args, false))
-                    local result = client.exec_server_tool(func, args)
-                    debug:log("function_call_result.log", jsonc.stringify(result, true))
 
-                    -- https://platform.openai.com/docs/api-reference/runs/submitToolOutputs
-                    local output = jsonc.stringify(result, false)
-                    local function_call = {}
-                    function_call.service = "OpenAI"
-                    function_call.name = func
-                    function_call.tool_outputs = {}
-                    function_call.tool_outputs[1] = {}
-                    function_call.tool_outputs[1].tool_call_id = tool_call_id
-                    function_call.tool_outputs[1].output = output
+                    -- WebUI notification payload
+                    local function_call = { service = "OpenAI", tool_outputs = {} }
+                    local first_output_str = ""
 
-                    local plain_text_for_console = function_call.tool_outputs[1].output
+                    -- History speaker (assistant with tool_calls)
+                    local speaker = { role = "assistant", tool_calls = {} }
+
+                    for _, tc in ipairs(message.tool_calls or {}) do
+                        local func = tc["function"] and tc["function"].name or ""
+                        local args = {}
+                        if tc["function"] and tc["function"].arguments then
+                            args = jsonc.parse(tc["function"].arguments) or {}
+                        end
+
+                        debug:log("function_call.log", "func = " .. tostring(func))
+                        local result = client.exec_server_tool(func, args)
+                        debug:log("function_call_result.log", jsonc.stringify(result, true))
+
+                        local output = jsonc.stringify(result, false)
+                        table.insert(function_call.tool_outputs, {
+                            tool_call_id = tc.id,
+                            output = output,
+                            name = func
+                        })
+
+                        table.insert(speaker.tool_calls, {
+                            id = tc.id,
+                            type = "function",
+                            ["function"] = {
+                                name = func,
+                                arguments = jsonc.stringify(args, false)
+                            }
+                        })
+
+                        if first_output_str == "" then first_output_str = output end
+                    end
+
+                    local plain_text_for_console = first_output_str
                     local json_text_for_webui    = jsonc.stringify(function_call, false)
                     debug:log("json_text_for_webui.log", json_text_for_webui)
-                    return plain_text_for_console, json_text_for_webui, function_call
+                    return plain_text_for_console, json_text_for_webui, speaker
                 end
             end
 
