@@ -813,11 +813,12 @@ function enable_tool()
     end
 
     local found = false
-    uci:foreach("oasis", "tool", function(s)
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         if s["name"] == tool_name then
             -- Do not enable when conflict flag is set
             if s["conflict"] ~= "1" then
-                uci:set("oasis", s[".name"], "enable", "1")
+                uci:set(common.db.uci.cfg, s[".name"], "enable", "1")
+                uci:commit(common.db.uci.cfg)
             end
             found = true
         end
@@ -843,10 +844,11 @@ function disable_tool()
     end
 
     local found = false
-    uci:foreach("oasis", "tool", function(s)
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         -- Do not enable when conflict flag is set
         if s["conflict"] ~= "1" then
-            uci:set("oasis", s[".name"], "enable", "0")
+            uci:set(common.db.uci.cfg, s[".name"], "enable", "0")
+            uci:commit(common.db.uci.cfg)
             found = true
         end
     end)
