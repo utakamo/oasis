@@ -1833,17 +1833,27 @@
                         continue;
                     }
 
-                    // ツール実行通知（専用バッジを先頭に表示）+ 必須フィールド検証
-                    // 期待JSON例: {"tool_outputs":[{"tool_call_id":"...","output":"..."}], "service":"OpenAI", "name":"get_wlan_if_list"}
+                    // Tool execution notice (badge at the top) + required fields validation
+                    // Expected JSON: {"tool_outputs":[{"tool_call_id":"...","output":"...","name":"..."}], "service":"OpenAI"}
                     if (evt && Array.isArray(evt.tool_outputs)) {
-                        const hasName = (typeof evt.name === 'string' && evt.name.length > 0);
                         const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
                         const hasOutputs = (evt.tool_outputs.length > 0);
-                        const first = hasOutputs ? evt.tool_outputs[0] : null;
-                        const hasOutputFields = !!(first && typeof first.tool_call_id === 'string' && ("output" in first));
+                        const allValid = hasOutputs && evt.tool_outputs.every(o =>
+                            (typeof o.tool_call_id === 'string') && ('output' in o)
+                        );
 
-                        if (hasName && hasService && hasOutputs && hasOutputFields) {
-                            toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(evt.name)}</span></div>`;
+                        // Collect tool names from each output element (optional)
+                        const names = hasOutputs
+                            ? Array.from(new Set(
+                                evt.tool_outputs
+                                  .map(o => (typeof o.name === 'string' && o.name.length > 0) ? o.name : null)
+                                  .filter(Boolean)
+                              ))
+                            : [];
+                        const toolNamesLabel = names.length ? names.join(', ') : '(unknown)';
+
+                        if (hasService && allValid) {
+                            toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(toolNamesLabel)}</span></div>`;
                             // Auto passthrough tool result to server (fire-and-forget)
                             if (!toolPassthroughSent) {
                                 try {
@@ -1887,10 +1897,9 @@
                             }
                         } else {
                             const missing = [];
-                            if (!hasName) missing.push('name');
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
-                            else if (!hasOutputFields) missing.push('tool_outputs[0].tool_call_id/output');
+                            else if (!allValid) missing.push('tool_outputs[*].tool_call_id/output');
                             errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
                         }
 
@@ -1948,16 +1957,25 @@
                 try {
                     const evt = JSON.parse(trimmed);
 
-                    // ツール実行通知（単発レスポンスの最後にも対応）+ 必須フィールド検証
+                    // Tool execution notice (also for single JSON at end) + required fields validation
                     if (evt && Array.isArray(evt.tool_outputs)) {
-                        const hasName = (typeof evt.name === 'string' && evt.name.length > 0);
                         const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
                         const hasOutputs = (evt.tool_outputs.length > 0);
-                        const first = hasOutputs ? evt.tool_outputs[0] : null;
-                        const hasOutputFields = !!(first && typeof first.tool_call_id === 'string' && ("output" in first));
+                        const allValid = hasOutputs && evt.tool_outputs.every(o =>
+                            (typeof o.tool_call_id === 'string') && ('output' in o)
+                        );
 
-                        if (hasName && hasService && hasOutputs && hasOutputFields) {
-                            toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(evt.name)}</span></div>`;
+                        const names = hasOutputs
+                            ? Array.from(new Set(
+                                evt.tool_outputs
+                                  .map(o => (typeof o.name === 'string' && o.name.length > 0) ? o.name : null)
+                                  .filter(Boolean)
+                              ))
+                            : [];
+                        const toolNamesLabel = names.length ? names.join(', ') : '(unknown)';
+
+                        if (hasService && allValid) {
+                            toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(toolNamesLabel)}</span></div>`;
                             // Auto passthrough tool result to server (fire-and-forget)
                             if (!toolPassthroughSent) {
                                 try {
@@ -2000,10 +2018,9 @@
                             }
                         } else {
                             const missing = [];
-                            if (!hasName) missing.push('name');
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
-                            else if (!hasOutputFields) missing.push('tool_outputs[0].tool_call_id/output');
+                            else if (!allValid) missing.push('tool_outputs[*].tool_call_id/output');
                             errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
                         }
                     }
