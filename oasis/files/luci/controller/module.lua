@@ -45,6 +45,8 @@ function index()
     entry({"admin", "network", "oasis", "rollback-target-data"}, call("rollback_target_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "base-info"}, call("base_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "change-tool-enable"}, call("change_tool_enable"), nil).leaf = true
+    entry({"admin", "network", "oasis", "enable-tool"}, call("enable_tool"), nil).leaf = true
+    entry({"admin", "network", "oasis", "disable-tool"}, call("disable_tool"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "local-tool-info"}, call("local_tool_info"), nil).leaf = true
@@ -797,6 +799,64 @@ function remove_remote_mcp_server()
     end
 
     uci:commit("oasis")
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ status = "OK" })
+end
+
+function enable_tool()
+    local tool_name = luci_http.formvalue("name")
+    local server_name = luci_http.formvalue("server")
+    if (not tool_name) or (not server_name) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local found = false
+    uci:foreach("oasis", "tool", function(s)
+        if s["name"] == tool_name then
+            -- Do not enable when conflict flag is set
+            if s["conflict"] ~= "1" then
+                uci:set("oasis", s[".name"], "enable", "1")
+            end
+            found = true
+        end
+    end)
+
+    if not found then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Tool not found" })
+        return
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ status = "OK" })
+end
+
+function disable_tool()
+    local tool_name = luci_http.formvalue("name")
+    local server_name = luci_http.formvalue("server")
+    if (not tool_name) or (not server_name) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Missing params" })
+        return
+    end
+
+    local found = false
+    uci:foreach("oasis", "tool", function(s)
+        -- Do not enable when conflict flag is set
+        if s["conflict"] ~= "1" then
+            uci:set("oasis", s[".name"], "enable", "0")
+            found = true
+        end
+    end)
+
+    if not found then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Tool not found" })
+        return
+    end
+
     luci_http.prepare_content("application/json")
     luci_http.write_json({ status = "OK" })
 end
