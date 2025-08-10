@@ -27,6 +27,13 @@ if request_method == "POST" then
         return
     end
 
+    -- Branch: tool result handling (from WebUI fetch)
+    -- Expecting payload like:
+    -- {"tool_outputs":[{"tool_call_id":"...","output":"..."}], "service":"OpenAI", "name":"get_wlan_if_list", "thread_id":"...", "run_id":"..."}
+    if (json_tbl.tool_outputs ~= nil) and (type(json_tbl.tool_outputs) == "table") then
+        return
+    end
+
     local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.assist, "enable")
     local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
     local uci_cmd_notification = {}
