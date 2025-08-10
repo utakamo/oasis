@@ -244,6 +244,7 @@ openai.new = function()
                     local output = jsonc.stringify(result, false)
                     local function_call = {}
                     function_call.service = "OpenAI"
+                    function_call.name = func
                     function_call.tool_outputs = {}
                     function_call.tool_outputs[1] = {}
                     function_call.tool_outputs[1].tool_call_id = tool_call_id
