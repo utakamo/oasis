@@ -133,7 +133,7 @@
     if (tool.script === 'lua' || tool.script === 'ucode') {
       const script = document.createElement('span');
       script.className = 'pill-script ' + (tool.script === 'lua' ? 'script-lua' : 'script-ucode');
-      script.textContent = tool.script;
+      script.textContent = (tool.script === 'ucode') ? 'uCode' : tool.script;
       title.appendChild(script);
     }
     // Show conflict badge when conflict === '1'
