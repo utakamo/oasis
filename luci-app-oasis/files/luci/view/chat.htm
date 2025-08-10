@@ -1737,6 +1737,7 @@
         let fullMessage = '';
         let is_notify = false;
         let toolNoticesHtml = '';
+        let toolPassthroughSent = false;
         let errorNoticesHtml = '';
 
         // 完全なJSONオブジェクトをバッファから切り出すユーティリティ
@@ -1843,6 +1844,17 @@
 
                         if (hasName && hasService && hasOutputs && hasOutputFields) {
                             toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(evt.name)}</span></div>`;
+                            // Auto passthrough tool result to server (fire-and-forget)
+                            if (!toolPassthroughSent) {
+                                try {
+                                    fetch(`${baseUrl}/cgi-bin/oasis`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(evt)
+                                    }).catch(() => {});
+                                } catch (_) {}
+                                toolPassthroughSent = true;
+                            }
                         } else {
                             const missing = [];
                             if (!hasName) missing.push('name');
@@ -1916,6 +1928,17 @@
 
                         if (hasName && hasService && hasOutputs && hasOutputFields) {
                             toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(evt.name)}</span></div>`;
+                            // Auto passthrough tool result to server (fire-and-forget)
+                            if (!toolPassthroughSent) {
+                                try {
+                                    fetch(`${baseUrl}/cgi-bin/oasis`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(evt)
+                                    }).catch(() => {});
+                                } catch (_) {}
+                                toolPassthroughSent = true;
+                            }
                         } else {
                             const missing = [];
                             if (!hasName) missing.push('name');
