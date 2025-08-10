@@ -166,13 +166,20 @@ openai.new = function()
                 msg.tool_call_id = speaker.tool_call_id
                 msg.name = speaker.name
                 msg.content = speaker.content
+                debug:log("openai.setup_msg.log",
+                    string.format("append TOOL msg: id=%s, name=%s, len=%d",
+                        tostring(msg.tool_call_id or ""), tostring(msg.name or ""), (msg.content and #msg.content) or 0))
             elseif speaker.role == common.role.assistant and speaker.tool_calls then
                 -- assistant message that contains tool_calls
                 msg.tool_calls = speaker.tool_calls
                 msg.content = speaker.content or ""
+                debug:log("openai.setup_msg.log",
+                    string.format("append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls))
             else
                 if not speaker.message or #speaker.message == 0 then return false end
                 msg.content = speaker.message
+                debug:log("openai.setup_msg.log",
+                    string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
             end
 
             table.insert(chat.messages, msg)
@@ -274,6 +281,9 @@ openai.new = function()
                     local plain_text_for_console = first_output_str
                     local json_text_for_webui    = jsonc.stringify(function_call, false)
                     debug:log("json_text_for_webui.log", json_text_for_webui)
+                    debug:log("function_call.log",
+                        string.format("return speaker(tool_calls=%d), tool_outputs=%d",
+                            #speaker.tool_calls, #function_call.tool_outputs))
                     return plain_text_for_console, json_text_for_webui, speaker
                 end
             end

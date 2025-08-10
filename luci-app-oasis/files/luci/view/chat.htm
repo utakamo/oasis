@@ -1836,6 +1836,8 @@
                     // Tool execution notice (badge at the top) + required fields validation
                     // Expected JSON: {"tool_outputs":[{"tool_call_id":"...","output":"...","name":"..."}], "service":"OpenAI"}
                     if (evt && Array.isArray(evt.tool_outputs)) {
+                        console.debug('[Oasis][chat.htm] tool evt(single):', evt);
+                        console.debug('[Oasis][chat.htm] tool evt(stream):', evt);
                         const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
                         const hasOutputs = (evt.tool_outputs.length > 0);
                         const allValid = hasOutputs && evt.tool_outputs.every(o =>
@@ -1853,10 +1855,13 @@
                         const toolNamesLabel = names.length ? names.join(', ') : '(unknown)';
 
                         if (hasService && allValid) {
+                            console.debug('[Oasis][chat.htm] tool validated(single), names=', names);
+                            console.debug('[Oasis][chat.htm] tool validated(stream), names=', names);
                             toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(toolNamesLabel)}</span></div>`;
                             // Auto passthrough tool result to server (fire-and-forget)
                             if (!toolPassthroughSent) {
                                 try {
+                                    console.debug('[Oasis][chat.htm] POST tool evt to CGI (stream)');
                                     // Show secondary Thinking... while waiting server response
                                     const chatRoot = document.querySelector('.chat-messages');
                                     const tpContainer = document.createElement('div');
@@ -1886,16 +1891,19 @@
                                     })
                                     .then(res => res.text())
                                     .then(text => {
+                                        console.debug('[Oasis][chat.htm] CGI response(stream):', text);
                                         tpText.innerHTML = convertMarkdownToHTML(text || '');
                                         keepLatestMessageVisible(true);
                                     })
                                     .catch(() => {
+                                        console.error('[Oasis][chat.htm] CGI error(stream)');
                                         tpText.innerHTML = convertMarkdownToHTML('Tool submission failed.');
                                     });
                                 } catch (_) {}
                                 toolPassthroughSent = true;
                             }
                         } else {
+                            console.warn('[Oasis][chat.htm] invalid tool evt(stream)');
                             const missing = [];
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
@@ -1979,6 +1987,7 @@
                             // Auto passthrough tool result to server (fire-and-forget)
                             if (!toolPassthroughSent) {
                                 try {
+                                    console.debug('[Oasis][chat.htm] POST tool evt to CGI (single)');
                                     const chatRoot = document.querySelector('.chat-messages');
                                     const tpContainer = document.createElement('div');
                                     tpContainer.className = 'message received';
@@ -2007,16 +2016,19 @@
                                     })
                                     .then(res => res.text())
                                     .then(text => {
+                                        console.debug('[Oasis][chat.htm] CGI response(single):', text);
                                         tpText.innerHTML = convertMarkdownToHTML(text || '');
                                         keepLatestMessageVisible(true);
                                     })
                                     .catch(() => {
+                                        console.error('[Oasis][chat.htm] CGI error(single)');
                                         tpText.innerHTML = convertMarkdownToHTML('Tool submission failed.');
                                     });
                                 } catch (_) {}
                                 toolPassthroughSent = true;
                             }
                         } else {
+                            console.warn('[Oasis][chat.htm] invalid tool evt(single)');
                             const missing = [];
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');

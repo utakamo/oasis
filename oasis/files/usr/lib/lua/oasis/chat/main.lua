@@ -664,37 +664,37 @@ end
 local output = function(arg)
 
     -- Entry log
-    debug:log("oasis.log", "\n--- [main.lua][output] ---")
+    debug:log("oasis_output.log", "\n--- [main.lua][output] ---")
 
     local has_msg = arg and type(arg.message) == "string" and (#arg.message > 0)
     local has_tools = arg and (type(arg.tool_outputs) == "table") and (#arg.tool_outputs > 0)
 
     -- Payload flags
     debug:log(
-        "oasis.log",
+        "oasis_output.log",
         string.format("[output] has_msg=%s, has_tools=%s",
             tostring(has_msg), tostring(has_tools))
     )
 
     if (not has_msg) and (not has_tools) then
-        debug:log("oasis.log", "[output] No message or tool_outputs. Early return.")
+        debug:log("oasis_output.log", "[output] No message or tool_outputs. Early return.")
         return
     end
 
     local service = common.select_service_obj()
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
-        debug:log("oasis.log", "[output] select_service_obj failed.")
+        debug:log("oasis_output.log", "[output] select_service_obj failed.")
         return
     end
 
     service:initialize(arg, common.ai.format.output)
-    debug:log("oasis.log", "[output] service.initialize done.")
+    debug:log("oasis_output.log", "[output] service.initialize done.")
 
     local cfg_dbg = service.get_config and service:get_config() or nil
     if cfg_dbg then
         debug:log(
-            "oasis.log",
+            "oasis_output.log",
             string.format(
                 "[output] cfg: service=%s, model=%s, id=%s",
                 tostring(cfg_dbg.service or "-"),
@@ -705,13 +705,13 @@ local output = function(arg)
     end
 
     local chat_ctx = datactrl.load_chat_data(service)
-    debug:log("oasis.log", "Load chat data ...")
-    debug:dump("oasis.log", chat_ctx)
+    debug:log("oasis_output.log", "Load chat data ...")
+    debug:dump("oasis_output.log", chat_ctx)
 
     -- 1) If tool outputs exist, append tool messages to the conversation history first
     if has_tools then
         debug:log(
-            "oasis.log",
+            "oasis_output.log",
             string.format("[output] append %d tool message(s)", #arg.tool_outputs)
         )
         for _, t in ipairs(arg.tool_outputs) do
@@ -720,7 +720,7 @@ local output = function(arg)
                 content = jsonc.stringify(content, false)
             end
             debug:log(
-                "oasis.log",
+                "oasis_output.log",
                 string.format(
                     "[output] tool msg: id=%s, name=%s, len=%d",
                     tostring(t.tool_call_id or t.id or ""),
@@ -741,22 +741,22 @@ local output = function(arg)
     if has_msg then
         local msg_len = (arg.message and #arg.message) or 0
         debug:log(
-            "oasis.log",
+            "oasis_output.log",
             string.format("[output] append user message: len=%d", msg_len)
         )
         service:setup_msg(chat_ctx, { role = common.role.user, message = arg.message })
     end
 
     -- 3) Persist and send to the AI service
-    debug:log("oasis.log", "[output] record_chat_data start")
+    debug:log("oasis_output.log", "[output] record_chat_data start")
     datactrl.record_chat_data(service, chat_ctx)
-    debug:log("oasis.log", "[output] record_chat_data done")
+    debug:log("oasis_output.log", "[output] record_chat_data done")
 
-    debug:log("oasis.log", "[output] call chat_with_ai")
+    debug:log("oasis_output.log", "[output] call chat_with_ai")
     local new_chat_info, message = transfer.chat_with_ai(service, chat_ctx)
     local msg_len = (message and #message) or 0
     debug:log(
-        "oasis.log",
+        "oasis_output.log",
         string.format("[output] chat_with_ai returned: new_chat_info_len=%d, message_len=%d",
             (new_chat_info and #new_chat_info) or 0,
             msg_len)
