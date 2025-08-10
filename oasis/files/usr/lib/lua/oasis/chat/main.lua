@@ -663,34 +663,104 @@ end
 
 local output = function(arg)
 
-    -- debug:log("oasis.log", "\n--- [main.lua][output] ---")
+    -- Entry log
+    debug:log("oasis.log", "\n--- [main.lua][output] ---")
 
-    if (not arg.message) then
+    local has_msg = arg and type(arg.message) == "string" and (#arg.message > 0)
+    local has_tools = arg and (type(arg.tool_outputs) == "table") and (#arg.tool_outputs > 0)
+
+    -- Payload flags
+    debug:log(
+        "oasis.log",
+        string.format("[output] has_msg=%s, has_tools=%s",
+            tostring(has_msg), tostring(has_tools))
+    )
+
+    if (not has_msg) and (not has_tools) then
+        debug:log("oasis.log", "[output] No message or tool_outputs. Early return.")
         return
     end
 
     local service = common.select_service_obj()
-
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
+        debug:log("oasis.log", "[output] select_service_obj failed.")
         return
     end
 
     service:initialize(arg, common.ai.format.output)
+    debug:log("oasis.log", "[output] service.initialize done.")
 
-    local output = datactrl.load_chat_data(service)
-
-    debug:log("oasis.log", "Load chat data ...")
-    debug:dump("oasis.log", output)
-
-    local new_chat_info, message = ""
-
-    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-    if service:setup_msg(output, { role = common.role.user, message = arg.message}) then
-        datactrl.record_chat_data(service, output)
-        new_chat_info, message = transfer.chat_with_ai(service, output)
+    local cfg_dbg = service.get_config and service:get_config() or nil
+    if cfg_dbg then
+        debug:log(
+            "oasis.log",
+            string.format(
+                "[output] cfg: service=%s, model=%s, id=%s",
+                tostring(cfg_dbg.service or "-"),
+                tostring(cfg_dbg.model or "-"),
+                tostring(cfg_dbg.id or "")
+            )
+        )
     end
 
+    local chat_ctx = datactrl.load_chat_data(service)
+    debug:log("oasis.log", "Load chat data ...")
+    debug:dump("oasis.log", chat_ctx)
+
+    -- 1) If tool outputs exist, append tool messages to the conversation history first
+    if has_tools then
+        debug:log(
+            "oasis.log",
+            string.format("[output] append %d tool message(s)", #arg.tool_outputs)
+        )
+        for _, t in ipairs(arg.tool_outputs) do
+            local content = t.output
+            if type(content) ~= "string" then
+                content = jsonc.stringify(content, false)
+            end
+            debug:log(
+                "oasis.log",
+                string.format(
+                    "[output] tool msg: id=%s, name=%s, len=%d",
+                    tostring(t.tool_call_id or t.id or ""),
+                    tostring(t.name or ""),
+                    tonumber((content and #content) or 0)
+                )
+            )
+            service:setup_msg(chat_ctx, {
+                role = "tool",
+                tool_call_id = t.tool_call_id or t.id,
+                name = t.name,
+                content = content
+            })
+        end
+    end
+
+    -- 2) If a user message exists, append it
+    if has_msg then
+        local msg_len = (arg.message and #arg.message) or 0
+        debug:log(
+            "oasis.log",
+            string.format("[output] append user message: len=%d", msg_len)
+        )
+        service:setup_msg(chat_ctx, { role = common.role.user, message = arg.message })
+    end
+
+    -- 3) Persist and send to the AI service
+    debug:log("oasis.log", "[output] record_chat_data start")
+    datactrl.record_chat_data(service, chat_ctx)
+    debug:log("oasis.log", "[output] record_chat_data done")
+
+    debug:log("oasis.log", "[output] call chat_with_ai")
+    local new_chat_info, message = transfer.chat_with_ai(service, chat_ctx)
+    local msg_len = (message and #message) or 0
+    debug:log(
+        "oasis.log",
+        string.format("[output] chat_with_ai returned: new_chat_info_len=%d, message_len=%d",
+            (new_chat_info and #new_chat_info) or 0,
+            msg_len)
+    )
     return new_chat_info, message
 end
 
