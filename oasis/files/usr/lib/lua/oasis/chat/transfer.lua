@@ -8,6 +8,29 @@ local datactrl  = require("oasis.chat.datactrl")
 local util      = require("luci.util")
 local debug     = require("oasis.chat.debug")
 
+-- Create a shallow copy of chat and drop transient messages before persisting
+-- - Exclude role=="tool"
+-- - Exclude role=="assistant" that contains tool_calls
+local function clone_chat_without_tool_messages(chat)
+    local cloned = {}
+    for k, v in pairs(chat or {}) do
+        if k ~= "messages" then
+            cloned[k] = v
+        end
+    end
+    cloned.messages = {}
+    if chat and chat.messages then
+        for _, m in ipairs(chat.messages) do
+            local is_tool = (m.role == "tool")
+            local is_assistant_toolcall = (m.role == "assistant" and m.tool_calls ~= nil)
+            if (not is_tool) and (not is_assistant_toolcall) then
+                table.insert(cloned.messages, m)
+            end
+        end
+    end
+    return cloned
+end
+
 local post_to_server = function(service, user_msg_json, callback)
 
     local cfg = service:get_config()
@@ -142,18 +165,30 @@ local chat_with_ai = function(service, chat)
 
         if (not cfg.id) or (#cfg.id == 0) then
             debug:log("oasis.log", "first called")
-            if service:setup_msg(chat, ai) then
-                local chat_info = {}
-                chat_info.id = datactrl.create_chat_file(service, chat)
-                local result = util.ubus("oasis.title", "auto_set", {id = chat_info.id})
-                chat_info.title = result.title
-                new_chat_info = jsonc.stringify(chat_info, false)
+            if ai and ai.tool_calls then
+                -- When the model requested tool calls, do not create file yet
+                -- Defer recording until the assistant returns a text response next time
+                debug:log("oasis.log", "tool_calls detected; defer create_chat_file")
+            else
+                if service:setup_msg(chat, ai) then
+                    local save_chat = clone_chat_without_tool_messages(chat)
+                    local chat_info = {}
+                    chat_info.id = datactrl.create_chat_file(service, save_chat)
+                    local result = util.ubus("oasis.title", "auto_set", {id = chat_info.id}) or {}
+                    chat_info.title = result.title or "--"
+                    new_chat_info = jsonc.stringify(chat_info, false)
+                end
             end
         else
             debug:log("oasis.log", "second called")
-            if service:setup_msg(chat, ai) then
-                debug:log("oasis.log", "call append_chat_data")
-                service:append_chat_data(chat)
+            if ai and not ai.tool_calls then
+                if service:setup_msg(chat, ai) then
+                    debug:log("oasis.log", "call append_chat_data")
+                    local save_chat = clone_chat_without_tool_messages(chat)
+                    service:append_chat_data(save_chat)
+                end
+            else
+                debug:log("oasis.log", "skip append for tool_calls response")
             end
         end
     elseif format == common.ai.format.title then
