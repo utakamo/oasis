@@ -78,9 +78,13 @@ local get_ai_service_cfg = function(arg, opts)
     if arg then
         cfg.id = arg.id
         if opts and ((opts.format == ai_ref.format.output) or (opts.format == ai_ref.format.rpc_output)) then
+            local default_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or "default"
             if (arg.sysmsg_key and (#arg.sysmsg_key > 0)) then
                 debug:log("oasis.log", "set sysmsg_key: " .. arg.sysmsg_key)
                 cfg.sysmsg_key = arg.sysmsg_key
+            else
+                cfg.sysmsg_key = default_sysmsg_key
+                debug:log("oasis.log", "use default sysmsg_key: " .. cfg.sysmsg_key)
             end
         end
     end
@@ -153,25 +157,26 @@ local load_chat_data = function(service)
 end
 
 local create_chat_file = function(service, chat)
-    -- TODO:
-    -- Update to allow chat files to be created even when role:system is not present.
+    -- Robust creation even if tool calls caused system/user/assistant counts to vary
+    local count = (chat.messages and #chat.messages) or 0
+    local get = function(idx)
+        if idx >= 1 and idx <= count then return chat.messages[idx].role, chat.messages[idx].content end
+        return "", ""
+    end
     local message = {}
     if (service.sysmsg_key) and (#service.sysmsg_key > 0) and (service.sysmsg_key == sysmsg_info.fix_key.casual) then
-        -- os.execute("echo \"no system message\" >> /tmp/oasis-create-chat-file.log")
-        message.role1 = chat.messages[#chat.messages - 1].role
-        message.content1 = chat.messages[#chat.messages - 1].content
-        message.role2 = chat.messages[#chat.messages].role
-        message.content2 = chat.messages[#chat.messages].content
-        message.role3 = ""
-        message.content3 = ""
+        local r2, c2 = get(count-1)
+        local r3, c3 = get(count)
+        message.role1, message.content1 = r2, c2
+        message.role2, message.content2 = r3, c3
+        message.role3, message.content3 = "", ""
     else
-        -- os.execute("echo \"system message\" >> /tmp/oasis-create-chat-file.log")
-        message.role1 = chat.messages[#chat.messages - 2].role
-        message.content1 = chat.messages[#chat.messages - 2].content
-        message.role2 = chat.messages[#chat.messages - 1].role
-        message.content2 = chat.messages[#chat.messages - 1].content
-        message.role3 = chat.messages[#chat.messages].role
-        message.content3 = chat.messages[#chat.messages].content
+        local r1, c1 = get(count-2)
+        local r2, c2 = get(count-1)
+        local r3, c3 = get(count)
+        message.role1, message.content1 = r1, c1
+        message.role2, message.content2 = r2, c2
+        message.role3, message.content3 = r3, c3
     end
 
     -- os.execute("echo " .. message.role1 .. " >> /tmp/oasis-message.log")
