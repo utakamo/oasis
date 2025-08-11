@@ -1733,7 +1733,9 @@
 
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
-        const baseUrl = `${window.location.protocol}//${window.location.hostname}`;
+    // No need to cache last user message in UI; server complements when needed
+        // Use origin to preserve port and scheme for same-origin requests
+        const baseUrl = window.location.origin || `${window.location.protocol}//${window.location.host}`;
         let fullMessage = '';
         let is_notify = false;
         let toolNoticesHtml = '';
@@ -1884,10 +1886,14 @@
                                     chatRoot.appendChild(tpContainer);
                                     keepLatestMessageVisible(true);
 
+                                    const body = JSON.stringify({
+                                        tool_outputs: evt.tool_outputs,
+                                        service: evt.service
+                                    });
                                     fetch(`${baseUrl}/cgi-bin/oasis`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify(evt)
+                                        body
                                     })
                                     .then(res => res.text())
                                     .then(text => {
