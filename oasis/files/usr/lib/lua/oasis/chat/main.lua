@@ -421,7 +421,7 @@ local delete = function(arg)
     output.service.delete(target_section)
 end
 
-local select = function(arg)
+local select_cmd = function(arg)
 
     if not arg.identifier then
         return
@@ -704,9 +704,40 @@ local output = function(arg)
         )
     end
 
-    local chat_ctx = datactrl.load_chat_data(service)
+local chat_ctx = datactrl.load_chat_data(service)
     debug:log("oasis_output.log", "Load chat data ...")
     debug:dump("oasis_output.log", chat_ctx)
+
+    -- Server-side last user message cache for first tool follow-up
+    local cfg = service.get_config and service:get_config() or {}
+    local sid = (arg and arg.session_id) and tostring(arg.session_id) or ""
+    local misc = require("oasis.chat.misc")
+    if has_msg then
+        -- Persist the latest user message for possible tool follow-up without UI-provided message
+        os.execute("mkdir -p /tmp/oasis")
+        local cache_path = "/tmp/oasis/last_user_msg" .. ( (#sid>0) and ("_"..sid) or "")
+        misc.write_file(cache_path, arg.message)
+        -- Also write generic fallback
+        misc.write_file("/tmp/oasis/last_user_msg", arg.message)
+        debug:log("oasis_output.log", "[output] cached last user message to " .. cache_path)
+    elseif has_tools and (not has_msg) and ((not cfg.id) or (#tostring(cfg.id) == 0)) then
+        -- For the first tool follow-up in a brand new chat, auto-complement the last user message
+        local cache_path = "/tmp/oasis/last_user_msg" .. ( (#sid>0) and ("_"..sid) or "")
+        local last_user_msg = _G.select(1, misc.read_file(cache_path))
+        if (not last_user_msg) or (#last_user_msg == 0) then
+            -- Fallback to generic cache
+            last_user_msg = _G.select(1, misc.read_file("/tmp/oasis/last_user_msg"))
+            if last_user_msg then
+                debug:log("oasis_output.log", "[output] fallback generic last user message cache hit")
+            end
+        end
+        if type(last_user_msg) == "string" and #last_user_msg > 0 then
+            debug:log("oasis_output.log", "[output] auto-append last user message for first tool follow-up (" .. cache_path .. ")")
+            service:setup_msg(chat_ctx, { role = common.role.user, message = last_user_msg })
+        else
+            debug:log("oasis_output.log", "[output] no cached last user message found")
+        end
+    end
 
     -- 1) If tool outputs exist, append tool messages to the conversation history first
     if has_tools then
@@ -747,11 +778,7 @@ local output = function(arg)
         service:setup_msg(chat_ctx, { role = common.role.user, message = arg.message })
     end
 
-    -- 3) Persist and send to the AI service
-    debug:log("oasis_output.log", "[output] record_chat_data start")
-    datactrl.record_chat_data(service, chat_ctx)
-    debug:log("oasis_output.log", "[output] record_chat_data done")
-
+    -- 3) Send to the AI service (recording is handled inside transfer layer)
     debug:log("oasis_output.log", "[output] call chat_with_ai")
     local new_chat_info, message = transfer.chat_with_ai(service, chat_ctx)
     local msg_len = (message and #message) or 0
@@ -846,7 +873,7 @@ return {
     add = add,
     change = change,
     delete = delete,
-    select = select,
+    select = select_cmd,
     show_service_list = show_service_list,
     chat = chat,
     delchat = delchat,
