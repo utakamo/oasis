@@ -74,6 +74,17 @@ openai.new = function()
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysmsg = common.load_conf_file(spath)
 
+            -- Ensure sysmsg_key is valid for output/rpc_output/title formats
+            do
+                local default_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or "default"
+                if (not self.cfg.sysmsg_key) or (not sysmsg or not sysmsg[self.cfg.sysmsg_key]) then
+                    self.cfg.sysmsg_key = default_key
+                    if (not sysmsg) or (not sysmsg[self.cfg.sysmsg_key]) then
+                        self.cfg.sysmsg_key = "default"
+                    end
+                end
+            end
+
             -- debug:log("oasis.log", "\n--- [openai.lua][setup_system_msg] ---");
             -- debug:log("oasis.log", "format = " .. self.format)
 
