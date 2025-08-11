@@ -1,53 +1,96 @@
 #!/usr/bin/env lua
 local jsonc = require("luci.jsonc")
-local uci = require("luci.model.uci").cursor()
-local common = require("oasis.common")
+local http  = require("luci.http")
+local uci   = require("luci.model.uci").cursor()
+local common= require("oasis.common")
 local oasis = require("oasis.chat.main")
-local filter = require("oasis.chat.filter")
--- local debug = require("oasis.chat.debug")
+local filter= require("oasis.chat.filter")
+local debug = require("oasis.chat.debug")
 
 local request_method = os.getenv("REQUEST_METHOD")
 
 print("Content-Type: text/plain\n")
-
--- debug:log("oasis.log",  "\n--- [cgi] ---")
+debug:log("oasis_cgi.log", "--- [cgi] request start ---")
 
 if request_method == "POST" then
     local content_length = tonumber(os.getenv("CONTENT_LENGTH") or 0)
     local post_data = io.read(content_length)
-    -- debug:log("oasis.log", "content length = " .. content_length)
-    -- debug:log("oasis.log", "message = " .. post_data)
+    debug:log("oasis_cgi.log", "content_length=" .. tostring(content_length))
+    debug:log("oasis_cgi.log", "raw body=" .. tostring(post_data))
 
     local json_tbl = jsonc.parse(post_data)
+    debug:log("oasis_cgi.log", "json parsed: " .. tostring(json_tbl ~= nil))
 
     -- debug:dump("oasis.log", json_tbl)
 
     if not json_tbl then
         io.write("Message Format Error.")
+        debug:log("oasis_cgi.log", "json parse error")
         return
     end
 
+    -- Attach LuCI session id (per-user cache key)
+    local sid = nil
+    do
+        -- Prefer luci.http.getcookie if available, else fallback to HTTP_COOKIE env parsing
+        local ok, val = pcall(function()
+            if http and http.getcookie then return http.getcookie("sysauth") end
+            return nil
+        end)
+        if ok and val and type(val) == "string" and #val > 0 then
+            sid = val
+            debug:log("oasis_cgi.log", "sid via luci.http.getcookie")
+        else
+            local raw_cookie = os.getenv("HTTP_COOKIE") or ""
+            local m = raw_cookie:match("sysauth=([^;]+)")
+            if m and #m > 0 then
+                sid = m
+                debug:log("oasis_cgi.log", "sid via HTTP_COOKIE")
+            else
+                debug:log("oasis_cgi.log", "sid not found in cookies")
+            end
+        end
+        if sid and #sid > 0 then
+            json_tbl.session_id = sid
+        end
+    end
+    debug:log("oasis_cgi.log", "sid set: " .. tostring(sid ~= nil))
+
     local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.assist, "enable")
-    local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
+    debug:log("oasis_cgi.log", "assist.enable=" .. tostring(enable))
+    debug:log("oasis_cgi.log", "call oasis.output")
+    local ok, new_chat_info, plain_text_ai_message = pcall(oasis.output, json_tbl)
+    if not ok then
+        debug:log("oasis_cgi.log", "oasis.output error: " .. tostring(new_chat_info))
+        -- Send minimal assistant message so UI doesn't fallback
+        local fallback = jsonc.stringify({ message = { role = "assistant", content = "Internal error: oasis.output failed" } }, false)
+        io.write(fallback)
+        io.flush()
+        debug:log("oasis_cgi.log", "wrote fallback message")
+        debug:log("oasis_cgi.log", "--- [cgi] request end (error) ---")
+        return
+    end
+    debug:log("oasis_cgi.log", "oasis.output returned: new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
+        .. ", message_len=" .. tostring((plain_text_ai_message and #plain_text_ai_message) or 0))
     local uci_cmd_notification = {}
     if enable and plain_text_ai_message then
         uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
         uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification.uci_list)
         if uci_cmd_notification.uci_notify then
             uci_cmd_notification = jsonc.stringify(uci_cmd_notification, false)
-            -- os.execute("echo \"" .. uci_cmd_notification .. "\" >> /tmp/oasis-notify.log")
             io.write(uci_cmd_notification)
             io.flush()
             os.execute("sleep 1")
-        -- else
-            -- debug:log("oasis.log", "no uci list")
+            debug:log("oasis_cgi.log", "wrote uci notification json")
         end
     end
 
     if #new_chat_info > 0 then
-        -- debug:log("oasis.log", "new_chat_info = " .. new_chat_info)
         io.write(new_chat_info)
+        io.flush()
+        debug:log("oasis_cgi.log", "wrote new_chat_info json")
     end
+    debug:log("oasis_cgi.log", "--- [cgi] request end ---")
 else
     io.write("This script only handles POST requests.")
 end
