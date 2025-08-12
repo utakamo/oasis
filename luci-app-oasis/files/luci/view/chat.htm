@@ -1898,7 +1898,58 @@
                                     .then(res => res.text())
                                     .then(text => {
                                         console.debug('[Oasis][chat.htm] CGI response(stream):', text);
-                                        tpText.innerHTML = convertMarkdownToHTML(text || '');
+                                        // The CGI may return concatenated JSON objects (assistant message and new_chat_info)
+                                        // Parse and render only assistant message.content; update targetChatId from new_chat_info
+                                        let content = '';
+                                        try {
+                                            const parts = [];
+                                            let depth = 0;
+                                            let start = -1;
+                                            let inString = false;
+                                            let escapeNext = false;
+                                            for (let i = 0; i < text.length; i++) {
+                                                const ch = text[i];
+                                                if (inString) {
+                                                    if (escapeNext) {
+                                                        escapeNext = false;
+                                                    } else if (ch === '\\') {
+                                                        escapeNext = true;
+                                                    } else if (ch === '"') {
+                                                        inString = false;
+                                                    }
+                                                } else {
+                                                    if (ch === '"') {
+                                                        inString = true;
+                                                    } else if (ch === '{') {
+                                                        if (depth === 0) start = i;
+                                                        depth++;
+                                                    } else if (ch === '}') {
+                                                        depth--;
+                                                        if (depth === 0 && start >= 0) {
+                                                            parts.push(text.slice(start, i + 1));
+                                                            start = -1;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            for (const p of parts) {
+                                                try {
+                                                    const evt = JSON.parse(p);
+                                                    if (evt && evt.message && typeof evt.message.content === 'string') {
+                                                        content += evt.message.content;
+                                                    }
+                                                    if (evt && evt.id && (typeof isNumeric === 'function' ? isNumeric(evt.id) : !isNaN(Number(evt.id)))) {
+                                                        targetChatId = evt.id;
+                                                    }
+                                                } catch (e) {
+                                                    // ignore this part
+                                                }
+                                            }
+                                        } catch (e) {
+                                            // fallback to raw text
+                                            content = text;
+                                        }
+                                        tpText.innerHTML = convertMarkdownToHTML(content || '');
                                         keepLatestMessageVisible(true);
                                     })
                                     .catch(() => {
