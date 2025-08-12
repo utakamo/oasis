@@ -745,6 +745,28 @@ local chat_ctx = datactrl.load_chat_data(service)
             "oasis_output.log",
             string.format("[output] append %d tool message(s)", #arg.tool_outputs)
         )
+
+        -- Insert assistant message with tool_calls first to satisfy OpenAI sequencing
+        local tool_calls = {}
+        for _, t in ipairs(arg.tool_outputs) do
+            local tool_id = t.tool_call_id or t.id or ""
+            local tool_name = t.name or ""
+            table.insert(tool_calls, {
+                id = tool_id,
+                type = "function",
+                ["function"] = {
+                    name = tool_name,
+                    arguments = "{}"
+                }
+            })
+        end
+        if #tool_calls > 0 then
+            debug:log(
+                "oasis_output.log",
+                string.format("[output] insert assistant tool_calls: count=%d", #tool_calls)
+            )
+            service:setup_msg(chat_ctx, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
+        end
         for _, t in ipairs(arg.tool_outputs) do
             local content = t.output
             if type(content) ~= "string" then
