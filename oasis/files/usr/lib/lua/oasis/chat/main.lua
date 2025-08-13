@@ -703,15 +703,43 @@ local output = function(arg)
             )
         )
     end
+    -- Keep chat_id continuity across requests (e.g., tool follow-ups)
+    local sid = (arg and arg.session_id) and tostring(arg.session_id) or ""
+    local misc = require("oasis.chat.misc")
+    os.execute("mkdir -p /tmp/oasis")
+
+    -- If POST provided id, set and cache it. Otherwise, try to restore from cache.
+    do
+        local cfg_now = service.get_config and service:get_config() or {}
+        if arg and arg.id and tostring(arg.id) ~= "" then
+            service:set_chat_id(tostring(arg.id))
+            local cpath = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
+            misc.write_file(cpath, tostring(arg.id))
+            misc.write_file("/tmp/oasis/last_chat_id", tostring(arg.id))
+        elseif ((not cfg_now.id) or (#tostring(cfg_now.id) == 0)) and (has_tools and (not has_msg)) then
+            local cpath = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
+            local cached_id = _G.select(1, misc.read_file(cpath))
+            if (not cached_id) or (#cached_id == 0) then
+                cached_id = _G.select(1, misc.read_file("/tmp/oasis/last_chat_id"))
+            end
+            if cached_id and #cached_id > 0 then
+                service:set_chat_id(cached_id)
+                debug:log("oasis_output.log", "[output] restored chat_id from cache: " .. cached_id)
+            else
+                debug:log("oasis_output.log", "[output] no cached chat_id for tool follow-up")
+            end
+        else
+            -- Normal chat without id: do not restore from cache
+            debug:log("oasis_output.log", "[output] skip restoring chat_id (normal chat)")
+        end
+    end
 
 local chat_ctx = datactrl.load_chat_data(service)
     debug:log("oasis_output.log", "Load chat data ...")
     debug:dump("oasis_output.log", chat_ctx)
 
-    -- Server-side last user message cache for first tool follow-up
-    local cfg = service.get_config and service:get_config() or {}
-    local sid = (arg and arg.session_id) and tostring(arg.session_id) or ""
-    local misc = require("oasis.chat.misc")
+    -- Server-side last user message cache for tool follow-up
+    -- sid/misc initialized above
     if has_msg then
         -- Persist the latest user message for possible tool follow-up without UI-provided message
         os.execute("mkdir -p /tmp/oasis")
@@ -720,8 +748,8 @@ local chat_ctx = datactrl.load_chat_data(service)
         -- Also write generic fallback
         misc.write_file("/tmp/oasis/last_user_msg", arg.message)
         debug:log("oasis_output.log", "[output] cached last user message to " .. cache_path)
-    elseif has_tools and (not has_msg) and ((not cfg.id) or (#tostring(cfg.id) == 0)) then
-        -- For the first tool follow-up in a brand new chat, auto-complement the last user message
+    elseif has_tools and (not has_msg) then
+        -- For any tool follow-up without an explicit user message, auto-complement the last user message
         local cache_path = "/tmp/oasis/last_user_msg" .. ( (#sid>0) and ("_"..sid) or "")
         local last_user_msg = _G.select(1, misc.read_file(cache_path))
         if (not last_user_msg) or (#last_user_msg == 0) then
@@ -732,8 +760,17 @@ local chat_ctx = datactrl.load_chat_data(service)
             end
         end
         if type(last_user_msg) == "string" and #last_user_msg > 0 then
-            debug:log("oasis_output.log", "[output] auto-append last user message for first tool follow-up (" .. cache_path .. ")")
-            service:setup_msg(chat_ctx, { role = common.role.user, message = last_user_msg })
+            local last_role = (
+                chat_ctx.messages and
+                chat_ctx.messages[#chat_ctx.messages] and
+                chat_ctx.messages[#chat_ctx.messages].role
+            ) or ""
+            if last_role ~= common.role.user then
+                debug:log("oasis_output.log", "[output] append cached last user message for tool follow-up")
+                service:setup_msg(chat_ctx, { role = common.role.user, message = last_user_msg })
+            else
+                debug:log("oasis_output.log", "[output] skip appending cached user message (last is already user)")
+            end
         else
             debug:log("oasis_output.log", "[output] no cached last user message found")
         end
@@ -810,6 +847,16 @@ local chat_ctx = datactrl.load_chat_data(service)
             (new_chat_info and #new_chat_info) or 0,
             msg_len)
     )
+    -- Cache newly created chat_id (when a new chat file was created on this turn)
+    if new_chat_info and #new_chat_info > 0 then
+        local ok, parsed = pcall(jsonc.parse, new_chat_info)
+        if ok and parsed and parsed.id then
+            local cpath = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
+            misc.write_file(cpath, tostring(parsed.id))
+            misc.write_file("/tmp/oasis/last_chat_id", tostring(parsed.id))
+            debug:log("oasis_output.log", "[output] cached new chat_id: " .. tostring(parsed.id))
+        end
+    end
     return new_chat_info, message
 end
 
