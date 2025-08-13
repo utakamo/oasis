@@ -350,7 +350,8 @@ openai.new = function()
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 
             -- Function Calling Schema
-            if is_use_tool then
+            -- Disable tool schema injection when creating a title to force plain text reply
+            if is_use_tool and (self:get_format() ~= common.ai.format.title) then
                 local client = require("oasis.local.tool.client")
                 local schema = client.get_function_call_schema()
 
