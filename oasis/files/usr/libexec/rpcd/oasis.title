@@ -3,6 +3,14 @@
 local jsonc     = require("luci.jsonc")
 -- local debug     = require("oasis.chat.debug")
 
+--[[
+ In ubus server scripts written in Lua, you must not define global functions.
+ Doing so may significantly increase the time it takes for the rpcd module to load the script.
+ Similarly, be cautious when using the require function to import libraries.
+ Depending on the library, it may also affect the loading time of rpcd.
+ To avoid this, make sure to call require inside the call field of each method within the methods table. 
+]]
+
 local methods = {
 
     auto_set = {
