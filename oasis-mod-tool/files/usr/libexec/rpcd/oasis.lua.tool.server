@@ -30,6 +30,12 @@
  In some cases, initialization may take between 2 and 3 minutes.  
  Future improvements may help reduce the loading time.
 
+# Important
+ Please avoid defining global functions in ubus server scripts.
+ For AI tool scripts used in Oasis (like this one), write your logic using server.tool.
+ If you need to create custom functions, put them inside the call field of the table that’s passed as the second argument to server.tool.
+ The same rule applies when using require to load external libraries—make sure to call require inside the call field too.
+
  About rpcd lua plugin:
  https://github.com/openwrt/luci/blob/37ea60da580490a4d8178134297152661f25151d/applications/luci-app-example/root/usr/libexec/rpcd/luci.example
 ]]
