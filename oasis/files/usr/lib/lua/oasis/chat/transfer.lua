@@ -182,10 +182,18 @@ local chat_with_ai = function(service, chat)
         else
             debug:log("oasis.log", "second called")
             if ai and not ai.tool_calls then
-                if service:setup_msg(chat, ai) then
+                debug:log("transfer-setup-msg.log", "Calling setup_msg for second call")
+                debug:log("transfer-setup-msg.log", "ai.role = " .. tostring(ai.role))
+                debug:log("transfer-setup-msg.log", "ai.message = " .. tostring(ai.message))
+                debug:log("transfer-setup-msg.log", "ai.content = " .. tostring(ai.content))
+                local setup_result = service:setup_msg(chat, ai)
+                debug:log("transfer-setup-msg.log", "setup_msg returned: " .. tostring(setup_result))
+                if setup_result then
                     debug:log("oasis.log", "call append_chat_data")
                     local save_chat = clone_chat_without_tool_messages(chat)
                     service:append_chat_data(save_chat)
+                else
+                    debug:log("transfer-setup-msg.log", "setup_msg returned false, skipping append_chat_data")
                 end
             else
                 debug:log("oasis.log", "skip append for tool_calls response")
