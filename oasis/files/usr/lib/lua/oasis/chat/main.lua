@@ -734,7 +734,7 @@ local output = function(arg)
         end
     end
 
-local chat_ctx = datactrl.load_chat_data(service)
+    local chat_ctx = datactrl.load_chat_data(service)
     debug:log("oasis_output.log", "Load chat data ...")
     debug:dump("oasis_output.log", chat_ctx)
 
