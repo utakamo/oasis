@@ -64,6 +64,17 @@ ollama.new = function()
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysmsg = common.load_conf_file(spath)
 
+            -- Ensure sysmsg_key is valid for output/rpc_output/title formats
+            do
+                local default_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or "default"
+                if (not self.cfg.sysmsg_key) or (not sysmsg or not sysmsg[self.cfg.sysmsg_key]) then
+                    self.cfg.sysmsg_key = default_key
+                    if (not sysmsg) or (not sysmsg[self.cfg.sysmsg_key]) then
+                        self.cfg.sysmsg_key = "default"
+                    end
+                end
+            end
+
             -- debug:log("oasis.log", "\n--- [ollama.lua][setup_system_msg] ---");
             -- debug:log("oasis.log", "format = " .. self.format)
 
@@ -157,11 +168,17 @@ ollama.new = function()
         obj.setup_msg = function(self, chat, speaker)
 
             debug:log("oasis.log", "\n--- [ollama.lua][setup_msg] ---")
+            debug:log("ollama-setup-msg.log", "setup_msg called")
+            debug:log("ollama-setup-msg.log", "speaker.role = " .. tostring(speaker and speaker.role or "nil"))
+            debug:log("ollama-setup-msg.log", "speaker.message = " .. tostring(speaker and speaker.message or "nil"))
+            debug:log("ollama-setup-msg.log", "speaker.content = " .. tostring(speaker and speaker.content or "nil"))
+            debug:log("ollama-setup-msg.log", "speaker.tool_calls = " .. tostring(speaker and speaker.tool_calls ~= nil or "nil"))
 
             local _ = self
 
             if (not speaker) or (not speaker.role) then
                 debug:log("oasis.log", "false")
+                debug:log("ollama-setup-msg.log", "No speaker or role, returning false")
                 return false
             end
 
@@ -170,7 +187,9 @@ ollama.new = function()
             local msg = { role = speaker.role }
 
             if speaker.role == "tool" then
+                debug:log("ollama-setup-msg.log", "Processing tool message")
                 if (not speaker.content) or (#tostring(speaker.content) == 0) then
+                    debug:log("ollama-setup-msg.log", "No tool content, returning false")
                     return false
                 end
                 msg.name = speaker.name
@@ -178,14 +197,58 @@ ollama.new = function()
                 debug:log("ollama.setup_msg.log",
                     string.format("append TOOL msg: name=%s, len=%d",
                         tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
+                
+                chat.messages = {}
+                table.insert(chat.messages, msg)
+                debug:log("ollama-setup-msg.log", "Tool message added, returning true")
+                return true
+
             elseif (speaker.role == common.role.assistant) and speaker.tool_calls then
-                msg.tool_calls = speaker.tool_calls
+                debug:log("ollama-setup-msg.log", "Processing assistant message with tool_calls")
+                -- Normalize function.arguments for Ollama: requires object (table), not JSON string
+                local fixed_tool_calls = {}
+                for _, tc in ipairs(speaker.tool_calls or {}) do
+                    local fn = tc["function"] or {}
+                    local args = fn.arguments
+
+                    if type(args) == "string" then
+                        local ok, parsed = pcall(jsonc.parse, args)
+                        if ok and type(parsed) == "table" then
+                            local is_array = (#parsed > 0)
+                            if is_array then
+                                fn.arguments = {}
+                            else
+                                fn.arguments = parsed
+                            end
+                        elseif args == "{}" then
+                            fn.arguments = {}
+                        else
+                            fn.arguments = {}
+                        end
+                    elseif type(args) == "table" then
+                        local is_array = (#args > 0)
+                        fn.arguments = is_array and {} or args
+                    else
+                        fn.arguments = {}
+                    end
+
+                    table.insert(fixed_tool_calls, {
+                        id = tc.id,
+                        type = "function",
+                        ["function"] = fn
+                    })
+                end
+                msg.tool_calls = fixed_tool_calls
                 msg.content = speaker.content or ""
                 debug:log("ollama.setup_msg.log",
                     string.format("append ASSISTANT msg with tool_calls: count=%d",
                         #msg.tool_calls))
+                debug:log("ollama-setup-msg.log", "Assistant message with tool_calls processed, returning true")
+                return true
             else
+                debug:log("ollama-setup-msg.log", "Processing regular message")
                 if (not speaker.message) or (#speaker.message == 0) then
+                    debug:log("ollama-setup-msg.log", "No message content, returning false")
                     return false
                 end
                 msg.content = speaker.message
@@ -194,16 +257,22 @@ ollama.new = function()
             end
 
             table.insert(chat.messages, msg)
+            debug:log("ollama-setup-msg.log", "Message added to chat, returning true")
             return true
         end
 
         obj.recv_ai_msg = function(self, chunk)
+
+            -- Log raw response from Ollama for troubleshooting
+            debug:log("ollama-ai-recv.log", tostring(chunk))
 
             local chunk_json = jsonc.parse(chunk)
 
             if (not chunk_json) or (type(chunk_json) ~= "table") then
                 return "", "", self.recv_raw_msg
             end
+
+            debug:log("ollama-ai-recv.log", chunk)
 
             -- Function Calling for Ollama (message.tool_calls[])
             if chunk_json.message and chunk_json.message.tool_calls
@@ -226,7 +295,12 @@ ollama.new = function()
                         local args = {}
                         if tc["function"] and tc["function"].arguments then
                             args = tc["function"].arguments
+                            if type(args) == "string" then
+                                args = jsonc.parse(args) or {}
+                            end
                         end
+
+                        local tool_id = tc.id or common.generate_service_id("seed")
 
                         debug:log("function_call.log", "ollama func = " .. tostring(func))
                         local result = client.exec_server_tool(func, args)
@@ -234,11 +308,13 @@ ollama.new = function()
 
                         local output = jsonc.stringify(result, false)
                         table.insert(function_call.tool_outputs, {
+                            tool_call_id = tool_id,
                             output = output,
                             name = func
                         })
 
                         table.insert(speaker.tool_calls, {
+                            id = tool_id,
                             type = "function",
                             ["function"] = {
                                 name = func,
@@ -325,6 +401,9 @@ ollama.new = function()
 
             local user_msg_json = jsonc.stringify(user_msg, false)
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
+
+            debug:log("ollama-send.log", user_msg_json)
+
             return user_msg_json
         end
 
