@@ -18,6 +18,7 @@ ollama.new = function()
         obj.recv_raw_msg.message = ""
         obj.cfg = nil
         obj.format = nil
+        obj.tool = false
 
         obj.initialize = function(self, arg, format)
             self.cfg =  datactrl.get_ai_service_cfg(arg, {format = format})
@@ -174,8 +175,6 @@ ollama.new = function()
             debug:log("ollama-setup-msg.log", "speaker.content = " .. tostring(speaker and speaker.content or "nil"))
             debug:log("ollama-setup-msg.log", "speaker.tool_calls = " .. tostring(speaker and speaker.tool_calls ~= nil or "nil"))
 
-            local _ = self
-
             if (not speaker) or (not speaker.role) then
                 debug:log("oasis.log", "false")
                 debug:log("ollama-setup-msg.log", "No speaker or role, returning false")
@@ -194,11 +193,18 @@ ollama.new = function()
                 end
                 msg.name = speaker.name
                 msg.content = speaker.content
-                debug:log("ollama.setup_msg.log",
+                debug:log("ollama-setup-msg.log",
                     string.format("append TOOL msg: name=%s, len=%d",
                         tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
-                
-                chat.messages = {}
+
+                -- Delete entries from the messages table where the "role" is "assistant" and "tool_calls" is present.
+                for i = #chat.messages, 1, -1 do
+                    local data = chat.messages[i]
+                    if data.role == "assistant" and data.tool_calls then
+                        table.remove(chat.messages, i)
+                    end
+                end
+
                 table.insert(chat.messages, msg)
                 debug:log("ollama-setup-msg.log", "Tool message added, returning true")
                 return true
@@ -240,9 +246,11 @@ ollama.new = function()
                 end
                 msg.tool_calls = fixed_tool_calls
                 msg.content = speaker.content or ""
-                debug:log("ollama.setup_msg.log",
+                debug:log("ollama-setup-msg.log",
                     string.format("append ASSISTANT msg with tool_calls: count=%d",
                         #msg.tool_calls))
+
+                table.insert(chat.messages, msg)
                 debug:log("ollama-setup-msg.log", "Assistant message with tool_calls processed, returning true")
                 return true
             else
@@ -252,13 +260,13 @@ ollama.new = function()
                     return false
                 end
                 msg.content = speaker.message
-                debug:log("ollama.setup_msg.log",
+                debug:log("ollama-setup-msg.log",
                     string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
-            end
 
-            table.insert(chat.messages, msg)
-            debug:log("ollama-setup-msg.log", "Message added to chat, returning true")
-            return true
+                table.insert(chat.messages, msg)
+                debug:log("ollama-setup-msg.log", "Message added to chat, returning true")
+                return true
+            end
         end
 
         obj.recv_ai_msg = function(self, chunk)
