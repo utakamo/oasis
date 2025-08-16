@@ -42,44 +42,133 @@
 
 local server = require("oasis.local.tool.server")
 
--- Sample tool "get_weather"
-server.tool("get_weather", {
-    -- args_desc: Description of parameters specified when invoking the tool.
-    args_desc   = { "City and country e.g. Bogotá, Colombia" },
-    args        = { location = "a_string" },
-
-    -- tool_desc: Description of the tool's functionality.
-    tool_desc   = "Get current temperature for a given location.",
-    call = function(args)
-        -- Mock: Returns a fake temperature for the given location
-        local res = server.response({ location = args.location, temperature = "25°C", condition = "Sunny" })
-        return res
-    end
-})
-
-server.tool("get_wlan_ifname_list", {
-    -- tool_desc: Description of the tool's functionality.
-    tool_desc = "Get the list of WLAN interface names.",
+server.tool("get_ifname_list", {
+    tool_desc = "Get the list of all network interface names.",
     call = function()
-        -- Mock: Returns a fake temperature for the given location
-        local res = server.response({ ifname1 = "wlan0", ifname2 = "wlan1" })
+        local res_tbl = {}
+        local index = 1
+
+        -- /sys/class/net にあるすべてのインタフェース名を取得
+        local handle = io.popen("ls /sys/class/net")
+        if handle then
+            for line in handle:lines() do
+                local key = "ifname" .. index
+                res_tbl[key] = line
+                index = index + 1
+            end
+            handle:close()
+        end
+
+        return server.response(res_tbl)
+    end
+})
+
+server.tool("get_lan_ipaddr", {
+    tool_desc = "Get the LAN IP Address.",
+    call = function()
+        local util = require("luci.util")
+        local ip = util.trim(util.exec("uci get network.lan.ipaddr 2>/dev/null"))
+        local res = server.response({lan_ipaddr = ip ~= "" and ip or nil})
         return res
     end
 })
 
-server.tool("echo", {
-    -- args_desc: Description of parameters specified when invoking the tool.
-    args_desc = { "Parameter 1 (string)", "Parameter 2 (string)" },
-    args = { param1 = "a_string", param2 = "a_string" },
-
-    -- tool_desc: Description of the tool's functionality.
-    tool_desc = "Echoes back the received parameters.",
-    call = function(args)
-        -- Mock: Returns the received parameters as is
+server.tool("get_wan_status", {
+    tool_desc = "Get the WAN Status.",
+    call = function()
+        local util = require("luci.util")
+        local json = util.exec("ubus call network.interface.wan status 2>/dev/null")
+        local wan_status = require("luci.jsonc").parse(json)
         local res = server.response({
-            received_param1 = args.param1,
-            received_param2 = args.param2
+            up = wan_status and wan_status.up or false,
+            ipv4_address = wan_status and wan_status['ipv4-address'] and wan_status['ipv4-address'][1] and wan_status['ipv4-address'][1].address or nil
         })
+        return res
+    end
+})
+
+server.tool("get_connected_clients", {
+    tool_desc = "Get connected clients (STAs).",
+    call = function()
+        local util = require("luci.util")
+        local leases = {}
+        local json = util.exec("ubus call dhcp ipv4leases 2>/dev/null")
+        local parsed = require("luci.jsonc").parse(json)
+        if parsed and parsed.leases then
+            for _, lease in ipairs(parsed.leases) do
+                table.insert(leases, {
+                    ip = lease.ip,
+                    mac = lease.mac,
+                    hostname = lease.hostname
+                })
+            end
+        end
+
+        local arp = util.exec("cat /proc/net/arp 2>/dev/null")
+        for line in arp:gmatch("[^\r\n]+") do
+            if not line:match("IP address") then
+                local ip, _, _, mac = line:match("([^%s]+)%s+[^%s]+%s+[^%s]+%s+([^%s]+)")
+                if ip and mac then
+                    local found = false
+                    for _, lease in ipairs(leases) do
+                        if lease.ip == ip then
+                            found = true
+                            break
+                        end
+                    end
+                    if not found then
+                        table.insert(leases, {ip = ip, mac = mac})
+                    end
+                end
+            end
+        end
+
+        local res = server.response({clients = leases})
+
+        return res
+    end
+})
+
+server.tool("get_system_load", {
+    tool_desc = "Get System Info Load (uptime/meminfo)",
+    call = function()
+        local util = require("luci.util")
+        local uptime_info = util.exec("uptime")
+        local meminfo = util.exec("cat /proc/meminfo")
+        local mem_total = meminfo:match("MemTotal:%s+(%d+)")
+        local mem_free = meminfo:match("MemFree:%s+(%d+)")
+        local res =  server.response({
+            uptime = util.trim(uptime_info),
+            mem_total_kb = tonumber(mem_total),
+            mem_free_kb = tonumber(mem_free)
+        })
+        return res
+    end
+})
+
+server.tool("get_storage_usage", {
+    tool_desc = "Get the storage usage.",
+    call = function()
+        local util = require("luci.util")
+        local df = util.exec("df -h / 2>/dev/null | tail -n 1")
+        local size, used, avail, usep = df:match("%S+%s+(%S+)%s+(%S+)%s+(%S+)%s+(%S+)")
+        local res = server.response({
+            size = size,
+            used = used,
+            available = avail,
+            usage_percent = usep
+        })
+        return res
+    end
+})
+
+server.tool("get_cpu_temp", {
+    tool_desc = "Get the cpu temperature.",
+    call = function()
+        local util = require("luci.util")
+        local temp = util.exec("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null")
+        local temp_c = tonumber(temp) and tonumber(temp) / 1000 or nil
+        local res = server.response({cpu_temp_c = temp_c})
         return res
     end
 })
