@@ -1,0 +1,87 @@
+#!/usr/bin/env lua
+
+--[[
+
+# Oasis Local Tool (OLT) Server (Lua Script Ver)
+ This server script is based on concepts inspired by the Model Context Protocol and Agents.json.
+ By leveraging UBUS, an integral part of the OpenWrt ecosystem, the client and server can cooperate
+ to allow the AI to access the tools it provides.
+ On OpenWrt systems with Oasis and oasis-mod-tool installed, third-party developers can easily expose
+ tools to the AI by simply downloading server scripts.
+
+# Rules for defining tools in the local tool server
+    - Rule 1. 
+        If a tool requires arguments, you must specify a type string for each argument.
+
+        Reference:
+        1. string type  ---> "a_string"
+        TODO: Investigate data type specifications other than "a_string" and add them here. 
+
+    - Rule 2. 
+        The table returned by server.response must be an associative array (key-value pairs).
+
+        Example: 
+        server.response({reply = "Hello Tool Client!"})
+
+# Note
+ This script is loaded by the `rpcd` module and registered with `ubusd` as a UBUS object.  
+ Under normal conditions, such scripts are loaded immediately when `rpcd` starts.  
+ However, due to dependencies on external modules, the loading time of this script may be longer than that of typical ones.  
+ In some cases, initialization may take between 2 and 3 minutes.  
+ Future improvements may help reduce the loading time.
+
+# Important
+ Please avoid defining global functions in ubus server scripts.
+ For AI tool scripts used in Oasis (like this one), write your logic using server.tool.
+ If you need to create custom functions, put them inside the call field of the table that’s passed as the second argument to server.tool.
+ The same rule applies when using require to load external libraries—make sure to call require inside the call field too.
+
+ About rpcd lua plugin:
+ https://github.com/openwrt/luci/blob/37ea60da580490a4d8178134297152661f25151d/applications/luci-app-example/root/usr/libexec/rpcd/luci.example
+]]
+
+local server = require("oasis.local.tool.server")
+
+-- Sample tool "get_weather"
+server.tool("get_weather", {
+    -- args_desc: Description of parameters specified when invoking the tool.
+    args_desc   = { "City and country e.g. Bogotá, Colombia" },
+    args        = { location = "a_string" },
+
+    -- tool_desc: Description of the tool's functionality.
+    tool_desc   = "Get current temperature for a given location.",
+    call = function(args)
+        -- Mock: Returns a fake temperature for the given location
+        local res = server.response({ location = args.location, temperature = "25°C", condition = "Sunny" })
+        return res
+    end
+})
+
+server.tool("get_wlan_ifname_list", {
+    -- tool_desc: Description of the tool's functionality.
+    tool_desc = "Get the list of WLAN interface names.",
+    call = function()
+        -- Mock: Returns a fake temperature for the given location
+        local res = server.response({ ifname1 = "wlan0", ifname2 = "wlan1" })
+        return res
+    end
+})
+
+server.tool("echo", {
+    -- args_desc: Description of parameters specified when invoking the tool.
+    args_desc = { "Parameter 1 (string)", "Parameter 2 (string)" },
+    args = { param1 = "a_string", param2 = "a_string" },
+
+    -- tool_desc: Description of the tool's functionality.
+    tool_desc = "Echoes back the received parameters.",
+    call = function(args)
+        -- Mock: Returns the received parameters as is
+        local res = server.response({
+            received_param1 = args.param1,
+            received_param2 = args.param2
+        })
+        return res
+    end
+})
+
+server.run(arg)
