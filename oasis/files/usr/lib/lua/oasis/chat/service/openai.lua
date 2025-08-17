@@ -211,7 +211,7 @@ openai.new = function()
             local chunk_json = jsonc.parse(self.chunk_all)
 
             if (not chunk_json) or (type(chunk_json) ~= "table") then
-                return "", "", self.recv_ai_msg
+                return "", "", self.recv_raw_msg
             end
 
             debug:log("openai-ai-recv.log", self.chunk_all)
@@ -240,7 +240,7 @@ openai.new = function()
             if not chunk_json.choices or type(chunk_json.choices) ~= "table" or #chunk_json.choices == 0 then
                 debug:log("openai-error.log", "Invalid response format: missing or empty choices field")
                 self.chunk_all = ""
-                return "", "", self.recv_ai_msg
+                return "", "", self.recv_raw_msg
             end
 
             -- Function Calling For OpenAI
@@ -307,7 +307,7 @@ openai.new = function()
             -- check choices table
             if not chunk_json.choices[1] or not chunk_json.choices[1].message then
                 debug:log("openai-error.log", "Invalid response format: missing message in choices[1]")
-                return "", "", self.recv_ai_msg
+                return "", "", self.recv_raw_msg
             end
 
             self.recv_raw_msg.role = chunk_json.choices[1].message.role
