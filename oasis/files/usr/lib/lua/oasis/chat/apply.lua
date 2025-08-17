@@ -634,7 +634,7 @@ local apply = function(uci_list, commit)
                     local init_script = "/etc/init.d/" .. cmd.class.config
                     local is_file_exist = misc.check_file_exist(init_script)
                     if is_file_exist then
-                        debug.log("oasis.log", "[2] trigger config: " .. cmd.class.config)
+                        debug:log("oasis.log", "[2] trigger config: " .. cmd.class.config)
                         sys.exec(init_script .. " restart")
                     end
                 end
