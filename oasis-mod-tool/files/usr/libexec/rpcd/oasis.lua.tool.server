@@ -25,10 +25,6 @@
 
 # Note
  This script is loaded by the `rpcd` module and registered with `ubusd` as a UBUS object.  
- Under normal conditions, such scripts are loaded immediately when `rpcd` starts.  
- However, due to dependencies on external modules, the loading time of this script may be longer than that of typical ones.  
- In some cases, initialization may take between 2 and 3 minutes.  
- Future improvements may help reduce the loading time.
 
 # Important
  Please avoid defining global functions in ubus server scripts.
