@@ -39,7 +39,7 @@
 local server = require("oasis.local.tool.server")
 
 server.tool("get_ifname_list", {
-    tool_desc = "Get the list of all network interface names.",
+    tool_desc = "Get the list of all network interface names on this OpenWrt device.",
     call = function()
         local res_tbl = {}
         local index = 1
@@ -60,7 +60,7 @@ server.tool("get_ifname_list", {
 })
 
 server.tool("get_lan_ipaddr", {
-    tool_desc = "Get the LAN IP Address.",
+    tool_desc = "Get the LAN IP Address of this OpenWrt device.",
     call = function()
         local util = require("luci.util")
         local ip = util.trim(util.exec("uci get network.lan.ipaddr 2>/dev/null"))
@@ -70,7 +70,7 @@ server.tool("get_lan_ipaddr", {
 })
 
 server.tool("get_wan_status", {
-    tool_desc = "Get the WAN Status.",
+    tool_desc = "Get the WAN Status of this OpenWrt device.",
     call = function()
         local util = require("luci.util")
         local json = util.exec("ubus call network.interface.wan status 2>/dev/null")
@@ -84,7 +84,7 @@ server.tool("get_wan_status", {
 })
 
 server.tool("get_connected_clients", {
-    tool_desc = "Get connected clients (STAs).",
+    tool_desc = "Get connected clients (STAs) on this OpenWrt device.",
     call = function()
         local util = require("luci.util")
         local leases = {}
@@ -126,7 +126,7 @@ server.tool("get_connected_clients", {
 })
 
 server.tool("get_system_load", {
-    tool_desc = "Get System Info Load (uptime/meminfo)",
+    tool_desc = "Get the system info load (uptime/meminfo) of this OpenWrt device.",
     call = function()
         local util = require("luci.util")
         local uptime_info = util.exec("uptime")
@@ -143,7 +143,7 @@ server.tool("get_system_load", {
 })
 
 server.tool("get_storage_usage", {
-    tool_desc = "Get the storage usage.",
+    tool_desc = "Get the storage usage of this OpenWrt device.",
     call = function()
         local util = require("luci.util")
         local df = util.exec("df -h / 2>/dev/null | tail -n 1")
@@ -159,7 +159,7 @@ server.tool("get_storage_usage", {
 })
 
 server.tool("get_cpu_temp", {
-    tool_desc = "Get the cpu temperature.",
+    tool_desc = "Get the CPU temperature of this OpenWrt device.",
     call = function()
         local util = require("luci.util")
         local temp = util.exec("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null")
