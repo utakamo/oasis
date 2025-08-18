@@ -44,7 +44,7 @@ server.tool("get_ifname_list", {
         local res_tbl = {}
         local index = 1
 
-        -- /sys/class/net にあるすべてのインタフェース名を取得
+        -- Get all network interface names from /sys/class/net.
         local handle = io.popen("ls /sys/class/net")
         if handle then
             for line in handle:lines() do
