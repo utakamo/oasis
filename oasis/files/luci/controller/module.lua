@@ -15,6 +15,13 @@ local debug         = require("oasis.chat.debug")
 module("luci.controller.oasis.module", package.seeall)
 
 function index()
+
+    local is_webui_support = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "webui")
+
+    if not is_webui_support then
+        return
+    end
+
     entry({"admin", "network", "oasis"}, firstchild(), "Oasis", 30).dependent=false
     entry({"admin", "network", "oasis", "icons"}, template("oasis/icons"), "Icon", 60).dependent=false
     entry({"admin", "network", "oasis", "tools"}, template("oasis/tools"), "Tools", 50).dependent=false
