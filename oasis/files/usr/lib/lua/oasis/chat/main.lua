@@ -120,12 +120,18 @@ local SERVICE_CONFIG = {
 -- Output format definitions
 local function get_output_formats()
     local output = {}
+
+    -- Basic formats
     output.format_1 = "%-64s >> "
     output.format_2 = "%-64s >> %s"
+
+    -- Field labels
     output.service = "Service (\"Ollama\" or \"OpenAI\")"
     output.endpoint = "Endpoint"
     output.api_key = "API KEY (leave blank if none)"
     output.model = "LLM MODEL"
+
+    -- Anthropic-specific formats
     output.max_tokens = string.format("Max Tokens (%d ～ %d)",
         SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.min,
         SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.max)
