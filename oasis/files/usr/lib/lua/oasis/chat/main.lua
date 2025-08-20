@@ -800,7 +800,10 @@ local output = function(arg)
         if #tool_calls > 0 then
             debug:log(
                 "oasis_output.log",
-                string.format("[output] insert assistant tool_calls: count=%d", #tool_calls)
+                string.format(
+                    "[output] insert assistant tool_calls: count=%d",
+                    #tool_calls
+                )
             )
             service:setup_msg(chat_ctx, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
         end
@@ -843,10 +846,24 @@ local output = function(arg)
     local msg_len = (message and #message) or 0
     debug:log(
         "oasis_output.log",
-        string.format("[output] chat_with_ai returned: new_chat_info_len=%d, message_len=%d",
+        string.format(
+            "[output] chat_with_ai returned: new_chat_info_len=%d, message_len=%d",
             (new_chat_info and #new_chat_info) or 0,
-            msg_len)
+            msg_len
+        )
     )
+
+    -- If this turn handled tool follow-up, clean up both session-specific and generic
+    -- cache files after receiving AI response.
+    if has_tools then
+        local id_path_session   = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
+        local user_path_session = "/tmp/oasis/last_user_msg" .. ((#sid > 0) and ("_" .. sid) or "")
+        os.remove(id_path_session)
+        os.remove(user_path_session)
+        os.remove("/tmp/oasis/last_chat_id")
+        os.remove("/tmp/oasis/last_user_msg")
+        debug:log("oasis_output.log", "[output] cleaned cache files after tool follow-up response")
+    end
     -- Cache newly created chat_id (when a new chat file was created on this turn)
     if new_chat_info and #new_chat_info > 0 then
         local ok, parsed = pcall(jsonc.parse, new_chat_info)
