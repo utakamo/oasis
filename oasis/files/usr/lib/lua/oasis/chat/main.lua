@@ -558,9 +558,9 @@ local chat = function(arg)
                 chat_history(chat)
             end
 
-        until (#your_message > 0) and (your_message ~= "history")
+        until (#your_message > 0) and (your_message ~= "/history")
 
-        if your_message == "exit" then
+        if your_message == "/exit" then
             break;
         end
 
