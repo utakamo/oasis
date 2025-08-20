@@ -78,7 +78,7 @@ local methods = {
             local _, title = transfer.chat_with_ai(service, chat)
 
             if (not title) or (#title == 0) then
-            
+                debug:log("oasis.log", "No title ...")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -100,6 +100,7 @@ local methods = {
             local is_set = save_chat_title(args.id, title)
 
             if not is_set then
+                debug:log("oasis.log", "Failed to save chat data ...")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
