@@ -88,54 +88,79 @@ local storage = function(args)
     uci:commit(common.db.uci.cfg)
 end
 
-local add = function(args)
+-- Service configuration constants
+local SERVICE_CONFIG = {
+    VALID_SERVICES = {
+        common.ai.service.ollama.name,
+        common.ai.service.openai.name,
+        common.ai.service.anthropic.name,
+        common.ai.service.gemini.name
+    },
 
+    ENDPOINT_FIELDS = {
+        [common.ai.service.ollama.name] = "ollama_endpoint",
+        [common.ai.service.openai.name] = "openai_custom_endpoint",
+        [common.ai.service.anthropic.name] = "anthropic_custom_endpoint",
+        [common.ai.service.gemini.name] = "gemini_custom_endpoint"
+    },
+
+    ENDPOINT_TYPES = {
+        [common.ai.service.openai.name] = "openai_endpoint_type",
+        [common.ai.service.anthropic.name] = "anthropic_endpoint_type",
+        [common.ai.service.gemini.name] = "gemini_endpoint_type"
+    },
+
+    ANTHROPIC_LIMITS = {
+        MAX_TOKENS = { min = 1000, max = 30000 },
+        BUDGET_TOKENS = { min = 1000, max = 20000 },
+        THINKING_TYPES = { enabled = "enabled", disabled = "disabled" }
+    }
+}
+
+-- Output format definitions
+local function get_output_formats()
+    local output = {}
+    output.format_1 = "%-64s >> "
+    output.format_2 = "%-64s >> %s"
+    output.service = "Service (\"Ollama\" or \"OpenAI\")"
+    output.endpoint = "Endpoint"
+    output.api_key = "API KEY (leave blank if none)"
+    output.model = "LLM MODEL"
+    output.max_tokens = string.format("Max Tokens (%d ～ %d)",
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.min,
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.max)
+    output.type = string.format("Thinking (\"%s\" or \"%s\")",
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled,
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled)
+    output.budget_tokens = string.format("Budget Tokens (%d ～ %d)",
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.min,
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.max)
+
+    return output
+end
+
+-- Validate service name
+local function is_valid_service(service_name)
+    for _, valid_service in ipairs(SERVICE_CONFIG.VALID_SERVICES) do
+        if service_name == valid_service then
+            return true
+        end
+    end
+    return false
+end
+
+-- Collect service name input
+local function collect_service_name(args, output)
     local setup = {}
 
-    local output = {}
-    output.format_1        = "%-64s >> "
-    output.format_2        = "%-64s >> %s"
-    -- output.service         = "Service (\"Ollama\" or \"OpenAI\" or \"Anthropic\" or \"Google Gemini\")"
-    output.service         = "Service (\"Ollama\" or \"OpenAI\")"
-    output.endpoint        = "Endpoint"
-    output.api_key         = "API KEY (leave blank if none)"
-    output.model           = "LLM MODEL"
-    output.max_tokens      = "Max Tokens (%d ～ %d)"               -- Anthropic Only
-    output.type            = "Thinking (\"%s\" or \"%s\")"         -- Anthropic Only
-    output.budget_tokens   = "Budget Tokens (%d ～ %d)"            -- Anthropic Only
-
-    local val = {}
-    val.type = {}
-    val.type.enable = "enabled"
-    val.type.disable = "disabled"
-    val.max_tokens = {}
-    val.max_tokens.min = 1000
-    val.max_tokens.max = 30000
-    val.budget_tokens = {}
-    val.budget_tokens.min = 1000
-    val.budget_tokens.max = 20000
-
-    output.max_tokens = string.format(output.max_tokens, val.max_tokens.min, val.max_tokens.max)
-    output.type = string.format(output.type, val.type.disable, val.type.enable)
-    output.budget_tokens = string.format(output.budget_tokens, val.budget_tokens.min, val.budget_tokens.max)
-
-    setup.identifier = common.generate_service_id("seed")
-
-    if (not args.service) then
+    if not args.service then
         repeat
             io.write(string.format(output.format_1, output.service))
             io.flush()
             setup.service = io.read()
-        until (setup.service == common.ai.service.ollama.name)
-                or (setup.service == common.ai.service.openai.name)
-                or (setup.service == common.ai.service.anthropic.name)
-                or (setup.service == common.ai.service.gemini.name)
+        until is_valid_service(setup.service)
     else
-        if (args.service == common.ai.service.ollama.name)
-            or (args.service == common.ai.service.openai.name)
-            or (args.service == common.ai.service.anthropic.name)
-            or (args.service == common.ai.service.gemini.name) then
-
+        if is_valid_service(args.service) then
             io.write(string.format(output.format_2, output.service, args.service))
             setup.service = args.service
         else
@@ -143,92 +168,105 @@ local add = function(args)
                 io.write(string.format(output.format_1, output.service))
                 io.flush()
                 setup.service = io.read()
-            until (setup.service == common.ai.service.ollama.name)
-                    or (setup.service == common.ai.service.openai.name)
-                    or (setup.service == common.ai.service.anthropic.name)
-                    or (setup.service == common.ai.service.gemini.name)
+            until is_valid_service(setup.service)
         end
     end
 
-    if (not args.endpoint) then
+    return setup.service
+end
+
+-- Collect endpoint input
+local function collect_endpoint(args, output)
+    if not args.endpoint then
         io.write(string.format(output.format_1, output.endpoint))
         io.flush()
-        setup.endpoint = io.read() or ""
+        return io.read() or ""
     else
         print(string.format(output.format_2, output.endpoint, args.endpoint))
-        setup.endpoint = args.endpoint or ""
+        return args.endpoint or ""
+    end
+end
+
+-- Collect Anthropic-specific configuration
+local function collect_anthropic_config(output)
+    local config = {}
+
+    -- Max Tokens
+    repeat
+        io.write(string.format(output.format_1, output.max_tokens))
+        io.flush()
+        config.max_tokens = io.read()
+    until (tonumber(config.max_tokens) >= SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.min)
+        and (tonumber(config.max_tokens) <= SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.max)
+
+    -- Thinking Type
+    repeat
+        io.write(string.format(output.format_1, output.type))
+        io.flush()
+        config.type = io.read()
+    until (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled) 
+        or (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enable)
+
+    -- Budget Tokens (if thinking enabled)
+    if config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enable then
+        repeat
+            io.write(string.format(output.format_1, output.budget_tokens))
+            io.flush()
+            config.budget_tokens = io.read()
+        until (tonumber(config.budget_tokens) >= SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.min)
+            and (tonumber(config.budget_tokens) <= SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.max)
     end
 
-    if setup.service == common.ai.service.anthropic.name then
-        repeat
-            io.write(string.format(output.format_1, output.max_tokens))
-            io.flush()
-            setup.max_tokens = io.read()
-        until (tonumber(setup.max_tokens) >= val.max_tokens.min)
-            and (tonumber(setup.max_tokens) <= val.max_tokens.max)
+    return config
+end
 
-        repeat
-            io.write(string.format(output.format_1, output.type))
-            io.flush()
-            setup.type = io.read()
-        until (setup.type == val.type.disable) or (setup.type == val.type.enable)
-
-        if setup.type == val.type.enable then
-            repeat
-                io.write(string.format(output.format_1, output.budget_tokens))
-                io.flush()
-                setup.budget_tokens = io.read()
-            until (tonumber(setup.budget_tokens) >= val.budget_tokens.min)
-                and (tonumber(setup.budget_tokens) <= val.budget_tokens.max)
-        end
-    end
-
-    if (not args.api_key) then
+-- Collect API key input
+local function collect_api_key(args, output)
+    if not args.api_key then
         io.write(string.format(output.format_1, output.api_key))
         io.flush()
-        setup.api_key = io.read() or ""
+        return io.read() or ""
     else
         print(string.format(output.format_2, output.api_key, args.api_key))
-        setup.api_key = args.api_key or ""
+        return args.api_key or ""
     end
+end
 
-    if (not args.model) then
+-- Collect model name input
+local function collect_model(args, output)
+    if not args.model then
         io.write(string.format(output.format_1, output.model))
         io.flush()
-        setup.model = io.read() or ""
+        return io.read() or ""
     else
         print(string.format(output.format_2, output.model, args.model))
-        setup.model = args.model or ""
+        return args.model or ""
     end
+end
 
-    local endpoint_op_name = "unknown"
+-- Determine endpoint field name
+local function determine_endpoint_field_name(service_name)
+    return SERVICE_CONFIG.ENDPOINT_FIELDS[service_name] or "unknown"
+end
 
-    if setup.service == common.ai.service.ollama.name then
-        endpoint_op_name = "ollama_endpoint"
-    elseif setup.service == common.ai.service.openai.name then
-        endpoint_op_name = "openai_custom_endpoint"
-    elseif setup.service == common.ai.service.anthropic.name then
-        endpoint_op_name = "anthropic_custom_endpoint"
-    elseif setup.service == common.ai.service.gemini.name then
-        endpoint_op_name = "gemini_custom_endpoint"
-    end
-
+-- Create UCI service section
+local function create_uci_service_section(setup, endpoint_field_name)
     local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.service)
+
+    -- Basic configuration
     uci:set(common.db.uci.cfg, unnamed_section, "identifier", setup.identifier)
     uci:set(common.db.uci.cfg, unnamed_section, "name", setup.service)
-    uci:set(common.db.uci.cfg, unnamed_section, endpoint_op_name, setup.endpoint)
-
-    if setup.service == common.ai.service.openai.name then
-        uci:set(common.db.uci.cfg, unnamed_section, "openai_endpoint_type", common.endpoint.type.custom)
-    elseif setup.service == common.ai.service.anthropic.name then
-        uci:set(common.db.uci.cfg, unnamed_section, "anthropic_endpoint_type", common.endpoint.type.custom)
-    elseif setup.service == common.ai.service.gemini.name then
-        uci:set(common.db.uci.cfg, unnamed_section, "gemini_endpoint_type", common.endpoint.type.custom)
-    end
-
+    uci:set(common.db.uci.cfg, unnamed_section, endpoint_field_name, setup.endpoint)
     uci:set(common.db.uci.cfg, unnamed_section, "api_key", setup.api_key)
     uci:set(common.db.uci.cfg, unnamed_section, "model", setup.model)
 
+    -- Endpoint type configuration
+    local endpoint_type_field = SERVICE_CONFIG.ENDPOINT_TYPES[setup.service]
+    if endpoint_type_field then
+        uci:set(common.db.uci.cfg, unnamed_section, endpoint_type_field, common.endpoint.type.custom)
+    end
+
+    -- Anthropic-specific configuration
     if setup.max_tokens then
         uci:set(common.db.uci.cfg, unnamed_section, "max_tokens", setup.max_tokens)
     end
@@ -242,6 +280,34 @@ local add = function(args)
     end
 
     uci:commit(common.db.uci.cfg)
+end
+
+-- Main add function (refactored)
+local add = function(args)
+    local output = get_output_formats()
+
+    -- Collect service configuration
+    local setup = {
+        identifier = common.generate_service_id("seed"),
+        service = collect_service_name(args, output),
+        endpoint = collect_endpoint(args, output),
+        api_key = collect_api_key(args, output),
+        model = collect_model(args, output)
+    }
+
+    -- Collect Anthropic-specific configuration
+    if setup.service == common.ai.service.anthropic.name then
+        local anthropic_config = collect_anthropic_config(output)
+        setup.max_tokens = anthropic_config.max_tokens
+        setup.type = anthropic_config.type
+        setup.budget_tokens = anthropic_config.budget_tokens
+    end
+
+    -- Determine endpoint field name
+    local endpoint_field_name = determine_endpoint_field_name(setup.service)
+
+    -- Create UCI section
+    create_uci_service_section(setup, endpoint_field_name)
 end
 
 local change = function(opt, arg)
