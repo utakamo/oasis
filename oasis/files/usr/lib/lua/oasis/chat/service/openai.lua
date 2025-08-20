@@ -211,7 +211,7 @@ openai.new = function()
             local chunk_json = jsonc.parse(self.chunk_all)
 
             if (not chunk_json) or (type(chunk_json) ~= "table") then
-                return "", "", self.recv_raw_msg
+                return "", "", self.recv_raw_msg, false
             end
 
             debug:log("openai-ai-recv.log", self.chunk_all)
@@ -233,14 +233,14 @@ openai.new = function()
                 local json_text_for_webui = jsonc.stringify(error_response, false)
 
                 self.chunk_all = ""
-                return plain_text_for_console, json_text_for_webui, self.recv_raw_msg
+                return plain_text_for_console, json_text_for_webui, self.recv_raw_msg, false
             end
 
             -- check choices field
             if not chunk_json.choices or type(chunk_json.choices) ~= "table" or #chunk_json.choices == 0 then
                 debug:log("openai-error.log", "Invalid response format: missing or empty choices field")
                 self.chunk_all = ""
-                return "", "", self.recv_raw_msg
+                return "", "", self.recv_raw_msg, false
             end
 
             -- Function Calling For OpenAI
@@ -295,7 +295,7 @@ openai.new = function()
                     debug:log("function_call.log",
                         string.format("return speaker(tool_calls=%d), tool_outputs=%d",
                             #speaker.tool_calls, #function_call.tool_outputs))
-                    return plain_text_for_console, json_text_for_webui, speaker
+                    return plain_text_for_console, json_text_for_webui, speaker, true
                 end
             end
 
@@ -307,7 +307,7 @@ openai.new = function()
             -- check choices table
             if not chunk_json.choices[1] or not chunk_json.choices[1].message then
                 debug:log("openai-error.log", "Invalid response format: missing message in choices[1]")
-                return "", "", self.recv_raw_msg
+                return "", "", self.recv_raw_msg, false
             end
 
             self.recv_raw_msg.role = chunk_json.choices[1].message.role
@@ -322,10 +322,10 @@ openai.new = function()
             json_text_for_webui = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
-                return "", "", self.recv_ai_msg
+                return "", "", self.recv_ai_msg, false
             end
 
-            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg
+            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg, false
         end
 
         obj.append_chat_data = function(self, chat)
@@ -374,6 +374,20 @@ openai.new = function()
             local user_msg_json = jsonc.stringify(user_msg, false)
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
             return user_msg_json
+        end
+
+        obj.prepare_post_to_server = function(self, easy, callback, form, user_msg_json)
+
+            easy:setopt_url(self.cfg.endpoint)
+            easy:setopt_writefunction(callback)
+
+            easy:setopt_httpheader({
+                "Content-Type: application/json",
+                "Authorization: Bearer " .. self.cfg.api_key
+            })
+
+            easy:setopt_httppost(form)
+            easy:setopt_postfields(user_msg_json)
         end
 
         return obj

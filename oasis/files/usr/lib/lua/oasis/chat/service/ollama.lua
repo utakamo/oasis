@@ -277,7 +277,7 @@ ollama.new = function()
             local chunk_json = jsonc.parse(chunk)
 
             if (not chunk_json) or (type(chunk_json) ~= "table") then
-                return "", "", self.recv_raw_msg
+                return "", "", self.recv_raw_msg, false
             end
 
             debug:log("ollama-ai-recv.log", chunk)
@@ -335,14 +335,14 @@ ollama.new = function()
 
                     local plain_text_for_console = first_output_str
                     local json_text_for_webui    = jsonc.stringify(function_call, false)
-                    return plain_text_for_console, json_text_for_webui, speaker
+                    return plain_text_for_console, json_text_for_webui, speaker, true
                 end
             end
 
             if (not chunk_json.message)
                 or (not chunk_json.message.role)
                 or (chunk_json.message.content == nil) then
-                return "", "", self.recv_raw_msg
+                return "", "", self.recv_raw_msg, false
             end
 
             self.recv_raw_msg.role = chunk_json.message.role
@@ -352,10 +352,10 @@ ollama.new = function()
             local json_text_for_webui = jsonc.stringify(chunk_json, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
-                return "", "", self.recv_raw_msg
+                return "", "", self.recv_raw_msg, false
             end
 
-            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg
+            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg, false
         end
 
         obj.append_chat_data = function(self, chat)
@@ -413,6 +413,20 @@ ollama.new = function()
             debug:log("ollama-send.log", user_msg_json)
 
             return user_msg_json
+        end
+
+        obj.prepare_post_to_server = function(self, easy, callback, form, user_msg_json)
+
+            easy:setopt_url(self.cfg.endpoint)
+            easy:setopt_writefunction(callback)
+
+            easy:setopt_httpheader({
+                "Content-Type: application/json",
+                "Authorization: Bearer " .. self.cfg.api_key
+            })
+
+            easy:setopt_httppost(form)
+            easy:setopt_postfields(user_msg_json)
         end
 
         return obj

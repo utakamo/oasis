@@ -33,34 +33,15 @@ end
 
 local post_to_server = function(service, user_msg_json, callback)
 
-    local cfg = service:get_config()
     local easy = curl.easy()
 
-    easy:setopt_url(cfg.endpoint)
-    easy:setopt_writefunction(callback)
-    -- ollama or openai
-    if cfg.api_key and (type(cfg.api_key) == "string") and (#cfg.api_key > 0) then
-        if (cfg.service == common.ai.service.ollama.name)
-            or (cfg.service == common.ai.service.openai.name)
-            or (cfg.service == common.ai.service.anthropic.name) then
+    service:prepare_post_to_server(easy, callback, curl.form(), user_msg_json)
 
-            easy:setopt_httpheader({
-                "Content-Type: application/json",
-                "Authorization: Bearer " .. cfg.api_key
-            })
-
-        elseif cfg.service == common.ai.service.gemini.name then
-            easy:setopt_httpheader({
-                "Content-Type: application/json",
-                "Authorization: Bearer " .. cfg.api_key
-            })
-        end
-    end
-    easy:setopt_httppost(curl.form())
-    easy:setopt_postfields(user_msg_json)
+    -- Send Post Request
     local success = easy:perform()
 
     if not success then
+        -- TODO: WebUI Error Handling Support
         print("\27[31m" .. "Error" .. "\27[0m")
     end
 
@@ -75,12 +56,32 @@ local get_to_server = function(url, callback)
     easy:close()
 end
 
+local output_response_msg = function(format, text_for_console, text_for_webui, tool_used)
+
+    debug:log("post_to_server.log", text_for_console)
+    debug:log("post_to_server.log", text_for_webui)
+
+    -- Response: output console
+    if (not tool_used) and (format == common.ai.format.chat)
+        or (format == common.ai.format.prompt) then
+        if (text_for_console) and (#text_for_console) > 0 then
+            io.write(text_for_console)
+            io.flush()
+        end
+
+    -- Response: output webui
+    elseif (format == common.ai.format.output) then
+        if (text_for_webui) and (#text_for_webui > 0) then
+            io.write(text_for_webui)
+            io.flush()
+        end
+    end
+end
+
 local send_user_msg = function(service, chat)
 
     local recv_raw_msg = ""
-
-    -- current
-    -- local usr_msg_json = jsonc.stringify(chat, false)
+    local tool_used = false
 
     local usr_msg_json = service:convert_schema(chat)
 
@@ -89,72 +90,54 @@ local send_user_msg = function(service, chat)
     debug:log("debug_msg_json.log", debug_msg_json)
 
     local format = service:get_format()
-
     service:init_msg_buffer()
 
-    -- Post
+    -- Post (Request) and Response
     post_to_server(service, usr_msg_json, function(chunk)
 
         local text_for_console
         local text_for_webui
 
-        text_for_console, text_for_webui, recv_raw_msg = service:recv_ai_msg(chunk)
+        text_for_console, text_for_webui, recv_raw_msg, tool_used = service:recv_ai_msg(chunk)
 
-        debug:log("post_to_server.log", text_for_console)
-        debug:log("post_to_server.log", text_for_webui)
-
-        -- output console
-        if (format == common.ai.format.chat)
-            or (format == common.ai.format.prompt)
-            or (format == common.ai.format.call) then
-            if (text_for_console) and (#text_for_console) > 0 then
-                io.write(text_for_console)
-                io.flush()
-            end
-
-        -- output webui
-        elseif (format == common.ai.format.output) then
-            if (text_for_webui) and (#text_for_webui > 0) then
-                io.write(text_for_webui)
-                io.flush()
-            end
-        end
+        output_response_msg(format, text_for_console, text_for_webui, tool_used)
     end)
 
-    return recv_raw_msg
+    return recv_raw_msg, tool_used
 end
-
 
 local chat_with_ai = function(service, chat)
 
     debug:log("oasis.log", "\n--- [transfer.lua][chat_with_ai] ---")
 
-    local format = service:get_format()
+    local output_llm_model = function(format, model)
 
-    local output_llm_model = function(model)
+        if format ~= common.ai.format.chat then
+            return
+        end
+
         print("\n\27[34m" .. model .. "\27[0m")
     end
 
+    local format = service:get_format()
     service:setup_system_msg(chat)
-
-    if format == common.ai.format.chat then
-        output_llm_model(chat.model)
-    end
+    
+    output_llm_model(format, chat.model)
 
     debug:log("oasis.log", "dump chat data")
     debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
-    local ai= send_user_msg(service, chat)
+    local ai_response_tbl, tool_used = send_user_msg(service, chat)
 
-    debug:dump("oasis.log", ai)
+    debug:dump("oasis.log", ai_response_tbl)
 
     local new_chat_info = nil
 
     if format == common.ai.format.chat then
-        -- debug:log("oasis.log", "#ai.message = " .. #ai.message)
-        -- debug:log("oasis.log", "ai.message = " .. ai.message)
-        if service:setup_msg(chat, ai) then
+        debug:log("oasis.log", "#ai_response_tbl.message = " .. #ai_response_tbl.message)
+        debug:log("oasis.log", "ai_response_tbl.message = " .. ai_response_tbl.message)
+        if service:setup_msg(chat, ai_response_tbl) then
             datactrl.record_chat_data(service, chat)
         end
     elseif (format == common.ai.format.output) or (format == common.ai.format.rpc_output) then
@@ -165,12 +148,12 @@ local chat_with_ai = function(service, chat)
 
         if (not cfg.id) or (#cfg.id == 0) then
             debug:log("oasis.log", "first called")
-            if ai and ai.tool_calls then
+            if ai_response_tbl and ai_response_tbl.tool_calls then
                 -- When the model requested tool calls, do not create file yet
                 -- Defer recording until the assistant returns a text response next time
                 debug:log("oasis.log", "tool_calls detected; defer create_chat_file")
             else
-                if service:setup_msg(chat, ai) then
+                if service:setup_msg(chat, ai_response_tbl) then
                     local save_chat = clone_chat_without_tool_messages(chat)
                     local chat_info = {}
                     chat_info.id = datactrl.create_chat_file(service, save_chat)
@@ -181,12 +164,12 @@ local chat_with_ai = function(service, chat)
             end
         else
             debug:log("oasis.log", "second called")
-            if ai and not ai.tool_calls then
+            if ai_response_tbl and not ai_response_tbl.tool_calls then
                 debug:log("transfer-setup-msg.log", "Calling setup_msg for second call")
-                debug:log("transfer-setup-msg.log", "ai.role = " .. tostring(ai.role))
-                debug:log("transfer-setup-msg.log", "ai.message = " .. tostring(ai.message))
-                debug:log("transfer-setup-msg.log", "ai.content = " .. tostring(ai.content))
-                local setup_result = service:setup_msg(chat, ai)
+                debug:log("transfer-setup-msg.log", "ai.role = " .. tostring(ai_response_tbl.role))
+                debug:log("transfer-setup-msg.log", "ai.message = " .. tostring(ai_response_tbl.message))
+                debug:log("transfer-setup-msg.log", "ai.content = " .. tostring(ai_response_tbl.content))
+                local setup_result = service:setup_msg(chat, ai_response_tbl)
                 debug:log("transfer-setup-msg.log", "setup_msg returned: " .. tostring(setup_result))
                 if setup_result then
                     debug:log("oasis.log", "call append_chat_data")
@@ -200,11 +183,12 @@ local chat_with_ai = function(service, chat)
             end
         end
     elseif format == common.ai.format.title then
-        -- debug:log("oasis.log", ai.message)
-        ai.message = ai.message:gsub("%s+", "")
+        debug:log("oasis.log", "title format")
+        debug:log("oasis.log", ai_response_tbl.message)
+        ai_response_tbl.message = ai_response_tbl.message:gsub("%s+", "")
     end
 
-    return new_chat_info, ai.message
+    return new_chat_info, ai_response_tbl.message
 end
 
 return {
