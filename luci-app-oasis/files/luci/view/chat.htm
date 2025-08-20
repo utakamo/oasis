@@ -1842,9 +1842,8 @@
                         console.debug('[Oasis][chat.htm] tool evt(stream):', evt);
                         const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
                         const hasOutputs = (evt.tool_outputs.length > 0);
-                        const allValid = hasOutputs && evt.tool_outputs.every(o =>
-                            (typeof o.tool_call_id === 'string') && ('output' in o)
-                        );
+                        // tool_call_id は任意: output の存在のみを必須とする
+                        const allValid = hasOutputs && evt.tool_outputs.every(o => ('output' in o));
 
                         // Collect tool names from each output element (optional)
                         const names = hasOutputs
@@ -1964,7 +1963,7 @@
                             const missing = [];
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
-                            else if (!allValid) missing.push('tool_outputs[*].tool_call_id/output');
+                            else if (!allValid) missing.push('tool_outputs[*].output');
                             errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
                         }
 
@@ -2026,9 +2025,8 @@
                     if (evt && Array.isArray(evt.tool_outputs)) {
                         const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
                         const hasOutputs = (evt.tool_outputs.length > 0);
-                        const allValid = hasOutputs && evt.tool_outputs.every(o =>
-                            (typeof o.tool_call_id === 'string') && ('output' in o)
-                        );
+                        // tool_call_id は任意: output の存在のみを必須とする
+                        const allValid = hasOutputs && evt.tool_outputs.every(o => ('output' in o));
 
                         const names = hasOutputs
                             ? Array.from(new Set(
@@ -2140,7 +2138,7 @@
                             const missing = [];
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
-                            else if (!allValid) missing.push('tool_outputs[*].tool_call_id/output');
+                            else if (!allValid) missing.push('tool_outputs[*].output');
                             errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
                         }
                     }

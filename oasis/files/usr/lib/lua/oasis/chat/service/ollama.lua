@@ -308,15 +308,12 @@ ollama.new = function()
                             end
                         end
 
-                        local tool_id = tc.id or common.generate_service_id("seed")
-
                         debug:log("function_call.log", "ollama func = " .. tostring(func))
                         local result = client.exec_server_tool(func, args)
                         debug:log("function_call_result.log", jsonc.stringify(result, true))
 
                         local output = jsonc.stringify(result, false)
                         table.insert(function_call.tool_outputs, {
-                            tool_call_id = tool_id,
                             output = output,
                             name = func
                         })
@@ -335,6 +332,7 @@ ollama.new = function()
 
                     local plain_text_for_console = first_output_str
                     local json_text_for_webui    = jsonc.stringify(function_call, false)
+                    debug:log("json_text_for_webui.log", json_text_for_webui)
                     return plain_text_for_console, json_text_for_webui, speaker, true
                 end
             end
