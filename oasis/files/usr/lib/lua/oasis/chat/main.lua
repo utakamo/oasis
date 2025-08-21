@@ -114,6 +114,30 @@ local SERVICE_CONFIG = {
         MAX_TOKENS = { min = 1000, max = 30000 },
         BUDGET_TOKENS = { min = 1000, max = 20000 },
         THINKING_TYPES = { enabled = "enabled", disabled = "disabled" }
+    },
+
+    -- Service configuration mapping for change function
+    SERVICE_CONFIG = {
+        [common.ai.service.ollama.name] = {
+            endpoint_field = "ollama_endpoint",
+            endpoint_type_field = nil,
+            endpoint_type_value = nil
+        },
+        [common.ai.service.openai.name] = {
+            endpoint_field = "openai_custom_endpoint",
+            endpoint_type_field = "openai_endpoint_type",
+            endpoint_type_value = common.endpoint.type.custom
+        },
+        [common.ai.service.anthropic.name] = {
+            endpoint_field = "anthropic_custom_endpoint",
+            endpoint_type_field = "anthropic_endpoint_type",
+            endpoint_type_value = common.endpoint.type.custom
+        },
+        [common.ai.service.gemini.name] = {
+            endpoint_field = "gemini_custom_endpoint",
+            endpoint_type_field = "gemini_endpoint_type",
+            endpoint_type_value = common.endpoint.type.custom
+        }
     }
 }
 
@@ -316,49 +340,86 @@ local add = function(args)
     create_uci_service_section(setup, endpoint_field_name)
 end
 
-local change = function(opt, arg)
+-- Update endpoint configuration
+local function update_endpoint(service_name, service_section, endpoint_value)
+    local config = SERVICE_CONFIG.SERVICE_CONFIG[service_name]
+    if not config then
+        return false
+    end
 
-    local output = {}
-    output.service = {}
-    output.service.update       = "Service Update!"
-    output.service.not_found    = "Service Not Found..."
+    uci:set(common.db.uci.cfg, service_section, config.endpoint_field, endpoint_value)
 
-    local is_update = false
+    if config.endpoint_type_field and config.endpoint_type_value then
+        uci:set(common.db.uci.cfg, service_section, config.endpoint_type_field, config.endpoint_type_value)
+    end
+
+    return true
+end
+
+-- Update service configuration
+local function update_service_config(service_section, opt)
+    local updated = false
+
+    if opt.u then
+        local service_name = uci:get(common.db.uci.cfg, service_section, "name")
+        if update_endpoint(service_name, service_section, opt.u) then
+            updated = true
+        end
+    end
+
+    if opt.k then
+        uci:set(common.db.uci.cfg, service_section, "api_key", opt.k)
+        updated = true
+    end
+
+    if opt.m then
+        uci:set(common.db.uci.cfg, service_section, "model", opt.m)
+        updated = true
+    end
+
+    if opt.s then
+        uci:set(common.db.uci.cfg, service_section, "storage", opt.s)
+        updated = true
+    end
+
+    return updated
+end
+
+-- Find and update service
+local function find_and_update_service(identifier, opt)
+    local found = false
+    local updated = false
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if service.identifier == arg.identifier then
-            is_update = true
-            if opt.u then
-                if service.name == common.ai.service.ollama.name then
-                    uci:set(common.db.uci.cfg, service[".name"], "ollama_endpoint", opt.u)
-                elseif service.name == common.ai.service.openai.name then
-                    uci:set(common.db.uci.cfg, service[".name"], "openai_custom_endpoint", opt.u)
-                    uci:set(common.db.uci.cfg, service[".name"], "openai_endpoint_type", common.endpoint.type.custom)
-                elseif service.name == common.ai.service.anthropic.name then
-                    uci:set(common.db.uci.cfg, service[".name"], "anthropic_custom_endpoint", opt.u)
-                    uci:set(common.db.uci.cfg, service[".name"], "anthropic_endpoint_type", common.endpoint.type.custom)
-                elseif common.ai.service.gemini.name then
-                    uci:set(common.db.uci.cfg, service[".name"], "gemini_custom_endpoint", opt.u)
-                    uci:set(common.db.uci.cfg, service[".name"], "gemini_endpoint_type", common.endpoint.type.custom)
-                end
+        if service.identifier == identifier then
+            found = true
+            if update_service_config(service[".name"], opt) then
+                updated = true
+                uci:commit(common.db.uci.cfg)
             end
-            if opt.k then
-                uci:set(common.db.uci.cfg, service[".name"], "api_key", opt.k)
-            end
-            if opt.m then
-                uci:set(common.db.uci.cfg, service[".name"], "model", opt.m)
-            end
-            if opt.s then
-                uci:set(common.db.uci.cfg, service[".name"], "storage", opt.s)
-            end
-            uci:commit(common.db.uci.cfg)
         end
     end)
 
-    if is_update then
+    return found, updated
+end
+
+-- Main change function
+local function change(opt, arg)
+    local output = {
+        service = {
+            update = "Service Update!",
+            not_found = "Service Not Found..."
+        }
+    }
+
+    local found, updated = find_and_update_service(arg.identifier, opt)
+
+    if found and updated then
         print(output.service.update)
-    else
+    elseif not found then
         print(output.service.not_found)
+    else
+        print("No changes made.")
     end
 end
 
@@ -521,13 +582,12 @@ local select_cmd = function(arg)
     print("Target model: \27[33m" .. model .. "\27[0m")
 end
 
-local chat = function(arg)
-
+-- Initialize and display service information
+local function initialize_chat_service(arg)
     local service = common.select_service_obj()
-
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
-        return
+        return nil
     end
 
     service:initialize(arg, common.ai.format.chat)
@@ -539,37 +599,82 @@ local chat = function(arg)
     print(string.format("%-14s :\27[33m %s \27[0m", "Model", cfg.model))
     print("-----------------------------------")
 
-    local chat = datactrl.load_chat_data(service)
+    return service
+end
 
-    while true do
+-- Get user input
+local function get_user_input(chat)
+    local your_message
+    repeat
+        io.write("\27[32m\nYou :\27[0m")
+        io.flush()
+        your_message = io.read()
 
-        local your_message
-
-        repeat
-            io.write("\27[32m\nYou :\27[0m")
-            io.flush()
-            your_message = io.read()
-
-            if not your_message then
-                return
-            end
-
-            if your_message == "history" then
-                chat_history(chat)
-            end
-
-        until (#your_message > 0) and (your_message ~= "/history")
-
-        if your_message == "/exit" then
-            break;
+        if not your_message then
+            return nil
         end
 
-        -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-        if service:setup_msg(chat, {role = common.role.user, message = your_message}) then
-            datactrl.record_chat_data(service, chat)
+        if your_message == "/history" then
+            chat_history(chat)
+        end
+    until (#your_message > 0) and (your_message ~= "/history")
+
+    return your_message
+end
+
+-- Process message and communicate with AI
+local function process_message(service, chat, message)
+    if not service:setup_msg(chat, {role = common.role.user, message = message}) then
+        return false
+    end
+
+    datactrl.record_chat_data(service, chat)
+
+    local tool_info, tool_used = transfer.chat_with_ai(service, chat)
+
+    debug:log("main_process.log", "tool_used = " .. tostring(tool_used))
+    debug:log("main_process.log", "tool_info = " .. tostring(tool_info))
+    if tool_info then
+        debug:log("main_process.log", "tool_info length = " .. tostring(#tool_info))
+    end
+
+    if tool_used then
+        if service:handle_tool_output(tool_info, chat) then
             transfer.chat_with_ai(service, chat)
         end
     end
+
+    return true
+end
+
+-- Main chat loop
+local function chat_loop(service, chat)
+    while true do
+        local message = get_user_input(chat)
+
+        if not message then
+            return
+        end
+
+        if message == "/exit" then
+            break
+        end
+
+        if not process_message(service, chat, message) then
+            print("Error: Failed to process message")
+        end
+    end
+end
+
+-- Main chat function
+local chat = function(arg)
+    local service = initialize_chat_service(arg)
+    if not service then
+        return
+    end
+
+    local chat = datactrl.load_chat_data(service)
+    chat_loop(service, chat)
 end
 
 local delchat = function(arg)
@@ -733,220 +838,55 @@ local sysmsg = function(arg)
     end
 end
 
-local output = function(arg)
-
-    -- Entry log
-    debug:log("oasis_output.log", "\n--- [main.lua][output] ---")
-
-    local has_msg = arg and type(arg.message) == "string" and (#arg.message > 0)
-    local has_tools = arg and (type(arg.tool_outputs) == "table") and (#arg.tool_outputs > 0)
-
-    -- Payload flags
-    debug:log(
-        "oasis_output.log",
-        string.format("[output] has_msg=%s, has_tools=%s",
-            tostring(has_msg), tostring(has_tools))
-    )
-
-    if (not has_msg) and (not has_tools) then
-        debug:log("oasis_output.log", "[output] No message or tool_outputs. Early return.")
-        return
-    end
-
+-- Initialize service for output
+local function initialize_output_service(arg)
     local service = common.select_service_obj()
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
         debug:log("oasis_output.log", "[output] select_service_obj failed.")
-        return
+        return nil
     end
 
     service:initialize(arg, common.ai.format.output)
     debug:log("oasis_output.log", "[output] service.initialize done.")
 
-    local cfg_dbg = service.get_config and service:get_config() or nil
-    if cfg_dbg then
-        debug:log(
-            "oasis_output.log",
-            string.format(
-                "[output] cfg: service=%s, model=%s, id=%s",
-                tostring(cfg_dbg.service or "-"),
-                tostring(cfg_dbg.model or "-"),
-                tostring(cfg_dbg.id or "")
-            )
-        )
-    end
-    -- Keep chat_id continuity across requests (e.g., tool follow-ups)
-    local sid = (arg and arg.session_id) and tostring(arg.session_id) or ""
-    local misc = require("oasis.chat.misc")
-    os.execute("mkdir -p /tmp/oasis")
+    return service
+end
 
-    -- If POST provided id, set and cache it. Otherwise, try to restore from cache.
-    do
-        local cfg_now = service.get_config and service:get_config() or {}
-        if arg and arg.id and tostring(arg.id) ~= "" then
-            service:set_chat_id(tostring(arg.id))
-            local cpath = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
-            misc.write_file(cpath, tostring(arg.id))
-            misc.write_file("/tmp/oasis/last_chat_id", tostring(arg.id))
-        elseif ((not cfg_now.id) or (#tostring(cfg_now.id) == 0)) and (has_tools and (not has_msg)) then
-            local cpath = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
-            local cached_id = _G.select(1, misc.read_file(cpath))
-            if (not cached_id) or (#cached_id == 0) then
-                cached_id = _G.select(1, misc.read_file("/tmp/oasis/last_chat_id"))
-            end
-            if cached_id and #cached_id > 0 then
-                service:set_chat_id(cached_id)
-                debug:log("oasis_output.log", "[output] restored chat_id from cache: " .. cached_id)
-            else
-                debug:log("oasis_output.log", "[output] no cached chat_id for tool follow-up")
-            end
-        else
-            -- Normal chat without id: do not restore from cache
-            debug:log("oasis_output.log", "[output] skip restoring chat_id (normal chat)")
+-- Process output message
+local function process_output_message(service, chat_ctx, message)
+    if not service:setup_msg(chat_ctx, { role = common.role.user, message = message }) then
+        return nil, nil
+    end
+
+    local tool_info, tool_used = transfer.chat_with_ai(service, chat_ctx)
+
+    if tool_used then
+        if service:handle_tool_output(tool_info, chat_ctx) then
+            return transfer.chat_with_ai(service, chat_ctx)
         end
     end
+
+    return tool_info, nil
+end
+
+-- Main output function
+local function output(arg)
+    debug:log("oasis_output.log", "\n--- [main.lua][output] ---")
+
+    local service = initialize_output_service(arg)
+    if not service then
+        return nil, nil
+    end
+
+    local misc = require("oasis.chat.misc")
+    os.execute("mkdir -p /tmp/oasis")
 
     local chat_ctx = datactrl.load_chat_data(service)
     debug:log("oasis_output.log", "Load chat data ...")
     debug:dump("oasis_output.log", chat_ctx)
 
-    -- Server-side last user message cache for tool follow-up
-    -- sid/misc initialized above
-    if has_msg then
-        -- Persist the latest user message for possible tool follow-up without UI-provided message
-        os.execute("mkdir -p /tmp/oasis")
-        local cache_path = "/tmp/oasis/last_user_msg" .. ( (#sid>0) and ("_"..sid) or "")
-        misc.write_file(cache_path, arg.message)
-        -- Also write generic fallback
-        misc.write_file("/tmp/oasis/last_user_msg", arg.message)
-        debug:log("oasis_output.log", "[output] cached last user message to " .. cache_path)
-    elseif has_tools and (not has_msg) then
-        -- For any tool follow-up without an explicit user message, auto-complement the last user message
-        local cache_path = "/tmp/oasis/last_user_msg" .. ( (#sid>0) and ("_"..sid) or "")
-        local last_user_msg = _G.select(1, misc.read_file(cache_path))
-        if (not last_user_msg) or (#last_user_msg == 0) then
-            -- Fallback to generic cache
-            last_user_msg = _G.select(1, misc.read_file("/tmp/oasis/last_user_msg"))
-            if last_user_msg then
-                debug:log("oasis_output.log", "[output] fallback generic last user message cache hit")
-            end
-        end
-        if type(last_user_msg) == "string" and #last_user_msg > 0 then
-            local last_role = (
-                chat_ctx.messages and
-                chat_ctx.messages[#chat_ctx.messages] and
-                chat_ctx.messages[#chat_ctx.messages].role
-            ) or ""
-            if last_role ~= common.role.user then
-                debug:log("oasis_output.log", "[output] append cached last user message for tool follow-up")
-                service:setup_msg(chat_ctx, { role = common.role.user, message = last_user_msg })
-            else
-                debug:log("oasis_output.log", "[output] skip appending cached user message (last is already user)")
-            end
-        else
-            debug:log("oasis_output.log", "[output] no cached last user message found")
-        end
-    end
-
-    -- 1) If tool outputs exist, append tool messages to the conversation history first
-    if has_tools then
-        debug:log(
-            "oasis_output.log",
-            string.format("[output] append %d tool message(s)", #arg.tool_outputs)
-        )
-
-        -- Insert assistant message with tool_calls first to satisfy OpenAI sequencing
-        local tool_calls = {}
-        for _, t in ipairs(arg.tool_outputs) do
-            local tool_id = t.tool_call_id or t.id or ""
-            local tool_name = t.name or ""
-            table.insert(tool_calls, {
-                id = tool_id,
-                type = "function",
-                ["function"] = {
-                    name = tool_name,
-                    arguments = "{}"
-                }
-            })
-        end
-        if #tool_calls > 0 then
-            debug:log(
-                "oasis_output.log",
-                string.format(
-                    "[output] insert assistant tool_calls: count=%d",
-                    #tool_calls
-                )
-            )
-            service:setup_msg(chat_ctx, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
-        end
-        for _, t in ipairs(arg.tool_outputs) do
-            local content = t.output
-            if type(content) ~= "string" then
-                content = jsonc.stringify(content, false)
-            end
-            debug:log(
-                "oasis_output.log",
-                string.format(
-                    "[output] tool msg: id=%s, name=%s, len=%d",
-                    tostring(t.tool_call_id or t.id or ""),
-                    tostring(t.name or ""),
-                    tonumber((content and #content) or 0)
-                )
-            )
-            service:setup_msg(chat_ctx, {
-                role = "tool",
-                tool_call_id = t.tool_call_id or t.id,
-                name = t.name,
-                content = content
-            })
-        end
-    end
-
-    -- 2) If a user message exists, append it
-    if has_msg then
-        local msg_len = (arg.message and #arg.message) or 0
-        debug:log(
-            "oasis_output.log",
-            string.format("[output] append user message: len=%d", msg_len)
-        )
-        service:setup_msg(chat_ctx, { role = common.role.user, message = arg.message })
-    end
-
-    -- 3) Send to the AI service (recording is handled inside transfer layer)
-    debug:log("oasis_output.log", "[output] call chat_with_ai")
-    local new_chat_info, message = transfer.chat_with_ai(service, chat_ctx)
-    local msg_len = (message and #message) or 0
-    debug:log(
-        "oasis_output.log",
-        string.format(
-            "[output] chat_with_ai returned: new_chat_info_len=%d, message_len=%d",
-            (new_chat_info and #new_chat_info) or 0,
-            msg_len
-        )
-    )
-
-    -- If this turn handled tool follow-up, clean up both session-specific and generic
-    -- cache files after receiving AI response.
-    if has_tools then
-        local id_path_session   = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
-        local user_path_session = "/tmp/oasis/last_user_msg" .. ((#sid > 0) and ("_" .. sid) or "")
-        os.remove(id_path_session)
-        os.remove(user_path_session)
-        os.remove("/tmp/oasis/last_chat_id")
-        os.remove("/tmp/oasis/last_user_msg")
-        debug:log("oasis_output.log", "[output] cleaned cache files after tool follow-up response")
-    end
-    -- Cache newly created chat_id (when a new chat file was created on this turn)
-    if new_chat_info and #new_chat_info > 0 then
-        local ok, parsed = pcall(jsonc.parse, new_chat_info)
-        if ok and parsed and parsed.id then
-            local cpath = "/tmp/oasis/last_chat_id" .. ((#sid > 0) and ("_" .. sid) or "")
-            misc.write_file(cpath, tostring(parsed.id))
-            misc.write_file("/tmp/oasis/last_chat_id", tostring(parsed.id))
-            debug:log("oasis_output.log", "[output] cached new chat_id: " .. tostring(parsed.id))
-        end
-    end
-    return new_chat_info, message
+    return process_output_message(service, chat_ctx, arg.message)
 end
 
 local rpc_output = function(arg)

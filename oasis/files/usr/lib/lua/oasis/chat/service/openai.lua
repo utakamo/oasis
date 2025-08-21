@@ -71,6 +71,16 @@ openai.new = function()
 
         obj.setup_system_msg = function(self, chat)
 
+            -- role:toolがある場合、AIに結果が送られることを示すため
+            -- ここではtoolsフィールドを入れない（入れても良い、その場合、失敗に対してツール実行ができる）
+            for _, message in ipairs(chat.messages) do
+                if message.role == "tool" then
+                    chat.tool_choice = nil -- 前回のやり取りで付与されたtool_choicesフィールドを除去する
+                    chat.tools = nil -- 前回のやり取りで付与されたtoolsフィールドを除去する
+                    return
+                end
+            end
+
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysmsg = common.load_conf_file(spath)
 
@@ -247,7 +257,7 @@ openai.new = function()
             if check_tool_call_response(chunk_json) then
                 debug:log("function_call.log", "check_tool_call_response")
                 local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-                if is_tool then
+                if is_tool and chunk_json.choices[1].tool_calls then
                     debug:log("function_call.log", "is_tool")
                     local client = require("oasis.local.tool.client")
                     local message = chunk_json.choices[1].message
@@ -295,6 +305,7 @@ openai.new = function()
                     debug:log("function_call.log",
                         string.format("return speaker(tool_calls=%d), tool_outputs=%d",
                             #speaker.tool_calls, #function_call.tool_outputs))
+
                     return plain_text_for_console, json_text_for_webui, speaker, true
                 end
             end
@@ -347,6 +358,18 @@ openai.new = function()
         end
 
         obj.convert_schema = function(self, user_msg)
+
+            -- role:toolがある場合、AIに結果が送られることを示すため
+            -- ここではtoolsフィールドを入れない（入れても良い、その場合、失敗に対してツール実行ができる）
+            for _, message in ipairs(user_msg.messages) do
+                if message.role == "tool" then
+                    user_msg.tool_choice = nil -- 前回のやり取りで付与されたtool_choicesフィールドを除去する
+                    user_msg.tools = nil -- 前回のやり取りで付与されたtoolsフィールドを除去する
+                    local user_msg_json = jsonc.stringify(user_msg, false)
+                    return user_msg_json
+                end
+            end
+
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 
             -- Function Calling Schema
@@ -388,6 +411,82 @@ openai.new = function()
 
             easy:setopt_httppost(form)
             easy:setopt_postfields(user_msg_json)
+        end
+
+        obj.handle_tool_output = function(self, tool_info, chat)
+            -- 後でserviceオブジェクトに入れてしまうこと
+            debug:log("output-tool.log", "tool_info type = " .. type(tool_info))
+            debug:log("output-tool.log", "tool_info value = " .. tostring(tool_info))
+            if tool_info then
+                debug:log("output-tool.log", "tool_info length = " .. tostring(#tool_info))
+            end
+
+            if not tool_info then
+                debug:log("output-tool.log", "tool_info is nil, returning false")
+                return false
+            end
+
+            local tool_info_tbl = jsonc.parse(tool_info)
+            if tool_info_tbl then
+                -- Insert assistant message with tool_calls first to satisfy OpenAI sequencing
+                local tool_calls = {}
+
+                for _, t in ipairs(tool_info_tbl.tool_outputs) do
+                    local tool_id = t.tool_call_id or t.id or ""
+                    local tool_name = t.name or ""
+                    table.insert(tool_calls, {
+                        id = tool_id,
+                        type = "function",
+                        ["function"] = {
+                            name = tool_name,
+                            arguments = "{}"
+                        }
+                    })
+                end
+
+                if #tool_calls > 0 then
+                    debug:log(
+                        "oasis_output.log",
+                        string.format(
+                            "[output] insert assistant tool_calls: count=%d",
+                            #tool_calls
+                        )
+                    )
+                    self:setup_msg(chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
+                end
+
+                for _, t in ipairs(tool_info_tbl.tool_outputs) do
+
+                    local content = t.output
+                    if type(content) ~= "string" then
+                        content = jsonc.stringify(content, false)
+                    end
+
+                    debug:log(
+                        "oasis_output.log",
+                        string.format(
+                            "[output] tool msg: id=%s, name=%s, len=%d",
+                            tostring(t.tool_call_id or t.id or ""),
+                            tostring(t.name or ""),
+                            tonumber((content and #content) or 0)
+                        )
+                    )
+
+                    self:setup_msg(chat, {
+                        role = "tool",
+                        tool_call_id = t.tool_call_id or t.id,
+                        name = t.name,
+                        content = content
+                    })
+                end
+
+                local chat_json = jsonc.stringify(chat, true)
+
+                debug:log("chat_json.log", chat_json)
+
+                return true
+            end
+            return false
         end
 
         return obj

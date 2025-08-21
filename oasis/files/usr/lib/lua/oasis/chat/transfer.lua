@@ -62,9 +62,25 @@ local output_response_msg = function(format, text_for_console, text_for_webui, t
     debug:log("post_to_server.log", text_for_webui)
 
     -- Response: output console
-    if (not tool_used) and (format == common.ai.format.chat)
+    if (format == common.ai.format.chat)
         or (format == common.ai.format.prompt) then
-        if (text_for_console) and (#text_for_console) > 0 then
+
+        if tool_used then
+            local tool_info = jsonc.parse(text_for_webui)
+            io.write("Tool Used: ")
+            for idx, tbl in ipairs(tool_info.tool_outputs) do
+                if idx > 1 then
+                    io.write(", ")
+                end
+
+                if tbl.name then
+                    io.write(tbl.name)
+                end
+            end
+
+            io.flush()
+
+        elseif (text_for_console) and (#text_for_console) > 0 then
             io.write(text_for_console)
             io.flush()
         end
@@ -93,17 +109,17 @@ local send_user_msg = function(service, chat)
     service:init_msg_buffer()
 
     -- Post (Request) and Response
-    post_to_server(service, usr_msg_json, function(chunk)
+    local text_for_console
+    local text_for_webui
 
-        local text_for_console
-        local text_for_webui
+    post_to_server(service, usr_msg_json, function(chunk)
 
         text_for_console, text_for_webui, recv_raw_msg, tool_used = service:recv_ai_msg(chunk)
 
         output_response_msg(format, text_for_console, text_for_webui, tool_used)
     end)
 
-    return recv_raw_msg, tool_used
+    return text_for_webui, recv_raw_msg, tool_used
 end
 
 local chat_with_ai = function(service, chat)
@@ -128,9 +144,13 @@ local chat_with_ai = function(service, chat)
     debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
-    local ai_response_tbl, tool_used = send_user_msg(service, chat)
+    local tool_info, ai_response_tbl, tool_used = send_user_msg(service, chat)
 
     debug:dump("oasis.log", ai_response_tbl)
+
+    if tool_used then
+        return tool_info, tool_used
+    end
 
     local new_chat_info = nil
 
@@ -160,6 +180,7 @@ local chat_with_ai = function(service, chat)
                     local result = util.ubus("oasis.title", "auto_set", {id = chat_info.id}) or {}
                     chat_info.title = result.title or "--"
                     new_chat_info = jsonc.stringify(chat_info, false)
+                    debug:log("oasis.log", "new_chat_info = " .. new_chat_info)
                 end
             end
         else
@@ -188,7 +209,7 @@ local chat_with_ai = function(service, chat)
         ai_response_tbl.message = ai_response_tbl.message:gsub("%s+", "")
     end
 
-    return new_chat_info, ai_response_tbl.message
+    return new_chat_info, ai_response_tbl.message, false
 end
 
 return {
