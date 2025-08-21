@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# Usage:
+#   oasis_build_and_upload <ssh_host>
+#
+# Description:
+#   - On the first run, if BUILDROOT_DIR or SSH_PASS are not found in config,
+#     the user will be prompted to enter them interactively.
+#   - SSH_HOST must always be specified as an argument.
+#
+
+CONFIG_FILE="$HOME/.oasis_build.conf"
+
+# --- Load saved config if exists ---
+if [ -f "$CONFIG_FILE" ]; then
+    . "$CONFIG_FILE"
+fi
+
+# --- Prompt for missing values ---
+if [ -z "$BUILDROOT_DIR" ]; then
+    read -p "Enter OpenWrt Buildroot directory path: " BUILDROOT_DIR
+fi
+
+if [ -z "$SSH_PASS" ]; then
+    read -s -p "Enter SSH password for root: " SSH_PASS
+    echo ""
+fi
+
+# --- Save config if updated ---
+cat > "$CONFIG_FILE" <<EOF
+BUILDROOT_DIR="$BUILDROOT_DIR"
+SSH_PASS="$SSH_PASS"
+EOF
+chmod 600 "$CONFIG_FILE"
+
+# --- Require SSH_HOST as argument ---
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <ssh_host>"
+    exit 1
+fi
+SSH_HOST="$1"
+
+# --- Build packages ---
+cd "$BUILDROOT_DIR" || { echo "Directory not found: $BUILDROOT_DIR"; exit 1; }
+make package/oasis/{clean,compile}
+make package/oasis-mod-tool/{clean,compile}
+make package/luci-app-oasis/{clean,compile}
+
+# --- Upload packages ---
+PKG_DIR="$BUILDROOT_DIR/bin/packages/aarch64_cortex-a53/ai"
+sshpass -p "$SSH_PASS" scp "$PKG_DIR"/oasis_*.ipk root@"$SSH_HOST":/root
+sshpass -p "$SSH_PASS" scp "$PKG_DIR"/luci-app-oasis_*.ipk root@"$SSH_HOST":/root
+sshpass -p "$SSH_PASS" scp "$PKG_DIR"/oasis-mod-tool_*.ipk root@"$SSH_HOST":/root
