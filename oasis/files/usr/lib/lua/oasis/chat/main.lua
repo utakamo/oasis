@@ -871,7 +871,7 @@ local function process_output_message(service, chat_ctx, message)
 end
 
 -- Main output function
-local function output(arg)
+local output = function(arg)
     debug:log("oasis_output.log", "\n--- [main.lua][output] ---")
 
     local service = initialize_output_service(arg)
