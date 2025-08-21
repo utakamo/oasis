@@ -29,49 +29,24 @@ if request_method == "POST" then
         return
     end
 
-    -- Attach LuCI session id (per-user cache key)
-    local sid = nil
-    do
-        -- Prefer luci.http.getcookie if available, else fallback to HTTP_COOKIE env parsing
-        local ok, val = pcall(function()
-            if http and http.getcookie then return http.getcookie("sysauth") end
-            return nil
-        end)
-        if ok and val and type(val) == "string" and #val > 0 then
-            sid = val
-            debug:log("oasis_cgi.log", "sid via luci.http.getcookie")
-        else
-            local raw_cookie = os.getenv("HTTP_COOKIE") or ""
-            local m = raw_cookie:match("sysauth=([^;]+)")
-            if m and #m > 0 then
-                sid = m
-                debug:log("oasis_cgi.log", "sid via HTTP_COOKIE")
-            else
-                debug:log("oasis_cgi.log", "sid not found in cookies")
-            end
-        end
-        if sid and #sid > 0 then
-            json_tbl.session_id = sid
-        end
-    end
-    debug:log("oasis_cgi.log", "sid set: " .. tostring(sid ~= nil))
-
-    local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.assist, "enable")
-    debug:log("oasis_cgi.log", "assist.enable=" .. tostring(enable))
     debug:log("oasis_cgi.log", "call oasis.output")
+
     local ok, new_chat_info, plain_text_ai_message = pcall(oasis.output, json_tbl)
+
     if not ok then
-        debug:log("oasis_cgi.log", "oasis.output error: " .. tostring(new_chat_info))
         -- Send minimal assistant message so UI doesn't fallback
         local fallback = jsonc.stringify({ message = { role = "assistant", content = "Internal error: oasis.output failed" } }, false)
         io.write(fallback)
         io.flush()
-        debug:log("oasis_cgi.log", "wrote fallback message")
-        debug:log("oasis_cgi.log", "--- [cgi] request end (error) ---")
         return
     end
+
     debug:log("oasis_cgi.log", "oasis.output returned: new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
         .. ", message_len=" .. tostring((plain_text_ai_message and #plain_text_ai_message) or 0))
+
+    local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.assist, "enable")
+    debug:log("oasis_cgi.log", "assist.enable=" .. tostring(enable))
+
     local uci_cmd_notification = {}
     if enable and plain_text_ai_message then
         uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
@@ -90,7 +65,9 @@ if request_method == "POST" then
         io.flush()
         debug:log("oasis_cgi.log", "wrote new_chat_info json")
     end
+
     debug:log("oasis_cgi.log", "--- [cgi] request end ---")
+
 else
     io.write("This script only handles POST requests.")
 end
