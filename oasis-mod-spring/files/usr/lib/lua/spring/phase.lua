@@ -122,7 +122,7 @@ matrix.register_luacode_event_detecter_func(defines, false, "get_load_average", 
 end)
 
 matrix.register_luacode_event_detecter_func(defines, true, "get_ip_address", function(args)
-    debug:log("get_ip_address.log", "called!!")
+    debug:log("oasis.log", "get_ip_address", "called!!")
     local interface = args[1] or "eth0"  -- Default to eth0 if no argument is provided
     local cmd = string.format("ip -4 addr show %s | grep inet", interface)
     local handle = io.popen(cmd)
@@ -162,11 +162,11 @@ for _, uci_phase_type in ipairs(phase_action_type_list) do
     act_base_tbl[#act_base_tbl + 1] = register_phase_base_tbl(uci_phase_type)
 end
 
-debug:log("spring-event-tbl.log", "Event")
-debug:dump("spring-event-tbl.log", evt_base_tbl)
+debug:log("oasis.log", "init", "Event")
+debug:dump("oasis.log", evt_base_tbl)
 
-debug:log("spring-action-tbl.log", "Action")
-debug:dump("spring-action-tbl.log", act_base_tbl)
+debug:log("oasis.log", "init", "Action")
+debug:dump("oasis.log", act_base_tbl)
 
 -- #1 func config
 -- uci add spring
@@ -228,7 +228,7 @@ matrix_phase_tbl[#matrix_phase_tbl + 1] = matrix.create_phase(defines, evt_base_
 matrix_phase_tbl[#matrix_phase_tbl + 1] = matrix.create_phase(defines, evt_base_tbl[2], act_base_tbl[2], 1) -- phase2
 
 function test_exec_allevents()
-    debug:log("spring-call.log", "called by springd")
+    debug:log("oasis.log", "test_exec_allevents", "called by springd")
     for idx, phase in ipairs(matrix_phase_tbl) do
         print("---- " .. "[PHASE " .. idx .. "] ----")
         matrix.execute_phase(phase)

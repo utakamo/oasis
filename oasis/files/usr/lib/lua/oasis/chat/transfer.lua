@@ -58,8 +58,8 @@ end
 
 local output_response_msg = function(format, text_for_console, text_for_webui, tool_used)
 
-    debug:log("post_to_server.log", text_for_console)
-    debug:log("post_to_server.log", text_for_webui)
+    debug:log("oasis.log", "post_to_server", text_for_console)
+    debug:log("oasis.log", "post_to_server", text_for_webui)
 
     -- Response: output console
     if (format == common.ai.format.chat)
@@ -103,7 +103,7 @@ local send_user_msg = function(service, chat)
 
     -- Debug Message Json Log
     local debug_msg_json = jsonc.stringify(chat, true)
-    debug:log("debug_msg_json.log", debug_msg_json)
+    debug:log("oasis.log", "send_user_msg", debug_msg_json)
 
     local format = service:get_format()
     service:init_msg_buffer()
@@ -124,7 +124,7 @@ end
 
 local chat_with_ai = function(service, chat)
 
-    debug:log("oasis.log", "\n--- [transfer.lua][chat_with_ai] ---")
+    debug:log("oasis.log", "chat_with_ai", "\n--- [transfer.lua][chat_with_ai] ---")
 
     local output_llm_model = function(format, model)
 
@@ -140,7 +140,7 @@ local chat_with_ai = function(service, chat)
     
     output_llm_model(format, chat.model)
 
-    debug:log("oasis.log", "dump chat data")
+    debug:log("oasis.log", "chat_with_ai", "dump chat data")
     debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
@@ -155,8 +155,8 @@ local chat_with_ai = function(service, chat)
     local new_chat_info = nil
 
     if format == common.ai.format.chat then
-        debug:log("oasis.log", "#ai_response_tbl.message = " .. #ai_response_tbl.message)
-        debug:log("oasis.log", "ai_response_tbl.message = " .. ai_response_tbl.message)
+        debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
+            debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
         if service:setup_msg(chat, ai_response_tbl) then
             datactrl.record_chat_data(service, chat)
         end
@@ -167,11 +167,11 @@ local chat_with_ai = function(service, chat)
         debug:dump("oasis.log", cfg)
 
         if (not cfg.id) or (#cfg.id == 0) then
-            debug:log("oasis.log", "first called")
+                        debug:log("oasis.log", "chat_with_ai", "first called")
             if ai_response_tbl and ai_response_tbl.tool_calls then
                 -- When the model requested tool calls, do not create file yet
                 -- Defer recording until the assistant returns a text response next time
-                debug:log("oasis.log", "tool_calls detected; defer create_chat_file")
+                    debug:log("oasis.log", "chat_with_ai", "tool_calls detected; defer create_chat_file")
             else
                 if service:setup_msg(chat, ai_response_tbl) then
                     local save_chat = clone_chat_without_tool_messages(chat)
@@ -180,32 +180,32 @@ local chat_with_ai = function(service, chat)
                     local result = util.ubus("oasis.title", "auto_set", {id = chat_info.id}) or {}
                     chat_info.title = result.title or "--"
                     new_chat_info = jsonc.stringify(chat_info, false)
-                    debug:log("oasis.log", "new_chat_info = " .. new_chat_info)
+                    debug:log("oasis.log", "chat_with_ai", "new_chat_info = " .. new_chat_info)
                 end
             end
         else
-            debug:log("oasis.log", "second called")
+            debug:log("oasis.log", "chat_with_ai", "second called")
             if ai_response_tbl and not ai_response_tbl.tool_calls then
-                debug:log("transfer-setup-msg.log", "Calling setup_msg for second call")
-                debug:log("transfer-setup-msg.log", "ai.role = " .. tostring(ai_response_tbl.role))
-                debug:log("transfer-setup-msg.log", "ai.message = " .. tostring(ai_response_tbl.message))
-                debug:log("transfer-setup-msg.log", "ai.content = " .. tostring(ai_response_tbl.content))
+                debug:log("oasis.log", "transfer_setup_msg", "Calling setup_msg for second call")
+                debug:log("oasis.log", "transfer_setup_msg", "ai.role = " .. tostring(ai_response_tbl.role))
+                debug:log("oasis.log", "transfer_setup_msg", "ai.message = " .. tostring(ai_response_tbl.message))
+                debug:log("oasis.log", "transfer_setup_msg", "ai.content = " .. tostring(ai_response_tbl.content))
                 local setup_result = service:setup_msg(chat, ai_response_tbl)
-                debug:log("transfer-setup-msg.log", "setup_msg returned: " .. tostring(setup_result))
+                debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned: " .. tostring(setup_result))
                 if setup_result then
-                    debug:log("oasis.log", "call append_chat_data")
+                        debug:log("oasis.log", "chat_with_ai", "call append_chat_data")
                     local save_chat = clone_chat_without_tool_messages(chat)
                     service:append_chat_data(save_chat)
                 else
-                    debug:log("transfer-setup-msg.log", "setup_msg returned false, skipping append_chat_data")
+                    debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned false, skipping append_chat_data")
                 end
             else
-                debug:log("oasis.log", "skip append for tool_calls response")
+                debug:log("oasis.log", "chat_with_ai", "skip append for tool_calls response")
             end
         end
     elseif format == common.ai.format.title then
-        debug:log("oasis.log", "title format")
-        debug:log("oasis.log", ai_response_tbl.message)
+    debug:log("oasis.log", "chat_with_ai", "title format")
+    debug:log("oasis.log", "chat_with_ai", ai_response_tbl.message)
         ai_response_tbl.message = ai_response_tbl.message:gsub("%s+", "")
     end
 

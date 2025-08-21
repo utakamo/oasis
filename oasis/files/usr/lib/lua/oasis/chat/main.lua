@@ -632,10 +632,10 @@ local function process_message(service, chat, message)
 
     local tool_info, tool_used = transfer.chat_with_ai(service, chat)
 
-    debug:log("main_process.log", "tool_used = " .. tostring(tool_used))
-    debug:log("main_process.log", "tool_info = " .. tostring(tool_info))
+    debug:log("oasis.log", "process_message", "tool_used = " .. tostring(tool_used))
+    debug:log("oasis.log", "process_message", "tool_info = " .. tostring(tool_info))
     if tool_info then
-        debug:log("main_process.log", "tool_info length = " .. tostring(#tool_info))
+        debug:log("oasis.log", "process_message", "tool_info length = " .. tostring(#tool_info))
     end
 
     if tool_used then
@@ -737,15 +737,15 @@ local sysmsg = function(arg)
     if arg then
 
         if arg.cmd then
-            debug:log("sysmsg.log", "arg.cmd = " .. arg.cmd)
+            debug:log("oasis.log", "sysmsg", "arg.cmd = " .. arg.cmd)
         end
 
         if arg.option then
-            debug:log("sysmsg.log", "arg.option = " .. arg.option)
+            debug:log("oasis.log", "sysmsg", "arg.option = " .. arg.option)
         end
 
         if arg.param then
-            debug:log("sysmsg.log", "arg.param = " .. arg.param)
+            debug:log("oasis.log", "sysmsg", "arg.param = " .. arg.param)
         end
     end
 
@@ -843,12 +843,12 @@ local function initialize_output_service(arg)
     local service = common.select_service_obj()
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
-        debug:log("oasis_output.log", "[output] select_service_obj failed.")
+        debug:log("oasis.log", "initialize_output_service", "[output] select_service_obj failed.")
         return nil
     end
 
     service:initialize(arg, common.ai.format.output)
-    debug:log("oasis_output.log", "[output] service.initialize done.")
+    debug:log("oasis.log", "initialize_output_service", "[output] service.initialize done.")
 
     return service
 end
@@ -872,7 +872,7 @@ end
 
 -- Main output function
 local output = function(arg)
-    debug:log("oasis_output.log", "\n--- [main.lua][output] ---")
+    debug:log("oasis.log", "output", "\n--- [main.lua][output] ---")
 
     local service = initialize_output_service(arg)
     if not service then
@@ -883,15 +883,15 @@ local output = function(arg)
     os.execute("mkdir -p /tmp/oasis")
 
     local chat_ctx = datactrl.load_chat_data(service)
-    debug:log("oasis_output.log", "Load chat data ...")
-    debug:dump("oasis_output.log", chat_ctx)
+    debug:log("oasis.log", "output", "Load chat data ...")
+    debug:dump("oasis.log", chat_ctx)
 
     return process_output_message(service, chat_ctx, arg.message)
 end
 
 local rpc_output = function(arg)
 
-    debug:log("oasis.log", "\n--- [main.lua][rpc_output] ---")
+    debug:log("oasis.log", "rpc_output", "\n--- [main.lua][rpc_output] ---")
 
     local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")
 
@@ -911,11 +911,11 @@ local rpc_output = function(arg)
 
     service:initialize(arg, common.ai.format.rpc_output)
 
-    debug:log("oasis.log", "[main.lua][rpc_output] Service initialize done ...")
+    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] Service initialize done ...")
 
     local rpc_output = datactrl.load_chat_data(service)
 
-    debug:log("oasis.log", "[main.lua][rpc_output] Load chat data ...")
+    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] Load chat data ...")
     debug:dump("oasis.log", rpc_output)
 
     local new_chat_info, message = ""
@@ -923,17 +923,17 @@ local rpc_output = function(arg)
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
     if service:setup_msg(rpc_output, { role = common.role.user, message = arg.message}) then
         datactrl.record_chat_data(service, rpc_output)
-        debug:log("oasis.log", "[main.lua][rpc_output] record_chat_data done ...")
-        new_chat_info, message = transfer.chat_with_ai(service, rpc_output)
-        debug:log("oasis.log", "[main.lua][rpc_output] chat_with_ai done ...")
+    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] record_chat_data done ...")
+    new_chat_info, message = transfer.chat_with_ai(service, rpc_output)
+    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] chat_with_ai done ...")
     end
 
     if new_chat_info then
-        debug:log("oasis.log", "[main.lua][rpc_output] new_chat_info dump")
-        debug:log("oasis.log", new_chat_info)
+    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] new_chat_info dump")
+    debug:log("oasis.log", "rpc_output", new_chat_info)
     end
 
-    debug:log("oasis.log", "[main.lua][rpc_output] message = " .. message)
+    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] message = " .. message)
 
     return { status = common.status.ok }, new_chat_info, message
 end

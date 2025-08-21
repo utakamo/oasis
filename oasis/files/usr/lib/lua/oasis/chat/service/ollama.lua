@@ -178,16 +178,16 @@ ollama.new = function()
 
         obj.setup_msg = function(self, chat, speaker)
 
-            debug:log("oasis.log", "\n--- [ollama.lua][setup_msg] ---")
-            debug:log("ollama-setup-msg.log", "setup_msg called")
-            debug:log("ollama-setup-msg.log", "speaker.role = " .. tostring(speaker and speaker.role or "nil"))
-            debug:log("ollama-setup-msg.log", "speaker.message = " .. tostring(speaker and speaker.message or "nil"))
-            debug:log("ollama-setup-msg.log", "speaker.content = " .. tostring(speaker and speaker.content or "nil"))
-            debug:log("ollama-setup-msg.log", "speaker.tool_calls = " .. tostring(speaker and speaker.tool_calls ~= nil or "nil"))
+            debug:log("oasis.log", "setup_msg", "\n--- [ollama.lua][setup_msg] ---")
+                debug:log("oasis.log", "setup_msg", "setup_msg called")
+                debug:log("oasis.log", "setup_msg", "speaker.role = " .. tostring(speaker and speaker.role or "nil"))
+                debug:log("oasis.log", "setup_msg", "speaker.message = " .. tostring(speaker and speaker.message or "nil"))
+                debug:log("oasis.log", "setup_msg", "speaker.content = " .. tostring(speaker and speaker.content or "nil"))
+                debug:log("oasis.log", "setup_msg", "speaker.tool_calls = " .. tostring(speaker and speaker.tool_calls ~= nil or "nil"))
 
             if (not speaker) or (not speaker.role) then
-                debug:log("oasis.log", "false")
-                debug:log("ollama-setup-msg.log", "No speaker or role, returning false")
+                debug:log("oasis.log", "setup_msg", "false")
+                    debug:log("oasis.log", "setup_msg", "No speaker or role, returning false")
                 return false
             end
 
@@ -196,14 +196,14 @@ ollama.new = function()
             local msg = { role = speaker.role }
 
             if speaker.role == "tool" then
-                debug:log("ollama-setup-msg.log", "Processing tool message")
+                debug:log("oasis.log", "setup_msg", "Processing tool message")
                 if (not speaker.content) or (#tostring(speaker.content) == 0) then
-                    debug:log("ollama-setup-msg.log", "No tool content, returning false")
+                    debug:log("oasis.log", "setup_msg", "No tool content, returning false")
                     return false
                 end
                 msg.name = speaker.name
                 msg.content = speaker.content
-                debug:log("ollama-setup-msg.log",
+                debug:log("oasis.log", "setup_msg",
                     string.format("append TOOL msg: name=%s, len=%d",
                         tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
 
@@ -216,11 +216,11 @@ ollama.new = function()
                 end
 
                 table.insert(chat.messages, msg)
-                debug:log("ollama-setup-msg.log", "Tool message added, returning true")
+                    debug:log("oasis.log", "setup_msg", "Tool message added, returning true")
                 return true
 
             elseif (speaker.role == common.role.assistant) and speaker.tool_calls then
-                debug:log("ollama-setup-msg.log", "Processing assistant message with tool_calls")
+                debug:log("oasis.log", "setup_msg", "Processing assistant message with tool_calls")
                 -- Normalize function.arguments for Ollama: requires object (table), not JSON string
                 local fixed_tool_calls = {}
                 for _, tc in ipairs(speaker.tool_calls or {}) do
@@ -256,25 +256,25 @@ ollama.new = function()
                 end
                 msg.tool_calls = fixed_tool_calls
                 msg.content = speaker.content or ""
-                debug:log("ollama-setup-msg.log",
+                debug:log("oasis.log", "setup_msg",
                     string.format("append ASSISTANT msg with tool_calls: count=%d",
                         #msg.tool_calls))
 
                 table.insert(chat.messages, msg)
-                debug:log("ollama-setup-msg.log", "Assistant message with tool_calls processed, returning true")
+                debug:log("oasis.log", "setup_msg", "Assistant message with tool_calls processed, returning true")
                 return true
             else
-                debug:log("ollama-setup-msg.log", "Processing regular message")
+                debug:log("oasis.log", "setup_msg", "Processing regular message")
                 if (not speaker.message) or (#speaker.message == 0) then
-                    debug:log("ollama-setup-msg.log", "No message content, returning false")
+                    debug:log("oasis.log", "setup_msg", "No message content, returning false")
                     return false
                 end
                 msg.content = speaker.message
-                debug:log("ollama-setup-msg.log",
+                debug:log("oasis.log", "setup_msg",
                     string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
 
                 table.insert(chat.messages, msg)
-                debug:log("ollama-setup-msg.log", "Message added to chat, returning true")
+                    debug:log("oasis.log", "setup_msg", "Message added to chat, returning true")
                 return true
             end
         end
@@ -282,7 +282,7 @@ ollama.new = function()
         obj.recv_ai_msg = function(self, chunk)
 
             -- Log raw response from Ollama for troubleshooting
-            debug:log("ollama-ai-recv.log", tostring(chunk))
+                debug:log("oasis.log", "recv_ai_msg", tostring(chunk))
 
             local chunk_json = jsonc.parse(chunk)
 
@@ -290,7 +290,7 @@ ollama.new = function()
                 return "", "", self.recv_raw_msg, false
             end
 
-            debug:log("ollama-ai-recv.log", chunk)
+                debug:log("oasis.log", "recv_ai_msg", chunk)
 
             -- Function Calling for Ollama (message.tool_calls[])
             if chunk_json.message and chunk_json.message.tool_calls
@@ -318,9 +318,9 @@ ollama.new = function()
                             end
                         end
 
-                        debug:log("function_call.log", "ollama func = " .. tostring(func))
+                            debug:log("oasis.log", "recv_ai_msg", "ollama func = " .. tostring(func))
                         local result = client.exec_server_tool(func, args)
-                        debug:log("function_call_result.log", jsonc.stringify(result, true))
+                            debug:log("oasis.log", "recv_ai_msg", jsonc.stringify(result, true))
 
                         local output = jsonc.stringify(result, false)
                         table.insert(function_call.tool_outputs, {
@@ -342,7 +342,7 @@ ollama.new = function()
 
                     local plain_text_for_console = first_output_str
                     local json_text_for_webui    = jsonc.stringify(function_call, false)
-                    debug:log("json_text_for_webui.log", json_text_for_webui)
+                    debug:log("oasis.log", "recv_ai_msg", json_text_for_webui)
                     return plain_text_for_console, json_text_for_webui, speaker, true
                 end
             end
@@ -429,7 +429,7 @@ ollama.new = function()
             local user_msg_json = jsonc.stringify(user_msg, false)
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
 
-            debug:log("ollama-send.log", user_msg_json)
+            debug:log("oasis.log", "prepare_post_to_server", user_msg_json)
 
             return user_msg_json
         end
@@ -450,14 +450,14 @@ ollama.new = function()
 
         obj.handle_tool_output = function(self, tool_info, chat)
             -- 後でserviceオブジェクトに入れてしまうこと
-            debug:log("output-tool.log", "tool_info type = " .. type(tool_info))
-            debug:log("output-tool.log", "tool_info value = " .. tostring(tool_info))
+            debug:log("oasis.log", "handle_tool_output", "tool_info type = " .. type(tool_info))
+            debug:log("oasis.log", "handle_tool_output", "tool_info value = " .. tostring(tool_info))
             if tool_info then
-                debug:log("output-tool.log", "tool_info length = " .. tostring(#tool_info))
+                debug:log("oasis.log", "handle_tool_output", "tool_info length = " .. tostring(#tool_info))
             end
 
             if not tool_info then
-                debug:log("output-tool.log", "tool_info is nil, returning false")
+                debug:log("oasis.log", "handle_tool_output", "tool_info is nil, returning false")
                 return false
             end
 
@@ -481,7 +481,8 @@ ollama.new = function()
 
                 if #tool_calls > 0 then
                     debug:log(
-                        "oasis_output.log",
+                        "oasis.log",
+                        "handle_tool_output",
                         string.format(
                             "[output] insert assistant tool_calls: count=%d",
                             #tool_calls
@@ -498,7 +499,8 @@ ollama.new = function()
                     end
 
                     debug:log(
-                        "oasis_output.log",
+                        "oasis.log",
+                        "handle_tool_output",
                         string.format(
                             "[output] tool msg: id=%s, name=%s, len=%d",
                             tostring(t.id or ""),
@@ -517,7 +519,7 @@ ollama.new = function()
 
                 local chat_json = jsonc.stringify(chat, true)
 
-                debug:log("chat_json.log", chat_json)
+                debug:log("oasis.log", "handle_tool_output", chat_json)
 
                 return true
             end

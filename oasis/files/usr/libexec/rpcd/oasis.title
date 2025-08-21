@@ -23,13 +23,13 @@ local methods = {
             local transfer  = require("oasis.chat.transfer")
             local debug     = require("oasis.chat.debug")
 
-            debug:log("oasis.log", "\n--- [oasis.title][auto_set] ---")
+            debug:log("oasis.log", "auto_set", "\n--- [oasis.title][auto_set] ---")
             local r = {}
             local cfg = datactrl.get_ai_service_cfg(nil, {with_storage = true})
             local file_name = cfg.prefix .. args.id
             local file_path = misc.normalize_path(cfg.path) .. file_name
 
-            debug:log("oasis.log", "file path = " .. file_path)
+            debug:log("oasis.log", "auto_set", "file path = " .. file_path)
 
             local rpath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysmsg = common.load_conf_file(rpath)
@@ -37,18 +37,18 @@ local methods = {
             local service = common.select_service_obj()
 
             if not service then
-                debug:log("oasis.log", "No Service ...")
+                debug:log("oasis.log", "auto_set", "No Service ...")
                 r.result = jsonc.stringify({ status = common.status.not_found })
                 return r
             end
 
             service:initialize(nil, common.ai.format.title)
 
-            debug:log("oasis.log", "file name = " .. file_name)
+            debug:log("oasis.log", "auto_set", "file name = " .. file_name)
             local is_search = common.search_chat_id(args.id)
 
             if not is_search then
-                debug:log("oasis.log", "Not Found ...")
+                debug:log("oasis.log", "auto_set", "Not Found ...")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -67,7 +67,7 @@ local methods = {
                 local chat_data = file:read("*a")
                 file:close()
 
-                debug:log("oasis.log", chat_data)
+                debug:log("oasis.log", "auto_set", chat_data)
 
                 return jsonc.parse(chat_data)
             end
@@ -78,7 +78,7 @@ local methods = {
             local _, title = transfer.chat_with_ai(service, chat)
 
             if (not title) or (#title == 0) then
-                debug:log("oasis.log", "No title ...")
+                debug:log("oasis.log", "auto_set", "No title ...")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
@@ -100,12 +100,12 @@ local methods = {
             local is_set = save_chat_title(args.id, title)
 
             if not is_set then
-                debug:log("oasis.log", "Failed to save chat data ...")
+                debug:log("oasis.log", "auto_set", "Failed to save chat data ...")
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
 
-            debug:log("oasis.log", "title = " .. title)
+            debug:log("oasis.log", "auto_set", "title = " .. title)
 
             r.result = jsonc.stringify({ status = common.status.ok, title = title })
             return r

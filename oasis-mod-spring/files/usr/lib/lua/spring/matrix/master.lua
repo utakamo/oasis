@@ -123,7 +123,7 @@ end
 local register_ccode_event_detecter_func = function(defines, cmdline, name)
 
     if not _G[name] then
-        debug:log("spring-error.log", "[Event] Failed to add \"" .. name .. "\" func")
+        debug:log("oasis.log", "register_ccode_event_detecter_func", "[Event] Failed to add \"" .. name .. "\" func")
         return
     end
 
@@ -138,7 +138,7 @@ end
 local register_ccode_action_func = function(defines, cmdline, name)
 
     if not _G[name] then
-        debug:log("spring-error.log", "[Action] Failed to add \"" .. name .. "\" func")
+        debug:log("oasis.log", "register_ccode_action_func", "[Action] Failed to add \"" .. name .. "\" func")
         return
     end
 
@@ -212,8 +212,8 @@ local execute_phase = function(target_phase_func_list)
     -- event detect function
     for idx, func in ipairs(target_phase_func_list.event) do
 
-        debug:log("spring-function-list.log", "Func name: " .. func.name)
-        debug:dump("spring-data.log", func)
+    debug:log("oasis.log", "execute_phase", "Func name: " .. func.name)
+    debug:dump("oasis.log", func)
 
         if misc.check_file_exist("/tmp/spring/terminate") then
             return PHASE.NONE
@@ -226,14 +226,14 @@ local execute_phase = function(target_phase_func_list)
         local result
         if func.type == db.phase.type.code then
             if func.cmdline then
-                debug:log("spring-func1.log", "arg")
+                debug:log("oasis.log", "execute_phase", "arg")
                 result = func.call(func.args)
             else
-                debug:log("spring-func2.log", "no arg")
+                debug:log("oasis.log", "execute_phase", "no arg")
                 result = func.call()
             end
         elseif func.type == db.phase.type.script then
-            debug:log("spring-func3.log", "scirpt")
+            debug:log("oasis.log", "execute_phase", "scirpt")
             result = func.call(func.script)
         end
 
@@ -243,11 +243,11 @@ local execute_phase = function(target_phase_func_list)
             if type(result) == LUA.TYPE.STRING then
                 -- local next_phase = target_phase_func_list.action[idx].func.call()
                 print(result)
-                debug:log("spring-r.log", "value:" .. result)
+                debug:log("oasis.log", "execute_phase", "value:" .. result)
             elseif type(result) == LUA.TYPE.TABLE then
                 for idx, value in pairs(result) do
                     print(idx .. ": " .. value)
-                    debug:log("spring-r.log", "key:" .. idx .. ", value:" .. value)
+                    debug:log("oasis.log", "execute_phase", "key:" .. idx .. ", value:" .. value)
                 end
             end
         end

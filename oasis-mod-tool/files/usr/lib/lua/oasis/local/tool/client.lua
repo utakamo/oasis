@@ -60,11 +60,10 @@ local setup_lua_server_config = function(server_name)
     local data = jsonc.parse(meta)
 
     if not data then
-        debug:log("oasis-mod-tool.log", server_name .. " is not olt server...")
+        debug:log("oasis.log", "setup_lua_server_config", server_name .. " is not olt server...")
         return
     end
-
-    debug:log("oasis-mod-tool.log", server_name .. " is olt server!!")
+    debug:log("oasis.log", "setup_lua_server_config", server_name .. " is olt server!!")
     uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
 
     local created_sections = {}
@@ -108,16 +107,15 @@ local setup_ucode_server_config = function(server_name)
 
     local server_path = ucode_ubus_server_app_dir .. server_name
     local meta = sys.exec("ucode " .. server_path)
-    debug:log("oasis-mod-tool.log", meta)
+    debug:log("oasis.log", "setup_ucode_server_config", meta)
 
     local data = jsonc.parse(meta)
 
     if not data then
-        debug:log("oasis-mod-tool.log", "Script: " .. server_name .. " is not olt server...")
+        debug:log("oasis.log", "setup_ucode_server_config", "Script: " .. server_name .. " is not olt server...")
         return
     end
-
-    debug:log("oasis-mod-tool.log", server_name .. " is olt server!!")
+    debug:log("oasis.log", "setup_ucode_server_config", server_name .. " is olt server!!")
     uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
 
     local created_sections = {}
@@ -373,18 +371,18 @@ local exec_server_tool = function(tool, data)
     local found = false
     local result = {}
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        debug:log("oasis-mod-tool.log", "s.server = " .. s.server)
-        debug:log("oasis-mod-tool.log", "s.name   = " .. s.name)
-        debug:log("oasis-mod-tool.log", "s.enable = " .. s.enable)
+    debug:log("oasis.log", "exec_server_tool", "config: s.server = " .. s.server)
+    debug:log("oasis.log", "exec_server_tool", "config: s.name   = " .. s.name)
+    debug:log("oasis.log", "exec_server_tool", "config: s.enable = " .. s.enable)
         if s.name == tool and s.enable == "1" then
             found = true
-            debug:log("oasis-mod-tool-data.log", jsonc.stringify(data, false))
+            debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
             result = util.ubus(s.server, s.name, data)
-            debug:log("oasis-mod-tool-final.log", string.format("Result for tool '%s': %s", s.name, tostring(jsonc.stringify(result, false))))
+            debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
         end
     end)
     if not found then
-        debug:log("oasis-mod-tool.log", string.format("Tool '%s' not found or not enabled.", tool))
+    debug:log("oasis.log", "exec_server_tool", string.format("Tool '%s' not found or not enabled.", tool))
     end
 
     return result

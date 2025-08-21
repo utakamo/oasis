@@ -32,8 +32,20 @@ debug.new = function()
         obj.dest = "/tmp/"
     end
 
-    obj.log = function(self, filename, msg)
+    obj.log = function(self, filename, ...)
         if self.disabled then return end
+
+        local args = {...}
+        local msg = ""
+
+        if #args == 1 then
+            msg = tostring(args[1])
+        elseif #args >= 2 then
+            -- second arg is caller function name, third is the message
+            msg = "[" .. tostring(args[1]) .. "] " .. tostring(args[2])
+        else
+            msg = ""
+        end
 
         local path = self.dest .. filename
         local file = io.open(path, "a")

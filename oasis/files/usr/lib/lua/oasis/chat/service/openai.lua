@@ -11,19 +11,19 @@ local debug     = require("oasis.chat.debug")
 local check_tool_call_response = function(response)
 
     if not response or type(response) ~= "table" then
-        debug:log("check_tool_call_response.log", "1")
+        debug:log("oasis.log", "check_tool_call_response", "1 (invalid response: nil or not a table)")
         return false
     end
 
     local choices = response.choices
     if not choices or type(choices) ~= "table" or #choices == 0 then
-        debug:log("check_tool_call_response.log", "2")
+        debug:log("oasis.log", "check_tool_call_response", "2 (invalid response: missing or empty choices array)")
         return false
     end
 
     local choice = choices[1]
     if not choice.message or type(choice.message) ~= "table" then
-        debug:log("check_tool_call_response.log", "3")
+        debug:log("oasis.log", "check_tool_call_response", "3 (invalid response: missing or invalid choice.message)")
         return false
     end
 
@@ -33,13 +33,13 @@ local check_tool_call_response = function(response)
         local tool = message.tool_calls[1]
         if tool["function"] and type(tool["function"]) == "table" then
             if tool["function"].name and tool["function"].arguments then
-                debug:log("check_tool_call_response.log", "4")
+                debug:log("oasis.log", "check_tool_call_response", "4 (tool_calls present with function name and arguments detected)")
                 return true
             end
         end
     end
 
-    debug:log("check_tool_call_response.log", "5")
+    debug:log("oasis.log", "check_tool_call_response", "5 (no valid tool_calls found)")
     return false
 end
 
@@ -187,19 +187,19 @@ openai.new = function()
                 msg.tool_call_id = speaker.tool_call_id
                 msg.name = speaker.name
                 msg.content = speaker.content
-                debug:log("openai.setup_msg.log",
+                debug:log("oasis.log", "setup_msg",
                     string.format("append TOOL msg: id=%s, name=%s, len=%d",
                         tostring(msg.tool_call_id or ""), tostring(msg.name or ""), (msg.content and #msg.content) or 0))
             elseif speaker.role == common.role.assistant and speaker.tool_calls then
                 -- assistant message that contains tool_calls
                 msg.tool_calls = speaker.tool_calls
                 msg.content = speaker.content or ""
-                debug:log("openai.setup_msg.log",
+                debug:log("oasis.log", "setup_msg",
                     string.format("append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls))
             else
                 if not speaker.message or #speaker.message == 0 then return false end
                 msg.content = speaker.message
-                debug:log("openai.setup_msg.log",
+                debug:log("oasis.log", "setup_msg",
                     string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
             end
 
@@ -224,13 +224,13 @@ openai.new = function()
                 return "", "", self.recv_raw_msg, false
             end
 
-            debug:log("openai-ai-recv.log", self.chunk_all)
+            debug:log("oasis.log", "recv_ai_msg", self.chunk_all)
 
             -- check error message
             if chunk_json.error then
                 local error_message = chunk_json.error.message or "Unknown error"
 
-                debug:log("openai-error.log", "API Error: " .. error_message)
+                debug:log("oasis.log", "recv_ai_msg", "API Error: " .. error_message)
 
                 local error_response = {
                     message = {
@@ -248,17 +248,17 @@ openai.new = function()
 
             -- check choices field
             if not chunk_json.choices or type(chunk_json.choices) ~= "table" or #chunk_json.choices == 0 then
-                debug:log("openai-error.log", "Invalid response format: missing or empty choices field")
+                debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing or empty choices field")
                 self.chunk_all = ""
                 return "", "", self.recv_raw_msg, false
             end
 
             -- Function Calling For OpenAI
             if check_tool_call_response(chunk_json) then
-                debug:log("function_call.log", "check_tool_call_response")
+                debug:log("oasis.log", "recv_ai_msg", "check_tool_call_response (tool call detection returned true)")
                 local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
                 if is_tool and chunk_json.choices[1].tool_calls then
-                    debug:log("function_call.log", "is_tool")
+                    debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled)")
                     local client = require("oasis.local.tool.client")
                     local message = chunk_json.choices[1].message
 
@@ -276,9 +276,9 @@ openai.new = function()
                             args = jsonc.parse(tc["function"].arguments) or {}
                         end
 
-                        debug:log("function_call.log", "func = " .. tostring(func))
+                        debug:log("oasis.log", "recv_ai_msg", "func = " .. tostring(func) .. " (detected function name)")
                         local result = client.exec_server_tool(func, args)
-                        debug:log("function_call_result.log", jsonc.stringify(result, true))
+                        debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
 
                         local output = jsonc.stringify(result, false)
                         table.insert(function_call.tool_outputs, {
@@ -301,8 +301,8 @@ openai.new = function()
 
                     local plain_text_for_console = first_output_str
                     local json_text_for_webui    = jsonc.stringify(function_call, false)
-                    debug:log("json_text_for_webui.log", json_text_for_webui)
-                    debug:log("function_call.log",
+                    debug:log("oasis.log", "recv_ai_msg", "json_text_for_webui = " .. json_text_for_webui)
+                    debug:log("oasis.log", "recv_ai_msg",
                         string.format("return speaker(tool_calls=%d), tool_outputs=%d",
                             #speaker.tool_calls, #function_call.tool_outputs))
 
@@ -317,7 +317,7 @@ openai.new = function()
 
             -- check choices table
             if not chunk_json.choices[1] or not chunk_json.choices[1].message then
-                debug:log("openai-error.log", "Invalid response format: missing message in choices[1]")
+                debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing message in choices[1]")
                 return "", "", self.recv_raw_msg, false
             end
 
@@ -415,14 +415,14 @@ openai.new = function()
 
         obj.handle_tool_output = function(self, tool_info, chat)
             -- 後でserviceオブジェクトに入れてしまうこと
-            debug:log("output-tool.log", "tool_info type = " .. type(tool_info))
-            debug:log("output-tool.log", "tool_info value = " .. tostring(tool_info))
+            debug:log("oasis.log", "handle_tool_output", "tool_info type = " .. type(tool_info))
+            debug:log("oasis.log", "handle_tool_output", "tool_info value = " .. tostring(tool_info))
             if tool_info then
-                debug:log("output-tool.log", "tool_info length = " .. tostring(#tool_info))
+                debug:log("oasis.log", "handle_tool_output", "tool_info length = " .. tostring(#tool_info))
             end
 
             if not tool_info then
-                debug:log("output-tool.log", "tool_info is nil, returning false")
+                debug:log("oasis.log", "handle_tool_output", "tool_info is nil, returning false")
                 return false
             end
 
@@ -446,7 +446,8 @@ openai.new = function()
 
                 if #tool_calls > 0 then
                     debug:log(
-                        "oasis_output.log",
+                        "oasis.log",
+                        "handle_tool_output",
                         string.format(
                             "[output] insert assistant tool_calls: count=%d",
                             #tool_calls
@@ -463,7 +464,8 @@ openai.new = function()
                     end
 
                     debug:log(
-                        "oasis_output.log",
+                        "oasis.log",
+                        "handle_tool_output",
                         string.format(
                             "[output] tool msg: id=%s, name=%s, len=%d",
                             tostring(t.tool_call_id or t.id or ""),
@@ -482,7 +484,7 @@ openai.new = function()
 
                 local chat_json = jsonc.stringify(chat, true)
 
-                debug:log("chat_json.log", chat_json)
+                debug:log("oasis.log", "handle_tool_output", chat_json)
 
                 return true
             end

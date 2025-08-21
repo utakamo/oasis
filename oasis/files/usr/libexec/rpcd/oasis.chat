@@ -30,7 +30,7 @@ local methods = {
             local uci           = require("luci.model.uci").cursor()
             local oasis_ubus    = require("oasis.ubus.util")
             local common        = require("oasis.common")
-            -- debug:log("oasis.log", "\n--- [oasis.chat][send] ---")
+            -- debug:log("oasis.log", "send", "\n--- [oasis.chat][send] ---")
 
             local r = {}
 
@@ -71,7 +71,7 @@ local methods = {
             local new_chat_tbl = jsonc.parse(new_chat_info)
 
             -- debug:dump("oasis.log", new_chat_tbl)
-            -- debug:log("oasis.log", plain_text_ai_message)
+            -- debug:log("oasis.log", "send", plain_text_ai_message)
 
             r.result = jsonc.stringify({content         = plain_text_ai_message,
                                         id              = new_chat_tbl.id, 
@@ -89,7 +89,7 @@ local methods = {
             local datactrl      = require("oasis.chat.datactrl")
             local misc          = require("oasis.chat.misc")
             local common        = require("oasis.common")
-            -- debug:log("oasis.log", "\n--- [oasis.chat][load] ---")
+            -- debug:log("oasis.log", "load", "\n--- [oasis.chat][load] ---")
 
             local r = {}
             local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
@@ -106,8 +106,8 @@ local methods = {
 
             local read_chat_data = function(file_path)
 
-                -- debug:log("oasis.log", "\n--- [oasis.chat][read_chat_data] ---")
-                -- debug:log("oasis.log", "file path = " .. file_path)
+                -- debug:log("oasis.log", "load", "\n--- [oasis.chat][read_chat_data] ---")
+                -- debug:log("oasis.log", "load", "file path = " .. file_path)
 
                 local file = io.open(file_path, "r")
 
@@ -118,7 +118,7 @@ local methods = {
                 local chat_data = file:read("*a")
                 file:close()
 
-                -- debug:log("oasis.log", "chat data = " .. chat_data)
+                -- debug:log("oasis.log", "load", "chat data = " .. chat_data)
 
                 return chat_data
             end

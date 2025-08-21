@@ -10,12 +10,12 @@ local debug     = require("oasis.chat.debug")
 
 local enqueue_rollback_data_with_enviction = function(data)
 
-    debug:log("oasis.log", "\n--- [apply.lua][enqueue_rollback_data_with_enviction] ---")
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "\n--- [apply.lua][enqueue_rollback_data_with_enviction] ---")
 
     local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rollback, "enable")
 
     if not enable then
-        debug:log("oasis.log", "rollback func disabled...")
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "rollback func disabled...")
         return
     end
 
@@ -23,15 +23,15 @@ local enqueue_rollback_data_with_enviction = function(data)
     list_max_num = tonumber(list_max_num)
     misc.write_file(common.rollback.dir .. common.rollback.uci_cmd_json, data)
 
-    debug:log("oasis.log", "write: " .. common.rollback.dir .. common.rollback.uci_cmd_json)
-    debug:log("oasis.log", "data: " .. data)
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "write: " .. common.rollback.dir .. common.rollback.uci_cmd_json)
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "data: " .. data)
 
     local target_uci_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "targets")
     local rollback_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list")
 
-    debug:log("oasis.log", "<target uci list>")
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "<target uci list>")
     debug:dump("oasis.log", target_uci_list)
-    debug:log("oasis.log", "<rollback list>")
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "<rollback list>")
     debug:dump("oasis.log", rollback_list)
 
     local index = #rollback_list + 1
@@ -40,63 +40,63 @@ local enqueue_rollback_data_with_enviction = function(data)
         for _, config in ipairs(target_uci_list) do
             local src = common.rollback.dir .. config
             local dest = common.rollback.dir .. rollback_list[idx] .. "/" .. config
-            debug:log("oasis.log", "[Copy File 1] src: " .. src .. ", dest: " .. dest)
+        debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "[Copy File 1] src: " .. src .. ", dest: " .. dest)
             misc.copy_file(src, dest)
         end
 
         local src = common.rollback.dir .. common.rollback.uci_cmd_json
         local dest = common.rollback.dir .. rollback_list[idx] .. "/" .. common.rollback.uci_cmd_json
-        debug:log("oasis.log", "[Copy File 2] src: " .. src .. ", dest: " .. dest)
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "[Copy File 2] src: " .. src .. ", dest: " .. dest)
         misc.copy_file(src, dest)
 
         local backup_uci_list = jsonc.stringify(target_uci_list)
         local filename = common.rollback.dir .. rollback_list[idx] .. "/" .. common.rollback.backup_uci_list
-        debug:log("oasis.log", "backup_uci_list: " .. backup_uci_list)
-        debug:log("oasis.log", "filename: " .. filename)
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "backup_uci_list: " .. backup_uci_list)
+    debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "filename: " .. filename)
         misc.write_file(filename, backup_uci_list)
     end
 
     local dequeue = function()
-        debug:log("oasis.log", "dequeue start")
+    debug:log("oasis.log", "dequeue", "dequeue start")
         for i = 2, list_max_num do
-            debug:log("oasis.log", "index = " .. i)
+            debug:log("oasis.log", "dequeue", "index = " .. i)
             local list_path = common.rollback.dir .. rollback_list[i - 1] .. "/" .. common.rollback.backup_uci_list
-            debug:log("oasis.log", "list_path: " .. list_path)
+            debug:log("oasis.log", "dequeue", "list_path: " .. list_path)
             local list_json = misc.read_file(list_path)
-            debug:log("oasis.log", "list_jso: " .. list_json)
+            debug:log("oasis.log", "dequeue", "list_jso: " .. list_json)
             local delete_uci_list = jsonc.parse(list_json)
             debug:dump("oasis.log", delete_uci_list)
 
             for _, cfg in ipairs(delete_uci_list) do
-                debug:log("Remove: ", common.rollback.dir .. rollback_list[i - 1] .. "/" .. cfg)
+                debug:log("oasis.log", "dequeue", "Remove: " .. common.rollback.dir .. rollback_list[i - 1] .. "/" .. cfg)
                 os.remove(common.rollback.dir .. rollback_list[i - 1] .. "/" .. cfg)
             end
 
             local src = common.rollback.dir .. rollback_list[i] .. "/" .. common.rollback.uci_cmd_json
             local dest = common.rollback.dir .. rollback_list[i - 1] .. "/" .. common.rollback.uci_cmd_json
-            debug:log("oasis.log", "[Copy File 3] src: " .. src .. ", dest: " .. dest)
+            debug:log("oasis.log", "dequeue", "[Copy File 3] src: " .. src .. ", dest: " .. dest)
             misc.copy_file(src, dest)
 
             src = common.rollback.dir .. rollback_list[i] .. "/" .. common.rollback.backup_uci_list
             dest = common.rollback.dir .. rollback_list[i - 1] .. "/" .. common.rollback.backup_uci_list
-            debug:log("oasis.log", "[Copy File 4] src: " .. src .. ", dest: " .. dest)
+            debug:log("oasis.log", "dequeue", "[Copy File 4] src: " .. src .. ", dest: " .. dest)
             misc.copy_file(src, dest)
 
             local backup_uci_list_json = misc.read_file(src)
-            debug:log("oasis.log", "backup_uci_list_json: " .. backup_uci_list_json)
+            debug:log("oasis.log", "dequeue", "backup_uci_list_json: " .. backup_uci_list_json)
             local backup_uci_list = jsonc.parse(backup_uci_list_json)
             debug:dump("oasis.log", backup_uci_list)
             for _, cfg in ipairs(backup_uci_list) do
                 src = common.rollback.dir .. rollback_list[i] .. "/" .. cfg
                 dest = common.rollback.dir .. rollback_list[i - 1] .. "/" ..cfg
-                debug:log("oasis.log", "[Copy File 5] src: " .. src .. ", dest: " .. dest)
+                debug:log("oasis.log", "dequeue", "[Copy File 5] src: " .. src .. ", dest: " .. dest)
                 misc.copy_file(src, dest)
             end
         end
     end
 
     if (index <= list_max_num) then
-        debug:log("oasis.log", "First enqueue!!")
+        debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "First enqueue!!")
         rollback_list[index] = common.rollback.list_item_name .. index
 
         enqueue(index)
@@ -112,7 +112,7 @@ end
 local rollback_target_data = function(index)
 
     debug:log("oasis.log", "\n--- [apply.lua][rollback_target_data] ---")
-    debug:log("oasis.log", "index: " .. index)
+    debug:log("oasis.log", "rollback_target_data", "index: " .. index)
 
     local rollback_list = uci:get_list(common.db.uci.cfg, common.db.uci.sect.rollback, "list")
     local restored_list = {}
@@ -121,20 +121,20 @@ local rollback_target_data = function(index)
 
     -- Rollback data (core process)
     for i = index, #rollback_list do
-        debug:log("oasis.log", "i = " .. i)
-        debug:log("oasis.log", "#rollback_list = " .. #rollback_list)
-        local file = common.rollback.dir .. rollback_list[i] .. "/" .. common.rollback.backup_uci_list
-        debug:log("oasis.log", "file: " .. file)
-        local rollback_target_json = misc.read_file(file)
-        debug:log("oasis.log", "rollback_target_json: " .. rollback_target_json)
+    debug:log("oasis.log", "rollback_target_data", "i = " .. i)
+    debug:log("oasis.log", "rollback_target_data", "#rollback_list = " .. #rollback_list)
+    local file = common.rollback.dir .. rollback_list[i] .. "/" .. common.rollback.backup_uci_list
+    debug:log("oasis.log", "rollback_target_data", "file: " .. file)
+    local rollback_target_json = misc.read_file(file)
+    debug:log("oasis.log", "rollback_target_data", "rollback_target_json: " .. rollback_target_json)
         local rollback_target_tbl = jsonc.parse(rollback_target_json)
-        debug:dump("oasis.log", rollback_target_tbl)
+    debug:dump("oasis.log", rollback_target_tbl)
         for _, cfg in ipairs(rollback_target_tbl) do
 
             local is_restored = false
             for _, restored_cfg in ipairs(restored_list) do
                 if cfg == restored_cfg then
-                    debug:log("oasis.log", "The following setting has been rolled back: " .. cfg)
+                    debug:log("oasis.log", "rollback_target_data", "The following setting has been rolled back: " .. cfg)
                     is_restored = true
                     break
                 end
