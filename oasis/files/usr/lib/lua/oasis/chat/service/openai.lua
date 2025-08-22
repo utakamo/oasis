@@ -376,13 +376,12 @@ openai.new = function()
 
             -- role:toolがある場合、AIに結果が送られることを示すため
             -- ここではtoolsフィールドを入れない（入れても良い、その場合、失敗に対してツール実行ができる）
-            for _, message in ipairs(user_msg.messages) do
-                if message.role == "tool" then
-                    user_msg.tool_choice = nil -- 前回のやり取りで付与されたtool_choicesフィールドを除去する
-                    user_msg.tools = nil -- 前回のやり取りで付与されたtoolsフィールドを除去する
-                    local user_msg_json = jsonc.stringify(user_msg, false)
-                    return user_msg_json
-                end
+            local last = user_msg.messages and user_msg.messages[#user_msg.messages]
+            if last and last.role == "tool" then
+                user_msg.tool_choice = nil
+                user_msg.tools = nil
+                local user_msg_json = jsonc.stringify(user_msg, false)
+                return user_msg_json
             end
 
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
