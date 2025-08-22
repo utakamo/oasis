@@ -52,6 +52,7 @@ openai.new = function()
         obj.recv_raw_msg = {}
         obj.recv_raw_msg.role = common.role.unknown
         obj.recv_raw_msg.message = ""
+        obj.processed_tool_call_ids = {}
         obj.cfg = nil
         obj.format = nil
 
@@ -63,6 +64,7 @@ openai.new = function()
         obj.init_msg_buffer = function(self)
             self.recv_raw_msg.role = common.role.unknown
             self.recv_raw_msg.message = ""
+            -- Keep processed_tool_call_ids across requests to avoid duplicate tool execution
         end
 
         obj.set_chat_id = function(self, id)
@@ -224,6 +226,9 @@ openai.new = function()
                 return "", "", self.recv_raw_msg, false
             end
 
+            -- Reset processed tool_call ids per assistant message
+            self.processed_tool_call_ids = {}
+
             debug:log("oasis.log", "recv_ai_msg", self.chunk_all)
 
             -- check error message
@@ -257,7 +262,7 @@ openai.new = function()
             if check_tool_call_response(chunk_json) then
                 debug:log("oasis.log", "recv_ai_msg", "check_tool_call_response (tool call detection returned true)")
                 local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-                if is_tool and chunk_json.choices[1].tool_calls then
+                if is_tool and chunk_json.choices[1].message and chunk_json.choices[1].message.tool_calls then
                     debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled)")
                     local client = require("oasis.local.tool.client")
                     local message = chunk_json.choices[1].message
@@ -277,26 +282,32 @@ openai.new = function()
                         end
 
                         debug:log("oasis.log", "recv_ai_msg", "func = " .. tostring(func) .. " (detected function name)")
-                        local result = client.exec_server_tool(func, args)
-                        debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
+                        local call_id = tc.id or ""
+                        if self.processed_tool_call_ids[call_id] then
+                            debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. tostring(call_id))
+                        else
+                            self.processed_tool_call_ids[call_id] = true
+                            local result = client.exec_server_tool(func, args)
+                            debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
 
-                        local output = jsonc.stringify(result, false)
-                        table.insert(function_call.tool_outputs, {
-                            tool_call_id = tc.id,
-                            output = output,
-                            name = func
-                        })
+                            local output = jsonc.stringify(result, false)
+                            table.insert(function_call.tool_outputs, {
+                                tool_call_id = tc.id,
+                                output = output,
+                                name = func
+                            })
 
-                        table.insert(speaker.tool_calls, {
-                            id = tc.id,
-                            type = "function",
-                            ["function"] = {
-                                name = func,
-                                arguments = jsonc.stringify(args, false)
-                            }
-                        })
+                            table.insert(speaker.tool_calls, {
+                                id = tc.id,
+                                type = "function",
+                                ["function"] = {
+                                    name = func,
+                                    arguments = jsonc.stringify(args, false)
+                                }
+                            })
 
-                        if first_output_str == "" then first_output_str = output end
+                            if first_output_str == "" then first_output_str = output end
+                        end
                     end
 
                     local plain_text_for_console = first_output_str
@@ -306,6 +317,8 @@ openai.new = function()
                         string.format("return speaker(tool_calls=%d), tool_outputs=%d",
                             #speaker.tool_calls, #function_call.tool_outputs))
 
+                    -- Clear buffer to avoid duplicate processing on repeated callbacks
+                    self.chunk_all = ""
                     return plain_text_for_console, json_text_for_webui, speaker, true
                 end
             end
@@ -321,15 +334,17 @@ openai.new = function()
                 return "", "", self.recv_raw_msg, false
             end
 
-            self.recv_raw_msg.role = chunk_json.choices[1].message.role
-            self.recv_raw_msg.message = self.recv_raw_msg.message .. chunk_json.choices[1].message.content
+            local msg = chunk_json.choices[1].message or {}
+            self.recv_raw_msg.role = msg.role
+            local content = msg.content or ""
+            self.recv_raw_msg.message = (self.recv_raw_msg.message or "") .. content
 
             local reply = {}
             reply.message = {}
-            reply.message.role = chunk_json.choices[1].message.role
-            reply.message.content = chunk_json.choices[1].message.content
+            reply.message.role = msg.role
+            reply.message.content = content
 
-            plain_text_for_console = misc.markdown(self.mark, reply.message.content)
+            plain_text_for_console = misc.markdown(self.mark, content)
             json_text_for_webui = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then

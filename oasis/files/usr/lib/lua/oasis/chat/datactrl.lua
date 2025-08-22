@@ -244,5 +244,6 @@ return {
     get_ai_service_cfg = get_ai_service_cfg,
     load_chat_data = load_chat_data,
     create_chat_file = create_chat_file,
+    set_chat_title = set_chat_title,
     record_chat_data = record_chat_data,
 }

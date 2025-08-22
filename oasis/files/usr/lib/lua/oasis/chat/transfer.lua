@@ -77,11 +77,11 @@ local output_response_msg = function(format, text_for_console, text_for_webui, t
                     io.write(tbl.name)
                 end
             end
-
+            io.write('\n')
             io.flush()
 
         elseif (text_for_console) and (#text_for_console) > 0 then
-            io.write(text_for_console)
+            io.write(text_for_console .. '\n')
             io.flush()
         end
 
@@ -157,8 +157,20 @@ local chat_with_ai = function(service, chat)
     if format == common.ai.format.chat then
         debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
             debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
+        -- chat mode
         if service:setup_msg(chat, ai_response_tbl) then
-            datactrl.record_chat_data(service, chat)
+            local cfg = service:get_config()
+            if (not cfg.id) or (#cfg.id == 0) then
+                -- On the first assistant text after a tool_calls turn, persist the chat
+                local save_chat = clone_chat_without_tool_messages(chat)
+                local chat_info = {}
+                chat_info.id = datactrl.create_chat_file(service, save_chat)
+                service:set_chat_id(chat_info.id)
+                -- Set the title and announce to console
+                datactrl.set_chat_title(service, chat_info.id)
+            else
+                datactrl.record_chat_data(service, chat)
+            end
         end
     elseif (format == common.ai.format.output) or (format == common.ai.format.rpc_output) then
 
