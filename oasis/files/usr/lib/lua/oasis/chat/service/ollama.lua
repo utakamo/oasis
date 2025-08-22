@@ -62,12 +62,12 @@ ollama.new = function()
 
         obj.setup_system_msg = function(self, chat)
 
-            -- role:toolがある場合、AIに結果が送られることを示すため
-            -- ここではtoolsフィールドを入れない（入れても良い、その場合、失敗に対してツール実行ができる）
+            -- When role:tool is present, it indicates that results are sent to AI
+            -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
             for _, message in ipairs(chat.messages) do
                 if message.role == "tool" then
-                    chat.tool_choice = nil -- 前回のやり取りで付与されたtool_choicesフィールドを除去する
-                    chat.tools = nil -- 前回のやり取りで付与されたtoolsフィールドを除去する
+                    chat.tool_choice = nil -- Remove tool_choices field assigned in previous interaction
+                    chat.tools = nil -- Remove tools field assigned in previous interaction
                     return
                 end
             end
@@ -394,8 +394,8 @@ ollama.new = function()
             local model = (self.cfg and self.cfg.model) or ""
             local supports_tool = is_model_tool_capable(model)
 
-            -- role:toolがある場合、AIに結果が送られることを示すため
-            -- ここではtoolsフィールドを入れない（入れても良い、その場合、失敗に対してツール実行ができる）
+            -- When role:tool is present, it indicates that results are sent to AI
+            -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
             local last = user_msg.messages and user_msg.messages[#user_msg.messages]
             if last and last.role == "tool" then
                 user_msg.tool_choice = nil
@@ -448,7 +448,6 @@ ollama.new = function()
         end
 
         obj.handle_tool_output = function(self, tool_info, chat)
-            -- 後でserviceオブジェクトに入れてしまうこと
             debug:log("oasis.log", "handle_tool_output", "tool_info type = " .. type(tool_info))
             debug:log("oasis.log", "handle_tool_output", "tool_info value = " .. tostring(tool_info))
             if tool_info then
