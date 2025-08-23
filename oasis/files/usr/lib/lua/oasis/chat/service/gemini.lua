@@ -107,13 +107,13 @@ gemini.new = function()
             reply.message.content = content
 
             local plain_text_for_console = misc.markdown(self.mark, content)
-            local json_text_for_webui = jsonc.stringify(reply, false)
+            local response_ai_json = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
                 return "", "", self.recv_ai_msg
             end
 
-            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg
+            return plain_text_for_console, response_ai_json, self.recv_raw_msg
         end
 
         obj.append_chat_data = function(self, chat)

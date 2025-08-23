@@ -245,10 +245,10 @@ openai.new = function()
                 }
 
                 local plain_text_for_console = error_message
-                local json_text_for_webui = jsonc.stringify(error_response, false)
+                local response_ai_json = jsonc.stringify(error_response, false)
 
                 self.chunk_all = ""
-                return plain_text_for_console, json_text_for_webui, self.recv_raw_msg, false
+                return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
             end
 
             -- check choices field
@@ -311,22 +311,22 @@ openai.new = function()
                     end
 
                     local plain_text_for_console = first_output_str
-                    local json_text_for_webui    = jsonc.stringify(function_call, false)
-                    debug:log("oasis.log", "recv_ai_msg", "json_text_for_webui = " .. json_text_for_webui)
+                    local response_ai_json    = jsonc.stringify(function_call, false)
+                    debug:log("oasis.log", "recv_ai_msg", "response_ai_json = " .. response_ai_json)
                     debug:log("oasis.log", "recv_ai_msg",
                         string.format("return speaker(tool_calls=%d), tool_outputs=%d",
                             #speaker.tool_calls, #function_call.tool_outputs))
 
                     -- Clear buffer to avoid duplicate processing on repeated callbacks
                     self.chunk_all = ""
-                    return plain_text_for_console, json_text_for_webui, speaker, true
+                    return plain_text_for_console, response_ai_json, speaker, true
                 end
             end
 
             self.chunk_all = ""
 
             local plain_text_for_console
-            local json_text_for_webui
+            local response_ai_json
 
             -- check choices table
             if not chunk_json.choices[1] or not chunk_json.choices[1].message then
@@ -345,13 +345,13 @@ openai.new = function()
             reply.message.content = content
 
             plain_text_for_console = misc.markdown(self.mark, content)
-            json_text_for_webui = jsonc.stringify(reply, false)
+            response_ai_json = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
                 return "", "", self.recv_ai_msg, false
             end
 
-            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg, false
+            return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
         end
 
         obj.append_chat_data = function(self, chat)

@@ -341,9 +341,9 @@ ollama.new = function()
                     end
 
                     local plain_text_for_console = first_output_str
-                    local json_text_for_webui    = jsonc.stringify(function_call, false)
-                    debug:log("oasis.log", "recv_ai_msg", json_text_for_webui)
-                    return plain_text_for_console, json_text_for_webui, speaker, true
+                    local response_ai_json    = jsonc.stringify(function_call, false)
+                    debug:log("oasis.log", "recv_ai_msg", response_ai_json)
+                    return plain_text_for_console, response_ai_json, speaker, true
                 end
             end
 
@@ -357,13 +357,13 @@ ollama.new = function()
             self.recv_raw_msg.message = self.recv_raw_msg.message .. tostring(chunk_json.message.content)
 
             local plain_text_for_console = misc.markdown(self.mark, tostring(chunk_json.message.content))
-            local json_text_for_webui = jsonc.stringify(chunk_json, false)
+            local response_ai_json = jsonc.stringify(chunk_json, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
                 return "", "", self.recv_raw_msg, false
             end
 
-            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg, false
+            return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
         end
 
         obj.append_chat_data = function(self, chat)

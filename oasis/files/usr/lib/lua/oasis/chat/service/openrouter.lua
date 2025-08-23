@@ -164,7 +164,7 @@ openrouter.new = function()
             self.chunk_all = ""
 
             local plain_text_for_console
-            local json_text_for_webui
+            local response_ai_json
 
             self.recv_raw_msg.role = chunk_json.choices[1].message.role
             self.recv_raw_msg.message = self.recv_raw_msg.message .. chunk_json.choices[1].message.content
@@ -175,13 +175,13 @@ openrouter.new = function()
             reply.message.content = chunk_json.choices[1].message.content
 
             plain_text_for_console = misc.markdown(self.mark, reply.message.content)
-            json_text_for_webui = jsonc.stringify(reply, false)
+            response_ai_json = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
                 return "", "", self.recv_ai_msg
             end
 
-            return plain_text_for_console, json_text_for_webui, self.recv_raw_msg
+            return plain_text_for_console, response_ai_json, self.recv_raw_msg
         end
 
         obj.append_chat_data = function(self, chat)
