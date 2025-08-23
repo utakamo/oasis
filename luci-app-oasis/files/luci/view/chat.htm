@@ -488,7 +488,7 @@
         });
     }
 
-    // Global: チャットリスト項目の生成とイベント付与（どこからでも呼べるように）
+    // Global: Create chat list items and attach events (callable from anywhere)
     function addChatListEntry(id, title) {
         const chatMessagesContainer = document.querySelector('.chat-messages');
         const chatListContainer = document.getElementById("chat-list");
@@ -921,7 +921,7 @@
             toggleSendDisabled();
             // Initial adjust for mobile keyboard when focusing the input
             messageInputEl.addEventListener('focus', () => {
-                // 次にIMEが開いたら末尾へ寄せるフラグ
+                // Flag to scroll to bottom next time the IME opens
                 pendingBottomOnKeyboardOpen = true;
                 setTimeout(() => { if (isKeyboardOpen) keepLatestMessageVisible(true); }, 50);
                 setTimeout(() => { if (isKeyboardOpen) keepLatestMessageVisible(true); }, 200);
@@ -1733,16 +1733,15 @@
 
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
-    // No need to cache last user message in UI; server complements when needed
-        // Use origin to preserve port and scheme for same-origin requests
         const baseUrl = window.location.origin || `${window.location.protocol}//${window.location.host}`;
         let fullMessage = '';
         let is_notify = false;
         let toolNoticesHtml = '';
-        let toolPassthroughSent = false;
         let errorNoticesHtml = '';
+        let toolNoticeShown = false;
+        let toolNoticeMessageDiv = null;
 
-        // 完全なJSONオブジェクトをバッファから切り出すユーティリティ
+        // Utility to extract complete JSON objects from the buffer
         function extractJsonObjects(text) {
             const objects = [];
             let startIndex = -1;
@@ -1785,7 +1784,6 @@
             if (depth > 0 && startIndex !== -1) {
                 remaining = text.slice(startIndex);
             } else if (startIndex === -1) {
-                // 余った非JSONテキスト（SSEのプレフィクスなど）は保持しない
                 remaining = '';
             }
 
@@ -1800,7 +1798,7 @@
                     cmd: 'chat',
                     id: targetChatId,
                     message: messageText,
-                    sysmsg_key: sysmsg_key, 
+                    sysmsg_key: sysmsg_key,
                 })
             });
 
@@ -1822,154 +1820,78 @@
 
                 buffer += decoder.decode(value, { stream: true });
 
-                // NDJSON / SSE 前置きが混在しても、{}の深さで安全に抽出
+                // Safely extract using brace depth even if NDJSON/SSE prefixes are mixed
                 const { objects, remaining } = extractJsonObjects(buffer);
-                buffer = remaining; // 解析済み以外を保持
+                buffer = remaining;
 
                 for (const jsonText of objects) {
                     let evt = null;
                     try {
                         evt = JSON.parse(jsonText);
                     } catch (e) {
-                        // 部分的に壊れた場合はスキップ（残りを待つ）
                         continue;
                     }
 
-                    // Tool execution notice (badge at the top) + required fields validation
-                    // Expected JSON: {"tool_outputs":[{"tool_call_id":"...","output":"...","name":"..."}], "service":"OpenAI"}
+                    // Tool execution notice
+                    // Expected JSON: {"tool_outputs":[{"tool_call_id":"...","output":"...","name":"..."}], "service":"..."}
                     if (evt && Array.isArray(evt.tool_outputs)) {
-                        console.debug('[Oasis][chat.htm] tool evt(single):', evt);
-                        console.debug('[Oasis][chat.htm] tool evt(stream):', evt);
                         const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
                         const hasOutputs = (evt.tool_outputs.length > 0);
-                        // tool_call_id は任意: output の存在のみを必須とする
                         const allValid = hasOutputs && evt.tool_outputs.every(o => ('output' in o));
 
-                        // Collect tool names from each output element (optional)
                         const names = hasOutputs
                             ? Array.from(new Set(
                                 evt.tool_outputs
-                                  .map(o => (typeof o.name === 'string' && o.name.length > 0) ? o.name : null)
-                                  .filter(Boolean)
-                              ))
+                                    .map(o => (typeof o.name === 'string' && o.name.length > 0) ? o.name : null)
+                                    .filter(Boolean)
+                            ))
                             : [];
                         const toolNamesLabel = names.length ? names.join(', ') : '(unknown)';
 
                         if (hasService && allValid) {
-                            console.debug('[Oasis][chat.htm] tool validated(single), names=', names);
-                            console.debug('[Oasis][chat.htm] tool validated(stream), names=', names);
                             toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(toolNamesLabel)}</span></div>`;
-                            // Auto passthrough tool result to server (fire-and-forget)
-                            if (!toolPassthroughSent) {
-                                try {
-                                    console.debug('[Oasis][chat.htm] POST tool evt to CGI (stream)');
-                                    // Show secondary Thinking... while waiting server response
-                                    const chatRoot = document.querySelector('.chat-messages');
-                                    const tpContainer = document.createElement('div');
-                                    tpContainer.className = 'message received';
-                                    const tpIcon = document.createElement('div');
-                                    tpIcon.className = 'icon';
-                                    tpIcon.style.backgroundImage = `url(${resourcePath}/oasis/${icon_name})`;
-                                    const tpText = document.createElement('div');
-                                    tpText.className = 'message-text chat-bubble';
-                                    const tpDots = document.createElement('span');
-                                    tpDots.classList.add('typing-dots');
-                                    for (let i = 0; i < 3; i++) { tpDots.appendChild(document.createElement('span')); }
-                                    const tpLabel = document.createElement('span');
-                                    tpLabel.classList.add('typing-text');
-                                    tpLabel.textContent = 'Thinking...';
-                                    tpText.appendChild(tpDots);
-                                    tpText.appendChild(tpLabel);
-                                    tpContainer.appendChild(tpIcon);
-                                    tpContainer.appendChild(tpText);
-                                    chatRoot.appendChild(tpContainer);
+                            if (!toolNoticeShown) {
+                                // Insert Tool Used bubble before current typing bubble
+                                const iconPath = `${resourcePath}/oasis/${icon_name}`;
+                                const msgDiv = document.createElement('div');
+                                msgDiv.className = 'message received';
+                                const iconDiv = document.createElement('div');
+                                iconDiv.className = 'icon';
+                                iconDiv.style.backgroundImage = `url(${iconPath})`;
+                                const textDiv = document.createElement('div');
+                                textDiv.className = 'message-text chat-bubble';
+                                textDiv.innerHTML = toolNoticesHtml;
+                                msgDiv.appendChild(iconDiv);
+                                msgDiv.appendChild(textDiv);
+                                const chatRoot = document.querySelector('.chat-messages');
+                                const parentMsg = receivedMessageTextContainer && receivedMessageTextContainer.parentNode;
+                                if (chatRoot) {
+                                    if (parentMsg && chatRoot.contains(parentMsg)) {
+                                        chatRoot.insertBefore(msgDiv, parentMsg);
+                                    } else {
+                                        chatRoot.appendChild(msgDiv);
+                                    }
+                                }
+                                toolNoticeShown = true;
+                                toolNoticeMessageDiv = msgDiv;
+                                if (isKeyboardOpen) {
                                     keepLatestMessageVisible(true);
-
-                                    const body = JSON.stringify({
-                                        tool_outputs: evt.tool_outputs,
-                                        service: evt.service
-                                    });
-                                    fetch(`${baseUrl}/cgi-bin/oasis`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body
-                                    })
-                                    .then(res => res.text())
-                                    .then(text => {
-                                        console.debug('[Oasis][chat.htm] CGI response(stream):', text);
-                                        // The CGI may return concatenated JSON objects (assistant message and new_chat_info)
-                                        // Parse and render only assistant message.content; update targetChatId from new_chat_info
-                                        let content = '';
-                                        try {
-                                            const parts = [];
-                                            let depth = 0;
-                                            let start = -1;
-                                            let inString = false;
-                                            let escapeNext = false;
-                                            for (let i = 0; i < text.length; i++) {
-                                                const ch = text[i];
-                                                if (inString) {
-                                                    if (escapeNext) {
-                                                        escapeNext = false;
-                                                    } else if (ch === '\\') {
-                                                        escapeNext = true;
-                                                    } else if (ch === '"') {
-                                                        inString = false;
-                                                    }
-                                                } else {
-                                                    if (ch === '"') {
-                                                        inString = true;
-                                                    } else if (ch === '{') {
-                                                        if (depth === 0) start = i;
-                                                        depth++;
-                                                    } else if (ch === '}') {
-                                                        depth--;
-                                                        if (depth === 0 && start >= 0) {
-                                                            parts.push(text.slice(start, i + 1));
-                                                            start = -1;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            for (const p of parts) {
-                                                try {
-                                                    const evt = JSON.parse(p);
-                                                    if (evt && evt.message && typeof evt.message.content === 'string') {
-                                                        content += evt.message.content;
-                                                    }
-                                                    if (evt && evt.id && (typeof isNumeric === 'function' ? isNumeric(evt.id) : !isNaN(Number(evt.id)))) {
-                                                        targetChatId = evt.id;
-                                                    }
-                                                } catch (e) {
-                                                    // ignore this part
-                                                }
-                                            }
-                                        } catch (e) {
-                                            // fallback to raw text
-                                            content = text;
-                                        }
-                                        tpText.innerHTML = convertMarkdownToHTML(content || '');
-                                        keepLatestMessageVisible(true);
-                                    })
-                                    .catch(() => {
-                                        console.error('[Oasis][chat.htm] CGI error(stream)');
-                                        tpText.innerHTML = convertMarkdownToHTML('Tool submission failed.');
-                                    });
-                                } catch (_) {}
-                                toolPassthroughSent = true;
+                                    setChatScrollLock(true);
+                                } else {
+                                    keepLatestMessageVisible(false);
+                                }
                             }
                         } else {
-                            console.warn('[Oasis][chat.htm] invalid tool evt(stream)');
                             const missing = [];
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
                             else if (!allValid) missing.push('tool_outputs[*].output');
-                            errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
+                            errorNoticesHtml += `<div class="error-notice">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
                         }
 
-                        // デスクトップ時は逐次描画
-                        if (!isSmallViewport) {
-                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + toolNoticesHtml + convertMarkdownToHTML(fullMessage);
+                        // Progressive rendering on desktop: keep typing until content arrives
+                        if (!isSmallViewport && fullMessage.length > 0) {
+                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(fullMessage);
                             if (receivedMessageTextContainer._typingTimer) {
                                 clearInterval(receivedMessageTextContainer._typingTimer);
                                 delete receivedMessageTextContainer._typingTimer;
@@ -1983,17 +1905,15 @@
                         }
                     }
 
+                    // Assistant message (streaming)
                     if (evt.message && typeof evt.message.content === 'string') {
                         fullMessage += evt.message.content;
                         if (!isSmallViewport) {
-                            // Desktop/two-column: progressive rendering
-                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + toolNoticesHtml + convertMarkdownToHTML(fullMessage);
-                            // タイピングローテーション停止
+                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(fullMessage);
                             if (receivedMessageTextContainer._typingTimer) {
                                 clearInterval(receivedMessageTextContainer._typingTimer);
                                 delete receivedMessageTextContainer._typingTimer;
                             }
-                            // During streaming: keyboard open → force bottom; otherwise near-bottom only
                             if (isKeyboardOpen) {
                                 keepLatestMessageVisible(true);
                                 setChatScrollLock(true);
@@ -2005,136 +1925,63 @@
 
                     if (evt.id && isNumeric(evt.id)) {
                         show_chat_popup(evt);
-                        }
+                    }
 
                     if (evt.uci_notify && !is_notify) {
                         show_notify_popup(evt);
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                            is_notify = true;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        is_notify = true;
                     }
                 }
             }
 
-            // 単発レスポンス型（全体が1 JSON）の場合、残りバッファを試行
+            // For single-response (one JSON), try parsing the remaining buffer
             const trimmed = (buffer || '').trim();
             if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
                 try {
                     const evt = JSON.parse(trimmed);
 
-                    // Tool execution notice (also for single JSON at end) + required fields validation
+                    // Tool execution notice (single JSON)
                     if (evt && Array.isArray(evt.tool_outputs)) {
                         const hasService = (typeof evt.service === 'string' && evt.service.length > 0);
                         const hasOutputs = (evt.tool_outputs.length > 0);
-                        // tool_call_id は任意: output の存在のみを必須とする
                         const allValid = hasOutputs && evt.tool_outputs.every(o => ('output' in o));
 
                         const names = hasOutputs
                             ? Array.from(new Set(
                                 evt.tool_outputs
-                                  .map(o => (typeof o.name === 'string' && o.name.length > 0) ? o.name : null)
-                                  .filter(Boolean)
-                              ))
+                                    .map(o => (typeof o.name === 'string' && o.name.length > 0) ? o.name : null)
+                                    .filter(Boolean)
+                            ))
                             : [];
                         const toolNamesLabel = names.length ? names.join(', ') : '(unknown)';
 
                         if (hasService && allValid) {
                             toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(toolNamesLabel)}</span></div>`;
-                            // Auto passthrough tool result to server (fire-and-forget)
-                            if (!toolPassthroughSent) {
-                                try {
-                                    console.debug('[Oasis][chat.htm] POST tool evt to CGI (single)');
-                                    const chatRoot = document.querySelector('.chat-messages');
-                                    const tpContainer = document.createElement('div');
-                                    tpContainer.className = 'message received';
-                                    const tpIcon = document.createElement('div');
-                                    tpIcon.className = 'icon';
-                                    tpIcon.style.backgroundImage = `url(${resourcePath}/oasis/${icon_name})`;
-                                    const tpText = document.createElement('div');
-                                    tpText.className = 'message-text chat-bubble';
-                                    const tpDots = document.createElement('span');
-                                    tpDots.classList.add('typing-dots');
-                                    for (let i = 0; i < 3; i++) { tpDots.appendChild(document.createElement('span')); }
-                                    const tpLabel = document.createElement('span');
-                                    tpLabel.classList.add('typing-text');
-                                    tpLabel.textContent = 'Thinking...';
-                                    tpText.appendChild(tpDots);
-                                    tpText.appendChild(tpLabel);
-                                    tpContainer.appendChild(tpIcon);
-                                    tpContainer.appendChild(tpText);
-                                    chatRoot.appendChild(tpContainer);
+                            if (!toolNoticeShown) {
+                                const iconPath = `${resourcePath}/oasis/${icon_name}`;
+                                const msgDiv = document.createElement('div');
+                                msgDiv.className = 'message received';
+                                const iconDiv = document.createElement('div');
+                                iconDiv.className = 'icon';
+                                iconDiv.style.backgroundImage = `url(${iconPath})`;
+                                const textDiv = document.createElement('div');
+                                textDiv.className = 'message-text chat-bubble';
+                                textDiv.innerHTML = toolNoticesHtml;
+                                msgDiv.appendChild(iconDiv);
+                                msgDiv.appendChild(textDiv);
+                                const chatRoot = document.querySelector('.chat-messages');
+                                if (chatRoot) chatRoot.appendChild(msgDiv);
+                                toolNoticeShown = true;
+                                toolNoticeMessageDiv = msgDiv;
+                                if (isKeyboardOpen) {
                                     keepLatestMessageVisible(true);
-
-                                    fetch(`${baseUrl}/cgi-bin/oasis`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify(evt)
-                                    })
-                                    .then(res => res.text())
-                                    .then(text => {
-                                        console.debug('[Oasis][chat.htm] CGI response(single):', text);
-                                        // The CGI may return concatenated JSON objects (assistant message and new_chat_info)
-                                        // Parse and render only assistant message.content; update targetChatId from new_chat_info
-                                        let content = '';
-                                        try {
-                                            const parts = [];
-                                            let depth = 0;
-                                            let start = -1;
-                                            let inString = false;
-                                            let escapeNext = false;
-                                            for (let i = 0; i < text.length; i++) {
-                                                const ch = text[i];
-                                                if (inString) {
-                                                    if (escapeNext) {
-                                                        escapeNext = false;
-                                                    } else if (ch === '\\') {
-                                                        escapeNext = true;
-                                                    } else if (ch === '"') {
-                                                        inString = false;
-                                                    }
-                                                } else {
-                                                    if (ch === '"') {
-                                                        inString = true;
-                                                    } else if (ch === '{') {
-                                                        if (depth === 0) start = i;
-                                                        depth++;
-                                                    } else if (ch === '}') {
-                                                        depth--;
-                                                        if (depth === 0 && start >= 0) {
-                                                            parts.push(text.slice(start, i + 1));
-                                                            start = -1;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            for (const p of parts) {
-                                                try {
-                                                    const evt = JSON.parse(p);
-                                                    if (evt && evt.message && typeof evt.message.content === 'string') {
-                                                        content += evt.message.content;
-                                                    }
-                                                    if (evt && evt.id && (typeof isNumeric === 'function' ? isNumeric(evt.id) : !isNaN(Number(evt.id)))) {
-                                                        targetChatId = evt.id;
-                                                    }
-                                                } catch (e) {
-                                                    // ignore this part
-                                                }
-                                            }
-                                        } catch (e) {
-                                            // fallback to raw text
-                                            content = text;
-                                        }
-                                        tpText.innerHTML = convertMarkdownToHTML(content || '');
-                                        keepLatestMessageVisible(true);
-                                    })
-                                    .catch(() => {
-                                        console.error('[Oasis][chat.htm] CGI error(single)');
-                                        tpText.innerHTML = convertMarkdownToHTML('Tool submission failed.');
-                                    });
-                                } catch (_) {}
-                                toolPassthroughSent = true;
+                                    setChatScrollLock(true);
+                                } else {
+                                    keepLatestMessageVisible(false);
+                                }
                             }
                         } else {
-                            console.warn('[Oasis][chat.htm] invalid tool evt(single)');
                             const missing = [];
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
@@ -2153,27 +2000,25 @@
                         show_notify_popup(evt);
                     }
                 } catch (_) {
-                    // 無視: 最終断片が不完全な場合
+                    // Ignore: the final fragment may be incomplete
                 }
             }
 
-            // Final output: on mobile、初めて表示（それまではタイピングのみ）
+            // Final output
             const __hasToolNotice = !!(toolNoticesHtml && toolNoticesHtml.length > 0);
             const __hasErrorNotice = !!(errorNoticesHtml && errorNoticesHtml.length > 0);
             const __finalText = (fullMessage || '').trim();
             if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
-                // Fallback: No AI service or no response
                 receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('No response from AI service. Please check settings.');
             } else {
-                receivedMessageTextContainer.innerHTML = errorNoticesHtml + toolNoticesHtml + convertMarkdownToHTML(__finalText);
+                // Render only errors + assistant content. Tool notice is shown in a separate bubble.
+                receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(__finalText);
             }
             if (receivedMessageTextContainer._typingTimer) {
                 clearInterval(receivedMessageTextContainer._typingTimer);
                 delete receivedMessageTextContainer._typingTimer;
             }
-            // Finalize scroll behavior
             if (isSmallViewport) {
-                // Mobile: after full render, ensure visibility once
                 keepLatestMessageVisible(true);
             } else {
                 if (isKeyboardOpen) {
@@ -2188,7 +2033,6 @@
         } finally {
             message_outputing = false;
             activeConversation = false;
-            // Unlock scroll after streaming finished
             setChatScrollLock(false);
         }
     }
@@ -2333,7 +2177,7 @@
                         return;
                     }
 
-                    // 追加されたチャットをリストに反映（共通関数）
+                    // Reflect the added chat in the list (common function)
                     const importedTitle = (data.title && String(data.title).length) ? data.title : '--';
                     addChatListEntry(data.id, importedTitle);
 
@@ -2389,7 +2233,7 @@
                         return;
                     }
 
-                    // 追加されたチャットをリストに反映（共通関数）
+                    // Reflect the added chat in the list (common function)
                     const importedTitle = (data.title && String(data.title).length) ? data.title : '--';
                     addChatListEntry(data.id, importedTitle);
 
