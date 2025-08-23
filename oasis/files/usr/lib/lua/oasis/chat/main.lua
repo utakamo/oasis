@@ -630,7 +630,7 @@ local function process_message(service, chat, message)
 
     datactrl.record_chat_data(service, chat)
 
-    local tool_info, tool_used = transfer.chat_with_ai(service, chat)
+    local tool_info, _, tool_used = transfer.chat_with_ai(service, chat)
 
     debug:log("oasis.log", "process_message", "tool_used = " .. tostring(tool_used))
     debug:log("oasis.log", "process_message", "tool_info = " .. tostring(tool_info))
