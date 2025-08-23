@@ -432,6 +432,18 @@ openai.new = function()
                 user_msg["tool_choice"] = "auto"
             end
 
+            -- TODO:後で以下の処理を移動すること、専用の関数を分けても良い
+            -- Inject max_tokens only when generating a title
+            if self:get_format() == common.ai.format.title then
+                local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
+                local conf = common.load_conf_file(spath)
+                local v = conf and conf.title and conf.title.openai_max_token
+                local n = tonumber(v)
+                if n then
+                    user_msg.max_tokens = n
+                end
+            end
+
             local user_msg_json = jsonc.stringify(user_msg, false)
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
             return user_msg_json
