@@ -42,14 +42,23 @@ end
 local function process_ai_response(json_tbl)
     debug:log("oasis.log", "process_ai_response", "call oasis.output")
     
-    local ok, new_chat_info, plain_text_ai_message = pcall(oasis.output, json_tbl)
-    
-    if not ok then
+    -- Call directly without pcall; rely on return values to detect failure
+    local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
+
+    -- If both are nil, treat as internal error (handled by caller)
+    if (not new_chat_info) and (not plain_text_ai_message) then
         return nil, nil, "Internal error: oasis.output failed"
     end
     
     debug:log("oasis.log", "process_ai_response", "oasis.output returned: new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
         .. ", message_len=" .. tostring((plain_text_ai_message and #plain_text_ai_message) or 0))
+
+    if new_chat_info and #new_chat_info > 0 then
+        debug:log("oasis.log", "process_ai_response", "new_chat_info=" .. tostring(new_chat_info))
+    end
+    if plain_text_ai_message and #plain_text_ai_message > 0 then
+        debug:log("oasis.log", "process_ai_response", "message=" .. tostring(plain_text_ai_message))
+    end
     
     return new_chat_info, plain_text_ai_message, nil
 end
