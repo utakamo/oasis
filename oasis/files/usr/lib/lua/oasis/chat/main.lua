@@ -855,19 +855,26 @@ end
 
 -- Process output message
 local function process_output_message(service, chat_ctx, message)
+
     if not service:setup_msg(chat_ctx, { role = common.role.user, message = message }) then
         return nil, nil
     end
 
-    local tool_info, tool_used = transfer.chat_with_ai(service, chat_ctx)
+    -- chat_with_ai returns: new_chat_info (or tool JSON when tool_used), plain_text_message, tool_used
+    local new_chat_info, plain_text_message, tool_used = transfer.chat_with_ai(service, chat_ctx)
 
     if tool_used then
-        if service:handle_tool_output(tool_info, chat_ctx) then
-            return transfer.chat_with_ai(service, chat_ctx)
+        -- Provide tool outputs back to the model, then get assistant's text reply
+        if service:handle_tool_output(new_chat_info, chat_ctx) then
+            local post_new_chat_info, post_message = transfer.chat_with_ai(service, chat_ctx)
+            return post_new_chat_info, post_message
+        else
+            return nil, nil
         end
     end
 
-    return tool_info, nil
+    -- No tools used: return values as-is
+    return new_chat_info, plain_text_message
 end
 
 -- Main output function
@@ -886,7 +893,20 @@ local output = function(arg)
     debug:log("oasis.log", "output", "Load chat data ...")
     debug:dump("oasis.log", chat_ctx)
 
-    return process_output_message(service, chat_ctx, arg.message)
+    local new_chat_info, plain_text_ai_message = process_output_message(service, chat_ctx, arg.message)
+    -- Log returned values for diagnostics
+    debug:log("oasis.log", "output", "returned new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
+        .. ", message_len=" .. tostring((plain_text_ai_message and #plain_text_ai_message) or 0))
+
+    if new_chat_info and #new_chat_info > 0 then
+        debug:log("oasis.log", "output", "new_chat_info=" .. tostring(new_chat_info))
+    end
+
+    if plain_text_ai_message and #plain_text_ai_message > 0 then
+        debug:log("oasis.log", "output", "message=" .. tostring(plain_text_ai_message))
+    end
+
+    return new_chat_info, plain_text_ai_message
 end
 
 local rpc_output = function(arg)
