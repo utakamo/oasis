@@ -133,10 +133,10 @@ ollama.new = function()
                     return
                 end
 
-                -- System message(rule or knowledge) for creating chat title
+                -- Title: keep only the title instruction as a single system message for Ollama
                 if self.format == common.ai.format.title then
                     table.insert(chat.messages, #chat.messages + 1, {
-                        role = common.role.system,
+                        role = common.role.user,
                         content = string.gsub(sysmsg.general.auto_title, "\\n", "\n")
                     })
                     return
