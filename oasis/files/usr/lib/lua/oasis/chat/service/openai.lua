@@ -209,149 +209,173 @@ openai.new = function()
             return true
         end
 
-        obj.recv_ai_msg = function(self, chunk)
-
-            -- debug:log("oasis.log", "\n--- [openai.lua][recv_ai_msg] ---")
-
-            -- When data is received, the processing of this block will be executed.
-            -- The received data is stored in a chunk.
-            -- In OpenAI, the received chunk data may occasionally be missing as a JSON string.
-            -- Therefore, the received data is stored in a buffer until it can be formatted into
-            -- data recognizable as a JSON format.
-
+        obj._append_and_parse_chunk = function(self, chunk)
             self.chunk_all = self.chunk_all .. chunk
             local chunk_json = jsonc.parse(self.chunk_all)
-
             if (not chunk_json) or (type(chunk_json) ~= "table") then
-                return "", "", self.recv_raw_msg, false
+                return nil
             end
+            return chunk_json
+        end
 
-            -- Reset processed tool_call ids per assistant message
-            self.processed_tool_call_ids = {}
-
-            debug:log("oasis.log", "recv_ai_msg", self.chunk_all)
-
-            -- check error message
-            if chunk_json.error then
+        obj._handle_api_error = function(self, chunk_json)
+            if chunk_json and chunk_json.error then
                 local error_message = chunk_json.error.message or "Unknown error"
-
                 debug:log("oasis.log", "recv_ai_msg", "API Error: " .. error_message)
-
-                local error_response = {
-                    message = {
-                        role = "assistant",
-                        content = error_message
-                    }
-                }
-
+                local error_response = { message = { role = "assistant", content = error_message } }
                 local plain_text_for_console = error_message
                 local response_ai_json = jsonc.stringify(error_response, false)
-
                 self.chunk_all = ""
                 return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
             end
+            return nil
+        end
 
-            -- check choices field
+        obj._choices_exist = function(self, chunk_json)
             if not chunk_json.choices or type(chunk_json.choices) ~= "table" or #chunk_json.choices == 0 then
                 debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing or empty choices field")
                 self.chunk_all = ""
-                return "", "", self.recv_raw_msg, false
+                return false
+            end
+            return true
+        end
+
+        obj._get_first_message = function(self, chunk_json)
+            local choice1 = chunk_json.choices and chunk_json.choices[1]
+            if not choice1 or not choice1.message then
+                return nil
+            end
+            return choice1.message
+        end
+
+        obj._process_tool_calls = function(self, message)
+            if not message then return nil end
+            if not check_tool_call_response({ choices = { { message = message } } }) then
+                return nil
             end
 
-            -- Function Calling For OpenAI
-            if check_tool_call_response(chunk_json) then
-                debug:log("oasis.log", "recv_ai_msg", "check_tool_call_response (tool call detection returned true)")
-                local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-                if is_tool and chunk_json.choices[1].message and chunk_json.choices[1].message.tool_calls then
-                    debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled)")
-                    local client = require("oasis.local.tool.client")
-                    local message = chunk_json.choices[1].message
+            local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+            if not (is_tool and message and message.tool_calls) then
+                return nil
+            end
 
-                    -- WebUI notification payload
-                    local function_call = { service = "OpenAI", tool_outputs = {} }
-                    local first_output_str = ""
+            debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled)")
 
-                    -- History speaker (assistant with tool_calls)
-                    local speaker = { role = "assistant", tool_calls = {} }
+            local client = require("oasis.local.tool.client")
 
-                    for _, tc in ipairs(message.tool_calls or {}) do
-                        local func = tc["function"] and tc["function"].name or ""
-                        local args = {}
-                        if tc["function"] and tc["function"].arguments then
-                            args = jsonc.parse(tc["function"].arguments) or {}
-                        end
+            local function_call = { service = "OpenAI", tool_outputs = {} }
+            local first_output_str = ""
+            local speaker = { role = "assistant", tool_calls = {} }
 
-                        debug:log("oasis.log", "recv_ai_msg", "func = " .. tostring(func) .. " (detected function name)")
-                        local call_id = tc.id or ""
-                        if self.processed_tool_call_ids[call_id] then
-                            debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. tostring(call_id))
-                        else
-                            self.processed_tool_call_ids[call_id] = true
-                            local result = client.exec_server_tool(func, args)
-                            debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
+            for _, tc in ipairs(message.tool_calls or {}) do
+                local func = tc["function"] and tc["function"].name or ""
+                local args = {}
+                if tc["function"] and tc["function"].arguments then
+                    args = jsonc.parse(tc["function"].arguments) or {}
+                end
 
-                            local output = jsonc.stringify(result, false)
-                            table.insert(function_call.tool_outputs, {
-                                tool_call_id = tc.id,
-                                output = output,
-                                name = func
-                            })
+                debug:log("oasis.log", "recv_ai_msg", "func = " .. tostring(func) .. " (detected function name)")
+                local call_id = tc.id or ""
+                if self.processed_tool_call_ids[call_id] then
+                    debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. tostring(call_id))
+                else
+                    self.processed_tool_call_ids[call_id] = true
+                    local result = client.exec_server_tool(func, args)
+                    debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
 
-                            table.insert(speaker.tool_calls, {
-                                id = tc.id,
-                                type = "function",
-                                ["function"] = {
-                                    name = func,
-                                    arguments = jsonc.stringify(args, false)
-                                }
-                            })
+                    local output = jsonc.stringify(result, false)
+                    table.insert(function_call.tool_outputs, {
+                        tool_call_id = tc.id,
+                        output = output,
+                        name = func
+                    })
 
-                            if first_output_str == "" then first_output_str = output end
-                        end
-                    end
+                    table.insert(speaker.tool_calls, {
+                        id = tc.id,
+                        type = "function",
+                        ["function"] = {
+                            name = func,
+                            arguments = jsonc.stringify(args, false)
+                        }
+                    })
 
-                    local plain_text_for_console = first_output_str
-                    local response_ai_json    = jsonc.stringify(function_call, false)
-                    debug:log("oasis.log", "recv_ai_msg", "response_ai_json = " .. response_ai_json)
-                    debug:log("oasis.log", "recv_ai_msg",
-                        string.format("return speaker(tool_calls=%d), tool_outputs=%d",
-                            #speaker.tool_calls, #function_call.tool_outputs))
-
-                    -- Clear buffer to avoid duplicate processing on repeated callbacks
-                    self.chunk_all = ""
-                    return plain_text_for_console, response_ai_json, speaker, true
+                    if first_output_str == "" then first_output_str = output end
                 end
             end
 
+            local plain_text_for_console = first_output_str
+            local response_ai_json = jsonc.stringify(function_call, false)
+            debug:log("oasis.log", "recv_ai_msg", "response_ai_json = " .. response_ai_json)
+            debug:log("oasis.log", "recv_ai_msg",
+                string.format("return speaker(tool_calls=%d), tool_outputs=%d",
+                    #speaker.tool_calls, #function_call.tool_outputs))
+
             self.chunk_all = ""
+            return plain_text_for_console, response_ai_json, speaker, true
+        end
 
-            local plain_text_for_console
-            local response_ai_json
-
-            -- check choices table
-            if not chunk_json.choices[1] or not chunk_json.choices[1].message then
-                debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing message in choices[1]")
-                return "", "", self.recv_raw_msg, false
-            end
-
-            local msg = chunk_json.choices[1].message or {}
-            self.recv_raw_msg.role = msg.role
-            local content = msg.content or ""
+        obj._build_text_response = function(self, message)
+            self.recv_raw_msg.role = message.role
+            local content = message.content or ""
             self.recv_raw_msg.message = (self.recv_raw_msg.message or "") .. content
 
-            local reply = {}
-            reply.message = {}
-            reply.message.role = msg.role
-            reply.message.content = content
-
-            plain_text_for_console = misc.markdown(self.mark, content)
-            response_ai_json = jsonc.stringify(reply, false)
+            local reply = { message = { role = message.role, content = content } }
+            local plain_text_for_console = misc.markdown(self.mark, content)
+            local response_ai_json = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
                 return "", "", self.recv_ai_msg, false
             end
-
             return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
+        end
+
+        obj.recv_ai_msg = function(self, chunk)
+            -- 1) 断片を連結してJSON化（未完成なら待機）
+            local chunk_json = self:_append_and_parse_chunk(chunk)
+            if not chunk_json then
+                return "", "", self.recv_raw_msg, false
+            end
+
+            -- 2) tool_call 重複実行ガードをメッセージ単位でリセット
+            self.processed_tool_call_ids = {}
+
+            debug:log("oasis.log", "recv_ai_msg", self.chunk_all)
+
+            -- 3) APIエラー
+            do
+                local err_plain, err_json, err_raw, err_tool = self:_handle_api_error(chunk_json)
+                if err_plain ~= nil then
+                    return err_plain, err_json, err_raw, err_tool
+                end
+            end
+
+            -- 4) choices の存在を検証（無ければここでバッファをクリアして終了）
+            if not self:_choices_exist(chunk_json) then
+                return "", "", self.recv_raw_msg, false
+            end
+
+            -- 5) 最初のメッセージを取得
+            local message = self:_get_first_message(chunk_json)
+
+            -- 6) ツールコール処理（該当時はここで確定返却; 内部でバッファクリア済み）
+            do
+                local t_plain, t_json, t_speaker, t_used = self:_process_tool_calls(message)
+                if t_plain ~= nil then
+                    return t_plain, t_json, t_speaker, t_used
+                end
+            end
+
+            -- 7) ツールコールでない場合は、この時点でバッファをクリア
+            self.chunk_all = ""
+
+            -- 8) メッセージが無効なら終了（元実装と同等の戻り値）
+            if not message then
+                debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing message in choices[1]")
+                return "", "", self.recv_raw_msg, false
+            end
+
+            -- 9) 通常応答の構築
+            return self:_build_text_response(message)
         end
 
         obj.append_chat_data = function(self, chat)
