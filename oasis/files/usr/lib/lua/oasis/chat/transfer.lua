@@ -56,17 +56,17 @@ local get_to_server = function(url, callback)
     easy:close()
 end
 
-local output_response_msg = function(format, text_for_console, text_for_webui, tool_used)
+local output_response_msg = function(format, text_for_console, response_ai_json, tool_used)
 
     debug:log("oasis.log", "post_to_server", text_for_console)
-    debug:log("oasis.log", "post_to_server", text_for_webui)
+    debug:log("oasis.log", "post_to_server", response_ai_json)
 
     -- Response: output console
     if (format == common.ai.format.chat)
         or (format == common.ai.format.prompt) then
 
         if tool_used then
-            local tool_info = jsonc.parse(text_for_webui)
+            local tool_info = jsonc.parse(response_ai_json)
             io.write("Tool Used: ")
             for idx, tbl in ipairs(tool_info.tool_outputs) do
                 if idx > 1 then
@@ -81,14 +81,14 @@ local output_response_msg = function(format, text_for_console, text_for_webui, t
             io.flush()
 
         elseif (text_for_console) and (#text_for_console) > 0 then
-            io.write(text_for_console .. '\n')
+            io.write(text_for_console)
             io.flush()
         end
 
     -- Response: output webui
     elseif (format == common.ai.format.output) then
-        if (text_for_webui) and (#text_for_webui > 0) then
-            io.write(text_for_webui)
+        if (response_ai_json) and (#response_ai_json > 0) then
+            io.write(response_ai_json)
             io.flush()
         end
     end
@@ -109,17 +109,17 @@ local send_user_msg = function(service, chat)
     service:init_msg_buffer()
 
     -- Post (Request) and Response
-    local text_for_console
-    local text_for_webui
+    local text_for_console -- text for console output
+    local response_ai_json -- raw json data (Data primarily for use in the Web UI)
 
     post_to_server(service, usr_msg_json, function(chunk)
 
-        text_for_console, text_for_webui, recv_raw_msg, tool_used = service:recv_ai_msg(chunk)
+        text_for_console, response_ai_json, recv_raw_msg, tool_used = service:recv_ai_msg(chunk)
 
-        output_response_msg(format, text_for_console, text_for_webui, tool_used)
+        output_response_msg(format, text_for_console, response_ai_json, tool_used)
     end)
 
-    return text_for_webui, recv_raw_msg, tool_used
+    return response_ai_json, recv_raw_msg, tool_used
 end
 
 local chat_with_ai = function(service, chat)
@@ -149,7 +149,9 @@ local chat_with_ai = function(service, chat)
     debug:dump("oasis.log", ai_response_tbl)
 
     if tool_used then
-        return tool_info, tool_used
+        -- When tools are requested, return tool JSON as first value,
+        -- no assistant text yet, and tool_used=true to signal caller
+        return tool_info, nil, true
     end
 
     local new_chat_info = nil
