@@ -133,7 +133,9 @@ ollama.new = function()
                     return
                 end
 
-                -- Title: keep only the title instruction as a single system message for Ollama
+                -- In Ollama, you should request title generation using role:user.
+                -- Doing so allows all AI models available in Ollama to generate titles.
+                -- It appears that some models may not respond if the request is made using role:system.
                 if self.format == common.ai.format.title then
                     table.insert(chat.messages, #chat.messages + 1, {
                         role = common.role.user,
