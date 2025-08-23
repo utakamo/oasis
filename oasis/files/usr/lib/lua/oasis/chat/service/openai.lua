@@ -437,10 +437,17 @@ openai.new = function()
             if self:get_format() == common.ai.format.title then
                 local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
                 local conf = common.load_conf_file(spath)
-                local v = conf and conf.title and conf.title.openai_max_token
-                local n = tonumber(v)
-                if n then
-                    user_msg.max_tokens = n
+                local v1 = conf and conf.title and conf.title.openai_temparature
+                local v2 = conf and conf.title and conf.title.openai_max_tokens
+
+                local n1 = tonumber(v1)
+                if n1 then
+                    user_msg.temparature = n1
+                end
+
+                local n2 = tonumber(v2)
+                if n2 then
+                    user_msg.max_tokens = n2
                 end
             end
 
