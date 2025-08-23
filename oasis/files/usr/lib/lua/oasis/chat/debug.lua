@@ -59,16 +59,23 @@ debug.new = function()
     obj.recursive_dump = function(self, filename, tbl, path)
         for k, v in pairs(tbl) do
             local key_path = path .. "[" .. tostring(k) .. "]"
-            if type(v) == "string" then
-                self:log(filename, key_path .. "=" .. v)
-            elseif type(v) == "table" then
+            local vt = type(v)
+            if vt == "string" or vt == "number" or vt == "boolean" or vt == "nil" then
+                self:log(filename, key_path .. "=" .. tostring(v))
+            elseif vt == "table" then
                 self:recursive_dump(filename, v, key_path)
+            else
+                self:log(filename, key_path .. "=<" .. vt .. ">")
             end
         end
     end
 
     obj.dump = function(self, filename, data)
         if self.disabled then return end
+        if type(data) ~= "table" then
+            self:log(filename, tostring(data))
+            return
+        end
         self:recursive_dump(filename, data, "data")
     end
 
