@@ -87,41 +87,89 @@ server.tool("get_connected_clients", {
     tool_desc = "Get connected clients (STAs) on this OpenWrt device.",
     call = function()
         local util = require("luci.util")
+        local jsonc = require("luci.jsonc")
         local leases = {}
-        local json = util.exec("ubus call dhcp ipv4leases 2>/dev/null")
-        local parsed = require("luci.jsonc").parse(json)
-        if parsed and parsed.leases then
-            for _, lease in ipairs(parsed.leases) do
-                table.insert(leases, {
-                    ip = lease.ip,
-                    mac = lease.mac,
-                    hostname = lease.hostname
-                })
+
+        local function add_lease(ip, mac, hostname)
+            if not ip or ip == "" then return end
+            for _, l in ipairs(leases) do
+                if l.ip == ip then
+                    -- update missing fields if available
+                    if (not l.mac or l.mac == "") and mac and mac ~= "" then l.mac = mac end
+                    if (not l.hostname or l.hostname == "") and hostname and hostname ~= "" then l.hostname = hostname end
+                    return
+                end
             end
+            local e = { ip = ip }
+            if mac and mac ~= "" then e.mac = mac end
+            if hostname and hostname ~= "" then e.hostname = hostname end
+            table.insert(leases, e)
         end
 
-        local arp = util.exec("cat /proc/net/arp 2>/dev/null")
-        for line in arp:gmatch("[^\r\n]+") do
-            if not line:match("IP address") then
-                local ip, _, _, mac = line:match("([^%s]+)%s+[^%s]+%s+[^%s]+%s+([^%s]+)")
-                if ip and mac then
-                    local found = false
-                    for _, lease in ipairs(leases) do
-                        if lease.ip == ip then
-                            found = true
-                            break
+        local function extract_from_record(rec)
+            if not rec then return nil, nil, nil end
+            local ip = rec.ip
+            -- IPv6 leases often carry addresses under 'ipv6-addr' array
+            if not ip and rec["ipv6-addr"] and type(rec["ipv6-addr"]) == "table" and rec["ipv6-addr"][1] then
+                ip = rec["ipv6-addr"][1].address
+            end
+            if not ip and rec["ipv6-address"] and type(rec["ipv6-address"]) == "table" and rec["ipv6-address"][1] then
+                ip = rec["ipv6-address"][1].address
+            end
+            local mac = rec.mac or rec.macaddr or rec.hwaddr or rec.duid
+            local hostname = rec.hostname
+            return ip, mac, hostname
+        end
+
+        local function parse_and_add(obj)
+            if not obj then return end
+            -- direct leases array
+            if obj.leases and type(obj.leases) == "table" then
+                for _, rec in ipairs(obj.leases) do
+                    local ip, mac, hostname = extract_from_record(rec)
+                    add_lease(ip, mac, hostname)
+                end
+            end
+            -- device -> iface -> leases
+            if obj.device and type(obj.device) == "table" then
+                for _, dev in pairs(obj.device) do
+                    if dev and dev.leases and type(dev.leases) == "table" then
+                        for _, rec in ipairs(dev.leases) do
+                            local ip, mac, hostname = extract_from_record(rec)
+                            add_lease(ip, mac, hostname)
                         end
-                    end
-                    if not found then
-                        table.insert(leases, {ip = ip, mac = mac})
                     end
                 end
             end
         end
 
-        local res = server.response({clients = leases})
+        -- IPv4 STAs info
+        do
+            local ipv4_stas = util.exec("ubus call dhcp ipv4leases 2>/dev/null")
+            local parsed = jsonc.parse(ipv4_stas)
+            parse_and_add(parsed)
+        end
 
-        return res
+        -- IPv6 STAs info
+        do
+            local ipv6_stas = util.exec("ubus call dhcp ipv6leases 2>/dev/null")
+            local parsed = jsonc.parse(ipv6_stas)
+            parse_and_add(parsed)
+        end
+
+        -- ARP table fallback
+        local arp = util.exec("cat /proc/net/arp 2>/dev/null") or ""
+        for line in arp:gmatch("[^\r\n]+") do
+            if not line:match("IP address") then
+                -- typical /proc/net/arp: IP address HW type Flags HW address Mask Device
+                local ip, hwaddr = line:match("^(%S+)%s+%S+%s+%S+%s+(%S+)")
+                if ip and hwaddr and hwaddr ~= "00:00:00:00:00:00" then
+                    add_lease(ip, hwaddr, nil)
+                end
+            end
+        end
+
+        return server.response({clients = leases})
     end
 })
 
