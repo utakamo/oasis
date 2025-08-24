@@ -171,7 +171,7 @@ server.tool("get_connected_clients", {
 })
 
 server.tool("wifi_scan", {
-    tool_desc = "Scan for nearby Wireless networks",
+    tool_desc = "Scan for nearby Wireless networks via iwinfo",
     args_desc = { "Wireless interface name [ex: wlan0]" },
     args = { ifname = "a_string"},
 
