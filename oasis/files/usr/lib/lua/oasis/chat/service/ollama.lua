@@ -29,7 +29,7 @@ ollama.new = function()
             local name = tostring(model or ""):lower()
             if #name == 0 then return false end
             local markers = {
-                "llama3", "llama 3", -- llama3.x 系
+                "llama3", "llama 3", -- llama3.x family
                 "qwen", "qwen2", "qwen3",
                 "mistral", "mixtral",
                 "deepseek",
@@ -281,92 +281,135 @@ ollama.new = function()
             end
         end
 
-        obj.recv_ai_msg = function(self, chunk)
+        -- [ADD] helper: parse chunk to JSON (returns nil on invalid input)
+		obj._parse_chunk = function(self, chunk)
+			local chunk_json = jsonc.parse(chunk)
+			if (not chunk_json) or (type(chunk_json) ~= "table") then
+				return nil
+			end
+			return chunk_json
+		end
 
-            -- Log raw response from Ollama for troubleshooting
-                debug:log("oasis.log", "recv_ai_msg", tostring(chunk))
+        -- [ADD] helper: detect presence of tool_calls (returns message if present)
+		obj._has_tool_calls = function(self, chunk_json)
+			if chunk_json.message and chunk_json.message.tool_calls
+				and type(chunk_json.message.tool_calls) == "table"
+				and #chunk_json.message.tool_calls > 0 then
+				return chunk_json.message
+			end
+			return nil
+		end
 
-            local chunk_json = jsonc.parse(chunk)
+        -- [ADD] helper: execute tool calls when local_tool is enabled (return values and order preserved)
+		obj._process_tool_calls = function(self, message)
+			local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+			if not is_tool then
+				return nil
+			end
 
-            if (not chunk_json) or (type(chunk_json) ~= "table") then
-                return "", "", self.recv_raw_msg, false
-            end
+			local client = require("oasis.local.tool.client")
+			local function_call = { service = "Ollama", tool_outputs = {} }
+			local first_output_str = ""
+			local speaker = { role = "assistant", tool_calls = {} }
 
-                debug:log("oasis.log", "recv_ai_msg", chunk)
+			for _, tc in ipairs(message.tool_calls or {}) do
+				local func = tc["function"] and tc["function"].name or ""
+				local args = {}
+				if tc["function"] and tc["function"].arguments then
+					args = tc["function"].arguments
+					if type(args) == "string" then
+						args = jsonc.parse(args) or {}
+					end
+				end
 
-            -- Function Calling for Ollama (message.tool_calls[])
-            if chunk_json.message and chunk_json.message.tool_calls
-                and type(chunk_json.message.tool_calls) == "table"
-                and #chunk_json.message.tool_calls > 0 then
+				debug:log("oasis.log", "recv_ai_msg", "ollama func = " .. tostring(func))
+				local result = client.exec_server_tool(func, args)
+				debug:log("oasis.log", "recv_ai_msg", jsonc.stringify(result, true))
 
-                local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-                if is_tool then
-                    local client = require("oasis.local.tool.client")
-                    local message = chunk_json.message
+				local output = jsonc.stringify(result, false)
+				table.insert(function_call.tool_outputs, {
+					output = output,
+					name = func
+				})
 
-                    local function_call = { service = "Ollama", tool_outputs = {} }
-                    local first_output_str = ""
+				local tool_id = nil
+				table.insert(speaker.tool_calls, {
+					id = tool_id,
+					type = "function",
+					["function"] = {
+						name = func,
+						arguments = jsonc.stringify(args, false)
+					}
+				})
 
-                    -- History speaker (assistant with tool_calls)
-                    local speaker = { role = "assistant", tool_calls = {} }
+				if first_output_str == "" then first_output_str = output end
+			end
 
-                    for _, tc in ipairs(message.tool_calls or {}) do
-                        local func = tc["function"] and tc["function"].name or ""
-                        local args = {}
-                        if tc["function"] and tc["function"].arguments then
-                            args = tc["function"].arguments
-                            if type(args) == "string" then
-                                args = jsonc.parse(args) or {}
-                            end
-                        end
+			local plain_text_for_console = first_output_str
+			local response_ai_json = jsonc.stringify(function_call, false)
+			debug:log("oasis.log", "recv_ai_msg", response_ai_json)
+			return plain_text_for_console, response_ai_json, speaker, true
+		end
 
-                            debug:log("oasis.log", "recv_ai_msg", "ollama func = " .. tostring(func))
-                        local result = client.exec_server_tool(func, args)
-                            debug:log("oasis.log", "recv_ai_msg", jsonc.stringify(result, true))
+        -- [ADD] helper: validate message structure
+		obj._is_valid_message = function(self, chunk_json)
+			if (not chunk_json.message)
+				or (not chunk_json.message.role)
+				or (chunk_json.message.content == nil) then
+				return false
+			end
+			return true
+		end
 
-                        local output = jsonc.stringify(result, false)
-                        table.insert(function_call.tool_outputs, {
-                            output = output,
-                            name = func
-                        })
+        -- [ADD] helper: update buffer and build display text / AI JSON
+		obj._build_text_response = function(self, chunk_json)
+			self.recv_raw_msg.role = chunk_json.message.role
+			self.recv_raw_msg.message = self.recv_raw_msg.message .. tostring(chunk_json.message.content)
 
-                        table.insert(speaker.tool_calls, {
-                            id = tool_id,
-                            type = "function",
-                            ["function"] = {
-                                name = func,
-                                arguments = jsonc.stringify(args, false)
-                            }
-                        })
+			local plain_text_for_console = misc.markdown(self.mark, tostring(chunk_json.message.content))
+			local response_ai_json = jsonc.stringify(chunk_json, false)
 
-                        if first_output_str == "" then first_output_str = output end
-                    end
+			if (not plain_text_for_console) or (#plain_text_for_console == 0) then
+				return "", "", self.recv_raw_msg, false
+			end
 
-                    local plain_text_for_console = first_output_str
-                    local response_ai_json    = jsonc.stringify(function_call, false)
-                    debug:log("oasis.log", "recv_ai_msg", response_ai_json)
-                    return plain_text_for_console, response_ai_json, speaker, true
-                end
-            end
+			return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
+		end
 
-            if (not chunk_json.message)
-                or (not chunk_json.message.role)
-                or (chunk_json.message.content == nil) then
-                return "", "", self.recv_raw_msg, false
-            end
+        -- [REPLACE] recv_ai_msg (I/O and log order preserved)
+		obj.recv_ai_msg = function(self, chunk)
 
-            self.recv_raw_msg.role = chunk_json.message.role
-            self.recv_raw_msg.message = self.recv_raw_msg.message .. tostring(chunk_json.message.content)
+			-- Log raw response from Ollama for troubleshooting
+			debug:log("oasis.log", "recv_ai_msg", tostring(chunk))
 
-            local plain_text_for_console = misc.markdown(self.mark, tostring(chunk_json.message.content))
-            local response_ai_json = jsonc.stringify(chunk_json, false)
+            -- Parse JSON (on failure, behave silently as before)
+			local chunk_json = self:_parse_chunk(chunk)
+			if not chunk_json then
+				return "", "", self.recv_raw_msg, false
+			end
 
-            if (not plain_text_for_console) or (#plain_text_for_console == 0) then
-                return "", "", self.recv_raw_msg, false
-            end
+            -- Raw chunk log after successful JSON parsing (unchanged)
+			debug:log("oasis.log", "recv_ai_msg", chunk)
 
-            return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
-        end
+            -- Tool calls (same conditions and order as before)
+			do
+				local msg_for_tools = self:_has_tool_calls(chunk_json)
+				if msg_for_tools then
+					local p, j, s, u = self:_process_tool_calls(msg_for_tools)
+					if p ~= nil then
+						return p, j, s, u
+					end
+				end
+			end
+
+            -- If message structure invalid, return as before
+			if not self:_is_valid_message(chunk_json) then
+				return "", "", self.recv_raw_msg, false
+			end
+
+            -- Normal response (unchanged)
+			return self:_build_text_response(chunk_json)
+		end
 
         obj.append_chat_data = function(self, chat)
             -- debug:log("oasis.log", "id = " .. self.cfg.id)
