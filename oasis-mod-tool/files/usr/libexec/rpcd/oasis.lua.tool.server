@@ -73,8 +73,7 @@ server.tool("get_wan_status", {
     tool_desc = "Get the WAN Status of this OpenWrt device.",
     call = function()
         local util = require("luci.util")
-        local json = util.exec("ubus call network.interface.wan status 2>/dev/null")
-        local wan_status = require("luci.jsonc").parse(json)
+        local wan_status = util.ubus("network.interface.wan", "status", {})
         local res = server.response({
             up = wan_status and wan_status.up or false,
             ipv4_address = wan_status and wan_status['ipv4-address'] and wan_status['ipv4-address'][1] and wan_status['ipv4-address'][1].address or nil
@@ -145,16 +144,14 @@ server.tool("get_connected_clients", {
 
         -- IPv4 STAs info
         do
-            local ipv4_stas = util.exec("ubus call dhcp ipv4leases 2>/dev/null")
-            local parsed = jsonc.parse(ipv4_stas)
-            parse_and_add(parsed)
+            local ipv4_stas = util.ubus("dhcp", "ipv4leases", {})
+            parse_and_add(ipv4_stas)
         end
 
         -- IPv6 STAs info
         do
-            local ipv6_stas = util.exec("ubus call dhcp ipv6leases 2>/dev/null")
-            local parsed = jsonc.parse(ipv6_stas)
-            parse_and_add(parsed)
+            local ipv6_stas = util.ubus("dhcp", "ipv6leases", {})
+            parse_and_add(ipv6_stas)
         end
 
         -- ARP table fallback
@@ -170,6 +167,50 @@ server.tool("get_connected_clients", {
         end
 
         return server.response({clients = leases})
+    end
+})
+
+server.tool("wifi_scan", {
+    tool_desc = "Scan for nearby Wireless networks",
+    args_desc = { "Wireless interface name [ex: wlan0]" },
+    args = { ifname = "a_string"},
+
+    call = function(args)
+        local util = require("luci.util")
+        local jsonc = require("luci.jsonc")
+        local ifname = args and args.ifname or nil
+        if not ifname or ifname == "" then
+            return server.response({error = "missing required argument: ifname [ex: wlan0]"})
+        end
+
+        local out = util.ubus("iwinfo", "scan", { device = ifname })
+        local results = {}
+
+        if out and out.results and type(out.results) == "table" then
+            for _, r in ipairs(out.results) do
+                local entry = {}
+                entry.ssid = r.ssid
+                entry.bssid = r.bssid
+                entry.mode = r.mode
+                entry.band = r.band
+                entry.channel = r.channel or r.primary_channel
+                entry.mhz = r.mhz
+                entry.signal = r.signal
+                entry.quality = r.quality
+                -- encryption summary
+                if r.encryption then
+                    entry.encryption = {}
+                    entry.encryption.enabled = r.encryption.enabled
+                    if r.encryption.wpa then entry.encryption.wpa = r.encryption.wpa end
+                    if r.encryption.authentication then entry.encryption.authentication = r.encryption.authentication end
+                    if r.encryption.ciphers then entry.encryption.ciphers = r.encryption.ciphers end
+                    if r.encryption.wep then entry.encryption.wep = r.encryption.wep end
+                end
+                table.insert(results, entry)
+            end
+        end
+
+        return server.response({networks = results})
     end
 })
 
