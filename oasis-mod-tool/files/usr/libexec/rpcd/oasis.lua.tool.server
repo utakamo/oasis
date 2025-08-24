@@ -180,7 +180,7 @@ server.tool("wifi_scan", {
         local jsonc = require("luci.jsonc")
         local ifname = args and args.ifname or nil
         if not ifname or ifname == "" then
-            return server.response({error = "missing required argument: ifname [ex: wlan0]"})
+            return server.response({error = "Please ask the user for the name of the interface. [ex: interface name 'wlan0']"})
         end
 
         local out = util.ubus("iwinfo", "scan", { device = ifname })
