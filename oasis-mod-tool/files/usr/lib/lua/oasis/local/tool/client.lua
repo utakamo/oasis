@@ -73,7 +73,7 @@ local setup_lua_server_config = function(server_name)
         uci:set(common.db.uci.cfg, s, "name", tool_name)
         uci:set(common.db.uci.cfg, s, "script", "lua")
         uci:set(common.db.uci.cfg, s, "server", server_name)
-        uci:set(common.db.uci.cfg, s, "enable", "1")
+        uci:set(common.db.uci.cfg, s, "enable", "0")
         uci:set(common.db.uci.cfg, s, "type", "function")
         uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
         uci:set(common.db.uci.cfg, s, "conflict", "0")
@@ -126,7 +126,7 @@ local setup_ucode_server_config = function(server_name)
             uci:set(common.db.uci.cfg, s, "name", tool)
             uci:set(common.db.uci.cfg, s, "script", "ucode")
             uci:set(common.db.uci.cfg, s, "server", server)
-            uci:set(common.db.uci.cfg, s, "enable", "1")
+            uci:set(common.db.uci.cfg, s, "enable", "0")
             uci:set(common.db.uci.cfg, s, "type", "function")
             uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
             uci:set(common.db.uci.cfg, s, "conflict", "0")
@@ -198,11 +198,73 @@ end
 
 local update_server_info = function()
 
-    -- Initialize: delete all tool section
+    -- 1) Create a snapshot of the old UCI (only 'enable' will be restored; comparisons require an exact match)
+    local function to_list(v)
+        if v == nil then return {} end
+        if type(v) == "table" then return v end
+        return { v }
+    end
+
+    local function normalize_from_uci_section(s)
+        local required = to_list(s.required)
+        local props    = to_list(s.property)
+        table.sort(required)
+        table.sort(props)
+        return {
+            name = s.name or "",
+            script = s.script or "",
+            server = s.server or "",
+            type = s.type or "function",
+            description = s.description or "",
+            additionalProperties = s.additionalProperties or "0",
+            required = required,
+            properties = props,
+        }
+    end
+
+    local function make_key(def)
+        return string.format("%s|%s|%s", def.script or "", def.server or "", def.name or "")
+    end
+
+    local function defs_equal(a, b)
+        if not a or not b then return false end
+        if a.name ~= b.name then return false end
+        if a.script ~= b.script then return false end
+        if a.server ~= b.server then return false end
+        if a.type ~= b.type then return false end
+        if a.description ~= b.description then return false end
+        if a.additionalProperties ~= b.additionalProperties then return false end
+        if #a.required ~= #b.required then return false end
+        for i = 1, #a.required do
+            if a.required[i] ~= b.required[i] then return false end
+        end
+        if #a.properties ~= #b.properties then return false end
+        for i = 1, #a.properties do
+            if a.properties[i] ~= b.properties[i] then return false end
+        end
+        return true
+    end
+
+    local old_map = {}
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        if s.name and s.server and s.script then
+            local def = normalize_from_uci_section(s)
+            local key = make_key(def)
+            old_map[key] = { def = def, enable = s.enable or "0" }
+        end
+    end)
+
+    do
+        local cnt = 0
+        for _ in pairs(old_map) do cnt = cnt + 1 end
+        debug:log("oasis.log", "update_server_info", "snapshot_count=" .. tostring(cnt))
+    end
+
+    -- 2) Remove all 'tool' sections temporarily
     uci:delete_all(common.db.uci.cfg, common.db.uci.sect.tool)
     uci:commit(common.db.uci.cfg)
 
-    -- rpcd ubus server (Lua Script Ver)
+    -- 3) Rebuild UCI by re-scanning Lua/uCode servers
     local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
     if lua_servers then
         for _, server_name in ipairs(lua_servers) do
@@ -210,7 +272,6 @@ local update_server_info = function()
         end
     end
 
-    -- rpcd ubus server (uCode Script Ver)
     local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
     if ucode_servers then
         for _, server_name in ipairs(ucode_servers) do
@@ -218,7 +279,49 @@ local update_server_info = function()
         end
     end
 
+    -- 4) Restore 'enable' to its previous value only for entries that exactly match (do not restore other settings)
+    -- 差分理由を出力する補助関数
+    local function diff_reason(a, b)
+        if a.name ~= b.name then return "name" end
+        if a.script ~= b.script then return "script" end
+        if a.server ~= b.server then return "server" end
+        if a.type ~= b.type then return "type" end
+        if a.description ~= b.description then return "description" end
+        if a.additionalProperties ~= b.additionalProperties then return "additionalProperties" end
+        if #a.required ~= #b.required then return "required.length" end
+        for i = 1, math.min(#a.required, #b.required) do
+            if a.required[i] ~= b.required[i] then return "required["..i.."]" end
+        end
+        if #a.properties ~= #b.properties then return "properties.length" end
+        for i = 1, math.min(#a.properties, #b.properties) do
+            if a.properties[i] ~= b.properties[i] then return "properties["..i.."]" end
+        end
+        return "unknown"
+    end
+
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        if s.name and s.server and s.script then
+            local new_def = normalize_from_uci_section(s)
+            local key = make_key(new_def)
+            local old = old_map[key]
+            if not old then
+                debug:log("oasis.log", "update_server_info", "no_snapshot key=" .. key)
+            else
+                if defs_equal(old.def, new_def) then
+                    uci:set(common.db.uci.cfg, s[".name"], "enable", old.enable or "0")
+                    debug:log("oasis.log", "update_server_info", "restored_enable key=" .. key .. " -> " .. (old.enable or "0"))
+                else
+                    debug:log("oasis.log", "update_server_info", "mismatch key=" .. key .. " reason=" .. diff_reason(old.def, new_def))
+                end
+            end
+        end
+    end)
+
+    -- 5) Check for tool name conflicts
     check_tool_name_conflict()
+
+    -- 6) Final commit
+    uci:commit(common.db.uci.cfg)
 end
 
 -- This function is called when sending a message to the LLM.

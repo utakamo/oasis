@@ -9,3 +9,7 @@ start() {
 stop() {
     lua /usr/bin/oasis_tool_setup delete
 }
+
+restart() {
+    lua /usr/bin/oasis_tool_setup init
+}
