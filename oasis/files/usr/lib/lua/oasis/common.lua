@@ -355,7 +355,7 @@ local check_unloaded_plugin = function(target)
     
     local result = false
 
-    if target == "osais" then
+    if target == "oasis" then
         result = misc.check_file_exist(flag.unload.oasis)
     elseif target == "oasis-mod-tool" then
         result = misc.check_file_exist(flag.unload.oasis_mod_tool)
