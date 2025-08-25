@@ -330,18 +330,18 @@ openai.new = function()
         end
 
         obj.recv_ai_msg = function(self, chunk)
-            -- 1) 断片を連結してJSON化（未完成なら待機）
+            -- 1) Append chunks and parse to JSON (wait if incomplete)
             local chunk_json = self:_append_and_parse_chunk(chunk)
             if not chunk_json then
                 return "", "", self.recv_raw_msg, false
             end
 
-            -- 2) tool_call 重複実行ガードをメッセージ単位でリセット
+            -- 2) Reset duplicate tool_call guard per message
             self.processed_tool_call_ids = {}
 
             debug:log("oasis.log", "recv_ai_msg", self.chunk_all)
 
-            -- 3) APIエラー
+            -- 3) API error handling
             do
                 local err_plain, err_json, err_raw, err_tool = self:_handle_api_error(chunk_json)
                 if err_plain ~= nil then
@@ -349,15 +349,15 @@ openai.new = function()
                 end
             end
 
-            -- 4) choices の存在を検証（無ければここでバッファをクリアして終了）
+            -- 4) Verify existence of choices (clear buffer and exit if missing)
             if not self:_choices_exist(chunk_json) then
                 return "", "", self.recv_raw_msg, false
             end
 
-            -- 5) 最初のメッセージを取得
+            -- 5) Get the first message
             local message = self:_get_first_message(chunk_json)
 
-            -- 6) ツールコール処理（該当時はここで確定返却; 内部でバッファクリア済み）
+            -- 6) Process tool calls (if any, return immediately; buffer cleared internally)
             do
                 local t_plain, t_json, t_speaker, t_used = self:_process_tool_calls(message)
                 if t_plain ~= nil then
@@ -365,16 +365,16 @@ openai.new = function()
                 end
             end
 
-            -- 7) ツールコールでない場合は、この時点でバッファをクリア
+            -- 7) If not a tool call, clear the buffer at this point
             self.chunk_all = ""
 
-            -- 8) メッセージが無効なら終了（元実装と同等の戻り値）
+            -- 8) Exit if message is invalid (same return semantics as original)
             if not message then
                 debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing message in choices[1]")
                 return "", "", self.recv_raw_msg, false
             end
 
-            -- 9) 通常応答の構築
+            -- 9) Build normal text response
             return self:_build_text_response(message)
         end
 
@@ -432,7 +432,7 @@ openai.new = function()
                 user_msg["tool_choice"] = "auto"
             end
 
-            -- TODO:後で以下の処理を移動すること、専用の関数を分けても良い
+            -- TODO: Move the following logic later or extract into a dedicated function
             -- Inject max_tokens only when generating a title
             if self:get_format() == common.ai.format.title then
                 local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
