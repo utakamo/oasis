@@ -191,7 +191,7 @@ local retrieve_uci_config = function(format)
             return jsonc.stringify({ error = "No uci list" })
         end
 
-        return { error = "No uci listt" }
+        return { error = "No uci list" }
     end
 
     for index = #list_tbl.configs, 1, -1 do
