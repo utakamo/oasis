@@ -6,6 +6,8 @@
   h2 { margin: 0 0 8px; }
   h3 { margin: 0; font-size: 1rem; color: #555; }
   .server-block { width: 100%; max-width: 760px; margin-top: 22px; }
+  /* Head action container: same width as server-block but dedicated for refresh button */
+  .tools-head-block { width: 100%; max-width: 760px; margin: 8px auto; }
   .server-header { display:flex; align-items:center; justify-content: space-between; margin-bottom: 8px; }
   .list { display:flex; flex-direction:column; gap: 12px; width:100%; margin-top: 8px; }
 
@@ -28,6 +30,8 @@
   .load-button { background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%); }
   .delete-button, .cancel-button { background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%); }
   .load-button:active, .delete-button:active, .cancel-button:active { transform: translateY(1px); }
+  /* Full width variant for head action */
+  .load-button.fullwidth { width: 100%; }
 
   /* Toast */
   .toast { position: sticky; top: 8px; background:#212529; color:#fff; padding:10px 12px; border-radius:8px; margin-bottom:8px; display:none; z-index: 10; }
@@ -68,6 +72,7 @@
 (function() {
   const container = document.getElementById('oasis-tool-container');
   const toastEl = document.getElementById('tools-toast');
+  const header = document.querySelector('h2');
   const API_ENABLE = '<%=build_url("admin", "network", "oasis", "enable-tool")%>';
   const API_DISABLE = '<%=build_url("admin", "network", "oasis", "disable-tool")%>';
   const errorModal = document.getElementById('tools-error-modal');
@@ -215,6 +220,36 @@
             container.appendChild(p);
           }
           return;
+        }
+        // local_tool is enabled: add Refresh button at top (centered, full width like server blocks)
+        if (header) {
+          const bar = document.createElement('div');
+          bar.className = 'tools-head-block';
+          bar.style.display = 'flex';
+          bar.style.justifyContent = 'center';
+
+          const btn = document.createElement('button');
+          btn.className = 'load-button fullwidth';
+          btn.textContent = 'Reflesh';
+          btn.addEventListener('click', () => {
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            fetch('<%=build_url("admin", "network", "oasis", "refresh-tools")%>', { method: 'POST' })
+              .then(r => r.json())
+              .then(res => {
+                if (!res || res.status !== 'OK') throw new Error('Failed to refresh services');
+                // After service restart, reload page to reflect changes
+                location.reload();
+              })
+              .catch(err => {
+                console.error('refresh-tools failed:', err);
+                showToast('Failed to refresh services', 'error', 3000);
+                btn.disabled = false;
+                btn.textContent = 'Reflesh';
+              });
+          });
+          bar.appendChild(btn);
+          header.parentNode.insertBefore(bar, header.nextSibling);
         }
         const tools = data.tools || {};
         const serverMap = {};

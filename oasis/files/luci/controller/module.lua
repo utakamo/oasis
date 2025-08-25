@@ -57,6 +57,7 @@ function index()
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "local-tool-info"}, call("local_tool_info"), nil).leaf = true
+    entry({"admin", "network", "oasis", "refresh-tools"}, call("refresh_tools"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -941,4 +942,12 @@ function local_tool_info()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(info)
+end
+
+function refresh_tools()
+    sys.exec("service olt_tool restart >/dev/null 2>&1")
+    sys.exec("service rpcd restart >/dev/null 2>&1")
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ status = "OK" })
 end
