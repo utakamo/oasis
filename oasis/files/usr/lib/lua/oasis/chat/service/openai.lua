@@ -324,7 +324,7 @@ openai.new = function()
             local response_ai_json = jsonc.stringify(reply, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
-                return "", "", self.recv_ai_msg, false
+                return "", "", self.recv_raw_msg, false
             end
             return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
         end
