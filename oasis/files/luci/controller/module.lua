@@ -937,6 +937,7 @@ function local_tool_info()
     local info = {}
     info.tools = tools
     info.server_info = server_info
+    info.local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(info)

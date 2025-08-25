@@ -207,6 +207,15 @@
     fetch('<%=build_url("admin", "network", "oasis", "local-tool-info")%>')
       .then(response => response.json())
       .then(data => {
+        if (data && data.local_tool === false) {
+          if (container) {
+            container.innerHTML = '';
+            const p = document.createElement('p');
+            p.textContent = "Please install the extension module 'oasis-mod-tool' to enable local tools.";
+            container.appendChild(p);
+          }
+          return;
+        }
         const tools = data.tools || {};
         const serverMap = {};
 
