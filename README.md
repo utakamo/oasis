@@ -126,11 +126,11 @@ AI-driven configuration changes are saved as rollback data, allowing users to re
 ## System Message (Knowledge)
 In Oasis, users can create and save system messages to use when starting a chat with AI. System messages are preloaded data used by AI to respond to the user.
 For example, add a message like the following as a system message to instruct the AI to interpret English and Japanese.
-<img width="954" height="440" alt="image" src="https://github.com/user-attachments/assets/1415cb9a-198f-47e7-8921-a963516a1772" />
+<img width="954" height="440" alt="image" src="https://github.com/user-attachments/assets/1415cb9a-198f-47e7-8921-a963516a1772" />  
 Enter the instructions for the AI into the text area of 'Create System Message' and press the Add button to add it to the System Message List. This will register a new System Message called 'Translator.'
 <img width="932" height="430" alt="image" src="https://github.com/user-attachments/assets/4108e2c0-d439-4bb6-8937-0ffd787a869d" />  
 When you return to the Chat with AI tab and start a new chat with the AI, 'Translator' will appear as a topic option.
-<img width="936" height="446" alt="image" src="https://github.com/user-attachments/assets/001aa57f-9cb9-4299-b0a9-4ab73288079a" /> 
+<img width="936" height="446" alt="image" src="https://github.com/user-attachments/assets/001aa57f-9cb9-4299-b0a9-4ab73288079a" />  
 When 'Translator' is selected, the user's English message will be translated into Japanese by the AI.
 <img width="934" height="447" alt="image" src="https://github.com/user-attachments/assets/1d3ddcc5-5e43-4c55-bcb0-67b6467e71af" />  
 In this way, by including instructions or specific knowledge for the AI as system messages, it is possible to modify the AI's behavior toward users.
@@ -154,14 +154,14 @@ By enabling the tools, the AI will begin using them in response to user requests
 
 ## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
-<img width="944" height="421" alt="Image" src="https://github.com/user-attachments/assets/c5fb33c2-5b66-4799-ac04-76923ec58b5b" />
+<img width="944" height="421" alt="Image" src="https://github.com/user-attachments/assets/c5fb33c2-5b66-4799-ac04-76923ec58b5b" />  
 Click your preferred icon image and press the Select button to apply the setting. 
-<img width="938" height="416" alt="image" src="https://github.com/user-attachments/assets/ba52f754-2da4-4762-bcbf-e3883a4adad6" />
-<img width="927" height="446" alt="image" src="https://github.com/user-attachments/assets/2e96eaf4-a02c-442c-aca1-1af4dafb2063" />
+<img width="938" height="416" alt="image" src="https://github.com/user-attachments/assets/ba52f754-2da4-4762-bcbf-e3883a4adad6" />  
+<img width="927" height="446" alt="image" src="https://github.com/user-attachments/assets/2e96eaf4-a02c-442c-aca1-1af4dafb2063" />  
 To add your favorite icon image (e.g., png), drag and drop it or click under Upload Icon.
-<img width="930" height="421" alt="image" src="https://github.com/user-attachments/assets/0ad89b02-221f-4a5d-8b30-070cc5112a28" />
+<img width="930" height="421" alt="image" src="https://github.com/user-attachments/assets/0ad89b02-221f-4a5d-8b30-070cc5112a28" />  
 Pressing the Upload button stores the icon in the OpenWrt device.
-<img width="940" height="414" alt="image" src="https://github.com/user-attachments/assets/bb24980e-0b37-42c2-99d4-8ff622fa600f" />
+<img width="940" height="414" alt="image" src="https://github.com/user-attachments/assets/bb24980e-0b37-42c2-99d4-8ff622fa600f" />  
 
 ## How to install only oasis
 Dependency: lua-curl-v3
