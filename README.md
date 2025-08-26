@@ -138,6 +138,9 @@ Currently, Oasis adjusts responses related to OpenWrt solely through system mess
 As a result, by storing information about OpenWrt settings as knowledge in existing or new system messages, it will become specialized in modifying OpenWrt settings.
 In particular, Oasis analyzes whether content related to modifying OpenWrt settings (UCI command sequences) found within AI responses can be executed. Then, it notifies the user with a popup.
 
+## Select Oasis Local Tool(OLT) Server
+
+
 ## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
 <img width="947" alt="oasis-icon01" src="https://github.com/user-attachments/assets/bc44f9d7-eaf0-4a55-b41b-379add9d9a26" />
