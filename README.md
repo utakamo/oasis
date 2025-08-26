@@ -207,19 +207,19 @@ Docs:
 - Example of OpenAI
 ```
 root@OpenWrt:~# oasis add
-Service Name                   >> my-chatgpt
-Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
-API KEY (leave blank if none)  >> <your_api-key>
-LLM MODEL                      >> gpt-4
+Service ("Ollama" or "OpenAI")                             >> OpenAI
+Endpoint(url)                                              >> https://api.openai.com/v1/chat/completions
+API KEY (leave blank if none)                              >> <your_api-key>
+LLM MODEL                                                  >> gpt-4
 ```
 
 - Example of local ai service (Ollama) 
 ```
 root@OpenWrt:~# oasis add
-Service Name                   >> my-ollama
-Endpoint(url)                  >> http://192.168.3.16:11434/api/chat       
-API KEY (leave blank if none)  >>
-LLM MODEL                      >> gemma2:2b
+Service ("Ollama" or "OpenAI")                             >> Ollama
+Endpoint(url)                                              >> http://192.168.3.16:11434/api/chat       
+API KEY (leave blank if none)                              >>
+LLM MODEL                                                  >> gemma2:2b
 ``````
 
 ### Step2: Select AI Service
