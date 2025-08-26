@@ -128,7 +128,7 @@ In Oasis, users can create and save system messages to use when starting a chat 
 For example, add a message like the following as a system message to instruct the AI to interpret English and Japanese.
 <img width="954" height="440" alt="image" src="https://github.com/user-attachments/assets/1415cb9a-198f-47e7-8921-a963516a1772" />
 Enter the instructions for the AI into the text area of 'Create System Message' and press the Add button to add it to the System Message List. This will register a new System Message called 'Translator.'
-<img width="945" alt="Image" src="https://github.com/user-attachments/assets/f89b1b46-4bd4-432c-a5b0-fcb8d52ae8b7" />  
+<img width="932" height="430" alt="image" src="https://github.com/user-attachments/assets/4108e2c0-d439-4bb6-8937-0ffd787a869d" />  
 When you return to the Chat with AI tab and start a new chat with the AI, 'Translator' will appear as a topic option.
 <img width="947" alt="Image" src="https://github.com/user-attachments/assets/0a9210e2-261d-4417-91bd-2f206b473fd3" />  
 When 'Translator' is selected, the user's English message will be translated into Japanese by the AI.
