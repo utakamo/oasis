@@ -154,7 +154,7 @@ By enabling the tools, the AI will begin using them in response to user requests
 
 ## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
-<img width="947" alt="oasis-icon01" src="https://github.com/user-attachments/assets/bc44f9d7-eaf0-4a55-b41b-379add9d9a26" />
+<img width="944" height="421" alt="Image" src="https://github.com/user-attachments/assets/c5fb33c2-5b66-4799-ac04-76923ec58b5b" />
 Click your preferred icon image and press the Select button to apply the setting. 
 <img width="945" alt="oasis-icon02" src="https://github.com/user-attachments/assets/0f54cb9f-4d66-46f4-b2fe-18baa8e0a0cd" />
 <img width="946" alt="oasis-icon05" src="https://github.com/user-attachments/assets/24bd6eed-93db-49a9-b539-ad1f747db582" />
