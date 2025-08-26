@@ -67,17 +67,20 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
 
         if tool_used then
             local tool_info = jsonc.parse(response_ai_json)
-            io.write("Tool Used: ")
+            local LABEL = "\27[1;37;44m"  -- bold white on blue (match Title/ID label)
+            local VALUE = "\27[1;33;44m"  -- bold yellow on blue (match title/id value)
+            local RESET = "\27[0m"
+            io.write(LABEL .. "Tool Used: ")
             for idx, tbl in ipairs(tool_info.tool_outputs) do
                 if idx > 1 then
-                    io.write(", ")
+                    io.write(LABEL .. ", ")
                 end
 
                 if tbl.name then
-                    io.write(tbl.name)
+                    io.write(VALUE .. tbl.name)
                 end
             end
-            io.write('\n')
+            io.write(RESET .. '\n')
             io.flush()
 
         elseif (text_for_console) and (#text_for_console) > 0 then
