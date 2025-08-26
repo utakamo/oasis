@@ -159,9 +159,9 @@ Click your preferred icon image and press the Select button to apply the setting
 <img width="938" height="416" alt="image" src="https://github.com/user-attachments/assets/ba52f754-2da4-4762-bcbf-e3883a4adad6" />
 <img width="927" height="446" alt="image" src="https://github.com/user-attachments/assets/2e96eaf4-a02c-442c-aca1-1af4dafb2063" />
 To add your favorite icon image (e.g., png), drag and drop it or click under Upload Icon.
-<img width="946" alt="oasis-icon03" src="https://github.com/user-attachments/assets/b0bab318-f423-489b-9b6c-b21212ba777e" />  
+<img width="930" height="421" alt="image" src="https://github.com/user-attachments/assets/0ad89b02-221f-4a5d-8b30-070cc5112a28" />
 Pressing the Upload button stores the icon in the OpenWrt device.
-<img width="941" alt="oasis-icon04" src="https://github.com/user-attachments/assets/a73523ea-ac91-4192-920c-8f9d9c0aed81" />
+<img width="940" height="414" alt="image" src="https://github.com/user-attachments/assets/bb24980e-0b37-42c2-99d4-8ff622fa600f" />
 
 ## How to install only oasis
 Dependency: lua-curl-v3
