@@ -197,6 +197,7 @@ Commands:
  delchat id=<chat-id>
  rename id=<chat-id> <title>
  list
+ tools
 
 Docs:
  https://github.com/utakamo/oasis
