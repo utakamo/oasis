@@ -119,7 +119,7 @@ By providing the current configuration information, the accuracy of the AI's sug
 <img width="833" alt="Image" src="https://github.com/user-attachments/assets/6228d327-f388-4ba9-8b35-2b50c58d24a9" />
 <img width="835" alt="Image" src="https://github.com/user-attachments/assets/a4e9c003-aa5f-433f-a337-af9e40046d31" />
 
-## Rollback Data List (New feature from v2.0.1!!)
+## Rollback Data List
 AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
 <img width="857" alt="Image" src="https://github.com/user-attachments/assets/9b344f7f-3cee-44ae-9fd0-eeaf5bc5c855" />
 
@@ -278,7 +278,7 @@ Hello! 👋  What can I do for you today? 😊
 root@OpenWrt:~# 
 ```
 
-# Oasis RPC (json-rpc2.0) :Perphaps, Next Version Release...
+# Oasis RPC (json-rpc2.0)
 Dependency Package: `uhttpd-mod-ubus`
 > [!NOTE]
 > If you wish to use this functionality, you may need to install uhttpd-mod-ubus.
