@@ -81,7 +81,7 @@ root@OpenWrt:~# reboot
 
 ## 1. Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
-<img width="944" alt="image" src="https://github.com/user-attachments/assets/a9ec9673-c8ce-4afc-8173-c803ea02ef07" />  
+<img width="940" height="447" alt="Image" src="https://github.com/user-attachments/assets/0e264254-1c3f-4a66-80ad-833145b7421a" /> 
 When chatting with AI for the first time, you can choose what topics to talk about. These options can be freely added or removed by the user in the System Message tab.  
 <img width="946" alt="image" src="https://github.com/user-attachments/assets/1d55f0f6-5bc7-4b14-bca6-72f5f04c659d" />  
 When a chat with AI begins, it is given a title and displayed in the chat list on the left side.
