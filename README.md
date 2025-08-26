@@ -139,7 +139,7 @@ As a result, by storing information about OpenWrt settings as knowledge in exist
 In particular, Oasis analyzes whether content related to modifying OpenWrt settings (UCI command sequences) found within AI responses can be executed. Then, it notifies the user with a popup.
 
 ## Select Oasis Local Tool(OLT) Server
-
+<img width="935" height="443" alt="Image" src="https://github.com/user-attachments/assets/7c13d8c5-1da3-4c06-842b-13481226863b" />
 
 ## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
