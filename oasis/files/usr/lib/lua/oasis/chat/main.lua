@@ -986,6 +986,93 @@ local list = function()
     end
 end
 
+local tools = function(arg)
+
+	local is_local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+	if not is_local_tool then
+		print("This command is exclusive to oasis-mod-tool.")
+        print("Please install oasis-mod-tool to use it.")
+		return
+	end
+
+	local by_server = {}
+	uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+		local server = s.server or "-"
+		if not by_server[server] then by_server[server] = {} end
+		table.insert(by_server[server], {
+			name   = s.name or "-",
+			enable = s.enable or "0",
+			conflict = s.conflict or "0",
+			sect   = s[".name"]
+		})
+	end)
+
+	local servers = {}
+	for srv, _ in pairs(by_server) do table.insert(servers, srv) end
+	table.sort(servers)
+
+	local index_map = {}
+	local idx = 0
+
+	for _, server in ipairs(servers) do
+		print("- " .. server)
+		table.sort(by_server[server], function(a, b) return (a.name or "") < (b.name or "") end)
+		for _, t in ipairs(by_server[server]) do
+			idx = idx + 1
+			local status = (t.enable == "1") and "enable" or "disable"
+			local conflict_suffix = (t.conflict == "1") and " - conflict" or ""
+			print(string.format(" [%d]: %-30s - %s%s", idx, t.name, status, conflict_suffix))
+			index_map[idx] = { sect = t.sect, name = t.name }
+		end
+		print()
+	end
+
+	if idx == 0 then
+		print("No tools found.")
+		return
+	end
+
+	io.write("Would you like to enable or disable a tool? (E/D/N): ")
+	io.flush()
+	local ans = io.read()
+	if (ans == "N") or (ans == "n") then
+		return
+	end
+	local action
+	if (ans == "E") or (ans == "e") then
+		action = "enable"
+	elseif (ans == "D") or (ans == "d") then
+		action = "disable"
+	else
+		print("Canceled.")
+		return
+	end
+
+	io.write("Target Tool No: ")
+	io.flush()
+	local num = tonumber(io.read())
+	if (not num) or (not index_map[num]) then
+		print("Invalid number.")
+		return
+	end
+
+	local sect = index_map[num].sect
+	if action == "enable" then
+		local conflict = uci:get(common.db.uci.cfg, sect, "conflict")
+		if conflict == "1" then
+			print("Cannot enable this tool due to conflict.")
+			return
+		end
+		uci:set(common.db.uci.cfg, sect, "enable", "1")
+		uci:commit(common.db.uci.cfg)
+		print("\n Enabled tool: " .. index_map[num].name)
+	else
+		uci:set(common.db.uci.cfg, sect, "enable", "0")
+		uci:commit(common.db.uci.cfg)
+		print("\n Disabled tool: " .. index_map[num].name)
+	end
+end
+
 return {
     storage = storage,
     add = add,
@@ -1001,4 +1088,5 @@ return {
     rpc_output = rpc_output,
     rename = rename,
     list = list,
+    tools = tools,
 }

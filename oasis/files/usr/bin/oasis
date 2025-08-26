@@ -68,6 +68,7 @@ Commands:
  delchat id=<chat-id>
  rename id=<chat-id> <title>
  list
+ tools
 
 Docs:
  https://github.com/utakamo/oasis
@@ -176,6 +177,10 @@ end
 
 commands.list = function()
     oasis.list()
+end
+
+commands.tools = function(args)
+    oasis.tools({})
 end
 
 local main_cmd = arg[1]
