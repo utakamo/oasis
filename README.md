@@ -210,7 +210,7 @@ root@OpenWrt:~# oasis add
 Service Name                   >> my-chatgpt
 Endpoint(url)                  >> https://api.openai.com/v1/chat/completions
 API KEY (leave blank if none)  >> <your_api-key>
-LLM MODEL                      >> gpt-3.5-turbo
+LLM MODEL                      >> gpt-4
 ```
 
 - Example of local ai service (Ollama) 
