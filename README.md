@@ -157,7 +157,7 @@ In Oasis, users can freely change the AI's chat icon to create a sense of famili
 <img width="944" height="421" alt="Image" src="https://github.com/user-attachments/assets/c5fb33c2-5b66-4799-ac04-76923ec58b5b" />
 Click your preferred icon image and press the Select button to apply the setting. 
 <img width="938" height="416" alt="image" src="https://github.com/user-attachments/assets/ba52f754-2da4-4762-bcbf-e3883a4adad6" />
-<img width="946" alt="oasis-icon05" src="https://github.com/user-attachments/assets/24bd6eed-93db-49a9-b539-ad1f747db582" />
+<img width="927" height="446" alt="image" src="https://github.com/user-attachments/assets/2e96eaf4-a02c-442c-aca1-1af4dafb2063" />
 To add your favorite icon image (e.g., png), drag and drop it or click under Upload Icon.
 <img width="946" alt="oasis-icon03" src="https://github.com/user-attachments/assets/b0bab318-f423-489b-9b6c-b21212ba777e" />  
 Pressing the Upload button stores the icon in the OpenWrt device.
