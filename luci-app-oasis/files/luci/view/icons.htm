@@ -96,6 +96,34 @@
         max-width: 100%;
         height: auto;
     }
+
+    /* Confirm modal */
+    .confirm-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1300;
+        background: rgba(0, 0, 0, 0.3);
+    }
+    .confirm-modal.show {
+        display: flex !important;
+    }
+    .confirm-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        padding: 18px 20px;
+        width: min(92vw, 420px);
+    }
+    .form-actions {
+        margin: 10px 0;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 </style>
 
 <div id="icons-toast" role="status" aria-live="polite" class="toast" aria-atomic="true" style="display:none;"></div>
@@ -110,7 +138,7 @@
 </div>
 
 <!-- Delete icon confirm modal -->
-<div id="icon-delete-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+<div id="icon-delete-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="confirm-card">
     <p>Delete this icon?</p>
     <div class="form-actions">
@@ -252,12 +280,14 @@
         const modal = document.getElementById('icon-delete-confirm');
         modal.classList.add('show');
         modal.setAttribute('aria-hidden', 'false');
+        modal.style.display = 'flex';
     });
 
     document.getElementById('icon-confirm-no').addEventListener('click', function() {
         const modal = document.getElementById('icon-delete-confirm');
         modal.classList.remove('show');
         modal.setAttribute('aria-hidden', 'true');
+        modal.style.display = 'none';
         _pendingDeleteIconKey = null;
     });
 
@@ -278,6 +308,7 @@
                 showToast('Delete failed', 'error');
                 modal.classList.remove('show');
                 modal.setAttribute('aria-hidden', 'true');
+                modal.style.display = 'none';
                 _pendingDeleteIconKey = null;
                 return;
             }
@@ -287,6 +318,7 @@
             showToast('Deleted', 'success');
             modal.classList.remove('show');
             modal.setAttribute('aria-hidden', 'true');
+            modal.style.display = 'none';
             _pendingDeleteIconKey = null;
         })
         .catch(error => {
@@ -295,6 +327,7 @@
             const modal = document.getElementById('icon-delete-confirm');
             modal.classList.remove('show');
             modal.setAttribute('aria-hidden', 'true');
+            modal.style.display = 'none';
             _pendingDeleteIconKey = null;
         });
     });
