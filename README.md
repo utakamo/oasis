@@ -240,15 +240,15 @@ Hello! 👋
 How can I help you today? 😄
 Title:ConversationStart  ID:7772532380
 
-You :history
+You :/history
 {"messages":[{"content":"Hello!","role":"user"},{"content":"Hello! 👋 How can I help you today? 😊 \n","role":"assistant"}],"model":"gemma2:2b"}
 
 You :exit
 ```
-|  chat cmd  |         description       |
+|  slash cmd  |         description       |
 | :---: | :---  |
-|   exit    |   Terminate the chat with the AI.   |
-|  history |   Display the chat history(JSON)  |
+|   /exit    |   Terminate the chat with the AI.   |
+|  /history |   Display the chat history(JSON)  |
 
 ### Step4: Load past chats and resume conversation.
 Confirm Chat ID
