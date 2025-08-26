@@ -92,7 +92,7 @@ Chat data can be renamed, exported, or deleted.
 
 ## Ask OpenWrt Setting (Basic Usage)
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
-<img width="944" alt="Image" src="https://github.com/user-attachments/assets/7ce13aff-b7f3-4594-80f7-a04d8a1bf012" />  
+<img width="937" height="444" alt="Image" src="https://github.com/user-attachments/assets/50654f91-c59e-462a-a392-06b1e3bfd297" /> 
 When a configuration change is suggested by the AI using UCI commands, the internal system of OpenWrt recognizes that a configuration change has been proposed by the AI. It then notifies the user via a popup to apply the configuration change to the current runtime. The user can accept the configuration change by pressing the Apply button.  
 <img width="946" alt="Image" src="https://github.com/user-attachments/assets/e1b7f41e-7b7a-4355-9438-4e621e9a2944" />
 <img width="940" alt="Image" src="https://github.com/user-attachments/assets/6310c703-b2c3-49d5-b38a-ebab82c61896" />  
