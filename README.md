@@ -81,14 +81,14 @@ root@OpenWrt:~# reboot
 
 ## 1. Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
-<img width="940" height="447" alt="Image" src="https://github.com/user-attachments/assets/0e264254-1c3f-4a66-80ad-833145b7421a" /> 
+<img width="940" height="447" alt="Image" src="https://github.com/user-attachments/assets/0e264254-1c3f-4a66-80ad-833145b7421a" />  
 When chatting with AI for the first time, you can choose what topics to talk about. These options can be freely added or removed by the user in the System Message tab.  
-<img width="940" height="447" alt="Image" src="https://github.com/user-attachments/assets/858c0e13-fee5-46d1-9da0-37ab30879bd4" /> 
+<img width="940" height="447" alt="Image" src="https://github.com/user-attachments/assets/858c0e13-fee5-46d1-9da0-37ab30879bd4" />  
 When a chat with AI begins, it is given a title and displayed in the chat list on the left side.
 "Users can continue chatting with AI, and if there is chat data from the past, they can select it to resume the conversation.
 <img width="943" height="440" alt="Image" src="https://github.com/user-attachments/assets/0fcd1d52-a875-4c53-835a-bc1c9a157d7a" />  
 Chat data can be renamed, exported, or deleted.
-<img width="938" height="446" alt="Image" src="https://github.com/user-attachments/assets/283debb0-638e-4b1e-b58c-4eb770899b15" />
+<img width="938" height="446" alt="Image" src="https://github.com/user-attachments/assets/283debb0-638e-4b1e-b58c-4eb770899b15" />  
 
 ## Ask OpenWrt Setting (Basic Usage)
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
