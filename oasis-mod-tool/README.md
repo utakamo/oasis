@@ -1,8 +1,8 @@
 # Oasis Local Tool (OLT) Client Server System
 
 Oasis provides the oasis-mod-tool as a plugin module, enabling AI systems to leverage OpenWrt functionality.
-The oasis-mod-tool utilizes Lua and uCode scripts that can run as ubus server applications, enabled by OpenWrt’s ubus and rpcd modules.
-After installing oasis-mod-tool, you can create Lua or uCode scripts using the syntax rules shown in the examples below. By placing the scripts in the appropriate directory, AI will detect the functionalities defined within them and recognize them as tools.  
+The oasis-mod-tool utilizes Lua and ucode scripts that can run as ubus server applications, enabled by OpenWrt’s ubus and rpcd modules.
+After installing oasis-mod-tool, you can create Lua or ucode scripts using the syntax rules shown in the examples below. By placing the scripts in the appropriate directory, AI will detect the functionalities defined within them and recognize them as tools.  
 
 <img width="789" height="254" alt="Image" src="https://github.com/user-attachments/assets/a5f616a4-d899-459f-814a-a915796f1aa8" />
 
@@ -60,9 +60,9 @@ server.tool("echo", {
 server.run(arg)
 ```
 
-## uCode OLT Server Example
+## ucode OLT Server Example
 This section explains how to write a script that manages tools named oasis.ucode.local.tool.server1 and oasis.ucode.local.tool.server2.
-Unlike Lua, uCode does not use the script’s filename as the tool group name—instead, the tool group must be explicitly declared when defining each tool.
+Unlike Lua, ucode does not use the script’s filename as the tool group name—instead, the tool group must be explicitly declared when defining each tool.
 To apply the script, place it in /usr/rpcd/ucode.
 ```
 'use strict';
@@ -127,7 +127,7 @@ root@OpenWrt~# service rpcd restart
 > If your script includes multiple module imports or similar operations, it may take a few minutes (typically 1 to 3) before it’s recognized by the Oasis/OpenWrt system.
 
 ## Memo
-Once scripts such as Lua or uCode are recognized by the Oasis/OpenWrt system, they become visible in the WebUI.
+Once scripts such as Lua or ucode are recognized by the Oasis/OpenWrt system, they become visible in the WebUI.
 The image below shows an example of how the tools page appears in Oasis.
 <img width="728" height="439" alt="Image" src="https://github.com/user-attachments/assets/6cc9d93d-c96c-41eb-8596-a84935ef173d" />  
 

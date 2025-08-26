@@ -1,12 +1,12 @@
 --[[
 # Note: How to retrieve tool list infomation
  - Ex1: Lua Script Ver) Target Tool Server ---> "oasis.lua.tool.server"
- - Ex2: uCode Script Ver) Target Tool Server ---> "oasis.ucode.tool.server1" and "oasis.ucode.tool.server2"
+ - Ex2: ucode Script Ver) Target Tool Server ---> "oasis.ucode.tool.server1" and "oasis.ucode.tool.server2"
 
  1. Execute (Lua Script Ver):
  root@OpenWrt:~# /usr/libexec/rpcd/oasis.lua.tool.server meta
 
- 2. Execute (uCode Script Ver):
+ 2. Execute (ucode Script Ver):
  root@OpenWrt:~# ucode /usr/share/rpcd/ucode/oasis_plugin_server.uc
 
  Output(Example):
@@ -264,7 +264,7 @@ local update_server_info = function()
     uci:delete_all(common.db.uci.cfg, common.db.uci.sect.tool)
     uci:commit(common.db.uci.cfg)
 
-    -- 3) Rebuild UCI by re-scanning Lua/uCode servers
+    -- 3) Rebuild UCI by re-scanning Lua/ucode servers
     local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
     if lua_servers then
         for _, server_name in ipairs(lua_servers) do
