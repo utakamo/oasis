@@ -140,11 +140,11 @@ In particular, Oasis analyzes whether content related to modifying OpenWrt setti
 
 ## Oasis Local Tool(OLT) Server
 By installing oasis-mod-tool, an extension module for Oasis, the AI will be able to use the tools. After installation, you can optionally enable AI tools from the Tools tab.  
-<img width="935" height="443" alt="Image" src="https://github.com/user-attachments/assets/7c13d8c5-1da3-4c06-842b-13481226863b" />
+<img width="935" height="443" alt="Image" src="https://github.com/user-attachments/assets/7c13d8c5-1da3-4c06-842b-13481226863b" />  
 The following is an example with both get_ip_addr and get_ifname_list enabled.  
-<img width="941" height="428" alt="Image" src="https://github.com/user-attachments/assets/584c41bd-718b-46f5-9dab-cda7379d0362" />
+<img width="941" height="428" alt="Image" src="https://github.com/user-attachments/assets/584c41bd-718b-46f5-9dab-cda7379d0362" />  
 By enabling the tools, the AI will begin using them in response to user requests.  
-<img width="934" height="446" alt="Image" src="https://github.com/user-attachments/assets/82944040-30f8-44ef-82bd-67b9a9157f4a" />
+<img width="934" height="446" alt="Image" src="https://github.com/user-attachments/assets/82944040-30f8-44ef-82bd-67b9a9157f4a" />  
 
 > [!IMPORTANT]
 > This feature requires that the AI supports tool usage. OpenAI's AI can use tools.
