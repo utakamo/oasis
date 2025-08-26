@@ -88,7 +88,7 @@ When a chat with AI begins, it is given a title and displayed in the chat list o
 "Users can continue chatting with AI, and if there is chat data from the past, they can select it to resume the conversation.
 <img width="943" height="440" alt="Image" src="https://github.com/user-attachments/assets/0fcd1d52-a875-4c53-835a-bc1c9a157d7a" />  
 Chat data can be renamed, exported, or deleted.
-<img width="942" alt="Image" src="https://github.com/user-attachments/assets/10d013bc-cc9d-4f9c-bcc4-2cedd0466a8d" />
+<img width="938" height="446" alt="Image" src="https://github.com/user-attachments/assets/283debb0-638e-4b1e-b58c-4eb770899b15" />
 
 ## Ask OpenWrt Setting (Basic Usage)
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
