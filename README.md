@@ -141,6 +141,7 @@ In particular, Oasis analyzes whether content related to modifying OpenWrt setti
 ## Select Oasis Local Tool(OLT) Server
 <img width="935" height="443" alt="Image" src="https://github.com/user-attachments/assets/7c13d8c5-1da3-4c06-842b-13481226863b" />
 <img width="941" height="428" alt="Image" src="https://github.com/user-attachments/assets/584c41bd-718b-46f5-9dab-cda7379d0362" />
+<img width="934" height="446" alt="Image" src="https://github.com/user-attachments/assets/82944040-30f8-44ef-82bd-67b9a9157f4a" />
 
 ## Select AI Icon
 In Oasis, users can freely change the AI's chat icon to create a sense of familiarity with the AI.
