@@ -138,7 +138,7 @@ Currently, Oasis adjusts responses related to OpenWrt solely through system mess
 As a result, by storing information about OpenWrt settings as knowledge in existing or new system messages, it will become specialized in modifying OpenWrt settings.
 In particular, Oasis analyzes whether content related to modifying OpenWrt settings (UCI command sequences) found within AI responses can be executed. Then, it notifies the user with a popup.
 
-## Select Oasis Local Tool(OLT) Server
+## Oasis Local Tool(OLT) Server
 By installing oasis-mod-tool, an extension module for Oasis, the AI will be able to use the tools. After installation, you can optionally enable AI tools from the Tools tab.  
 <img width="935" height="443" alt="Image" src="https://github.com/user-attachments/assets/7c13d8c5-1da3-4c06-842b-13481226863b" />
 The following is an example with both get_ip_addr and get_ifname_list enabled.  
