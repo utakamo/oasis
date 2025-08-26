@@ -541,6 +541,18 @@ function delete_icon_data()
 
     data.icons[icon_key] = nil
 
+    -- If the deleted icon was selected, fallback to another available icon key
+    if data.icons.using == icon_key then
+        local fallback = ""
+        for k, v in pairs(data.icons) do
+            if type(k) == "string" and k:match("^icon_%d+$") and type(v) == "string" and #v > 0 then
+                fallback = k
+                break
+            end
+        end
+        data.icons.using = fallback
+    end
+
     if not common.update_conf_file("/etc/oasis/oasis.conf", data) then
         luci_http.prepare_content("application/json")
         luci_http.write_json({ error = "Failed to delete icon info" })

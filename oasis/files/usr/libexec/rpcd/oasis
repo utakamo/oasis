@@ -71,9 +71,28 @@ local methods = {
                 return r
             end
 
-            os.remove(data.icons.path .. args.target)
+            -- Delete file by filename, not by key
+            local filename = data.icons and data.icons[args.target]
 
-            data[args.target] = nil
+            if filename and #filename > 0 then
+                os.remove(data.icons.path .. filename)
+            end
+
+            if data.icons then
+                data.icons[args.target] = nil
+
+                -- If the deleted key was selected, choose a fallback icon key
+                if data.icons.using == args.target then
+                    local fallback = ""
+                    for k, v in pairs(data.icons) do
+                        if type(k) == "string" and k:match("^icon_%d+$") and type(v) == "string" and #v > 0 then
+                            fallback = k
+                            break
+                        end
+                    end
+                    data.icons.using = fallback
+                end
+            end
 
             local is_update = common.update_conf_file("/etc/oasis/oasis.conf", data)
 
