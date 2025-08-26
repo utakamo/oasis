@@ -130,7 +130,7 @@ For example, add a message like the following as a system message to instruct th
 Enter the instructions for the AI into the text area of 'Create System Message' and press the Add button to add it to the System Message List. This will register a new System Message called 'Translator.'
 <img width="932" height="430" alt="image" src="https://github.com/user-attachments/assets/4108e2c0-d439-4bb6-8937-0ffd787a869d" />  
 When you return to the Chat with AI tab and start a new chat with the AI, 'Translator' will appear as a topic option.
-<img width="947" alt="Image" src="https://github.com/user-attachments/assets/0a9210e2-261d-4417-91bd-2f206b473fd3" />  
+<img width="936" height="446" alt="image" src="https://github.com/user-attachments/assets/001aa57f-9cb9-4299-b0a9-4ab73288079a" /> 
 When 'Translator' is selected, the user's English message will be translated into Japanese by the AI.
 <img width="941" alt="image" src="https://github.com/user-attachments/assets/e2a35ad2-b307-41e9-a5b3-1abb6e00538d" />  
 In this way, by including instructions or specific knowledge for the AI as system messages, it is possible to modify the AI's behavior toward users.
