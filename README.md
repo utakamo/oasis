@@ -35,7 +35,7 @@ root@OpenWrt:~# reboot
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
 ### 1. Example OpenAI Setup
-<img width="838" alt="Image" src="https://github.com/user-attachments/assets/a4d4cb84-2135-40b7-97ee-4d0e0dacff2c" />
+<img width="940" height="319" alt="Image" src="https://github.com/user-attachments/assets/c7c9d912-bee7-420e-871c-5d252c58ebcf" />
 
 > [!NOTE]
 > #### 1.1. OpenAI Endpoint
