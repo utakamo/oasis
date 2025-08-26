@@ -149,7 +149,7 @@ By enabling the tools, the AI will begin using them in response to user requests
 > [!IMPORTANT]
 > This feature requires that the AI supports tool usage. OpenAI's AI can use tools.
 > However, when using Ollama, some AIs may not support tool usage.
-> For details on which Ollama AIs support tools, please refer to the URL below.
+> For details on which Ollama AIs support tools, please refer to the URL below.  
 > https://ollama.com/blog/tool-support
 
 ## Select AI Icon
