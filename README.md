@@ -112,7 +112,7 @@ When you send a message to the AI, the selected configuration information (e.g.,
 
 By providing the current configuration information, the accuracy of the AI's suggestions improves.  
 <img width="946" height="445" alt="image" src="https://github.com/user-attachments/assets/baa28d6d-2c5b-4082-a780-dcf4e80c120e" />  
-<img width="833" alt="Image" src="https://github.com/user-attachments/assets/6228d327-f388-4ba9-8b35-2b50c58d24a9" />  
+<img width="944" height="449" alt="image" src="https://github.com/user-attachments/assets/7dae99a1-8fad-4b6a-a55e-efc3f719ef2d" />  
 <img width="835" alt="Image" src="https://github.com/user-attachments/assets/a4e9c003-aa5f-433f-a337-af9e40046d31" />  
 
 ## Rollback Data List
