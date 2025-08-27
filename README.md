@@ -104,7 +104,7 @@ After applying the settings, if the user can access the WebUI, they will be noti
 If you are willing to provide your current settings to the AI, you can select UCI Config from the dropdown menu below the message box. When you provide this as supplementary information when making a request to the AI, the accuracy of its suggestions will improve significantly. For example, as shown in the following case.
 
 In the following example, Wi-Fi is enabled, and when requesting some configuration changes, the current wireless settings are provided to the AI as reference information.
-<img width="854" alt="Image" src="https://github.com/user-attachments/assets/4d58b2e9-82eb-43cc-b90f-11597760994e" />  
+<img width="1888" height="889" alt="image" src="https://github.com/user-attachments/assets/1020e00f-3c97-4177-8ad5-70e527132a0d" />  
 When you send a message to the AI, the selected configuration information (e.g., wireless settings) will be added at the bottom.  
 > [!IMPORTANT]
 > After pressing the Send button, select ```OpenWrt Teacher (for High-Performance LLM)``` from the list of system messages displayed.
