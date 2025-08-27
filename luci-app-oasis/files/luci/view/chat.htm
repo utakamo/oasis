@@ -1644,24 +1644,8 @@
             save_apply_proc(jsonResponse, "commit");
         });
 
-        // Add Copy button
-        const copyButton = document.createElement("button");
-        copyButton.className = "copy-btn";
-        copyButton.textContent = "Copy";
-        copyButton.addEventListener('click', async function () {
-            try {
-                await navigator.clipboard.writeText(preElement.textContent || '');
-                copyButton.textContent = 'Copied!';
-                setTimeout(() => copyButton.textContent = 'Copy', 1500);
-            } catch (e) {
-                console.error('Clipboard failed', e);
-                copyButton.textContent = 'Failed';
-                setTimeout(() => copyButton.textContent = 'Copy', 1500);
-            }
-        });
-
         popupDiv.appendChild(applyButton);
-        popupDiv.appendChild(copyButton);
+        
 
         const cancelButton = document.createElement("button");
         cancelButton.id = "uci-cancel";
