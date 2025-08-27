@@ -111,7 +111,7 @@ When you send a message to the AI, the selected configuration information (e.g.,
 <img width="946" height="443" alt="image" src="https://github.com/user-attachments/assets/c8ea11d1-e6fa-4c9b-9982-b1dbfdc7bfcd" />  
 
 By providing the current configuration information, the accuracy of the AI's suggestions improves.  
-<img width="844" alt="Image" src="https://github.com/user-attachments/assets/67a330b1-0767-4a22-b9a7-e8683a6833f2" />  
+<img width="946" height="445" alt="image" src="https://github.com/user-attachments/assets/baa28d6d-2c5b-4082-a780-dcf4e80c120e" />  
 <img width="833" alt="Image" src="https://github.com/user-attachments/assets/6228d327-f388-4ba9-8b35-2b50c58d24a9" />  
 <img width="835" alt="Image" src="https://github.com/user-attachments/assets/a4e9c003-aa5f-433f-a337-af9e40046d31" />  
 
