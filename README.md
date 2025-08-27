@@ -113,7 +113,7 @@ When you send a message to the AI, the selected configuration information (e.g.,
 By providing the current configuration information, the accuracy of the AI's suggestions improves.  
 <img width="946" height="445" alt="image" src="https://github.com/user-attachments/assets/baa28d6d-2c5b-4082-a780-dcf4e80c120e" />  
 <img width="944" height="449" alt="image" src="https://github.com/user-attachments/assets/7dae99a1-8fad-4b6a-a55e-efc3f719ef2d" />  
-<img width="835" alt="Image" src="https://github.com/user-attachments/assets/a4e9c003-aa5f-433f-a337-af9e40046d31" />  
+<img width="947" height="443" alt="image" src="https://github.com/user-attachments/assets/8fd37066-4ab3-4534-ae42-18ec6540f94e" /> 
 
 ## Rollback Data List
 AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
