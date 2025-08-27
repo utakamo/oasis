@@ -18,7 +18,7 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 
 ## How to install oasis
 Support OpenWrt Ver: 24.x  
-Support Hardware: All Device
+Support Hardware: All Device  
 Install Size: 4.5Mib
 
 ### 1. Install Packages via the Command Line
