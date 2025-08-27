@@ -21,8 +21,6 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 Support OpenWrt Ver: 24.x  
 Support Hardware: All Device  
 Install Size: 4.5Mib
-
-### 1. Install Packages via the Command Line
 ```
 wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_installer.sh | sh
 ```
