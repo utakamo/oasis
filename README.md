@@ -17,7 +17,7 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 |  oasis-mod-tool |  This is a plugin that enables AI to use tools.  |
 <img width="936" height="445" alt="Image" src="https://github.com/user-attachments/assets/169aa8dd-e3c1-4f44-a1d9-0e5d452a5fd0" />
 
-## How to install oasis
+## Install oasis
 Support OpenWrt Ver: 24.x  
 Support Hardware: All Device  
 Install Size: 4.5Mib
@@ -159,16 +159,7 @@ To add your favorite icon image (e.g., png), drag and drop it or click under Upl
 Pressing the Upload button stores the icon in the OpenWrt device.
 <img width="940" height="414" alt="image" src="https://github.com/user-attachments/assets/bb24980e-0b37-42c2-99d4-8ff622fa600f" />  
 
-## How to install only oasis
-Dependency: lua-curl-v3
-```
-root@OpenWrt:~# wget -O oasis_2.0.1-r1_all.ipk https://github.com/utakamo/oasis/releases/download/v2.0.1/oasis_2.0.1-r1_all.ipk
-root@OpenWrt:~# opkg update
-root@OpenWrt:~# opkg install oasis_2.0.1-r1_all.ipk
-root@OpenWrt:~# service rpcd reload
-```
-
-## Commands
+## Oasis CLI Commands
 ```
 root@OpenWrt:~# oasis
 Usage: oasis <command> [[<options>] arguments]...
