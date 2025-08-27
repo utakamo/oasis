@@ -17,8 +17,8 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 <img width="936" height="445" alt="Image" src="https://github.com/user-attachments/assets/169aa8dd-e3c1-4f44-a1d9-0e5d452a5fd0" />
 
 ## How to install oasis
-Support Ver: 24.x
-Hardware: all device
+Support Ver: 24.x  
+Hardware: all device  
 ### 1. Install Packages via the Command Line
 ```
 wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_installer.sh | sh
