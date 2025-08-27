@@ -108,7 +108,7 @@ In the following example, Wi-Fi is enabled, and when requesting some configurati
 When you send a message to the AI, the selected configuration information (e.g., wireless settings) will be added at the bottom.  
 > [!IMPORTANT]
 > After pressing the Send button, select ```OpenWrt Teacher (for High-Performance LLM)``` from the list of system messages displayed.
-<img width="849" alt="Image" src="https://github.com/user-attachments/assets/7abdfb17-9997-411a-9c56-1646deb1cb03" />  
+<img width="946" height="443" alt="image" src="https://github.com/user-attachments/assets/c8ea11d1-e6fa-4c9b-9982-b1dbfdc7bfcd" />  
 
 By providing the current configuration information, the accuracy of the AI's suggestions improves.  
 <img width="844" alt="Image" src="https://github.com/user-attachments/assets/67a330b1-0767-4a22-b9a7-e8683a6833f2" />  
