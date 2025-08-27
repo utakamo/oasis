@@ -24,13 +24,5 @@ rm -f /tmp/oasis_3.0.0-r1_all.ipk \
 
 # Completion message
 echo "Oasis installation completed successfully!"
-
-# Ask for reboot
-echo -n "Do you want to reboot now? [Y/n]: "
-read answer
-if [ "$answer" = "Y" ] || [ "$answer" = "y" ]; then
-    echo "Rebooting system..."
-    reboot
-else
-    echo "Reboot skipped. Please reboot manually later to apply changes."
-fi
+echo "System Rebooting ..."
+reboot
