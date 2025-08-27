@@ -117,7 +117,7 @@ By providing the current configuration information, the accuracy of the AI's sug
 
 ## Rollback Data List
 AI-driven configuration changes are saved as rollback data, allowing users to revert settings to any desired point.
-<img width="857" alt="Image" src="https://github.com/user-attachments/assets/9b344f7f-3cee-44ae-9fd0-eeaf5bc5c855" />  
+<img width="944" height="444" alt="image" src="https://github.com/user-attachments/assets/7f65108a-674e-435b-824d-69933e70d80e" />　　  
 
 ## System Message (Knowledge)
 In Oasis, users can create and save system messages to use when starting a chat with AI. System messages are preloaded data used by AI to respond to the user.
