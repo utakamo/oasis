@@ -88,11 +88,12 @@ Chat data can be renamed, exported, or deleted.
 ## Ask OpenWrt Setting (Basic Usage)
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
 <img width="946" height="443" alt="image" src="https://github.com/user-attachments/assets/bf4ad521-5b90-4a95-a847-a7d870413499" />
-When a configuration change is suggested by the AI using UCI commands, the internal system of OpenWrt recognizes that a configuration change has been proposed by the AI. It then notifies the user via a popup to apply the configuration change to the current runtime. The user can accept the configuration change by pressing the Apply button.  
+When a configuration change is suggested by the AI using UCI commands, the internal system of OpenWrt recognizes that a configuration change has been proposed by the AI. It then notifies the user via a popup to apply the configuration change to the current runtime. The user can accept the configuration change by pressing the Apply button.　　 
 <img width="944" height="443" alt="image" src="https://github.com/user-attachments/assets/9a52798c-2887-41ec-b151-bed95f01d1c5" />
-<img width="938" height="446" alt="Image" src="https://github.com/user-attachments/assets/7959e63b-391c-4f89-821d-1449328e301e" />  
-After applying the settings, if the user can access the WebUI, they will be notified in the Oasis chat screen to finalize the configuration change suggested by the AI. The user can press the Finalize button to approve the configuration change, or press the Rollback button to reject it.  
-<img width="946" alt="Image" src="https://github.com/user-attachments/assets/081313e4-e3ad-405f-a75b-ff4a46c83684" />  
+<img width="947" height="444" alt="image" src="https://github.com/user-attachments/assets/c9d2b1a7-d4d9-4471-b81b-80ef2c7e700e" /> 
+After applying the settings, if the user can access the WebUI, they will be notified in the Oasis chat screen to finalize the configuration change suggested by the AI. The user can press the Finalize button to approve the configuration change, or press the Rollback button to reject it.　　
+<img width="946" height="442" alt="image" src="https://github.com/user-attachments/assets/b69221e9-856d-47f8-ad1e-af879ae558e0" />
+ 
 > [!IMPORTANT]
 > After a configuration change, if the user does not press the Finalize or Rollback button within 5 minutes (default), the configuration will automatically rollback (Rollback monitoring). This ensures that even if there was a configuration error that caused a brick, the system will return to the original, normal settings. Note: If the OpenWrt device is powered off during the rollback monitoring period, the rollback monitoring will resume upon restart.
 
