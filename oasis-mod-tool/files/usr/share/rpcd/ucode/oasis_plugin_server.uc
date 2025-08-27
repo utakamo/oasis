@@ -46,3 +46,5 @@ server.tool("oasis.ucode.tool.server2", "get_os_info", {
         return { result : os_info_tbl };
     }
 });
+
+return server.submit();
