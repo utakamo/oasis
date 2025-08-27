@@ -190,7 +190,6 @@
         btn.className = isEnabled ? 'delete-button' : 'load-button';
         status.textContent = isEnabled ? 'Enabled' : 'Disabled';
         status.className = 'status-pill' + (isEnabled ? ' enabled' : '');
-        showToast(`"${tool.name}" is now ${isEnabled ? 'enabled' : 'disabled'}.`, isEnabled ? 'success' : 'info');
       })
       .catch(err => {
         console.error('toggle failed:', err);
