@@ -377,6 +377,10 @@ root@OpenWrt:~# ubus -v list oasis.title
 # Dependency Package
 - lua-curl-v3
 - luci-compat
+- ucode
+- rpcd-mod-ucode
+- ucode-mod-fs
+- ucode-mod-ubus
 
 ## License
 
