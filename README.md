@@ -18,12 +18,25 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 <img width="936" height="445" alt="Image" src="https://github.com/user-attachments/assets/169aa8dd-e3c1-4f44-a1d9-0e5d452a5fd0" />
 
 # 🚀Install oasis
-```
-wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_installer.sh | sh
-```
 Support OpenWrt Ver: 24.x  
 Support Hardware: All Device  
 Install Size: 4.5Mib
+
+|  Detail  |         description       |
+| :---: | :---  |
+|  OpenWrt Version Support    |   24.x   |
+|  Hardware Support |   All  |
+|  Install Size |  4.5Mib  |
+
+```
+wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_installer.sh | sh
+```
+> [!NOTE]
+> If an SSL certificate error occurs when running the above installer, run the date command to check the current time. If the displayed time is incorrect, run /etc/init.d/sysntpd restart.
+> ```
+> date
+> /etc/init.d/sysntpd restart
+> ```
 
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
