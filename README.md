@@ -34,8 +34,8 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > [!NOTE]
 > If an SSL certificate error occurs when running the above installer, run the date command to check the current time. If the displayed time is incorrect, run /etc/init.d/sysntpd restart.
 > ```
-> date
-> /etc/init.d/sysntpd restart
+> root@OpenWrt:~# date
+> root@OpenWrt:~# /etc/init.d/sysntpd restart
 > ```
 
 ## AI Setting
