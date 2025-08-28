@@ -32,7 +32,7 @@ Install Size: 4.5Mib
 wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_installer.sh | sh
 ```
 > [!NOTE]
-> If an SSL certificate error occurs when running the above installer script, run the date command to check the current time. If the displayed time is incorrect, run /etc/init.d/sysntpd restart.
+> If an SSL certificate error occurs when running the above installer script, run the `date` command to check the current time. If the displayed time is incorrect, run `/etc/init.d/sysntpd restart`.
 > ```
 > root@OpenWrt:~# date
 > root@OpenWrt:~# /etc/init.d/sysntpd restart
