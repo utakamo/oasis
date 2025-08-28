@@ -150,7 +150,7 @@ local function get_output_formats()
     output.format_2 = "%-64s >> %s"
 
     -- Field labels
-    output.service = "Service (\"Ollama\" or \"OpenAI\")"
+    output.service = "Service (\"Ollama\", \"OpenAI\" or \"Google Gemini\")"
     output.endpoint = "Endpoint"
     output.api_key = "API KEY (leave blank if none)"
     output.model = "LLM MODEL"

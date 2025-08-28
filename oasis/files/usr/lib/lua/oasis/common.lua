@@ -1,5 +1,4 @@
 #!/usr/bin/env lua
-
 local ubus  = require("ubus")
 local uci   = require("luci.model.uci").cursor()
 local sys   = require("luci.sys")
@@ -61,7 +60,7 @@ ai.service.anthropic.name           = "Anthropic"
 ai.service.anthropic.endpoint       = "https://api.anthropic.com/v1/messages"
 ai.service.gemini                   = {}
 ai.service.gemini.name              = "Google Gemini"
-ai.service.gemini.endpoint          = "https://generativelanguage.geminiapis.com"
+ai.service.gemini.endpoint          = "https://generativelanguage.googleapis.com"
 ai.service.openrouter               = {}
 ai.service.openrouter.name          = "OpenRouter"
 ai.service.openrouter.endpoint      = "https://openrouter.ai/api/v1/chat/completions"
@@ -352,7 +351,6 @@ local function check_server_loaded(server_name)
 end
 
 local check_unloaded_plugin = function(target)
-    
     local result = false
 
     if target == "oasis" then
@@ -370,7 +368,7 @@ local check_prepare_oasis = function()
 
     -- Check standard ubus server
     if  (not check_server_loaded("oasis"))
-            or (not check_server_loaded("oasis.chat")) 
+            or (not check_server_loaded("oasis.chat"))
             or (not check_server_loaded("oasis.title")) then
         return false
     end

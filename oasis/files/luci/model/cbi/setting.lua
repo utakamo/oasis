@@ -57,7 +57,7 @@ name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)
 name:value(common.ai.service.openai.name, common.ai.service.openai.name)
 -- name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
--- name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
+name:value(common.ai.service.gemini.name, "Gemini")
 -- name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
 
 -- Ollama
@@ -86,14 +86,14 @@ openai_custom_endpoint:depends("openai_endpoint_type", common.endpoint.type.cust
 -- anthropic_custom_endpoint:depends("anthropic_endpoint_type", common.endpoint.type.custom)
 
 -- Google Gemini
--- endpoint_type_for_gemini = service:option(ListValue, "gemini_endpoint_type", "Endpoint")
--- endpoint_type_for_gemini:value(common.endpoint.type.default, common.endpoint.type.default)
--- endpoint_type_for_gemini:value(common.endpoint.type.custom, common.endpoint.type.custom)
--- endpoint_type_for_gemini.description = "Default: " .. common.ai.service.gemini.endpoint
--- endpoint_type_for_gemini:depends("name", common.ai.service.gemini.name)
+endpoint_type_for_gemini = service:option(ListValue, "gemini_endpoint_type", "Endpoint Type")
+endpoint_type_for_gemini:value(common.endpoint.type.default, common.endpoint.type.default)
+endpoint_type_for_gemini:value(common.endpoint.type.custom, common.endpoint.type.custom)
+endpoint_type_for_gemini.description = "Default: " .. common.ai.service.gemini.endpoint
+endpoint_type_for_gemini:depends("name", common.ai.service.gemini.name)
 
--- gemini_custom_endpoint = service:option(Value, "gemini_custom_endpoint", "Endpoint")
--- gemini_custom_endpoint:depends("gemini_endpoint_type", common.endpoint.type.custom)
+gemini_custom_endpoint = service:option(Value, "gemini_custom_endpoint", "Custom Endpoint")
+gemini_custom_endpoint:depends("gemini_endpoint_type", common.endpoint.type.custom)
 
 -- OpenRouter
 -- endpoint_type_for_openrouter = service:option(ListValue, "openrouter_endpoint_type", "Endpoint Type")
@@ -129,6 +129,14 @@ for i = 1000, 20000, 1000 do
 end
 budget_tokens:depends({name = common.ai.service.anthropic.name, thinking = "enabled"})
 
+-- Model (free text) for non-Gemini services
 model = service:option(Value, "model", "Model")
+model:depends("name", common.ai.service.ollama.name)
+model:depends("name", common.ai.service.openai.name)
+
+-- Model (dropdown) for Gemini
+model_gemini = service:option(ListValue, "model", "Model")
+model_gemini:depends("name", common.ai.service.gemini.name)
+model_gemini:value("gemini-2.0-flash", "gemini-2.0-flash")
 
 return m
