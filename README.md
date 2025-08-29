@@ -23,7 +23,7 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 | :---: | :---  |
 |  OpenWrt Version Support    |   24.x   |
 |  Hardware Support |   All  |
-|  Install Size |  4.5Mib  |
+|  Install Size |  1.44MiB  |
 
 ```
 wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_installer.sh | sh
