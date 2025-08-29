@@ -47,9 +47,17 @@ gemini.new = function()
             if not speaker or not speaker.role then return false end
             if not speaker.message or #speaker.message == 0 then return false end
             chat.messages = chat.messages or {}
-            table.insert(chat.messages, { role = speaker.role, content = speaker.message })
-            debug:log("oasis.log", "gemini.setup_msg",
-                string.format("role=%s, len=%d", tostring(speaker.role), #speaker.message))
+            table.insert(chat.messages, { role = speaker.role, content = speaker.message, name = speaker.name })
+            debug:log(
+                "oasis.log",
+                "gemini.setup_msg",
+                string.format(
+                    "role=%s, name=%s, len=%d",
+                    tostring(speaker.role),
+                    tostring(speaker.name or ""),
+                    #speaker.message
+                )
+            )
             return true
         end
 
@@ -113,10 +121,15 @@ gemini.new = function()
                                 (type(text) == "string" and #text) or 0
                             )
                         )
-                        table.insert(contents, {
-                            role = "user",
-                            parts = { { functionResponse = { name = m.name, response = resp } } }
-                        })
+                        local fname = tostring(m.name or "")
+                        if fname == "" then
+                            debug:log("oasis.log", "gemini.convert_schema", "skip functionResponse: empty name")
+                        else
+                            table.insert(contents, {
+                                role = "user",
+                                parts = { { functionResponse = { name = fname, response = resp } } }
+                            })
+                        end
                     end
                 end
             end
@@ -135,14 +148,22 @@ gemini.new = function()
                     local schema = client.get_function_call_schema()
                     local fdecl = {}
                     for _, tool_def in ipairs(schema or {}) do
+                        -- sanitize parameters for Gemini (remove additionalProperties, ensure properties is an object)
+                        local params = tool_def.parameters or {}
+                        local sanitized = {
+                            type = params.type or "object",
+                            properties = params.properties or {},
+                            required = params.required or {}
+                        }
                         table.insert(fdecl, {
                             name = tool_def.name,
                             description = tool_def.description or "",
-                            parameters = tool_def.parameters
+                            parameters = sanitized
                         })
                     end
                     if #fdecl > 0 then
-                        body.tools = { functionDeclarations = fdecl }
+                        -- Gemini expects an array of tools, each with functionDeclarations
+                        body.tools = { { functionDeclarations = fdecl } }
                         debug:log(
                             "oasis.log",
                             "gemini.convert_schema",
@@ -175,6 +196,8 @@ gemini.new = function()
             end
 
             local user_msg_json = jsonc.stringify(body, false)
+            -- Ensure empty properties are objects, not arrays (jsonc may encode empty Lua tables as [])
+            user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
             debug:log("oasis.log", "gemini.convert_schema",
                 string.format("contents=%d, json_len=%d", #contents, #user_msg_json))
             return user_msg_json
