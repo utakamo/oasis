@@ -129,14 +129,10 @@ for i = 1000, 20000, 1000 do
 end
 budget_tokens:depends({name = common.ai.service.anthropic.name, thinking = "enabled"})
 
--- Model (free text) for non-Gemini services
+-- Model
 model = service:option(Value, "model", "Model")
 model:depends("name", common.ai.service.ollama.name)
 model:depends("name", common.ai.service.openai.name)
-
--- Model (dropdown) for Gemini
-model_gemini = service:option(ListValue, "model", "Model")
-model_gemini:depends("name", common.ai.service.gemini.name)
-model_gemini:value("gemini-2.0-flash", "gemini-2.0-flash")
+model:depends("name", common.ai.service.gemini.name)
 
 return m
