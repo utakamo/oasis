@@ -112,7 +112,20 @@ end
 
 local setup_ucode_server_config = function(server_name)
 
+    local misc = require("oasis.chat.misc")
+
+    -- Check ucode binary
+    if not misc.check_file_exist("/usr/bin/ucode") then
+        debug:log("oasis.log", "setup_ucode_server_config", "ucode not installed; skip")
+        return
+    end
+
     local server_path = ucode_ubus_server_app_dir .. server_name
+    -- Check target ucode script
+    if not misc.check_file_exist(server_path) then
+        debug:log("oasis.log", "setup_ucode_server_config", "script not found: " .. server_path)
+        return
+    end
     local meta = sys.exec("ucode " .. server_path)
     debug:log("oasis.log", "setup_ucode_server_config", meta)
 
