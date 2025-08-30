@@ -6,7 +6,7 @@ opkg update
 # Download packages to /tmp
 wget -O /tmp/oasis_3.0.0-r1_all.ipk https://github.com/utakamo/oasis/releases/download/v3.0.0/oasis_3.0.0-r1_all.ipk
 wget -O /tmp/luci-app-oasis_3.0.0-r1_all.ipk https://github.com/utakamo/oasis/releases/download/v3.0.0/luci-app-oasis_3.0.0-r1_all.ipk
-wget -O /tmp/oasis-mod-tool_1.0.0-r1_all.ipk https://github.com/utakamo/oasis/releases/download/v3.0.0/oasis-mod-tool_1.0.3-r1_all.ipk
+wget -O /tmp/oasis-mod-tool_1.0.3-r1_all.ipk https://github.com/utakamo/oasis/releases/download/v3.0.0/oasis-mod-tool_1.0.3-r1_all.ipk
 
 # Install packages from /tmp
 opkg install /tmp/oasis_3.0.0-r1_all.ipk
