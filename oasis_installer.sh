@@ -20,7 +20,7 @@ opkg list-installed | grep -E 'oasis|luci-app-oasis|oasis-mod-tool'
 # Clean up temporary files if no longer needed
 rm -f /tmp/oasis_3.0.0-r1_all.ipk \
       /tmp/luci-app-oasis_3.0.0-r1_all.ipk \
-      /tmp/oasis-mod-tool_1.0.0-r1_all.ipk
+      /tmp/oasis-mod-tool_1.0.3-r1_all.ipk
 
 # Completion message
 echo "Oasis installation completed successfully!"
