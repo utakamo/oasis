@@ -78,26 +78,33 @@ local setup_lua_server_config = function(server_name)
         uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
         uci:set(common.db.uci.cfg, s, "conflict", "0")
 
-        -- required parameter
-        if tool.args then
+        -- required / properties: set_list with arrays for all params
+        local params = {}
+        if tool.args and type(tool.args) == "table" then
             for param, _ in pairs(tool.args) do
-                uci:set(common.db.uci.cfg, s, "required", param)
+                params[#params + 1] = param
             end
-        end
-        uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
+            table.sort(params)
 
-        -- properties
-        if tool.args then
-            for param, typ in pairs(tool.args) do
+            local required_list = {}
+            local property_list = {}
+
+            local type_map = { a_string = "string", integer = "number", boolean = "boolean", number = "number", string = "string" }
+            for i, param in ipairs(params) do
+                required_list[#required_list + 1] = param
+                local typ  = tool.args[param]
                 local desc = ""
                 if tool.args_desc and type(tool.args_desc) == "table" then
-                    desc = tool.args_desc[1] or ""
+                    desc = tool.args_desc[i] or ""
                 end
-                local type_map = { a_string = "string", integer = "number", boolean = "boolean" }
-                local uci_type = type_map[typ] or typ
-                uci:set(common.db.uci.cfg, s, "property", string.format("%s:%s:%s", param, uci_type, desc))
+                local uci_type = type_map[typ] or "string"
+                property_list[#property_list + 1] = string.format("%s:%s:%s", param, uci_type, desc)
             end
+
+            uci:set_list(common.db.uci.cfg, s, "required", required_list)
+            uci:set_list(common.db.uci.cfg, s, "property", property_list)
         end
+        uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
         table.insert(created_sections, {section = s, name = tool_name})
     end
     uci:commit(common.db.uci.cfg)
@@ -120,6 +127,14 @@ local setup_ucode_server_config = function(server_name)
 
     local created_sections = {}
 
+    local function detect_type(v)
+        local t = type(v)
+        if t == "number" then return "number"
+        elseif t == "boolean" then return "boolean"
+        elseif t == "string" then return "string"
+        else return "string" end
+    end
+
     for server, tbl in pairs(data) do
         for tool, def in pairs(tbl) do
             local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
@@ -131,33 +146,31 @@ local setup_ucode_server_config = function(server_name)
             uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
             uci:set(common.db.uci.cfg, s, "conflict", "0")
 
-            -- required parameter
-            if def.args then
+            -- required / properties: set_list with arrays for all params
+            local params = {}
+            if def.args and type(def.args) == "table" then
                 for param, _ in pairs(def.args) do
-                    uci:set(common.db.uci.cfg, s, "required", param)
+                    params[#params + 1] = param
                 end
-            end
-            uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
+                table.sort(params)
 
-            -- properties
-            if def.args then
-                for param, typ in pairs(def.args) do
+                local required_list = {}
+                local property_list = {}
+
+                for i, param in ipairs(params) do
+                    required_list[#required_list + 1] = param
+                    local typ  = detect_type(def.args[param])
                     local desc = ""
                     if def.args_desc and type(def.args_desc) == "table" then
-                        desc = def.args_desc[1] or ""
+                        desc = def.args_desc[i] or ""
                     end
-                    local type_map = {}
-                    type_map["8"] = "number"
-                    type_map["16"] = "number"
-                    type_map["32"] = "number"
-                    type_map["64"] = "number"
-                    type_map["true"] = "boolean"
-                    type_map["false"] = "boolean"
-                    type_map["string"] = "string"
-                    local param_type = type_map[typ] or type_map.string
-                    uci:set(common.db.uci.cfg, s, "property", string.format("%s:%s:%s", param, param_type, desc))
+                    property_list[#property_list + 1] = string.format("%s:%s:%s", param, typ, desc)
                 end
+
+                uci:set_list(common.db.uci.cfg, s, "required", required_list)
+                uci:set_list(common.db.uci.cfg, s, "property", property_list)
             end
+            uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
             table.insert(created_sections, {section = s, name = tool})
         end
     end
