@@ -15,7 +15,14 @@ To apply the Lua script, place it in /usr/libexec/rpcd.
 
 local server = require("oasis.local.tool.server")
 
--- Sample tool "get_weather"
+server.tool("get_hello", {
+    tool_desc = "Return a fixed greeting message.",
+    call = function()
+        local res = server.response({ message = "Hello, world!" })
+        return res
+    end
+})
+
 server.tool("get_weather", {
     -- args_desc: Description of parameters specified when invoking the tool.
     args_desc   = { "City and country e.g. Bogotá, Colombia" },
@@ -30,29 +37,17 @@ server.tool("get_weather", {
     end
 })
 
-server.tool("get_wlan_ifname_list", {
-    -- tool_desc: Description of the tool's functionality.
-    tool_desc = "Get the list of WLAN interface names.",
-    call = function()
-        -- Mock: Returns a fake temperature for the given location
-        local res = server.response({ ifname1 = "wlan0", ifname2 = "wlan1" })
-        return res
-    end
-})
+server.tool("add_numbers", {
 
-server.tool("echo", {
-    -- args_desc: Description of parameters specified when invoking the tool.
-    args_desc = { "Parameter 1 (string)", "Parameter 2 (string)" },
-    args = { param1 = "a_string", param2 = "a_string" },
+    tool_desc   = "Add two numbers together and return the result.",
 
-    -- tool_desc: Description of the tool's functionality.
-    tool_desc = "Echoes back the received parameters.",
+    args_desc   = { "First number", "Second number" },
+    args        = { num1 = "a_number", num2 = "a_number" },
+
     call = function(args)
-        -- Mock: Returns the received parameters as is
-        local res = server.response({
-            received_param1 = args.param1,
-            received_param2 = args.param2
-        })
+        local a = tonumber(args.num1) or 0
+        local b = tonumber(args.num2) or 0
+        local res = server.response({ num1 = a, num2 = b, sum = a + b })
         return res
     end
 })
