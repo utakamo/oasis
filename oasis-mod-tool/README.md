@@ -70,47 +70,42 @@ To apply the script, place it in /usr/rpcd/ucode.
 let ubus = require('ubus').connect();
 let server = require('oasis.local.tool.server');
 
-server.tool("oasis.ucode.tool.server1", "method_1", {
-    tool_desc: "This is test tool No.1",
+server.tool("oasis.ucode.template.tool1", "get_goodbye", {
+    tool_desc: "Return a fixed goodbye message.",
     call: function() {
-        return { response: "oasis.ucode.tool.server1 --- No.1"};
+        return { message: "Goodbye! This is a template tool." };
     }
 });
 
-server.tool("oasis.ucode.tool.server1", "method_2", {
-    tool_desc: "This is test tool No.2",
-
+server.tool("oasis.ucode.template.tool1", "subtract", {
+    tool_desc: "Subtract the second number from the first and return the result.",
     args_desc: [
-        "sample Integer parameter.",
-        "sample boolean parameter.",
-        "sample string parameter.",
+        "First number (integer)",
+        "Second number (integer)"
     ],
-
     args: {
-        foo: 32,
-        baz: true,
-        qrx: "example"
+        num1: 0,
+        num2: 0
     },
-
-    call: function() {
-        return {
-            got_args: request.args,
-            got_info: request.info
-        };
+    call: function(request) {
+        let a = request.args.num1;
+        let b = request.args.num2;
+        return { num1: a, num2: b, difference: a - b };
     }
 });
 
-server.tool("oasis.ucode.tool.server2", "method_3", {
-    tool_desc: "This is test tool No.1",
-    call: function() {
-        return { response: "oasis.ucode.tool.server2 --- No.1"};
-    }
-});
-
-server.tool("oasis.ucode.tool.server2", "method_4", {
-    tool_desc: "This is test tool No.2",
-    call: function() {
-        return { response: "oasis.ucode.tool.server2 --- No.2"};
+server.tool("oasis.ucode.template.tool2", "concat_strings", {
+    tool_desc: "Concatenate two strings and return the result.",
+    args_desc: [
+        "First string",
+        "Second string"
+    ],
+    args: {
+        str1: "",
+        str2: ""
+    },
+    call: function(request) {
+        return { str1: request.args.str1, str2: request.args.str2, result: request.args.str1 + request.args.str2 };
     }
 });
 
