@@ -329,18 +329,6 @@ gemini.new = function()
                 text = tostring(chunk_json.candidates[1].content.parts[1].text or "")
             end
 
-            -- Fallback for title generation when AI returned empty/whitespace
-            if (self.format == common.ai.format.title) and ((#text == 0) or text:match("^%s*$")) then
-                local src = tostring(self._last_user_text or "")
-                src = src:gsub("[%s\r\n]+", " ")
-                src = src:gsub("^%s+", ""):gsub("%s+$", "")
-                local maxlen = 64
-                if #src > maxlen then src = src:sub(1, maxlen) end
-                if #src == 0 then src = "--" end
-                text = src
-                debug:log("oasis.log", "gemini.recv_ai_msg", "title fallback used; text_len=" .. tostring(#text))
-            end
-
             self.recv_raw_msg.role = common.role.assistant
             self.recv_raw_msg.message = text
             debug:log("oasis.log", "gemini.recv_ai_msg", "text_len=" .. tostring(#text))
