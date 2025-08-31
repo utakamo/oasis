@@ -56,49 +56,99 @@ gemini.new = function()
         end
 
         obj.setup_system_msg = function(self, chat)
+
             local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
             local sysmsg = common.load_conf_file(spath)
 
-            -- Always prepare title instruction for title generation
-            if (self.format == common.ai.format.title) then
-                self._sysmsg_text = string.gsub(sysmsg.general.auto_title, "\\n", "\n")
-                debug:log("oasis.log", "gemini.setup_system_msg",
-                    string.format("format=%s, sysmsg_len=%d",
-                        tostring(self.format), (self._sysmsg_text and #self._sysmsg_text or 0)))
+            -- Ensure sysmsg_key is valid for output/rpc_output/title formats
+            do
+                local default_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or "default"
+                if (not self.cfg.sysmsg_key) or (not sysmsg or not sysmsg[self.cfg.sysmsg_key]) then
+                    self.cfg.sysmsg_key = default_key
+                    if (not sysmsg) or (not sysmsg[self.cfg.sysmsg_key]) then
+                        self.cfg.sysmsg_key = "default"
+                    end
+                end
+            end
+
+            -- The system message (knowledge) is added to the first message in the chat.
+            -- The first message is data that has not been assigned a chat ID.
+            if (not self.cfg.id) or (#self.cfg.id == 0) then
+                -- System message(rule or knowledge) for chat
+                if (self.format == common.ai.format.chat) then
+                    local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or nil
+                    if (not target_sysmsg_key) then
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysmsg.default.chat, "\\n", "\n")
+                        })
+                    else
+                        local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
+                        if (category and target) and (sysmsg[category][target])then
+                            table.insert(chat.messages, 1, {
+                                role = common.role.system,
+                                content = string.gsub(sysmsg[category][target], "\\n", "\n")
+                            })
+                        else
+                            table.insert(chat.messages, 1, {
+                                role = common.role.system,
+                                content = string.gsub(sysmsg.default.chat, "\\n", "\n")
+                            })
+                        end
+                    end
+                    return
+                end
+
+                if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
+                    table.insert(chat.messages, 1, {
+                        role = common.role.system,
+                        content = string.gsub(sysmsg[self.cfg.sysmsg_key].chat, "\\n", "\n")
+                    })
+                    return
+                end
+
+                -- In Ollama, you should request title generation using role:user.
+                -- Doing so allows all AI models available in Ollama to generate titles.
+                -- It appears that some models may not respond if the request is made using role:system.
+                if self.format == common.ai.format.title then
+                    table.insert(chat.messages, #chat.messages + 1, {
+                        role = common.role.user,
+                        content = string.gsub(sysmsg.general.auto_title, "\\n", "\n")
+                    })
+                    return
+                end
+            end
+
+            if self.format == common.ai.format.prompt then
+                local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt") or nil
+                if (not target_sysmsg_key) then
+                    table.insert(chat.messages, 1, {
+                        role = common.role.system,
+                        content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
+                    })
+                else
+                    local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
+                    if (category and target) and (sysmsg[category][target])then
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysmsg[category][target], "\\n", "\n")
+                        })
+                    else
+                        table.insert(chat.messages, 1, {
+                            role = common.role.system,
+                            content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
+                        })
+                    end
+                end
                 return
             end
 
-            if (not self.cfg.id) or (#self.cfg.id == 0) then
-                if (self.format == common.ai.format.chat) then
-                    self._sysmsg_text = string.gsub(sysmsg.default.chat, "\\n", "\n")
-                elseif (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
-                    self._sysmsg_text = string.gsub((sysmsg.default.output or sysmsg.default.chat), "\\n", "\n")
-                elseif (self.format == common.ai.format.prompt) then
-                    self._sysmsg_text = string.gsub(sysmsg.default.prompt, "\\n", "\n")
-                elseif (self.format == common.ai.format.call) then
-                    self._sysmsg_text = string.gsub((sysmsg.default.call or sysmsg.default.chat), "\\n", "\n")
-                end
-                debug:log("oasis.log", "gemini.setup_system_msg",
-                    string.format("format=%s, sysmsg_len=%d",
-                        tostring(self.format), (self._sysmsg_text and #self._sysmsg_text or 0)))
-            end
-
-            -- Insert role:system into chat.messages for persistence (once, at head)
-            if chat then
-                local has_system = false
-                if chat.messages and type(chat.messages) == "table" then
-                    for _, m in ipairs(chat.messages) do
-                        if m and m.role == common.role.system then
-                            has_system = true
-                            break
-                        end
-                    end
-                end
-                if (not has_system) and self._sysmsg_text and (#self._sysmsg_text > 0) then
-                    chat.messages = chat.messages or {}
-                    table.insert(chat.messages, 1, { role = common.role.system, content = self._sysmsg_text })
-                    debug:log("oasis.log", "gemini.setup_system_msg", "inserted system message into chat.messages")
-                end
+            if self.format == common.ai.format.call then
+                table.insert(chat.messages, 1, {
+                    role = common.role.system,
+                    content = string.gsub(sysmsg.default.call, "\\n", "\n")
+                })
+                return
             end
         end
 
@@ -142,31 +192,6 @@ gemini.new = function()
                 #sysmsg_text,
                 ((#system_buf > 0) and "system_buf") or ((self._sysmsg_text and (#self._sysmsg_text > 0)) and "_sysmsg_text" or "none")
             ))
-
-            local inserted_title = false
-            if (self.format == common.ai.format.title) then
-                local first_user, first_assistant
-                for _, m in ipairs(messages) do
-                    local role = tostring(m.role or "")
-                    local text = tostring(m.content or m.message or "")
-                    if (not first_user) and role == common.role.user and #text > 0 then
-                        first_user = text
-                    elseif first_user and (not first_assistant) and role == common.role.assistant and #text > 0 then
-                        first_assistant = text
-                        break
-                    end
-                end
-
-                contents = {}
-                if first_user then
-                    contents[#contents + 1] = { role = "user", parts = { { text = first_user } } }
-                end
-                if first_assistant then
-                    contents[#contents + 1] = { role = "model", parts = { { text = first_assistant } } }
-                end
-                inserted_title = true
-            end
-            debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", "title_injected=" .. tostring(inserted_title))
 
             if #contents == 0 then
                 contents[#contents + 1] = { parts = { { text = "" } } }
@@ -340,6 +365,7 @@ gemini.new = function()
                     content = text
                 }
             }
+
             local response_ai_json = jsonc.stringify(msg_tbl, false)
 
             if (not plain_text_for_console) or (#plain_text_for_console == 0) then
