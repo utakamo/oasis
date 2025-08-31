@@ -21,27 +21,20 @@ gemini.new = function()
         obj.format = nil
         obj._sysmsg_text = nil
         obj._last_user_text = ""
+        obj._last_assistant_text = ""
 
         obj.initialize = function(self, arg, format)
             self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
             self.format = format
-            if (not self.cfg.model) or (#tostring(self.cfg.model) == 0) then
-                self.cfg.model = "gemini-2.0-flash"
-            end
-            debug:log("oasis.log", "gemini.initialize",
-                string.format("format=%s, model=%s, endpoint=%s",
-                    tostring(format), tostring(self.cfg.model), tostring(self.cfg.endpoint)))
         end
 
         obj.init_msg_buffer = function(self)
             self.recv_raw_msg.role = common.role.unknown
             self.recv_raw_msg.message = ""
-            debug:log("oasis.log", "gemini.init_msg_buffer", "buffer cleared")
         end
 
         obj.set_chat_id = function(self, id)
             self.cfg.id = id
-            debug:log("oasis.log", "gemini.set_chat_id", "id=" .. tostring(id))
         end
 
         obj.setup_msg = function(_, chat, speaker)
@@ -127,6 +120,7 @@ gemini.new = function()
                         self._last_user_text = text
                     elseif role == common.role.assistant then
                         contents[#contents + 1] = { role = "model", parts = { { text = text } } }
+                        self._last_assistant_text = text
                     elseif role == "tool" then
                         local resp
                         local ok, parsed = pcall(jsonc.parse, text)
@@ -150,8 +144,26 @@ gemini.new = function()
             ))
 
             local inserted_title = false
-            if (self.format == common.ai.format.title) and (#sysmsg_text > 0) then
-                table.insert(contents, 1, { role = "user", parts = { { text = sysmsg_text } } })
+            if (self.format == common.ai.format.title) then
+                local first_user, first_assistant
+                for _, m in ipairs(messages) do
+                    local role = tostring(m.role or "")
+                    local text = tostring(m.content or m.message or "")
+                    if (not first_user) and role == common.role.user and #text > 0 then
+                        first_user = text
+                    elseif first_user and (not first_assistant) and role == common.role.assistant and #text > 0 then
+                        first_assistant = text
+                        break
+                    end
+                end
+
+                contents = {}
+                if first_user then
+                    contents[#contents + 1] = { role = "user", parts = { { text = first_user } } }
+                end
+                if first_assistant then
+                    contents[#contents + 1] = { role = "model", parts = { { text = first_assistant } } }
+                end
                 inserted_title = true
             end
             debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", "title_injected=" .. tostring(inserted_title))
@@ -210,12 +222,9 @@ gemini.new = function()
         end
 
         obj.prepare_post_to_server = function(self, easy, callback, form, user_msg_json)
-            local base = tostring(self.cfg.endpoint or "")
-            if #base == 0 then
-                base = "https://generativelanguage.googleapis.com"
-            end
-            local model = tostring(self.cfg.model or "gemini-2.0-flash")
-            local url = string.format("%s/v1beta/models/%s:generateContent", base, model)
+            -- local base = tostring(self.cfg.endpoint or "")
+            -- local model = tostring(self.cfg.model or "gemini-2.0-flash")
+            local url = string.format("%s/v1beta/models/%s:generateContent", self.cfg.endpoint, self.cfg.model)
 
             easy:setopt_url(url)
             easy:setopt_writefunction(callback)
