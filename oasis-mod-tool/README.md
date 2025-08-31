@@ -42,7 +42,7 @@ server.tool("add_numbers", {
     tool_desc   = "Add two numbers together and return the result.",
 
     args_desc   = { "First number", "Second number" },
-    args        = { num1 = "a_number", num2 = "a_number" },
+    args        = { num1 = "a_string", num2 = "a_string" },
 
     call = function(args)
         local a = tonumber(args.num1) or 0
