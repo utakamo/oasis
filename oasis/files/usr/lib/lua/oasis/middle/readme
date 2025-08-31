@@ -1,0 +1,86 @@
+Oasis employs a dedicated data structure to centrally manage chat data across multiple AI services.
+This structure functions as an intermediate layer, enabling seamless switching between AI services
+during a conversation and allowing users to resume chats by loading past data.
+
+The chat data structure in Oasis is modeled after OpenAI’s format and follows the JSON schema shown
+below. As a result, it is directly compatible with OpenAI and other AI services that adopt similar specifications.
+
+However, services such as Gemini and Anthropic differ significantly from OpenAI’s JSON format,
+requiring conversion of incompatible elements. These conversion processes are individually implemented
+within service-specific modules (e.g., openai.lua, ollama.lua, gemini.lua, Anthropic ).
+
+[Send Message Data to LLM]
+                                     ------------------------------                                                -----------
+                                    |                              | ----> | convert data <openai.lua>    | ---> |            |            
+ ------        set message data     |                              | ----> | convert data <ollama.lua>    | ---> |            |          
+| User |  ------------------------> | oasis middle layer (layer)   | ----> | convert data <gemini.lua>    | ---> |  transfer  | ---> LLM
+ ------                             |                              | ----> | convert data <anthropic.lua> | ---> |            |
+                                    |                              | ----> | convert data <openrouter.lua>| ---> |            |       
+                                     ------------------------------                                               ------------
+[Receive Message data from LLM]
+
+
+
+
+
+
+
+# 1. Normal Conversation
+
+------------------
+- [Oasis Format] -
+------------------
+{
+  "messages": [
+    {
+      "content": "system message (knowledge)",
+      "role": "system"
+    },
+    {
+      "content": "user first message",
+      "role": "user"
+    },
+    {
+      "content": "ai first response",
+      "role": "assistant"
+    },
+    {
+      "content": "user second message",
+      "role": "user"
+    },
+    {
+      "content": "ai second response",
+      "role": "assistant"
+    }
+  ]
+}
+
+-----------
+- Example -
+-----------
+{
+  "messages": [
+    {
+      "content": "You are an OpenWrt teacher. \nPlease answer users' questions politely. Also, when a user requests a configuration change, please provide instructions on how to change the settings using UCI commands. \n\nThe UCI commands that you output as code are executed by software called Oasis. \nWhen Oasis runs UCI commands, it automatically executes the relevant uci commit command and /etc/init.d scripts.\n\nTherefore, you do not need to display the uci commit command to the user.\n",
+      "role": "system"
+    },
+    {
+      "content": "Hello",
+      "role": "user"
+    },
+    {
+      "content": "Hello! Welcome to the world of OpenWrt! What can I help you with today? Do you have any questions about configuring your router or need guidance on a specific task? \n\nI'm ready to answer any questions you might have and offer assistance in setting up your OpenWrt experience.\n",
+      "role": "assistant"
+    },
+    {
+      "content": "Nice to meet you. My name is utakamo.",
+      "role": "user"
+    },
+    {
+      "content": "Hello Utakamo! Nice to meet you too! It's a pleasure to help you with your OpenWrt setup. What are you hoping to learn or achieve today? \n\n\nLet me know if you have any questions about getting started, configuring services, setting up specific features like DDNS or VPNs, or anything else related to OpenWrt. \n",
+      "role": "assistant"
+    }
+  ]
+}
+
+# 2. Tool Use (Function Calling)
