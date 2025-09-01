@@ -1,5 +1,5 @@
 Oasis employs a dedicated data structure to centrally manage chat data across multiple AI services.
-This structure functions as an intermediate layer, enabling seamless switching between AI services
+This structure functions as an unified schema, enabling seamless switching between AI services
 during a conversation and allowing users to resume chats by loading past data.
 
 The chat data structure in Oasis is modeled after OpenAIâ€™s format and follows the JSON schema shown
@@ -9,27 +9,37 @@ However, services such as Gemini and Anthropic differ significantly from OpenAIâ
 requiring conversion of incompatible elements. These conversion processes are individually implemented
 within service-specific modules (e.g., openai.lua, ollama.lua, gemini.lua, Anthropic ).
 
-[Send Message Data to LLM]
-                                     ------------------------------                                                -----------
-                                    |                              | ----> | convert data <openai.lua>    | ---> |            |            
- ------        set message data     |                              | ----> | convert data <ollama.lua>    | ---> |            |          
-| User |  ------------------------> | oasis middle layer (layer)   | ----> | convert data <gemini.lua>    | ---> |  transfer  | ---> LLM
- ------                             |                              | ----> | convert data <anthropic.lua> | ---> |            |
-                                    |                              | ----> | convert data <openrouter.lua>| ---> |            |       
-                                     ------------------------------                                               ------------
-[Receive Message data from LLM]
+[Send & Set Message Data to LLM]
+                               ------------------------------                                                 ------------
+                              |                              | ----> | convert schema <openai.lua>    | ---> |            |            
+ ------      message data     |                              | ----> | convert schema <ollama.lua>    | ---> |            |          
+| User | ---- main.lua------> |   oasis unified chat schema  | ----> | convert schema <gemini.lua>    | ---> |  transfer  | ---> LLM
+ ------                       |                              | ----> | convert schema <anthropic.lua> | ---> |            |
+                              |                              | ----> | convert schema <openrouter.lua>| ---> |            |       
+                               -----------------------------                                                  ------------
 
-
-
-
-
-
+[Receive & Save Message data from LLM]
+                               -----------------------------                                                  -----------
+                              |                             | <---- | convert schema <openai.lua>     | <--- |           |
+ ------      message data     |                             | <---- | convert schema <ollama.lua>     | <--- |           |
+| User | <--- main.lua ------ |  oasis unified chat schema  | <---- | convert schema <gemini.lua>     | <--- | transfer  | <--- LLM
+ ------         |             |                             | <---- | convert schema <anthropic.lua>  | <--- |           |
+                |             |                             | <---- | convert schema <openrouter.lua> | <--- |           |
+                |              -----------------------------                                                  -----------
+                |
+                |                            
+                | Save chat Data
+                |              -----------------------------
+                |             |                             |
+                 -----------> |         data control        |
+                              |                             |
+                               -----------------------------
 
 # 1. Normal Conversation
 
-------------------
-- [Oasis Format] -
-------------------
+--------------------------------------
+- [Oasis unified chat schema Format] -
+--------------------------------------
 {
   "messages": [
     {
