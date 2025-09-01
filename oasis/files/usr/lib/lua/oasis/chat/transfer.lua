@@ -6,6 +6,7 @@ local common    = require("oasis.common")
 local jsonc     = require("luci.jsonc")
 local datactrl  = require("oasis.chat.datactrl")
 local util      = require("luci.util")
+local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
 
 -- Create a shallow copy of chat and drop transient messages before persisting
@@ -163,7 +164,7 @@ local chat_with_ai = function(service, chat)
         -- debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
         -- debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
         -- chat mode
-        if service:setup_msg(chat, ai_response_tbl) then
+        if ous.setup_msg(chat, ai_response_tbl) then
             local cfg = service:get_config()
             if (not cfg.id) or (#cfg.id == 0) then
                 -- On the first assistant text after a tool_calls turn, persist the chat
@@ -212,7 +213,7 @@ local chat_with_ai = function(service, chat)
                 if setup_result then
                         debug:log("oasis.log", "chat_with_ai", "call append_chat_data")
                     local save_chat = clone_chat_without_tool_messages(chat)
-                    service:append_chat_data(save_chat)
+                    ous.append_chat_data(save_chat)
                 else
                     debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned false, skipping append_chat_data")
                 end
