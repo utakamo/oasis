@@ -211,7 +211,7 @@ local chat_with_ai = function(service, chat)
                 local setup_result = service:setup_msg(chat, ai_response_tbl)
                 debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned: " .. tostring(setup_result))
                 if setup_result then
-                        debug:log("oasis.log", "chat_with_ai", "call append_chat_data")
+                    debug:log("oasis.log", "chat_with_ai", "call append_chat_data")
                     local save_chat = clone_chat_without_tool_messages(chat)
                     ous.append_chat_data(save_chat)
                 else

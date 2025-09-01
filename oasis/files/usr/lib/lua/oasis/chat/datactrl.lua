@@ -4,6 +4,7 @@ local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
+local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
 
 local sysmsg_info = {}
@@ -236,7 +237,7 @@ local record_chat_data = function(service, chat)
     -- Conversation after the second
     elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
         debug:dump("oasis.log", chat)
-        service:append_chat_data(chat)
+        ous.append_chat_data(service, chat)
     end
 end
 
