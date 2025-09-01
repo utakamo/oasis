@@ -1,6 +1,10 @@
 #!/usr/bin/env lua
 
 local util      = require("luci.util")
+local uci       = require("luci.model.uci").cursor()
+local common    = require("oasis.common")
+local jsonc     = require("luci.jsonc")
+local debug     = require("oasis.chat.debug")
 
 -- Helpers -----------------------------------------------------------------
 local function normalize_newlines(s)
