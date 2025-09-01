@@ -132,7 +132,7 @@ local setup_system_msg = function(chat)
     end
 end
 
-local setup_msg = function(self, chat, speaker)
+local setup_msg = function(chat, speaker)
 
     debug:log("oasis.log", "setup_msg", string.format("\n--- [ollama.lua][setup_msg] ---"))
     debug:log("oasis.log", "setup_msg", string.format("setup_msg called"))
@@ -216,9 +216,12 @@ local setup_msg = function(self, chat, speaker)
     return true
 end
 
-local append_chat_data = function(chat)
+local append_chat_data = function(service, chat)
+
+    local cfg = service:get_config()
+
     local message = {}
-    message.id = self.cfg.id
+    message.id = cfg.id
     message.role1 = chat.messages[#chat.messages - 1].role
     message.content1 = chat.messages[#chat.messages - 1].content
     message.role2 = chat.messages[#chat.messages].role
