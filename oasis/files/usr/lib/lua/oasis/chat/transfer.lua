@@ -160,8 +160,8 @@ local chat_with_ai = function(service, chat)
     local new_chat_info = nil
 
     if format == common.ai.format.chat then
-        debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
-            debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
+        -- debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
+        -- debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
         -- chat mode
         if service:setup_msg(chat, ai_response_tbl) then
             local cfg = service:get_config()
