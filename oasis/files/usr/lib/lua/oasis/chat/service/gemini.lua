@@ -42,16 +42,6 @@ gemini.new = function()
             if not speaker.message or #speaker.message == 0 then return false end
             chat.messages = chat.messages or {}
             table.insert(chat.messages, { role = speaker.role, content = speaker.message, name = speaker.name })
-            debug:log(
-                "oasis.log",
-                "gemini.setup_msg",
-                string.format(
-                    "role=%s, name=%s, len=%d",
-                    tostring(speaker.role),
-                    tostring(speaker.name or ""),
-                    #speaker.message
-                )
-            )
             return true
         end
 
@@ -177,7 +167,9 @@ gemini.new = function()
                         if ok and parsed then resp = parsed else resp = text end
                         local fname = tostring(m.name or "")
                         if fname ~= "" then
-                            contents[#contents + 1] = { role = "user", parts = { { functionResponse = { name = fname, response = resp } } } }
+                            contents[#contents + 1] = { role = "model", parts = { { functionResponse = { name = fname, response = resp } } } }
+                            debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", 
+                                string.format("converted tool to functionResponse: name=%s", fname))
                         end
                     end
                 end
@@ -243,6 +235,12 @@ gemini.new = function()
             local user_msg_json = jsonc.stringify(body, false)
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
             debug:log("oasis.log", "gemini.convert_schema", string.format("contents=%d, json_len=%d", #(body.contents or {}), #user_msg_json))
+            
+            -- Add: Detailed JSON log sent to Gemini
+            debug:log("oasis.log", "gemini.convert_schema", "=== GEMINI REQUEST JSON ===")
+            debug:log("oasis.log", "gemini.convert_schema", user_msg_json)
+            debug:log("oasis.log", "gemini.convert_schema", "=== END GEMINI REQUEST JSON ===")
+            
             return user_msg_json
         end
 
@@ -264,6 +262,10 @@ gemini.new = function()
         end
 
         obj.recv_ai_msg = function(self, chunk)
+
+			-- Log raw response from Gemini for troubleshooting
+			debug:log("oasis.log", "gemini.recv_ai_msg", tostring(chunk))
+
             local clen = (chunk and #chunk) or 0
             debug:log("oasis.log", "gemini.recv_ai_msg", "chunk_len=" .. tostring(clen))
             self.chunk_all = self.chunk_all .. chunk
@@ -308,7 +310,7 @@ gemini.new = function()
                             if type(fargs) ~= "table" then fargs = {} end
 
                             debug:log("oasis.log", "gemini.recv_ai_msg",
-                                string.format("functionCall detected: name=%s", fname))
+                                string.format("functionCall detected: name=%s, args=%s", fname, jsonc.stringify(fargs, false)))
                             debug:log(
                                 "oasis.log",
                                 "gemini.recv_ai_msg",
@@ -319,12 +321,14 @@ gemini.new = function()
                             )
 
                             local client = require("oasis.local.tool.client")
+                            debug:log("oasis.log", "gemini.recv_ai_msg", 
+                                string.format("executing tool: %s with args: %s", fname, jsonc.stringify(fargs, false)))
                             local result = client.exec_server_tool(fname, fargs)
                             local output = jsonc.stringify(result, false)
                             debug:log(
                                 "oasis.log",
                                 "gemini.recv_ai_msg",
-                                string.format("tool result len=%d", (output and #output) or 0)
+                                string.format("tool result len=%d, result=%s", (output and #output) or 0, output or "nil")
                             )
 
                             local function_call = {
