@@ -40,6 +40,45 @@ local function insert_user_end(chat, text)
     table.insert(chat.messages, #chat.messages + 1, { role = common.role.user, content = normalize_newlines(text) })
 end
 
+-- Commonized sysmsg insertion helpers -----------------------------------
+local function insert_sysmsg(chat, sysmsg, target_key, default_key)
+    if not target_key then
+        insert_system_front(chat, sysmsg.default[default_key])
+        return
+    end
+
+    local category, target = target_key:match("^([^.]+)%.([^.]+)$")
+    if (category and target) and (sysmsg[category] and sysmsg[category][target]) then
+        insert_system_front(chat, sysmsg[category][target])
+    else
+        insert_system_front(chat, sysmsg.default[default_key])
+    end
+end
+
+-- Normalize function arguments ------------------------------------------
+local function normalize_arguments(args)
+    if type(args) == "string" then
+        if args == "{}" then
+            return {}
+        end
+
+        local ok, parsed = pcall(jsonc.parse, args)
+        if ok and type(parsed) == "table" then
+            local is_array = (#parsed > 0)
+            return is_array and {} or parsed
+        end
+
+        return {}
+    end
+
+    if type(args) == "table" then
+        local is_array = (#args > 0)
+        return is_array and {} or args
+    end
+
+    return {}
+end
+
 -- Main: prepare system/user messages based on format and chat state --------
 local setup_system_msg = function(chat)
     -- If a tool was involved in previous interaction, clean tool-specific fields and stop.
@@ -55,17 +94,8 @@ local setup_system_msg = function(chat)
     -- If chat has no ID yet, add initial system/user messages depending on format
     if (not self.cfg.id) or (#self.cfg.id == 0) then
         if (self.format == common.ai.format.chat) then
-            local target_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or nil
-            if not target_key then
-                insert_system_front(chat, sysmsg.default.chat)
-            else
-                local category, target = target_key:match("^([^.]+)%.([^.]+)$")
-                if (category and target) and (sysmsg[category] and sysmsg[category][target]) then
-                    insert_system_front(chat, sysmsg[category][target])
-                else
-                    insert_system_front(chat, sysmsg.default.chat)
-                end
-            end
+            local target_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat")
+            insert_sysmsg(chat, sysmsg, target_key, "chat")
             return
         end
 
@@ -86,17 +116,8 @@ local setup_system_msg = function(chat)
 
     -- Prompt format
     if self.format == common.ai.format.prompt then
-        local target_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt") or nil
-        if not target_key then
-            insert_system_front(chat, sysmsg.default.prompt)
-        else
-            local category, target = target_key:match("^([^.]+)%.([^.]+)$")
-            if (category and target) and (sysmsg[category] and sysmsg[category][target]) then
-                insert_system_front(chat, sysmsg[category][target])
-            else
-                insert_system_front(chat, sysmsg.default.prompt)
-            end
-        end
+        local target_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt")
+        insert_sysmsg(chat, sysmsg, target_key, "prompt")
         return
     end
 
@@ -117,7 +138,7 @@ local setup_msg = function(self, chat, speaker)
     debug:log("oasis.log", "setup_msg", string.format("speaker.tool_calls = %s", tostring((speaker and (speaker.tool_calls ~= nil)) and "true" or "nil")))
 
     if (not speaker) or (not speaker.role) then
-    debug:log("oasis.log", "setup_msg", "No speaker or role, returning false")
+        debug:log("oasis.log", "setup_msg", "No speaker or role, returning false")
         return false
     end
 
@@ -126,14 +147,14 @@ local setup_msg = function(self, chat, speaker)
 
     -- Handle tool messages
     if speaker.role == "tool" then
-    debug:log("oasis.log", "setup_msg", "Processing tool message")
+        debug:log("oasis.log", "setup_msg", "Processing tool message")
         if (not speaker.content) or (#tostring(speaker.content) == 0) then
             debug:log("oasis.log", "setup_msg", string.format("No tool content, returning false"))
             return false
         end
         msg.name = speaker.name
         msg.content = speaker.content
-            debug:log("oasis.log", "setup_msg", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
+        debug:log("oasis.log", "setup_msg", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
 
         -- Remove any assistant messages that have tool_calls (stale entries)
         for i = #chat.messages, 1, -1 do
@@ -152,30 +173,10 @@ local setup_msg = function(self, chat, speaker)
     if (speaker.role == common.role.assistant) and speaker.tool_calls then
         debug:log("oasis.log", "setup_msg", "Processing assistant message with tool_calls")
         local fixed_tool_calls = {}
+
         for _, tc in ipairs(speaker.tool_calls or {}) do
             local fn = tc["function"] or {}
-            local args = fn.arguments
-
-            if type(args) == "string" then
-                local ok, parsed = pcall(jsonc.parse, args)
-                if ok and type(parsed) == "table" then
-                    local is_array = (#parsed > 0)
-                    if is_array then
-                        fn.arguments = {}
-                    else
-                        fn.arguments = parsed
-                    end
-                elseif args == "{}" then
-                    fn.arguments = {}
-                else
-                    fn.arguments = {}
-                end
-            elseif type(args) == "table" then
-                local is_array = (#args > 0)
-                fn.arguments = is_array and {} or args
-            else
-                fn.arguments = {}
-            end
+            fn.arguments = normalize_arguments(fn.arguments)
 
             table.insert(fixed_tool_calls, {
                 id = tc.id,
@@ -186,7 +187,9 @@ local setup_msg = function(self, chat, speaker)
 
         msg.tool_calls = fixed_tool_calls
         msg.content = speaker.content or ""
-        debug:log("oasis.log", "setup_msg", string.format("append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls))
+        debug:log("oasis.log", "setup_msg", string.format(
+            "append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls
+        ))
 
         table.insert(chat.messages, msg)
         debug:log("oasis.log", "setup_msg", "Assistant message with tool_calls processed, returning true")
