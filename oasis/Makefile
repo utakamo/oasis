@@ -39,6 +39,7 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/ubus
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat/unified/chat
 	$(INSTALL_DIR) $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(UCI_CONFIG_DIR)
 	$(INSTALL_DIR) $(1)$(STORAGE_DIR)
