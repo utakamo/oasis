@@ -213,7 +213,7 @@ local chat_with_ai = function(service, chat)
                 if setup_result then
                     debug:log("oasis.log", "chat_with_ai", "call append_chat_data")
                     local save_chat = clone_chat_without_tool_messages(chat)
-                    ous.append_chat_data(save_chat)
+                    ous.append_chat_data(service, save_chat)
                 else
                     debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned false, skipping append_chat_data")
                 end
