@@ -160,15 +160,12 @@ local setup_msg = function(chat, speaker)
         end
         msg.name = speaker.name
         msg.content = speaker.content
+        msg.tool_call_id = speaker.tool_call_id  -- OpenAI tool id requirement
+
         debug:log("oasis.log", "setup_msg", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
 
-        -- Remove any assistant messages that have tool_calls (stale entries)
-        for i = #chat.messages, 1, -1 do
-            local data = chat.messages[i]
-            if data.role == "assistant" and data.tool_calls then
-                table.remove(chat.messages, i)
-            end
-        end
+        -- Point: Do not remove  from the  block (to preserve order).
+        -- If tool call information is unnecessary, handle it on the Lua script side for each AI service.
 
         table.insert(chat.messages, msg)
         debug:log("oasis.log", "setup_msg", "Tool message added, returning true")
@@ -183,6 +180,8 @@ local setup_msg = function(chat, speaker)
         for _, tc in ipairs(speaker.tool_calls or {}) do
             local fn = tc["function"] or {}
             fn.arguments = normalize_arguments(fn.arguments)
+            local norm = normalize_arguments(fn.arguments)
+            fn.arguments = jsonc.stringify(norm, false)  -- 文字列で送る
 
             table.insert(fixed_tool_calls, {
                 id = tc.id,
