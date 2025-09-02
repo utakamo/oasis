@@ -140,7 +140,7 @@ local chat_with_ai = function(service, chat)
     end
 
     local format = service:get_format()
-    service:setup_system_msg(chat)
+    ous.setup_system_msg(service, chat)
     
     output_llm_model(format, chat.model)
 
