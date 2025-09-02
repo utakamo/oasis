@@ -26,12 +26,12 @@ local function load_sysmsg()
     return common.load_conf_file(spath)
 end
 
-local function ensure_sysmsg_key(sysmsg)
+local function ensure_sysmsg_key(cfg, sysmsg)
     local default_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or "default"
-    if (not self.cfg.sysmsg_key) or (not sysmsg or not sysmsg[self.cfg.sysmsg_key]) then
-        self.cfg.sysmsg_key = default_key
-        if (not sysmsg) or (not sysmsg[self.cfg.sysmsg_key]) then
-            self.cfg.sysmsg_key = "default"
+    if (not cfg.sysmsg_key) or (not sysmsg or not sysmsg[cfg.sysmsg_key]) then
+        cfg.sysmsg_key = default_key
+        if (not sysmsg) or (not sysmsg[cfg.sysmsg_key]) then
+            cfg.sysmsg_key = "default"
         end
     end
 end
@@ -84,7 +84,7 @@ local function normalize_arguments(args)
 end
 
 -- Main: prepare system/user messages based on format and chat state --------
-local setup_system_msg = function(chat)
+local setup_system_msg = function(service, chat)
     -- If a tool was involved in previous interaction, clean tool-specific fields and stop.
     if has_tool_message(chat) then
         chat.tool_choice = nil -- Remove tool_choices field assigned in previous interaction
@@ -92,41 +92,43 @@ local setup_system_msg = function(chat)
         return
     end
 
+    local cfg = service:get_config()
+    local format = service:get_format()
     local sysmsg = load_sysmsg()
-    ensure_sysmsg_key(sysmsg)
+    ensure_sysmsg_key(cfg, sysmsg)
 
     -- If chat has no ID yet, add initial system/user messages depending on format
-    if (not self.cfg.id) or (#self.cfg.id == 0) then
-        if (self.format == common.ai.format.chat) then
+    if (not cfg.id) or (#cfg.id == 0) then
+        if (format == common.ai.format.chat) then
             local target_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat")
             insert_sysmsg(chat, sysmsg, target_key, "chat")
             return
         end
 
-        if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
-            if sysmsg and sysmsg[self.cfg.sysmsg_key] and sysmsg[self.cfg.sysmsg_key].chat then
-                insert_system_front(chat, sysmsg[self.cfg.sysmsg_key].chat)
+        if (format == common.ai.format.output) or (format == common.ai.format.rpc_output) then
+            if sysmsg and sysmsg[cfg.sysmsg_key] and sysmsg[cfg.sysmsg_key].chat then
+                insert_system_front(chat, sysmsg[cfg.sysmsg_key].chat)
             else
                 insert_system_front(chat, sysmsg.default.chat)
             end
             return
         end
 
-        if self.format == common.ai.format.title then
+        if format == common.ai.format.title then
             insert_user_end(chat, sysmsg.general.auto_title)
             return
         end
     end
 
     -- Prompt format
-    if self.format == common.ai.format.prompt then
+    if format == common.ai.format.prompt then
         local target_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt")
         insert_sysmsg(chat, sysmsg, target_key, "prompt")
         return
     end
 
     -- Call format
-    if self.format == common.ai.format.call then
+    if format == common.ai.format.call then
         insert_system_front(chat, sysmsg.default.call)
         return
     end
