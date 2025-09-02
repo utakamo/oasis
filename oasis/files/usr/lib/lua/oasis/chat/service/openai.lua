@@ -10,8 +10,6 @@ local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
 local calling   = require("oasis.chat.function.calling.openai")
 
--- function calling 検出ロジックは calling モジュールへ移動
-
 local openai = {}
 openai.new = function()
 
