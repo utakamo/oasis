@@ -6,42 +6,11 @@ local uci       = require("luci.model.uci").cursor()
 local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
+local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
+local calling   = require("oasis.chat.function.calling.openai")
 
-local check_tool_call_response = function(response)
-
-    if not response or type(response) ~= "table" then
-        debug:log("oasis.log", "check_tool_call_response", "1 (invalid response: nil or not a table)")
-        return false
-    end
-
-    local choices = response.choices
-    if not choices or type(choices) ~= "table" or #choices == 0 then
-        debug:log("oasis.log", "check_tool_call_response", "2 (invalid response: missing or empty choices array)")
-        return false
-    end
-
-    local choice = choices[1]
-    if not choice.message or type(choice.message) ~= "table" then
-        debug:log("oasis.log", "check_tool_call_response", "3 (invalid response: missing or invalid choice.message)")
-        return false
-    end
-
-    local message = choice.message
-
-    if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
-        local tool = message.tool_calls[1]
-        if tool["function"] and type(tool["function"]) == "table" then
-            if tool["function"].name and tool["function"].arguments then
-                debug:log("oasis.log", "check_tool_call_response", "4 (tool_calls present with function name and arguments detected)")
-                return true
-            end
-        end
-    end
-
-    debug:log("oasis.log", "check_tool_call_response", "5 (no valid tool_calls found)")
-    return false
-end
+-- function calling 検出ロジックは calling モジュールへ移動
 
 local openai = {}
 openai.new = function()
@@ -69,144 +38,6 @@ openai.new = function()
 
         obj.set_chat_id = function(self, id)
             self.cfg.id = id
-        end
-
-        obj.setup_system_msg = function(self, chat)
-
-            -- When role:tool is present, it indicates that results are sent to AI
-            -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
-            for _, message in ipairs(chat.messages) do
-                if message.role == "tool" then
-                    chat.tool_choice = nil -- Remove tool_choices field assigned in previous interaction
-                    chat.tools = nil -- Remove tools field assigned in previous interaction
-                    return
-                end
-            end
-
-            local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-            local sysmsg = common.load_conf_file(spath)
-
-            -- Ensure sysmsg_key is valid for output/rpc_output/title formats
-            do
-                local default_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or "default"
-                if (not self.cfg.sysmsg_key) or (not sysmsg or not sysmsg[self.cfg.sysmsg_key]) then
-                    self.cfg.sysmsg_key = default_key
-                    if (not sysmsg) or (not sysmsg[self.cfg.sysmsg_key]) then
-                        self.cfg.sysmsg_key = "default"
-                    end
-                end
-            end
-
-            -- debug:log("oasis.log", "\n--- [openai.lua][setup_system_msg] ---");
-            -- debug:log("oasis.log", "format = " .. self.format)
-
-            -- The system message (knowledge) is added to the first message in the chat.
-            -- The first message is data that has not been assigned a chat ID.
-            if (not self.cfg.id) or (#self.cfg.id == 0) then
-                -- System message(rule or knowledge) for chat
-                if (self.format == common.ai.format.chat) then
-                    local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or nil
-                    if (not target_sysmsg_key) then
-                        table.insert(chat.messages, 1, {
-                            role = common.role.system,
-                            content = string.gsub(sysmsg.default.chat, "\\n", "\n")
-                        })
-                    else
-                        local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
-                        if (category and target) and (sysmsg[category][target])then
-                            table.insert(chat.messages, 1, {
-                                role = common.role.system,
-                                content = string.gsub(sysmsg[category][target], "\\n", "\n")
-                            })
-                        else
-                            table.insert(chat.messages, 1, {
-                                role = common.role.system,
-                                content = string.gsub(sysmsg.default.chat, "\\n", "\n")
-                            })
-                        end
-                    end
-                    return
-                end
-
-                if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
-                    table.insert(chat.messages, 1, {
-                        role = common.role.system,
-                        content = string.gsub(sysmsg[self.cfg.sysmsg_key].chat, "\\n", "\n")
-                    })
-                    return
-                end
-
-                -- System message(rule or knowledge) for creating chat title
-                if (self.format == common.ai.format.title) then
-                    table.insert(chat.messages, 1, {
-                        role = common.role.system,
-                        content = string.gsub(sysmsg.general.auto_title, "\\n", "\n")
-                    })
-                    return
-                end
-            end
-
-            if self.format == common.ai.format.prompt then
-                local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt") or nil
-                if (not target_sysmsg_key) then
-                    table.insert(chat.messages, 1, {
-                        role = common.role.system,
-                        content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
-                    })
-                else
-                    local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
-                    if (category and target) and (sysmsg[category][target])then
-                        table.insert(chat.messages, 1, {
-                            role = common.role.system,
-                            content = string.gsub(sysmsg[category][target], "\\n", "\n")
-                        })
-                    else
-                        table.insert(chat.messages, 1, {
-                            role = common.role.system,
-                            content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
-                        })
-                    end
-                end
-                return
-            end
-
-            if self.format == common.ai.format.call then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysmsg.default.call, "\\n", "\n")
-                })
-                return
-            end
-        end
-
-        obj.setup_msg = function(self, chat, speaker)
-            if not speaker or not speaker.role then return false end
-
-            local msg = { role = speaker.role }
-
-            if speaker.role == "tool" then
-                if not speaker.tool_call_id or not speaker.content then return false end
-                msg.tool_call_id = speaker.tool_call_id
-                msg.name = speaker.name
-                msg.content = speaker.content
-                debug:log("oasis.log", "setup_msg",
-                    string.format("append TOOL msg: id=%s, name=%s, len=%d",
-                        tostring(msg.tool_call_id or ""), tostring(msg.name or ""), (msg.content and #msg.content) or 0))
-            elseif speaker.role == common.role.assistant and speaker.tool_calls then
-                -- assistant message that contains tool_calls
-                msg.tool_calls = speaker.tool_calls
-                msg.content = speaker.content or ""
-                debug:log("oasis.log", "setup_msg",
-                    string.format("append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls))
-            else
-                if not speaker.message or #speaker.message == 0 then return false end
-                msg.content = speaker.message
-                debug:log("oasis.log", "setup_msg",
-                    string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
-            end
-
-            table.insert(chat.messages, msg)
-            return true
         end
 
         obj._append_and_parse_chunk = function(self, chunk)
@@ -249,69 +80,7 @@ openai.new = function()
         end
 
         obj._process_tool_calls = function(self, message)
-            if not message then return nil end
-            if not check_tool_call_response({ choices = { { message = message } } }) then
-                return nil
-            end
-
-            local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-            if not (is_tool and message and message.tool_calls) then
-                return nil
-            end
-
-            debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled)")
-
-            local client = require("oasis.local.tool.client")
-
-            local function_call = { service = "OpenAI", tool_outputs = {} }
-            local first_output_str = ""
-            local speaker = { role = "assistant", tool_calls = {} }
-
-            for _, tc in ipairs(message.tool_calls or {}) do
-                local func = tc["function"] and tc["function"].name or ""
-                local args = {}
-                if tc["function"] and tc["function"].arguments then
-                    args = jsonc.parse(tc["function"].arguments) or {}
-                end
-
-                debug:log("oasis.log", "recv_ai_msg", "func = " .. tostring(func) .. " (detected function name)")
-                local call_id = tc.id or ""
-                if self.processed_tool_call_ids[call_id] then
-                    debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. tostring(call_id))
-                else
-                    self.processed_tool_call_ids[call_id] = true
-                    local result = client.exec_server_tool(func, args)
-                    debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
-
-                    local output = jsonc.stringify(result, false)
-                    table.insert(function_call.tool_outputs, {
-                        tool_call_id = tc.id,
-                        output = output,
-                        name = func
-                    })
-
-                    table.insert(speaker.tool_calls, {
-                        id = tc.id,
-                        type = "function",
-                        ["function"] = {
-                            name = func,
-                            arguments = jsonc.stringify(args, false)
-                        }
-                    })
-
-                    if first_output_str == "" then first_output_str = output end
-                end
-            end
-
-            local plain_text_for_console = first_output_str
-            local response_ai_json = jsonc.stringify(function_call, false)
-            debug:log("oasis.log", "recv_ai_msg", "response_ai_json = " .. response_ai_json)
-            debug:log("oasis.log", "recv_ai_msg",
-                string.format("return speaker(tool_calls=%d), tool_outputs=%d",
-                    #speaker.tool_calls, #function_call.tool_outputs))
-
-            self.chunk_all = ""
-            return plain_text_for_console, response_ai_json, speaker, true
+            return calling.process(self, message)
         end
 
         obj._build_text_response = function(self, message)
@@ -378,16 +147,6 @@ openai.new = function()
             return self:_build_text_response(message)
         end
 
-        obj.append_chat_data = function(self, chat)
-            local message = {}
-            message.id = self.cfg.id
-            message.role1 = chat.messages[#chat.messages - 1].role
-            message.content1 = chat.messages[#chat.messages - 1].content
-            message.role2 = chat.messages[#chat.messages].role
-            message.content2 = chat.messages[#chat.messages].content
-            util.ubus("oasis.chat", "append", message)
-        end
-
         obj.get_config = function(self)
             return self.cfg
         end
@@ -408,29 +167,8 @@ openai.new = function()
                 return user_msg_json
             end
 
-            local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-
-            -- Function Calling Schema
-            -- Disable tool schema injection when creating a title to force plain text reply
-            if is_use_tool and (self:get_format() ~= common.ai.format.title) then
-                local client = require("oasis.local.tool.client")
-                local schema = client.get_function_call_schema()
-
-                user_msg["tools"] = {}
-
-                for _, tool_def in ipairs(schema) do
-                    table.insert(user_msg["tools"], {
-                        type = "function",
-                        ["function"] = {
-                            name = tool_def.name,
-                            description = tool_def.description or "",
-                            parameters = tool_def.parameters
-                        }
-                    })
-                end
-
-                user_msg["tool_choice"] = "auto"
-            end
+            -- Function Calling Schema injection moved to calling module
+            user_msg = calling.inject_schema(self, user_msg)
 
             -- TODO: Move the following logic later or extract into a dedicated function
             -- Inject max_tokens only when generating a title
@@ -509,7 +247,7 @@ openai.new = function()
                             #tool_calls
                         )
                     )
-                    self:setup_msg(chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
+                    ous.setup_msg(chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
                 end
 
                 for _, t in ipairs(tool_info_tbl.tool_outputs) do
@@ -530,7 +268,7 @@ openai.new = function()
                         )
                     )
 
-                    self:setup_msg(chat, {
+                    ous.setup_msg(chat, {
                         role = "tool",
                         tool_call_id = t.tool_call_id or t.id,
                         name = t.name,
