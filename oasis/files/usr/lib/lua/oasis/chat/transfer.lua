@@ -164,7 +164,7 @@ local chat_with_ai = function(service, chat)
         -- debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
         -- debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
         -- chat mode
-        if ous.setup_msg(chat, ai_response_tbl) then
+        if ous.setup_msg(service, chat, ai_response_tbl) then
             local cfg = service:get_config()
             if (not cfg.id) or (#cfg.id == 0) then
                 -- On the first assistant text after a tool_calls turn, persist the chat
@@ -191,7 +191,7 @@ local chat_with_ai = function(service, chat)
                 -- Defer recording until the assistant returns a text response next time
                     debug:log("oasis.log", "chat_with_ai", "tool_calls detected; defer create_chat_file")
             else
-                if ous.setup_msg(chat, ai_response_tbl) then
+                if ous.setup_msg(service, chat, ai_response_tbl) then
                     local save_chat = clone_chat_without_tool_messages(chat)
                     local chat_info = {}
                     chat_info.id = datactrl.create_chat_file(service, save_chat)
@@ -208,7 +208,7 @@ local chat_with_ai = function(service, chat)
                 debug:log("oasis.log", "transfer_setup_msg", "ai.role = " .. tostring(ai_response_tbl.role))
                 debug:log("oasis.log", "transfer_setup_msg", "ai.message = " .. tostring(ai_response_tbl.message))
                 debug:log("oasis.log", "transfer_setup_msg", "ai.content = " .. tostring(ai_response_tbl.content))
-                local setup_result = ous.setup_msg(chat, ai_response_tbl)
+                local setup_result = ous.setup_msg(service, chat, ai_response_tbl)
                 debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned: " .. tostring(setup_result))
                 if setup_result then
                     debug:log("oasis.log", "chat_with_ai", "call append_chat_data")

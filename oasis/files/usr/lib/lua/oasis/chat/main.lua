@@ -626,7 +626,7 @@ end
 -- Process message and communicate with AI
 local function process_message(service, chat, message)
 
-    if not ous.setup_msg(chat, {role = common.role.user, message = message}) then
+    if not ous.setup_msg(service, chat, {role = common.role.user, message = message}) then
         return false
     end
 
@@ -726,7 +726,7 @@ local prompt = function(arg)
     local prompt = datactrl.load_chat_data(service)
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-    if ous.setup_msg(prompt, { role = common.role.user, message = arg.message }) then
+    if ous.setup_msg(service, prompt, { role = common.role.user, message = arg.message }) then
         transfer.chat_with_ai(service, prompt)
         print()
     end
@@ -858,7 +858,7 @@ end
 -- Process output message
 local function process_output_message(service, chat_ctx, message)
 
-    if not ous.setup_msg(chat_ctx, { role = common.role.user, message = message }) then
+    if not ous.setup_msg(service, chat_ctx, { role = common.role.user, message = message }) then
         return nil, nil
     end
 
@@ -943,7 +943,7 @@ local rpc_output = function(arg)
     local new_chat_info, message = ""
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-    if ous.setup_msg(rpc_output, { role = common.role.user, message = arg.message}) then
+    if ous.setup_msg(service, rpc_output, { role = common.role.user, message = arg.message}) then
         datactrl.record_chat_data(service, rpc_output)
         debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] record_chat_data done ...")
         new_chat_info, message = transfer.chat_with_ai(service, rpc_output)

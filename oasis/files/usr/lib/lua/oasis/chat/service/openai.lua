@@ -192,6 +192,24 @@ openai.new = function()
             return user_msg_json
         end
 
+        obj.handle_tool_info = function(self, chat, speaker, msg)
+
+            if speaker.role ~= "tool" then
+                return nil
+            end
+
+            return calling.convert_tool_info_msg(chat, speaker, msg)
+        end
+
+        obj.handle_tool_call_response = function(self, chat, speaker, msg)
+
+            if (speaker.role ~= common.role.assistant) or (not speaker.tool_calls) then
+                return nil
+            end
+
+            return calling.convert_tool_call_res_msg(chat, speaker, msg)
+        end
+
         obj.prepare_post_to_server = function(self, easy, callback, form, user_msg_json)
 
             easy:setopt_url(self.cfg.endpoint)
@@ -245,7 +263,7 @@ openai.new = function()
                             #tool_calls
                         )
                     )
-                    ous.setup_msg(chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
+                    ous.setup_msg(self, chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
                 end
 
                 for _, t in ipairs(tool_info_tbl.tool_outputs) do
@@ -266,7 +284,7 @@ openai.new = function()
                         )
                     )
 
-                    ous.setup_msg(chat, {
+                    ous.setup_msg(self, chat, {
                         role = "tool",
                         tool_call_id = t.tool_call_id or t.id,
                         name = t.name,

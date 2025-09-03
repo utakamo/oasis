@@ -4,6 +4,7 @@ local jsonc  = require("luci.jsonc")
 local common = require("oasis.common")
 local uci    = require("luci.model.uci").cursor()
 local debug  = require("oasis.chat.debug")
+local ous	 = require("oasis.unified.chat.schema")
 
 local M = {}
 
@@ -111,6 +112,61 @@ function M.inject_schema(self, user_msg)
 	end
 	user_msg["tool_choice"] = "auto"
 	return user_msg
+end
+
+-----------------------------------
+-- Convert Function Calling Data --
+-----------------------------------
+function M.convert_tool_info_msg(chat, speaker, msg)
+
+	debug:log("oasis.log", "convert_tool_info_msg", "Processing tool message")
+	if (not speaker.content) or (#tostring(speaker.content) == 0) then
+		debug:log("oasis.log", "convert_tool_info_msg", string.format("No tool content, returning false"))
+		return false
+	end
+
+	msg.name = speaker.name
+	msg.content = speaker.content
+	msg.tool_call_id = speaker.tool_call_id  -- OpenAI tool id requirement
+
+	debug:log("oasis.log", "convert_tool_info_msg", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
+
+	-- Point: Do not remove  from the  block (to preserve order).
+	-- If tool call information is unnecessary, handle it on the Lua script side for each AI service.
+
+	table.insert(chat.messages, msg)
+	debug:log("oasis.log", "convert_tool_info_msg", "Tool message added, returning true")
+
+	return true
+end
+
+function M.convert_tool_call_res_msg(chat, speaker, msg)
+	debug:log("oasis.log", "convert_tool_call_res_msg", "Processing assistant message with tool_calls")
+	local fixed_tool_calls = {}
+
+	for _, tc in ipairs(speaker.tool_calls or {}) do
+		local fn = tc["function"] or {}
+		fn.arguments = ous.normalize_arguments(fn.arguments)
+		local norm = ous.normalize_arguments(fn.arguments)
+		fn.arguments = jsonc.stringify(norm, false)
+
+		table.insert(fixed_tool_calls, {
+			id = tc.id,
+			type = "function",
+			["function"] = fn
+		})
+	end
+
+	msg.tool_calls = fixed_tool_calls
+	msg.content = speaker.content or ""
+	debug:log("oasis.log", "convert_tool_call_res_msg", string.format(
+		"append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls
+	))
+
+	table.insert(chat.messages, msg)
+	debug:log("oasis.log", "convert_tool_call_res_msg", "Assistant message with tool_calls processed, returning true")
+
+	return true
 end
 
 return M

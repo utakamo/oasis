@@ -60,7 +60,7 @@ local function insert_sysmsg(chat, sysmsg, target_key, default_key)
 end
 
 -- Normalize function arguments ------------------------------------------
-local function normalize_arguments(args)
+local normalize_arguments = function(args)
     if type(args) == "string" then
         if args == "{}" then
             return {}
@@ -134,7 +134,24 @@ local setup_system_msg = function(service, chat)
     end
 end
 
-local setup_msg = function(chat, speaker)
+local handle_normal_msg = function(chat, speaker, msg)
+    -- Regular message
+    debug:log("oasis.log", "handle_normal_msg", "Processing regular message")
+
+    if (not speaker.message) or (#speaker.message == 0) then
+        debug:log("oasis.log", "handle_normal_msg", "No message content, returning false")
+        return false
+    end
+
+    msg.content = speaker.message
+    debug:log("oasis.log", "handle_normal_msg", string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
+
+    table.insert(chat.messages, msg)
+    debug:log("oasis.log", "handle_normal_msg", "Message added to chat, returning true")
+    return true
+end
+
+local setup_msg = function(service, chat, speaker)
 
     debug:log("oasis.log", "setup_msg", string.format("\n--- [ollama.lua][setup_msg] ---"))
     debug:log("oasis.log", "setup_msg", string.format("setup_msg called"))
@@ -151,70 +168,20 @@ local setup_msg = function(chat, speaker)
     chat.messages = chat.messages or {}
     local msg = { role = speaker.role }
 
-    -- Handle tool messages
-    if speaker.role == "tool" then
-        debug:log("oasis.log", "setup_msg", "Processing tool message")
-        if (not speaker.content) or (#tostring(speaker.content) == 0) then
-            debug:log("oasis.log", "setup_msg", string.format("No tool content, returning false"))
-            return false
-        end
-        msg.name = speaker.name
-        msg.content = speaker.content
-        msg.tool_call_id = speaker.tool_call_id  -- OpenAI tool id requirement
+    local h_tool_info = service:handle_tool_info(chat, speaker, msg)
 
-        debug:log("oasis.log", "setup_msg", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
-
-        -- Point: Do not remove  from the  block (to preserve order).
-        -- If tool call information is unnecessary, handle it on the Lua script side for each AI service.
-
-        table.insert(chat.messages, msg)
-        debug:log("oasis.log", "setup_msg", "Tool message added, returning true")
-        return true
+    if h_tool_info then
+        return h_tool_info
     end
 
-    -- Handle assistant with tool_calls
-    if (speaker.role == common.role.assistant) and speaker.tool_calls then
-        debug:log("oasis.log", "setup_msg", "Processing assistant message with tool_calls")
-        local fixed_tool_calls = {}
+    local h_tool_call_res = service:handle_tool_call_response(chat, speaker, msg)
 
-        for _, tc in ipairs(speaker.tool_calls or {}) do
-            local fn = tc["function"] or {}
-            fn.arguments = normalize_arguments(fn.arguments)
-            local norm = normalize_arguments(fn.arguments)
-            fn.arguments = jsonc.stringify(norm, false)  -- 文字列で送る
-
-            table.insert(fixed_tool_calls, {
-                id = tc.id,
-                type = "function",
-                ["function"] = fn
-            })
-        end
-
-        msg.tool_calls = fixed_tool_calls
-        msg.content = speaker.content or ""
-        debug:log("oasis.log", "setup_msg", string.format(
-            "append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls
-        ))
-
-        table.insert(chat.messages, msg)
-        debug:log("oasis.log", "setup_msg", "Assistant message with tool_calls processed, returning true")
-        return true
+    if h_tool_call_res then
+        return h_tool_call_res
     end
 
-    -- Regular message
-    debug:log("oasis.log", "setup_msg", "Processing regular message")
-
-    if (not speaker.message) or (#speaker.message == 0) then
-        debug:log("oasis.log", "setup_msg", "No message content, returning false")
-        return false
-    end
-
-    msg.content = speaker.message
-    debug:log("oasis.log", "setup_msg", string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
-
-    table.insert(chat.messages, msg)
-    debug:log("oasis.log", "setup_msg", "Message added to chat, returning true")
-    return true
+    local handle_normal_msg = handle_normal_msg(chat, speaker, msg)
+    return handle_normal_msg
 end
 
 local append_chat_data = function(service, chat)
@@ -234,4 +201,5 @@ return {
     setup_system_msg = setup_system_msg,
     setup_msg = setup_msg,
     append_chat_data = append_chat_data,
+    normalize_arguments = normalize_arguments,
 }
