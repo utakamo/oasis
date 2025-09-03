@@ -7,6 +7,8 @@ local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
+local calling   = require("oasis.chat.function.calling.ollama")
+local ous       = require("oasis.unified.chat.schema")
 
 local ollama ={}
 ollama.new = function()
@@ -58,227 +60,6 @@ ollama.new = function()
 
         obj.set_chat_id = function(self, id)
             self.cfg.id = id
-        end
-
-        obj.setup_system_msg = function(self, chat)
-
-            -- When role:tool is present, it indicates that results are sent to AI
-            -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
-            for _, message in ipairs(chat.messages) do
-                if message.role == "tool" then
-                    chat.tool_choice = nil -- Remove tool_choices field assigned in previous interaction
-                    chat.tools = nil -- Remove tools field assigned in previous interaction
-                    return
-                end
-            end
-
-            local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-            local sysmsg = common.load_conf_file(spath)
-
-            -- Ensure sysmsg_key is valid for output/rpc_output/title formats
-            do
-                local default_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or "default"
-                if (not self.cfg.sysmsg_key) or (not sysmsg or not sysmsg[self.cfg.sysmsg_key]) then
-                    self.cfg.sysmsg_key = default_key
-                    if (not sysmsg) or (not sysmsg[self.cfg.sysmsg_key]) then
-                        self.cfg.sysmsg_key = "default"
-                    end
-                end
-            end
-
-            -- debug:log("oasis.log", "\n--- [ollama.lua][setup_system_msg] ---");
-            -- debug:log("oasis.log", "format = " .. self.format)
-
-            -- if self.cfg.id then
-            --     debug:log("oasis.log", "id = " .. self.cfg.id)
-            -- end
-
-            -- debug:dump("oasis.log", chat)
-
-            -- debug:log("oasis.log", self.cfg.sysmsg_key)
-
-            -- The system message (knowledge) is added to the first message in the chat.
-            -- The first message is data that has not been assigned a chat ID.
-            if (not self.cfg.id) or (#self.cfg.id == 0) then
-                -- System message(rule or knowledge) for chat
-                if (self.format == common.ai.format.chat) then
-                    local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "chat") or nil
-                    if (not target_sysmsg_key) then
-                        table.insert(chat.messages, 1, {
-                            role = common.role.system,
-                            content = string.gsub(sysmsg.default.chat, "\\n", "\n")
-                        })
-                    else
-                        local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
-                        if (category and target) and (sysmsg[category][target])then
-                            table.insert(chat.messages, 1, {
-                                role = common.role.system,
-                                content = string.gsub(sysmsg[category][target], "\\n", "\n")
-                            })
-                        else
-                            table.insert(chat.messages, 1, {
-                                role = common.role.system,
-                                content = string.gsub(sysmsg.default.chat, "\\n", "\n")
-                            })
-                        end
-                    end
-                    return
-                end
-
-                if (self.format == common.ai.format.output) or (self.format == common.ai.format.rpc_output) then
-                    table.insert(chat.messages, 1, {
-                        role = common.role.system,
-                        content = string.gsub(sysmsg[self.cfg.sysmsg_key].chat, "\\n", "\n")
-                    })
-                    return
-                end
-
-                -- In Ollama, you should request title generation using role:user.
-                -- Doing so allows all AI models available in Ollama to generate titles.
-                -- It appears that some models may not respond if the request is made using role:system.
-                if self.format == common.ai.format.title then
-                    table.insert(chat.messages, #chat.messages + 1, {
-                        role = common.role.user,
-                        content = string.gsub(sysmsg.general.auto_title, "\\n", "\n")
-                    })
-                    return
-                end
-            end
-
-            if self.format == common.ai.format.prompt then
-                local target_sysmsg_key = uci:get(common.db.uci.cfg, common.db.uci.sect.console, "prompt") or nil
-                if (not target_sysmsg_key) then
-                    table.insert(chat.messages, 1, {
-                        role = common.role.system,
-                        content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
-                    })
-                else
-                    local category, target = target_sysmsg_key:match("^([^.]+)%.([^.]+)$")
-                    if (category and target) and (sysmsg[category][target])then
-                        table.insert(chat.messages, 1, {
-                            role = common.role.system,
-                            content = string.gsub(sysmsg[category][target], "\\n", "\n")
-                        })
-                    else
-                        table.insert(chat.messages, 1, {
-                            role = common.role.system,
-                            content = string.gsub(sysmsg.default.prompt, "\\n", "\n")
-                        })
-                    end
-                end
-                return
-            end
-
-            if self.format == common.ai.format.call then
-                table.insert(chat.messages, 1, {
-                    role = common.role.system,
-                    content = string.gsub(sysmsg.default.call, "\\n", "\n")
-                })
-                return
-            end
-        end
-
-        obj.setup_msg = function(self, chat, speaker)
-
-            debug:log("oasis.log", "setup_msg", "\n--- [ollama.lua][setup_msg] ---")
-                debug:log("oasis.log", "setup_msg", "setup_msg called")
-                debug:log("oasis.log", "setup_msg", "speaker.role = " .. tostring(speaker and speaker.role or "nil"))
-                debug:log("oasis.log", "setup_msg", "speaker.message = " .. tostring(speaker and speaker.message or "nil"))
-                debug:log("oasis.log", "setup_msg", "speaker.content = " .. tostring(speaker and speaker.content or "nil"))
-                debug:log("oasis.log", "setup_msg", "speaker.tool_calls = " .. tostring(speaker and speaker.tool_calls ~= nil or "nil"))
-
-            if (not speaker) or (not speaker.role) then
-                debug:log("oasis.log", "setup_msg", "false")
-                    debug:log("oasis.log", "setup_msg", "No speaker or role, returning false")
-                return false
-            end
-
-            chat.messages = chat.messages or {}
-
-            local msg = { role = speaker.role }
-
-            if speaker.role == "tool" then
-                debug:log("oasis.log", "setup_msg", "Processing tool message")
-                if (not speaker.content) or (#tostring(speaker.content) == 0) then
-                    debug:log("oasis.log", "setup_msg", "No tool content, returning false")
-                    return false
-                end
-                msg.name = speaker.name
-                msg.content = speaker.content
-                debug:log("oasis.log", "setup_msg",
-                    string.format("append TOOL msg: name=%s, len=%d",
-                        tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
-
-                -- Delete entries from the messages table where the "role" is "assistant" and "tool_calls" is present.
-                for i = #chat.messages, 1, -1 do
-                    local data = chat.messages[i]
-                    if data.role == "assistant" and data.tool_calls then
-                        table.remove(chat.messages, i)
-                    end
-                end
-
-                table.insert(chat.messages, msg)
-                    debug:log("oasis.log", "setup_msg", "Tool message added, returning true")
-                return true
-
-            elseif (speaker.role == common.role.assistant) and speaker.tool_calls then
-                debug:log("oasis.log", "setup_msg", "Processing assistant message with tool_calls")
-                -- Normalize function.arguments for Ollama: requires object (table), not JSON string
-                local fixed_tool_calls = {}
-                for _, tc in ipairs(speaker.tool_calls or {}) do
-                    local fn = tc["function"] or {}
-                    local args = fn.arguments
-
-                    if type(args) == "string" then
-                        local ok, parsed = pcall(jsonc.parse, args)
-                        if ok and type(parsed) == "table" then
-                            local is_array = (#parsed > 0)
-                            if is_array then
-                                fn.arguments = {}
-                            else
-                                fn.arguments = parsed
-                            end
-                        elseif args == "{}" then
-                            fn.arguments = {}
-                        else
-                            fn.arguments = {}
-                        end
-                    elseif type(args) == "table" then
-                        local is_array = (#args > 0)
-                        fn.arguments = is_array and {} or args
-                    else
-                        fn.arguments = {}
-                    end
-
-                    table.insert(fixed_tool_calls, {
-                        id = tc.id,
-                        type = "function",
-                        ["function"] = fn
-                    })
-                end
-                msg.tool_calls = fixed_tool_calls
-                msg.content = speaker.content or ""
-                debug:log("oasis.log", "setup_msg",
-                    string.format("append ASSISTANT msg with tool_calls: count=%d",
-                        #msg.tool_calls))
-
-                table.insert(chat.messages, msg)
-                debug:log("oasis.log", "setup_msg", "Assistant message with tool_calls processed, returning true")
-                return true
-            else
-                debug:log("oasis.log", "setup_msg", "Processing regular message")
-                if (not speaker.message) or (#speaker.message == 0) then
-                    debug:log("oasis.log", "setup_msg", "No message content, returning false")
-                    return false
-                end
-                msg.content = speaker.message
-                debug:log("oasis.log", "setup_msg",
-                    string.format("append %s msg: len=%d", tostring(msg.role), #msg.content))
-
-                table.insert(chat.messages, msg)
-                    debug:log("oasis.log", "setup_msg", "Message added to chat, returning true")
-                return true
-            end
         end
 
         -- [ADD] helper: parse chunk to JSON (returns nil on invalid input)
@@ -478,6 +259,24 @@ ollama.new = function()
             return user_msg_json
         end
 
+        obj.handle_tool_info = function(self, chat, speaker, msg)
+
+            if speaker.role ~= "tool" then
+                return nil
+            end
+
+            return calling.convert_tool_info_msg(chat, speaker, msg)
+        end
+
+        obj.handle_tool_call_response = function(self, chat, speaker, msg)
+
+            if (speaker.role ~= common.role.assistant) or (not speaker.tool_calls) then
+                return nil
+            end
+
+            return calling.convert_tool_call_res_msg(chat, speaker, msg)
+        end
+
         obj.prepare_post_to_server = function(self, easy, callback, form, user_msg_json)
 
             easy:setopt_url(self.cfg.endpoint)
@@ -531,7 +330,7 @@ ollama.new = function()
                             #tool_calls
                         )
                     )
-                    self:setup_msg(chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
+                    ous.setup_msg(self, chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
                 end
 
                 for _, t in ipairs(tool_info_tbl.tool_outputs) do
@@ -552,9 +351,9 @@ ollama.new = function()
                         )
                     )
 
-                    self:setup_msg(chat, {
+                    ous.setup_msg(self, chat, {
                         role = "tool",
-                        tool_call_id = t.id,
+                        -- tool_call_id = t.id,
                         name = t.name,
                         content = content
                     })
