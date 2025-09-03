@@ -149,6 +149,10 @@ The following is an example with both get_ip_addr and get_ifname_list enabled.
 <img width="941" height="428" alt="Image" src="https://github.com/user-attachments/assets/584c41bd-718b-46f5-9dab-cda7379d0362" />  
 By enabling the tools, the AI will begin using them in response to user requests.  
 <img width="934" height="446" alt="Image" src="https://github.com/user-attachments/assets/82944040-30f8-44ef-82bd-67b9a9157f4a" />  
+You can add Oasis tools as plugins, giving you the freedom to let the AI use whichever tools you prefer.
+Building your own tools is easy, too.
+For more information, check out the repository below.
+https://github.com/utakamo/oasis-tool-box  
 
 > [!IMPORTANT]
 > This feature requires that the AI supports tool usage. OpenAI's AI can use tools.
