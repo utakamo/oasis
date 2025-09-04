@@ -141,31 +141,7 @@ function M.convert_tool_info_msg(chat, speaker, msg)
 end
 
 function M.convert_tool_call_res_msg(chat, speaker, msg)
-	debug:log("oasis.log", "convert_tool_call_res_msg", "Processing assistant message with tool_calls")
-	local fixed_tool_calls = {}
-
-	for _, tc in ipairs(speaker.tool_calls or {}) do
-		local fn = tc["function"] or {}
-		fn.arguments = ous.normalize_arguments(fn.arguments)
-		local norm = ous.normalize_arguments(fn.arguments)
-		fn.arguments = jsonc.stringify(norm, false)
-
-		table.insert(fixed_tool_calls, {
-			type = "function",
-			["function"] = fn
-		})
-	end
-
-	msg.tool_calls = fixed_tool_calls
-	msg.content = speaker.content or ""
-	debug:log("oasis.log", "convert_tool_call_res_msg", string.format(
-		"append ASSISTANT msg with tool_calls: count=%d", #msg.tool_calls
-	))
-
-	table.insert(chat.messages, msg)
-	debug:log("oasis.log", "convert_tool_call_res_msg", "Assistant message with tool_calls processed, returning true")
-
-	return true
+	return
 end
 
 return M
