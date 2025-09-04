@@ -152,6 +152,7 @@ By enabling the tools, the AI will begin using them in response to user requests
 You can add Oasis tools as plugins, giving you the freedom to let the AI use whichever tools you prefer.
 Building your own tools is easy, too.
 For more information, check out the repository below.
+
 https://github.com/utakamo/oasis-tool-box  
 
 > [!IMPORTANT]
