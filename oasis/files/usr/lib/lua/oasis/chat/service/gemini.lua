@@ -7,6 +7,8 @@ local util      = require("luci.util")
 local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
+local ous      = require("oasis.unified.chat.schema")
+local calling   = require("oasis.chat.function.calling.gemini")
 
 local gemini ={}
 gemini.new = function()
@@ -17,6 +19,7 @@ gemini.new = function()
         obj.recv_raw_msg = {}
         obj.recv_raw_msg.role = common.role.unknown
         obj.recv_raw_msg.message = ""
+        obj.processed_tool_call_ids = {}
         obj.cfg = nil
         obj.format = nil
         obj._sysmsg_text = nil
@@ -110,21 +113,6 @@ gemini.new = function()
 
             local body = { contents = contents }
 
-            local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-            if is_use_tool and (self.format ~= common.ai.format.title) then
-                local client = require("oasis.local.tool.client")
-                local schema = client.get_function_call_schema()
-                local fdecl = {}
-                for _, tool_def in ipairs(schema or {}) do
-                    local params = tool_def.parameters or {}
-                    fdecl[#fdecl + 1] = { name = tool_def.name, description = tool_def.description or "", parameters = { type = params.type or "object", properties = params.properties or {}, required = params.required or {} } }
-                end
-                debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", string.format("functionDeclarations_count=%d", #fdecl))
-                if #fdecl > 0 then
-                    body.tools = { { functionDeclarations = fdecl } }
-                end
-            end
-
             if (#sysmsg_text > 0) then
                 body.systemInstruction = { parts = { { text = sysmsg_text } } }
                 debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", "systemInstruction attached")
@@ -135,6 +123,7 @@ gemini.new = function()
 
         obj.convert_schema = function(self, chat)
             local body = self:transform_midlayer_to_gemini(chat)
+            body = calling.inject_schema(self, body)
             local user_msg_json = jsonc.stringify(body, false)
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
             debug:log("oasis.log", "gemini.convert_schema", string.format("contents=%d, json_len=%d", #(body.contents or {}), #user_msg_json))
@@ -180,6 +169,8 @@ gemini.new = function()
             end
 
             self.chunk_all = ""
+            -- Reset duplicate tool_call guard per message
+            self.processed_tool_call_ids = {}
 
             if chunk_json.error and (chunk_json.error.message) then
                 local msg = tostring(chunk_json.error.message)
@@ -196,57 +187,11 @@ gemini.new = function()
                 return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
             end
 
-            -- Detect functionCall in candidates → execute local tool and return tool_used
+            -- Detect functionCall via calling module → execute local tool and return tool_used
             do
-                local c = (chunk_json.candidates and chunk_json.candidates[1]) or nil
-                local parts = c and c.content and c.content.parts or nil
-                if parts and type(parts) == "table" then
-                    for _, p in ipairs(parts) do
-                        if type(p) == "table" and p.functionCall then
-                            local f = p.functionCall
-                            local fname = tostring(f.name or "")
-                            local fargs = f.args
-                            if type(fargs) == "string" then
-                                local ok, parsed = pcall(jsonc.parse, fargs)
-                                if ok and parsed then fargs = parsed end
-                            end
-                            if type(fargs) ~= "table" then fargs = {} end
-
-                            debug:log("oasis.log", "gemini.recv_ai_msg",
-                                string.format("functionCall detected: name=%s, args=%s", fname, jsonc.stringify(fargs, false)))
-                            debug:log(
-                                "oasis.log",
-                                "gemini.recv_ai_msg",
-                                string.format(
-                                    "args_keys=%d",
-                                    (function(tbl) local n=0; for _ in pairs(tbl) do n=n+1 end; return n end)(fargs)
-                                )
-                            )
-
-                            local client = require("oasis.local.tool.client")
-                            debug:log("oasis.log", "gemini.recv_ai_msg", 
-                                string.format("executing tool: %s with args: %s", fname, jsonc.stringify(fargs, false)))
-                            local result = client.exec_server_tool(fname, fargs)
-                            local output = jsonc.stringify(result, false)
-                            debug:log(
-                                "oasis.log",
-                                "gemini.recv_ai_msg",
-                                string.format("tool result len=%d, result=%s", (output and #output) or 0, output or "nil")
-                            )
-
-                            local function_call = {
-                                service = "Gemini",
-                                tool_outputs = {
-                                    { name = fname, output = output }
-                                }
-                            }
-
-                            local first_output_str = output or ""
-                            local response_ai_json = jsonc.stringify(function_call, false)
-
-                            return first_output_str, response_ai_json, self.recv_raw_msg, true
-                        end
-                    end
+                local t_plain, t_json, t_speaker, t_used = calling.process(self, chunk_json)
+                if t_plain ~= nil then
+                    return t_plain, t_json, (t_speaker or self.recv_raw_msg), t_used
                 end
             end
 
@@ -307,6 +252,52 @@ gemini.new = function()
                 "gemini.handle_tool_output",
                 string.format("appended functionResponse messages: count=%d", count)
             )
+            return true
+        end
+
+        -- Implement unified hook: accept tool result messages appended via ous.setup_msg
+        obj.handle_tool_result = function(self, chat, speaker, msg)
+            if (not speaker) or (speaker.role ~= "tool") then
+                return nil
+            end
+
+            msg.name = speaker.name
+            msg.content = speaker.content or speaker.message or ""
+            msg.tool_call_id = speaker.tool_call_id
+
+            table.insert(chat.messages, msg)
+            debug:log("oasis.log", "gemini.handle_tool_result", string.format(
+                "append TOOL msg: name=%s, len=%d",
+                tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0
+            ))
+            return true
+        end
+
+        -- Implement unified hook: accept assistant messages that include tool_calls (for compatibility)
+        obj.handle_tool_call = function(self, chat, speaker, msg)
+            if (not speaker) or (speaker.role ~= common.role.assistant) or (not speaker.tool_calls) then
+                return nil
+            end
+
+            local fixed_tool_calls = {}
+            for _, tc in ipairs(speaker.tool_calls or {}) do
+                local fn = tc["function"] or {}
+                fn.arguments = ous.normalize_arguments(fn.arguments)
+                fn.arguments = jsonc.stringify(fn.arguments, false)
+
+                table.insert(fixed_tool_calls, {
+                    id = tc.id,
+                    type = "function",
+                    ["function"] = fn
+                })
+            end
+
+            msg.tool_calls = fixed_tool_calls
+            msg.content = speaker.content or ""
+            table.insert(chat.messages, msg)
+            debug:log("oasis.log", "gemini.handle_tool_call", string.format(
+                "append ASSISTANT msg with tool_calls: count=%d", #fixed_tool_calls
+            ))
             return true
         end
 
