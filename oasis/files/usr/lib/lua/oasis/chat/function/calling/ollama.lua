@@ -117,11 +117,11 @@ end
 -----------------------------------
 -- Convert Function Calling Data --
 -----------------------------------
-function M.convert_tool_info_msg(chat, speaker, msg)
+function M.convert_tool_result(chat, speaker, msg)
 
-	debug:log("oasis.log", "convert_tool_info_msg", "Processing tool message")
+	debug:log("oasis.log", "convert_tool_result", "Processing tool message")
 	if (not speaker.content) or (#tostring(speaker.content) == 0) then
-		debug:log("oasis.log", "convert_tool_info_msg", string.format("No tool content, returning false"))
+		debug:log("oasis.log", "convert_tool_result", string.format("No tool content, returning false"))
 		return false
 	end
 
@@ -129,18 +129,18 @@ function M.convert_tool_info_msg(chat, speaker, msg)
 	msg.content = speaker.content
 	msg.tool_call_id = speaker.tool_call_id  -- OpenAI tool id requirement
 
-	debug:log("oasis.log", "convert_tool_info_msg", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
+	debug:log("oasis.log", "convert_tool_result", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
 
 	-- Point: Do not remove  from the  block (to preserve order).
 	-- If tool call information is unnecessary, handle it on the Lua script side for each AI service.
 
 	table.insert(chat.messages, msg)
-	debug:log("oasis.log", "convert_tool_info_msg", "Tool message added, returning true")
+	debug:log("oasis.log", "convert_tool_result", "Tool message added, returning true")
 
 	return true
 end
 
-function M.convert_tool_call_res_msg(chat, speaker, msg)
+function M.convert_tool_call(chat, speaker, msg)
 	return
 end
 

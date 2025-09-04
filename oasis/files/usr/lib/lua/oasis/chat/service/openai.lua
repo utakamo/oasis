@@ -192,22 +192,22 @@ openai.new = function()
             return user_msg_json
         end
 
-        obj.handle_tool_info = function(self, chat, speaker, msg)
+        obj.handle_tool_result = function(self, chat, speaker, msg)
 
             if speaker.role ~= "tool" then
                 return nil
             end
 
-            return calling.convert_tool_info_msg(chat, speaker, msg)
+            return calling.convert_tool_result(chat, speaker, msg)
         end
 
-        obj.handle_tool_call_response = function(self, chat, speaker, msg)
+        obj.handle_tool_call = function(self, chat, speaker, msg)
 
             if (speaker.role ~= common.role.assistant) or (not speaker.tool_calls) then
                 return nil
             end
 
-            return calling.convert_tool_call_res_msg(chat, speaker, msg)
+            return calling.convert_tool_call(chat, speaker, msg)
         end
 
         obj.prepare_post_to_server = function(self, easy, callback, form, user_msg_json)

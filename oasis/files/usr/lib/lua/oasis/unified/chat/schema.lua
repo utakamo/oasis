@@ -168,13 +168,13 @@ local setup_msg = function(service, chat, speaker)
     chat.messages = chat.messages or {}
     local msg = { role = speaker.role }
 
-    local h_tool_info = service:handle_tool_info(chat, speaker, msg)
+    local h_tool_info = service:handle_tool_result(chat, speaker, msg)
 
     if h_tool_info then
         return h_tool_info
     end
 
-    local h_tool_call_res = service:handle_tool_call_response(chat, speaker, msg)
+    local h_tool_call_res = service:handle_tool_call(chat, speaker, msg)
 
     if h_tool_call_res then
         return h_tool_call_res
