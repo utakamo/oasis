@@ -49,12 +49,12 @@ gemini.new = function()
         end
 
         -- Transform Oasis midlayer (system/user/assistant/tool) into Gemini JSON body
-        obj.transform_midlayer_to_gemini = function(self, chat)
+        obj.transform_unified_schema_to_gemini = function(self, chat)
             local contents = {}
             local system_buf = {}
 
             local messages = chat.messages or {}
-            debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", "messages_count=" .. tostring(#messages))
+            debug:log("oasis.log", "gemini.transform_unified_schema_to_gemini", "messages_count=" .. tostring(#messages))
             for _, m in ipairs(messages) do
                 local role = tostring(m.role or "")
                 local text = tostring(m.content or m.message or "")
@@ -74,7 +74,7 @@ gemini.new = function()
                         local fname = tostring(m.name or "")
                         if fname ~= "" then
                             contents[#contents + 1] = { role = "model", parts = { { functionResponse = { name = fname, response = resp } } } }
-                            debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", 
+                            debug:log("oasis.log", "gemini.transform_unified_schema_to_gemini", 
                                 string.format("converted tool to functionResponse: name=%s", fname))
                         end
                     end
@@ -86,7 +86,7 @@ gemini.new = function()
                 sysmsg_text = self._sysmsg_text
             end
 
-            debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", string.format("sysmsg_text_len=%d, source=%s",
+            debug:log("oasis.log", "gemini.transform_unified_schema_to_gemini", string.format("sysmsg_text_len=%d, source=%s",
                 #sysmsg_text,
                 ((#system_buf > 0) and "system_buf") or ((self._sysmsg_text and (#self._sysmsg_text > 0)) and "_sysmsg_text" or "none")
             ))
@@ -108,21 +108,21 @@ gemini.new = function()
                     cnt_model = cnt_model + 1
                 end
             end
-            debug:log("oasis.log", "gemini.transform_midlayer_to_gemini",
+            debug:log("oasis.log", "gemini.transform_unified_schema_to_gemini",
                 string.format("contents_count user=%d, model=%d, functionResponse=%d", cnt_user, cnt_model, cnt_func))
 
             local body = { contents = contents }
 
             if (#sysmsg_text > 0) then
                 body.systemInstruction = { parts = { { text = sysmsg_text } } }
-                debug:log("oasis.log", "gemini.transform_midlayer_to_gemini", "systemInstruction attached")
+                debug:log("oasis.log", "gemini.transform_unified_schema_to_gemini", "systemInstruction attached")
             end
 
             return body
         end
 
         obj.convert_schema = function(self, chat)
-            local body = self:transform_midlayer_to_gemini(chat)
+            local body = self:transform_unified_schema_to_gemini(chat)
             body = calling.inject_schema(self, body)
             local user_msg_json = jsonc.stringify(body, false)
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
