@@ -108,27 +108,9 @@ local load_chat_data = function(service)
 
     chat.model = cfg.model
 
-    if (cfg.service == common.ai.service.ollama.name)
-        or (cfg.service == common.ai.service.openai.name)
-        or (cfg.service == common.ai.service.gemini.name) then
-        -- New Chat - initialize
-        if not chat.messages then
-            chat.messages = {}
-        end
-    elseif (cfg.service == common.ai.service.anthropic.name) then
-        local max_tokens = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "max_tokens", "1000")
-        local type = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "type", "disabled")
-        local budget_tokens = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "budget_tokens", "1000")
-        -- New Chat - initialize
-        if not chat.messages then
-            chat.max_tokens = max_tokens
-            chat.stream = true
-            chat.max_tokens = {
-                type = type,
-                budget_tokens = budget_tokens
-            }
-            chat.messages = {}
-        end
+    -- New Chat - initialize
+    if not chat.messages then
+        chat.messages = {}
     end
 
     -- TODO: Separate the get_ai_service_cfg function into load_service and load_chat_history and print.
