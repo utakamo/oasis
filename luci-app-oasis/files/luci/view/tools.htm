@@ -50,6 +50,9 @@
 
 <div id="tools-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
 <h2>Local Tools</h2>
+<div class="tools-head-block" id="tools-head" style="display:none;">
+  <button type="button" id="tools-refresh" class="load-button fullwidth">Refresh</button>
+</div>
 <div id="oasis-tool-container"></div>
 
 <!-- Error dialog -->
@@ -72,7 +75,8 @@
 (function() {
   const container = document.getElementById('oasis-tool-container');
   const toastEl = document.getElementById('tools-toast');
-  const header = document.querySelector('h2');
+  const headBar = document.getElementById('tools-head');
+  const refreshBtn = document.getElementById('tools-refresh');
   const API_ENABLE = '<%=build_url("admin", "network", "oasis", "enable-tool")%>';
   const API_DISABLE = '<%=build_url("admin", "network", "oasis", "disable-tool")%>';
   const errorModal = document.getElementById('tools-error-modal');
@@ -98,6 +102,27 @@
       errorModal.classList.remove('show');
       errorModal.setAttribute('aria-hidden', 'true');
     });
+  }
+
+  function bindRefreshButton() {
+    if (!refreshBtn || refreshBtn.dataset.bound === '1') return;
+    refreshBtn.addEventListener('click', () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = 'Running...';
+      fetch('<%=build_url("admin", "network", "oasis", "refresh-tools")%>', { method: 'POST' })
+        .then(r => r.json())
+        .then(res => {
+          if (!res || res.status !== 'OK') throw new Error('Failed to refresh services');
+          location.reload();
+        })
+        .catch(err => {
+          console.error('refresh-tools failed:', err);
+          showToast('Failed to refresh services', 'error', 3000);
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = 'Refresh';
+        });
+    });
+    refreshBtn.dataset.bound = '1';
   }
 
   function createServerBlock(serverName, tools) {
@@ -212,6 +237,7 @@
       .then(response => response.json())
       .then(data => {
         if (data && data.local_tool === false) {
+          if (headBar) headBar.style.display = 'none';
           if (container) {
             container.innerHTML = '';
             const p = document.createElement('p');
@@ -220,36 +246,9 @@
           }
           return;
         }
-        // local_tool is enabled: add Refresh button at top (centered, full width like server blocks)
-        if (header) {
-          const bar = document.createElement('div');
-          bar.className = 'tools-head-block';
-          bar.style.display = 'flex';
-          bar.style.justifyContent = 'center';
-
-          const btn = document.createElement('button');
-          btn.className = 'load-button fullwidth';
-          btn.textContent = 'Refresh';
-          btn.addEventListener('click', () => {
-            btn.disabled = true;
-            btn.textContent = 'Running...';
-            fetch('<%=build_url("admin", "network", "oasis", "refresh-tools")%>', { method: 'POST' })
-              .then(r => r.json())
-              .then(res => {
-                if (!res || res.status !== 'OK') throw new Error('Failed to refresh services');
-                // After service restart, reload page to reflect changes
-                location.reload();
-              })
-              .catch(err => {
-                console.error('refresh-tools failed:', err);
-                showToast('Failed to refresh services', 'error', 3000);
-                btn.disabled = false;
-                btn.textContent = 'Reflesh';
-              });
-          });
-          bar.appendChild(btn);
-          header.parentNode.insertBefore(bar, header.nextSibling);
-        }
+        // local_tool is enabled: show static Refresh button and bind handler
+        if (headBar) headBar.style.display = '';
+        bindRefreshButton();
         const tools = data.tools || {};
         const serverMap = {};
 
