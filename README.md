@@ -182,6 +182,9 @@ Pressing the Upload button stores the icon in the OpenWrt device.
 ### Matrial Theme
 <img width="951" height="442" alt="image" src="https://github.com/user-attachments/assets/68bbf3c0-a420-411b-a810-106e26e8db5d" />
 
+### Alpha Theme
+<img width="959" height="442" alt="image" src="https://github.com/user-attachments/assets/c335f8f8-a85a-440d-9b2c-4610047a6f95" />
+
 ## Oasis CLI Commands
 ```
 root@OpenWrt:~# oasis
