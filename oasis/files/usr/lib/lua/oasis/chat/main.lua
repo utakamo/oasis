@@ -672,13 +672,13 @@ end
 local display_chat_history = function(chat)
     for _, tbl in ipairs(chat.messages) do
         if tbl.role == common.role.user then
-            print("You :" .. tbl.content)
+            print("\27[32m\nYou :\27[0m" .. tbl.content)
         elseif tbl.role == common.role.assistant then
 
             local content = misc.markdown(nil, tbl.content)
 
             print()
-            print(chat.model)
+            print("\27[33m" .. chat.model .. "\27[0m")
             print(content)
         end
     end
