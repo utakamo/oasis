@@ -173,6 +173,9 @@ Pressing the Upload button stores the icon in the OpenWrt device.
 <img width="940" height="414" alt="image" src="https://github.com/user-attachments/assets/bb24980e-0b37-42c2-99d4-8ff622fa600f" />  
 
 ## OpenWrt Theme Overview
+### Bootstrap Theme
+<img width="1896" height="880" alt="image" src="https://github.com/user-attachments/assets/059f303d-bf05-458b-8733-903294935187" />
+
 ### OpenWrt Theme
 <img width="947" height="443" alt="image" src="https://github.com/user-attachments/assets/6e5c9ad7-26a9-4358-9ce9-84a96c7b4da3" />
 
