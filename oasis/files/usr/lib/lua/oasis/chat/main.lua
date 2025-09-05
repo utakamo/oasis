@@ -4,6 +4,7 @@ local sys               = require("luci.sys")
 local util              = require("luci.util")
 local uci               = require("luci.model.uci").cursor()
 local jsonc             = require("luci.jsonc")
+local misc              = require("oasis.chat.misc")
 local transfer          = require("oasis.chat.transfer")
 local datactrl          = require("oasis.chat.datactrl")
 local common            = require("oasis.common")
@@ -668,14 +669,32 @@ local function chat_loop(service, chat)
     end
 end
 
+local display_chat_history = function(chat)
+    for _, tbl in ipairs(chat.messages) do
+        if tbl.role == common.role.user then
+            print("You :" .. tbl.content)
+        elseif tbl.role == common.role.assistant then
+
+            local content = misc.markdown(nil, tbl.content)
+
+            print()
+            print(chat.model)
+            print(content)
+        end
+    end
+end
+
 -- Main chat function
 local chat = function(arg)
+
     local service = initialize_chat_service(arg)
+
     if not service then
         return
     end
 
     local chat = datactrl.load_chat_data(service)
+    display_chat_history(chat)
     chat_loop(service, chat)
 end
 
@@ -888,7 +907,6 @@ local output = function(arg)
         return nil, nil
     end
 
-    local misc = require("oasis.chat.misc")
     os.execute("mkdir -p /tmp/oasis")
 
     local chat_ctx = datactrl.load_chat_data(service)
