@@ -110,7 +110,7 @@ local load_chat_data = function(service)
 
     if (cfg.service == common.ai.service.ollama.name)
         or (cfg.service == common.ai.service.openai.name)
-        or (cfg.service == common.ai.service.anthropic.name) then
+        or (cfg.service == common.ai.service.gemini.name) then
         -- New Chat - initialize
         if not chat.messages then
             chat.messages = {}
@@ -128,12 +128,6 @@ local load_chat_data = function(service)
                 budget_tokens = budget_tokens
             }
             chat.messages = {}
-        end
-    elseif (cfg.service == common.ai.service.gemini.name) then
-        -- New Chat - initialize
-        if not chat.contents then
-            chat.contents = {}
-            chat.contents.parts = {}
         end
     end
 
