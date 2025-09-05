@@ -58,22 +58,37 @@ gemini.new = function()
             for _, m in ipairs(messages) do
                 local role = tostring(m.role or "")
                 local text = tostring(m.content or m.message or "")
-                if #text > 0 then
+                local has_tool_calls = (m.tool_calls and type(m.tool_calls) == "table" and #m.tool_calls > 0)
+                if (#text > 0) or has_tool_calls or (role == "tool") then
                     if role == common.role.system then
                         system_buf[#system_buf + 1] = text
                     elseif role == common.role.user then
                         contents[#contents + 1] = { role = "user", parts = { { text = text } } }
                         self._last_user_text = text
                     elseif role == common.role.assistant then
-                        contents[#contents + 1] = { role = "model", parts = { { text = text } } }
-                        self._last_assistant_text = text
+                        -- assistant に tool_calls がある場合は Gemini の functionCall に変換
+                        if has_tool_calls then
+                            local parts = {}
+                            for _, tc in ipairs(m.tool_calls) do
+                                local fn = tc["function"] or {}
+                                local args = ous.normalize_arguments(fn.arguments)
+                                local fc = { name = tostring(fn.name or ""), args = args }
+                                local id_str = tostring(tc.id or "")
+                                if #id_str > 0 then fc.id = id_str end
+                                parts[#parts + 1] = { functionCall = fc }
+                            end
+                            contents[#contents + 1] = { role = "model", parts = parts }
+                        else
+                            contents[#contents + 1] = { role = "model", parts = { { text = text } } }
+                            self._last_assistant_text = text
+                        end
                     elseif role == "tool" then
                         local resp
                         local ok, parsed = pcall(jsonc.parse, text)
                         if ok and parsed then resp = parsed else resp = text end
                         local fname = tostring(m.name or "")
                         if fname ~= "" then
-                            contents[#contents + 1] = { role = "model", parts = { { functionResponse = { name = fname, response = resp } } } }
+                            contents[#contents + 1] = { role = "function", parts = { { functionResponse = { name = fname, response = resp } } } }
                             debug:log("oasis.log", "gemini.transform_unified_schema_to_gemini", 
                                 string.format("converted tool to functionResponse: name=%s", fname))
                         end
@@ -125,7 +140,9 @@ gemini.new = function()
             local body = self:transform_unified_schema_to_gemini(chat)
             body = calling.inject_schema(self, body)
             local user_msg_json = jsonc.stringify(body, false)
+            -- normalize empty arrays in schemas and functionCall args
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
+            user_msg_json = user_msg_json:gsub('"args"%s*:%s*%[%s*%]', '"args":{}')
             debug:log("oasis.log", "gemini.convert_schema", string.format("contents=%d, json_len=%d", #(body.contents or {}), #user_msg_json))
             
             -- Add: Detailed JSON log sent to Gemini
@@ -234,16 +251,38 @@ gemini.new = function()
             local info = jsonc.parse(tool_info)
             if not info or not info.tool_outputs then return false end
 
+            -- 1) functionCall（assistant.tool_calls）を先に履歴へ追加
+            local tool_calls = {}
+            for _, t in ipairs(info.tool_outputs or {}) do
+                local tool_id = t.tool_call_id or t.id or ""
+                local tool_name = t.name or ""
+                table.insert(tool_calls, {
+                    id = tool_id,
+                    type = "function",
+                    ["function"] = {
+                        name = tool_name,
+                        arguments = "{}"
+                    }
+                })
+            end
+            if #tool_calls > 0 then
+                ous.setup_msg(self, chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
+                debug:log("oasis.log", "gemini.handle_tool_output",
+                    string.format("insert assistant tool_calls: count=%d", #tool_calls))
+            end
+
+            -- 2) 続けて functionResponse（role=function を含む tool メッセージ）を追加
             local count = 0
             for _, t in ipairs(info.tool_outputs or {}) do
                 local content = t.output
                 if type(content) ~= "string" then
                     content = jsonc.stringify(content, false)
                 end
-                self:setup_msg(chat, {
+                ous.setup_msg(self, chat, {
                     role = "tool",
-                    message = content,
-                    name = t.name
+                    tool_call_id = t.tool_call_id or t.id,
+                    name = t.name,
+                    content = content
                 })
                 count = count + 1
             end
@@ -278,27 +317,8 @@ gemini.new = function()
             if (not speaker) or (speaker.role ~= common.role.assistant) or (not speaker.tool_calls) then
                 return nil
             end
-
-            local fixed_tool_calls = {}
-            for _, tc in ipairs(speaker.tool_calls or {}) do
-                local fn = tc["function"] or {}
-                fn.arguments = ous.normalize_arguments(fn.arguments)
-                fn.arguments = jsonc.stringify(fn.arguments, false)
-
-                table.insert(fixed_tool_calls, {
-                    id = tc.id,
-                    type = "function",
-                    ["function"] = fn
-                })
-            end
-
-            msg.tool_calls = fixed_tool_calls
-            msg.content = speaker.content or ""
-            table.insert(chat.messages, msg)
-            debug:log("oasis.log", "gemini.handle_tool_call", string.format(
-                "append ASSISTANT msg with tool_calls: count=%d", #fixed_tool_calls
-            ))
-            return true
+            -- Delegate to calling module to avoid duplication
+            return calling.convert_tool_call(chat, speaker, msg)
         end
 
         obj.append_chat_data = function(self, chat)
