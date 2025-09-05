@@ -172,6 +172,12 @@ To add your favorite icon image (e.g., png), drag and drop it or click under Upl
 Pressing the Upload button stores the icon in the OpenWrt device.
 <img width="940" height="414" alt="image" src="https://github.com/user-attachments/assets/bb24980e-0b37-42c2-99d4-8ff622fa600f" />  
 
+## OpenWrt Theme Overview
+### OpenWrt2020 Theme
+<img width="946" height="443" alt="image" src="https://github.com/user-attachments/assets/e4a1d1bf-6d05-4217-b4a7-126e3a1de7d2" />
+
+### Matrial Theme
+
 ## Oasis CLI Commands
 ```
 root@OpenWrt:~# oasis
