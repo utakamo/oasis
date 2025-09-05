@@ -179,8 +179,8 @@ commands.list = function()
     oasis.list()
 end
 
-commands.tools = function(args)
-    oasis.tools({})
+commands.tools = function()
+    oasis.tools()
 end
 
 local main_cmd = arg[1]
