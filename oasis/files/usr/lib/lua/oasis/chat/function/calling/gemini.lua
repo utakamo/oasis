@@ -198,10 +198,35 @@ function M.convert_tool_result(chat, speaker, msg)
 end
 
 function M.convert_tool_call(chat, speaker, msg)
-	-- Since Gemini typically doesn't use the assistant's tool_calls format, no action is taken.
-	return
+	-- Normalize assistant.tool_calls and append to chat (Gemini path)
+	debug:log("oasis.log", "convert_tool_call[gemini]", "Processing assistant message with tool_calls")
+
+	if (not speaker) or (not speaker.tool_calls) or (type(speaker.tool_calls) ~= "table") then
+		return
+	end
+
+	local fixed_tool_calls = {}
+	for _, tc in ipairs(speaker.tool_calls or {}) do
+		local fn = tc["function"] or {}
+		fn.arguments = ous.normalize_arguments(fn.arguments)
+		fn.arguments = jsonc.stringify(fn.arguments, false)
+
+		table.insert(fixed_tool_calls, {
+			id = tc.id,
+			type = "function",
+			["function"] = fn
+		})
+	end
+
+	msg.tool_calls = fixed_tool_calls
+	msg.content = speaker.content or ""
+
+	table.insert(chat.messages, msg)
+
+	debug:log("oasis.log", "convert_tool_call[gemini]", string.format(
+		"append ASSISTANT msg with tool_calls: count=%d", #fixed_tool_calls
+	))
+	return true
 end
 
 return M
-
-
