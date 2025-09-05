@@ -988,7 +988,7 @@ local list = function()
     end
 end
 
-local tools = function(arg)
+local tools = function()
 
 	local is_local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 	if not is_local_tool then
@@ -1022,8 +1022,12 @@ local tools = function(arg)
 		for _, t in ipairs(by_server[server]) do
 			idx = idx + 1
 			local status = (t.enable == "1") and "enable" or "disable"
-			local conflict_suffix = (t.conflict == "1") and " - conflict" or ""
-			print(string.format(" [%d]: %-30s - %s%s", idx, t.name, status, conflict_suffix))
+            local status_text_color = "\27[33m"
+            if status == "enable" then
+                status_text_color = "\27[32m"
+            end
+			local conflict_suffix = (t.conflict == "1") and " [conflict]" or ""
+			print(string.format(" %3d: %-30s - %s%s\27[0m\27[31m%s\27[0m", idx, t.name, status_text_color, status, conflict_suffix))
 			index_map[idx] = { sect = t.sect, name = t.name }
 		end
 		print()
