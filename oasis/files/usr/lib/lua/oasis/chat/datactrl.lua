@@ -113,23 +113,6 @@ local load_chat_data = function(service)
         chat.messages = {}
     end
 
-    -- TODO: Separate the get_ai_service_cfg function into load_service and load_chat_history and print.
-    if (format ~= common.ai.format.output) and (format ~= common.ai.format.rpc_output) then
-        -- todo: update
-        for _, tbl in ipairs(chat.messages) do
-            if tbl.role == common.role.user then
-                print("You :" .. tbl.content)
-            elseif tbl.role == common.role.assistant then
-
-                local content = misc.markdown(nil, tbl.content)
-
-                print()
-                print(chat.model)
-                print(content)
-            end
-        end
-    end
-
     return chat
 end
 
