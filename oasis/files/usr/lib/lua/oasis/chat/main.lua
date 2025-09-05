@@ -678,7 +678,7 @@ local display_chat_history = function(chat)
             local content = misc.markdown(nil, tbl.content)
 
             print()
-            print("\27[33m" .. chat.model .. "\27[0m")
+            print("\27[34m" .. chat.model .. "\27[0m")
             print(content)
         end
     end
