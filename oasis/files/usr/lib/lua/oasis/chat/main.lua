@@ -429,12 +429,13 @@ local show_service_list = function()
 
     local output = {}
     output.service = {}
-    output.service.in_use = function(index, identifier)
-        print("\n\27[1;34m[" .. index .. "] : " .. identifier .. " \27[1;32m(in use)\27[0m")
+
+    output.service.in_use = function(no)
+        print("\n\27[1;34mService No: " .. no .. " \27[1;32m(in use)\27[0m")
     end
 
-    output.service.not_in_use = function(index, identifier)
-        print("\n\27[1;34m[" .. index .. "] : " .. identifier .. " \27[0m")
+    output.service.not_in_use = function(no)
+        print("\n\27[1;34mService No: " .. no .. "\27[0m")
     end
 
     output.line = function()
@@ -453,9 +454,9 @@ local show_service_list = function()
         index = index + 1
         if tbl.name then
             if index == 1 then
-                output.service.in_use(index, tbl.identifier)
+                output.service.in_use(index)
             else
-                output.service.not_in_use(index, tbl.identifier)
+                output.service.not_in_use(index)
             end
 
             output.line()
@@ -492,6 +493,19 @@ local show_service_list = function()
     end)
 end
 
+local get_service_id_by_number = function(arg)
+    local index = 0
+    local target_section = ""
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
+        index = index + 1
+        if tonumber(arg.no) == index then
+            target_section = service[".name"]
+        end
+    end)
+
+    return target_section
+end
+
 local delete = function(arg)
 
     if not arg then
@@ -500,11 +514,11 @@ local delete = function(arg)
 
     local output = {}
     output.service = {}
-    output.service.confirm_service_delete = function(identifier)
+    output.service.confirm_service_delete = function(no)
         local reply
 
         repeat
-            io.write("Do you delete service [" ..identifier .. "] (Y/N):")
+            io.write("Do you delete Service No." .. no .. " (Y/N):")
             io.flush()
 
             reply = io.read()
@@ -525,31 +539,18 @@ local delete = function(arg)
         print("Delete service [" .. service .. "]")
     end
 
-    output.service.not_found = function(identifier)
-        print("Error: Service ID('" .. identifier .. "') was not found in the configuration.")
+    output.service.not_found = function(no)
+        print("Error: Service No." .. no .. " was not found in the configuration.")
     end
 
-    if not arg.identifier then
+    local target_section = get_service_id_by_number(arg)
+
+    if (#target_section == 0) then
+        output.service.not_found(arg.no)
         return
     end
 
-    local target_section
-    local found = false
-
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if not found and service.identifier == arg.identifier then
-            target_section = service[".name"]
-            found = true
-            return false
-        end
-    end)
-
-    if (not target_section) or (#target_section == 0) then
-        output.service.not_found(arg.identifier)
-        return
-    end
-
-    if output.service.confirm_service_delete(arg.identifier) == 'N' then
+    if output.service.confirm_service_delete(arg.no) == 'N' then
         return
     end
 
@@ -558,20 +559,14 @@ end
 
 local select_cmd = function(arg)
 
-    if not arg.identifier then
+    if not arg.no then
         return
     end
 
-    local target_section = ""
-
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if service.identifier == arg.identifier then
-            target_section = service[".name"]
-        end
-    end)
+    local target_section = get_service_id_by_number(arg)
 
     if #target_section == 0 then
-        print("Identifer Name: " .. arg.identifier .. " is not found.")
+        print("Service No: " .. arg.no .. " is not found.")
         return
     end
 
@@ -580,7 +575,7 @@ local select_cmd = function(arg)
     uci:commit(common.db.uci.cfg)
 
     local model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
-    print(arg.identifier .. " is selected.")
+    print("Service No: " .. arg.no .. " is selected.")
     print("Target model: \27[33m" .. model .. "\27[0m")
 end
 
@@ -596,7 +591,6 @@ local function initialize_chat_service(arg)
     local cfg = service:get_config()
 
     print("-----------------------------------")
-    print(string.format("%-14s :\27[33m %s \27[0m", "Identifer", cfg.identifier))
     print(string.format("%-14s :\27[33m %s \27[0m", "AI Service", cfg.service))
     print(string.format("%-14s :\27[33m %s \27[0m", "Model", cfg.model))
     print("-----------------------------------")
@@ -732,6 +726,7 @@ local delchat = function(arg)
 
         if reply == 'N' then
             print("canceled.")
+            return
         end
     else
         print("No chat data found for no=" .. arg.no)
@@ -1031,7 +1026,7 @@ local list = function()
     print("-------------------------------------------------------------")
 
     for i, chat_info in ipairs(list.item) do
-        print(string.format("[%3d]: %s", i, chat_info.title))
+        print(string.format("%3d: %s", i, chat_info.title))
     end
 end
 
