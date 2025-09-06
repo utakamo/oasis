@@ -59,7 +59,7 @@ Options:
 Commands:
  storage <path> [<chat-max>]
  add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
- change <service-id> [<options> <value>]...
+ change [no=<service-number> [<options> <value>]...]
  select [no=<service-number>]
  delete no=<service-number>
  chat [no=<chat-number>]
@@ -116,10 +116,15 @@ commands.add = function(args)
 end
 
 commands.change = function(args)
-    local identifier = args[2]
-    if not identifier then return help() end
-    local options = parse_options(args, 3)
-    oasis.change(options, { identifier = identifier })
+
+    local no = extract_no(args[2])
+
+    if no then
+        local options = parse_options(args, 3)
+        oasis.change({ no = no }, options)
+    else
+        oasis.show_service_list()
+    end
 end
 
 commands.select = function(args)
