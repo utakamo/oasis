@@ -273,8 +273,8 @@ root@OpenWrt:~# oasis list
 -----------------------------------------------------
  No. | title
 -----------------------------------------------------
-[ 1]: Hello                            5727149461
-[ 2]: ConversationStart                7772532380
+[ 1]: Hello
+[ 2]: ConversationStart
 ```
 Resume conversation with the AI by specifying the chat ID.
 ```
