@@ -684,8 +684,30 @@ local display_chat_history = function(chat)
     end
 end
 
+local get_chat_data_by_number = function(arg)
+
+    if not arg.no then
+        return nil
+    end
+
+    local list = util.ubus("oasis.chat", "list", {})
+
+    for chat_no, chat_info in ipairs(list.item) do
+        debug:log("oasis.log", "get_chat_data_by_number", "chat_info.id = " .. chat_info.id)
+        debug:log("oasis.log", "get_chat_data_by_number", "arg.no = " .. arg.no)
+        debug:log("oasis.log", "get_chat_data_by_number", "chat_no = " .. chat_no)
+        if tonumber(arg.no) == chat_no then
+            return chat_info.id
+        end
+    end
+
+    return nil
+end
+
 -- Main chat function
 local chat = function(arg)
+
+    arg.id = get_chat_data_by_number(arg)
 
     local service = initialize_chat_service(arg)
 
@@ -700,10 +722,10 @@ end
 
 local delchat = function(arg)
 
-    local is_search = common.search_chat_id(arg.id)
+    arg.id = get_chat_data_by_number(arg)
 
-    if is_search then
-        io.write("Do you delete chat data id=" ..arg.id .. " ? (Y/N):")
+    if arg.id then
+        io.write("Do you delete chat data no=" ..arg.no .. " ? (Y/N):")
         io.flush()
 
         local reply = io.read()
@@ -712,7 +734,8 @@ local delchat = function(arg)
             print("canceled.")
         end
     else
-        print("No chat data found for id=" .. arg.id)
+        print("No chat data found for no=" .. arg.no)
+        return
     end
 
     local storage_path = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "path")
@@ -728,7 +751,7 @@ local delchat = function(arg)
 
     uci:commit(common.db.uci.cfg)
 
-    print("Delete chat data id=" .. arg.id)
+    print("Delete chat data no=" .. arg.no)
 end
 
 local prompt = function(arg)
@@ -979,12 +1002,18 @@ local rpc_output = function(arg)
 end
 
 local rename = function(arg)
+
+    arg.id = get_chat_data_by_number(arg)
+
+    if not arg.id then
+        print("Chat data for no=" .. arg.no .. " could not be found.")
+        return
+    end
+
     local result = util.ubus("oasis.title", "manual_set", {id = arg.id, title = arg.title})
 
     if result.status == "OK" then
-        print("Changed title of chat data with id=" .. arg.id  .. " to " .. result.title .. ".")
-    else
-        print("Chat data for id=" .. arg.id .. " could not be found.")
+        print("Changed title of chat data with no=" .. arg.no  .. " to " .. result.title .. ".")
     end
 end
 
@@ -997,12 +1026,12 @@ local list = function()
         return
     end
 
-    print("-----------------------------------------------------")
-    print(string.format(" %3s | %-30s | %s", "No.", "title", "id" ))
-    print("-----------------------------------------------------")
+    print("-------------------------------------------------------------")
+    print(string.format(" %3s | title", "No." ))
+    print("-------------------------------------------------------------")
 
     for i, chat_info in ipairs(list.item) do
-        print(string.format("[%2d]: %-30s   %s", i, chat_info.title, chat_info.id))
+        print(string.format("[%3d]: %s", i, chat_info.title))
     end
 end
 

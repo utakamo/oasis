@@ -207,11 +207,11 @@ Commands:
  change <service-id> [<options> <value>]...
  select [<service-id>]
  delete <service-id>
- chat [id=<chat-id>]
+ chat [no=<chat-number>]
  prompt <message>
  sysmsg [<chat|prompt> <options> <value>]
- delchat id=<chat-id>
- rename id=<chat-id> <title>
+ delchat no=<chat-number>
+ rename no=<chat-number> <title>
  list
  tools
 
@@ -271,14 +271,14 @@ Confirm Chat ID
 ```
 root@OpenWrt:~# oasis list
 -----------------------------------------------------
- No. | title                          | id
+ No. | title
 -----------------------------------------------------
 [ 1]: Hello                            5727149461
 [ 2]: ConversationStart                7772532380
 ```
 Resume conversation with the AI by specifying the chat ID.
 ```
-root@OpenWrt:~# oasis chat id=7772532380
+root@OpenWrt:~# oasis chat no=1
 You :Hello!
 
 gemma2:2b

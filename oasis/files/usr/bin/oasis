@@ -62,11 +62,11 @@ Commands:
  change <service-id> [<options> <value>]...
  select [<service-id>]
  delete <service-id>
- chat [id=<chat-id>]
+ chat [no=<chat-number>]
  prompt <message>
  sysmsg [<chat|prompt> <options> <value>]
- delchat id=<chat-id>
- rename id=<chat-id> <title>
+ delchat no=<chat-number>
+ rename no=<chat-number> <title>
  list
  tools
 
@@ -92,8 +92,8 @@ local function parse_options(args, start_index)
     return options
 end
 
-local function extract_id(arg_str)
-    local prefix = "id="
+local function extract_no(arg_str)
+    local prefix = "no="
     if arg_str and arg_str:sub(1, #prefix) == prefix then
         return arg_str:sub(#prefix + 1)
     end
@@ -139,14 +139,14 @@ commands.delete = function(args)
 end
 
 commands.chat = function(args)
-    local id = extract_id(args[2])
-    oasis.chat({ id = id })
+    local no = extract_no(args[2])
+    oasis.chat({ no = no })
 end
 
 commands.delchat = function(args)
-    local id = extract_id(args[2])
-    if id then
-        oasis.delchat({ id = id })
+    local no = extract_no(args[2])
+    if no then
+        oasis.delchat({ no = no })
     else
         oasis.list()
     end
@@ -167,9 +167,9 @@ commands.sysmsg = function(args)
 end
 
 commands.rename = function(args)
-    local id = extract_id(args[2])
-    if id and args[3] then
-        oasis.rename({ id = id, title = args[3] })
+    local no = extract_no(args[2])
+    if no and args[3] then
+        oasis.rename({ no = no, title = args[3] })
     else
         oasis.list()
     end
