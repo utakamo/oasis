@@ -60,8 +60,8 @@ Commands:
  storage <path> [<chat-max>]
  add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
  change <service-id> [<options> <value>]...
- select [<service-id>]
- delete <service-id>
+ select [no=<service-number>]
+ delete no=<service-number>
  chat [no=<chat-number>]
  prompt <message>
  sysmsg [<chat|prompt> <options> <value>]
@@ -123,16 +123,22 @@ commands.change = function(args)
 end
 
 commands.select = function(args)
-    if args[2] then
-        oasis.select({ identifier = args[2] })
+
+    local no = extract_no(args[2])
+
+    if no then
+        oasis.select({ no = no })
     else
         oasis.show_service_list()
     end
 end
 
 commands.delete = function(args)
-    if args[2] then
-        oasis.delete({ identifier = args[2] })
+
+    local no = extract_no(args[2])
+
+    if no then
+        oasis.delete({ no = no })
     else
         oasis.show_service_list()
     end
