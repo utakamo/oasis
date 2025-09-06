@@ -190,6 +190,9 @@ local function collect_service_name(args, output)
             io.write(string.format(output.format_1, output.service))
             io.flush()
             setup.service = io.read()
+            if #setup.service == 0 then
+                os.exit()
+            end
         until is_valid_service(setup.service)
     else
         if is_valid_service(args.service) then
