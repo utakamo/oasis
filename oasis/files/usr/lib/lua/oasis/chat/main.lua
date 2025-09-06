@@ -361,8 +361,22 @@ local function update_endpoint(service_name, service_section, endpoint_value)
     return true
 end
 
+local get_service_id_by_number = function(arg)
+    local index = 0
+    local target_section = ""
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
+        index = index + 1
+        if tonumber(arg.no) == index then
+            target_section = service[".name"]
+        end
+    end)
+
+    return target_section
+end
+
 -- Update service configuration
 local function update_service_config(service_section, opt)
+
     local updated = false
 
     if opt.u then
@@ -391,25 +405,36 @@ local function update_service_config(service_section, opt)
 end
 
 -- Find and update service
-local function find_and_update_service(identifier, opt)
-    local found = false
-    local updated = false
+local function find_and_update_service(arg, opt)
+
+    local is_found = false
+    local is_update = false
+    local index = 0
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        if service.identifier == identifier then
-            found = true
+        index = index + 1
+        if tonumber(arg.no) == index then
+            debug:log("oasis.log", "find_and_update_service", "identifier = " .. service.identifier)
+            arg.identifier = service.identifier
             if update_service_config(service[".name"], opt) then
-                updated = true
                 uci:commit(common.db.uci.cfg)
+                debug:log("oasis.log", "find_and_update_service", "updated!!")
+                is_found = true
+                is_update = true
+            else
+                debug:log("oasis.log", "find_and_update_service", "not updated ...")
+                is_found = true
+                is_update = false
             end
         end
     end)
 
-    return found, updated
+    return is_found, is_update
 end
 
 -- Main change function
-local function change(opt, arg)
+local function change(arg, opt)
+
     local output = {
         service = {
             update = "Service Update!",
@@ -417,11 +442,11 @@ local function change(opt, arg)
         }
     }
 
-    local found, updated = find_and_update_service(arg.identifier, opt)
+    local is_found, is_update = find_and_update_service(arg, opt)
 
-    if found and updated then
+    if is_found and is_update then
         print(output.service.update)
-    elseif not found then
+    elseif not is_found then
         print(output.service.not_found)
     else
         print("No changes made.")
@@ -494,19 +519,6 @@ local show_service_list = function()
             output.item("MODEL", tbl.model)
         end
     end)
-end
-
-local get_service_id_by_number = function(arg)
-    local index = 0
-    local target_section = ""
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.service, function(service)
-        index = index + 1
-        if tonumber(arg.no) == index then
-            target_section = service[".name"]
-        end
-    end)
-
-    return target_section
 end
 
 local delete = function(arg)
