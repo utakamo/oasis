@@ -1,11 +1,11 @@
-# OpenWrt AI Assistant Application - Oasis (v3.0.0)
+# OpenWrt AI Assistant Application - Oasis (v3.1.2)
 > [!IMPORTANT]
 > >
 > **Support AI Service**
 > - OpenAI
 > - Ollama
+> - Google Gemini
 > - Anthropic (Work in Progress)
-> - Google Gemini (Work in Progress)
 > - OpenRouter (Work in Progress)
 
 This software provides the ability to link OpenWrt and AI. Based on user input, the AI provides the optimal settings for OpenWrt; the OpenWrt device itself analyzes the information provided by the AI, verifies the validity of that information, and then notifies the user.
