@@ -110,7 +110,7 @@ return server.submit();
 ## How to Apply the Script
 To have Oasis recognize the scripts you've created, you’ll need to either reboot OpenWrt or run the command shown below.
 ```
-root@OpenWrt~# /etc/init.d/olt_tool restart
+root@OpenWrt~# service olt_tool restart
 root@OpenWrt~# service rpcd restart
 ```
 > [!NOTE]
