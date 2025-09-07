@@ -180,7 +180,7 @@ server.tool("wifi_scan", {
         local jsonc = require("luci.jsonc")
         local ifname = args and args.ifname or nil
         if not ifname or ifname == "" then
-            return server.response({error = "Please ask the user for the name of the interface. [ex: interface name 'wlan0']"})
+            return server.response({ error = "Please ask the user for the name of the interface. [ex: interface name 'wlan0'] "})
         end
 
         local out = util.ubus("iwinfo", "scan", { device = ifname })
@@ -194,9 +194,9 @@ server.tool("wifi_scan", {
                 entry.mode = r.mode
                 entry.band = r.band
                 entry.channel = r.channel or r.primary_channel
-                entry.mhz = r.mhz
+                -- entry.mhz = r.mhz
                 entry.signal = r.signal
-                entry.quality = r.quality
+                -- entry.quality = r.quality
                 -- encryption summary
                 if r.encryption then
                     entry.encryption = {}
@@ -210,7 +210,11 @@ server.tool("wifi_scan", {
             end
         end
 
-        return server.response({networks = results})
+        if #results == 0 then
+            return server.response( { scan_results = "not found" , announce = "Wi-Fi may not be enabled. Please check with the user." })
+        end
+
+        return server.response({ scan_results = results, request = "Show the scan results in list format."})
     end
 })
 
