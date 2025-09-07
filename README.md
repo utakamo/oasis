@@ -204,9 +204,9 @@ Options:
 Commands:
  storage <path> [<chat-max>]
  add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
- change <service-id> [<options> <value>]...
- select [<service-id>]
- delete <service-id>
+ change [no=<service-number> [<options> <value>]...]
+ select [no=<service-number>]
+ delete no=<service-number>
  chat [no=<chat-number>]
  prompt <message>
  sysmsg [<chat|prompt> <options> <value>]
