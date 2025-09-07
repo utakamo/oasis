@@ -58,7 +58,7 @@ server.run(arg)
 ## ucode OLT Server Example
 This section explains how to write a script that manages tools named oasis.ucode.local.tool.server1 and oasis.ucode.local.tool.server2.
 Unlike Lua, ucode does not use the script’s filename as the tool group name—instead, the tool group must be explicitly declared when defining each tool.
-To apply the script, place it in /usr/rpcd/ucode.
+To apply the script, place it in /usr/share/rpcd/ucode.
 ```
 'use strict';
 
