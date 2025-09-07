@@ -267,7 +267,7 @@ You :exit
 |  /history |   Display the chat history(JSON)  |
 
 ### Step4: Load past chats and resume conversation.
-Confirm Chat ID
+Confirm Chat Data
 ```
 root@OpenWrt:~# oasis list
 -----------------------------------------------------
