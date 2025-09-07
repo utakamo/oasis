@@ -775,12 +775,28 @@ local prompt = function(arg)
 
     service:initialize(arg, common.ai.format.prompt)
 
+    -- In the case of the prompt command, the load_chat_data function is used to return template-structured data conforming to the Oasis unified chat schema.
     local prompt = datactrl.load_chat_data(service)
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-    if ous.setup_msg(service, prompt, { role = common.role.user, message = arg.message }) then
-        transfer.chat_with_ai(service, prompt)
-        print()
+    if not ous.setup_msg(service, prompt, {role = common.role.user, message = arg.message}) then
+        return false
+    end
+
+    local tool_info, _, tool_used = transfer.chat_with_ai(service, prompt)
+    print()
+
+    debug:log("oasis.log", "prompt", "tool_used = " .. tostring(tool_used))
+    debug:log("oasis.log", "prompt", "tool_info = " .. tostring(tool_info))
+    if tool_info then
+        debug:log("oasis.log", "prompt", "tool_info length = " .. tostring(#tool_info))
+    end
+
+    if tool_used then
+        if service:handle_tool_output(tool_info, prompt) then
+            transfer.chat_with_ai(service, prompt)
+            print()
+        end
     end
 end
 
