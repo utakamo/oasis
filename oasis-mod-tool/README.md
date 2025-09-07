@@ -7,7 +7,7 @@ After installing oasis-mod-tool, you can create Lua or ucode scripts using the s
 <img width="789" height="254" alt="Image" src="https://github.com/user-attachments/assets/a5f616a4-d899-459f-814a-a915796f1aa8" />
 
 ## Lua OLT Server Example
-This section presents an example of managing three tools within the tool group oasis.lua.local.tool.server.
+This section presents an example of managing three tools within the tool group oasis.lua.template.tool.server.
 In Lua, the tool group name corresponds to the script’s filename.
 To apply the Lua script, place it in /usr/libexec/rpcd.
 ```
