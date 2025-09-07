@@ -243,7 +243,7 @@ LLM MODEL                                                  >> gemma2:2b
 <img width="1805" height="788" alt="image" src="https://github.com/user-attachments/assets/07261d69-b521-422e-9be6-94e8d6082e8f" />
 
 - To switch to another AI service, run oasis select <service-name>. The following is an example of switching the service in use to Service No: 3.
-<img width="455" alt="aihelper_select_service02" src="https://github.com/user-attachments/assets/befe2830-0364-4c81-937a-bd1c9168f522">
+<img width="1795" height="819" alt="image" src="https://github.com/user-attachments/assets/b00f9a8c-9bb3-4f9d-a0df-01561dea2437" />
 
 ### Step3: Example of chat with ai
 ```
