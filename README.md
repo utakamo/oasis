@@ -50,7 +50,7 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > Please create an API Key on your OpenAI Platform page.  
 > https://platform.openai.com/docs/overview
 >
-> #### 1.3. OpenAI LLM Models (Example)
+> #### 1.3. OpenAI LLM Models
 > - gpt-3.5-turbo
 > - gpt-4
 > - gpt-4o
@@ -70,7 +70,7 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > Please create an API Key on your Google AI Studio.  
 > https://aistudio.google.com/welcome
 > 
-> #### 2.3. Gemini LLM Models (Example)
+> #### 2.3. Gemini LLM Models
 > - gemini-2.0-flash
 > - gemini-2.5-flash
 > - etc ...
@@ -85,6 +85,10 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > #### 3.2. OpenRouter API Key  
 > Please create an API Key on your OpenRouter Account page.  
 > https://openrouter.ai/
+>
+> #### 3.3. OpenRouter LLM Models
+> Check this.
+> https://openrouter.ai/models
 
 ### 4. Example Ollama Setup
 <img width="853" alt="Image" src="https://github.com/user-attachments/assets/7cc74e68-c920-4f2a-b0df-c0eba7264774" />
