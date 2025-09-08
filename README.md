@@ -294,6 +294,31 @@ Hello! 👋  What can I do for you today? 😊
 root@OpenWrt:~# 
 ```
 
+### Step6: How to enable tools
+```
+root@OpenWrt:~# oasis tools
+- oasis.lua.tool.server
+   1: get_connected_clients          - disable
+   2: get_cpu_temp                   - disable
+   3: get_ifname_list                - enable
+   4: get_lan_ipaddr                 - disable
+   5: get_storage_usage              - disable
+   6: get_system_load                - disable
+   7: get_wan_status                 - disable
+   8: wifi_scan                      - disable
+
+- oasis.ucode.tool.server1
+   9: get_board_info                 - disable
+
+- oasis.ucode.tool.server2
+  10: get_os_info                    - enable
+
+Would you like to enable or disable a tool? (E/D/N): E
+Target Tool No: 7
+
+ Enabled tool: get_wan_status
+```
+
 # Oasis RPC (json-rpc2.0)
 Dependency Package: `uhttpd-mod-ubus`
 > [!NOTE]
