@@ -55,7 +55,7 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > - gpt-4
 > - gpt-4o
 > - etc...
->  
+>  Show more: https://platform.openai.com/docs/models
 
 ### 2. Example Ollama Setup
 <img width="853" alt="Image" src="https://github.com/user-attachments/assets/7cc74e68-c920-4f2a-b0df-c0eba7264774" />
