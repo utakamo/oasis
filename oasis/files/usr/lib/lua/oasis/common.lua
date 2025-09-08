@@ -138,7 +138,16 @@ local select_service_obj = function()
     elseif service == ai.service.gemini.name then
         target = require("oasis.chat.service.gemini")
     elseif service == ai.service.openrouter.name then
-        target = require("oasis.chat.service.openrouter")
+        -- OpenRouter is fully compatible with OpenAI's API and JSON schema.
+        -- Therefore, we reuse the OpenAI service implementation here.
+        -- Note:
+        --  - The actual endpoint and API key are still resolved as OpenRouter
+        --    values via datactrl.get_ai_service_cfg(), so requests are sent to
+        --    OpenRouter with the proper Authorization header.
+        --  - If OpenRouter's behavior diverges from OpenAI in the future
+        --    (e.g. response format or tool-calling), consider creating a
+        --    dedicated oasis.chat.service.openrouter module and mapping back.
+        target = require("oasis.chat.service.openai")
     end
 
     return target

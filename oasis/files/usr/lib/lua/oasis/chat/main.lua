@@ -96,20 +96,23 @@ local SERVICE_CONFIG = {
         common.ai.service.ollama.name,
         common.ai.service.openai.name,
         common.ai.service.anthropic.name,
-        common.ai.service.gemini.name
+        common.ai.service.gemini.name,
+        common.ai.service.openrouter.name
     },
 
     ENDPOINT_FIELDS = {
         [common.ai.service.ollama.name] = "ollama_endpoint",
         [common.ai.service.openai.name] = "openai_custom_endpoint",
         [common.ai.service.anthropic.name] = "anthropic_custom_endpoint",
-        [common.ai.service.gemini.name] = "gemini_custom_endpoint"
+        [common.ai.service.gemini.name] = "gemini_custom_endpoint",
+        [common.ai.service.openrouter.name] = "openrouter_custom_endpoint"
     },
 
     ENDPOINT_TYPES = {
         [common.ai.service.openai.name] = "openai_endpoint_type",
         [common.ai.service.anthropic.name] = "anthropic_endpoint_type",
-        [common.ai.service.gemini.name] = "gemini_endpoint_type"
+        [common.ai.service.gemini.name] = "gemini_endpoint_type",
+        [common.ai.service.openrouter.name] = "openrouter_endpoint_type"
     },
 
     ANTHROPIC_LIMITS = {
@@ -139,6 +142,11 @@ local SERVICE_CONFIG = {
             endpoint_field = "gemini_custom_endpoint",
             endpoint_type_field = "gemini_endpoint_type",
             endpoint_type_value = common.endpoint.type.custom
+        },
+        [common.ai.service.openrouter.name] = {
+            endpoint_field = "openrouter_custom_endpoint",
+            endpoint_type_field = "openrouter_endpoint_type",
+            endpoint_type_value = common.endpoint.type.custom
         }
     }
 }
@@ -152,7 +160,7 @@ local function get_output_formats()
     output.format_2 = "%-64s >> %s"
 
     -- Field labels
-    output.service = "Service (\"Ollama\", \"OpenAI\" or \"Gemini\")"
+    output.service = "Service (\"Ollama\", \"OpenAI\" or \"Gemini\" or \"OpenRouter\")"
     output.endpoint = "Endpoint"
     output.api_key = "API KEY (leave blank if none)"
     output.model = "LLM MODEL"

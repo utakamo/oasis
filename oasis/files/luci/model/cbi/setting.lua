@@ -57,8 +57,8 @@ name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)
 name:value(common.ai.service.openai.name, common.ai.service.openai.name)
 -- name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
-name:value(common.ai.service.gemini.name, "Gemini")
--- name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
+name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
+name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
 
 -- Ollama
 ollama_endpoint = service:option(Value, "ollama_endpoint", "Endpoint")
@@ -96,14 +96,14 @@ gemini_custom_endpoint = service:option(Value, "gemini_custom_endpoint", "Custom
 gemini_custom_endpoint:depends("gemini_endpoint_type", common.endpoint.type.custom)
 
 -- OpenRouter
--- endpoint_type_for_openrouter = service:option(ListValue, "openrouter_endpoint_type", "Endpoint Type")
--- endpoint_type_for_openrouter:value(common.endpoint.type.default, common.endpoint.type.default)
--- endpoint_type_for_openrouter:value(common.endpoint.type.custom, common.endpoint.type.custom)
--- endpoint_type_for_openrouter.description = "Default: " .. common.ai.service.openrouter.endpoint
--- endpoint_type_for_openrouter:depends("name", common.ai.service.openrouter.name)
+endpoint_type_for_openrouter = service:option(ListValue, "openrouter_endpoint_type", "Endpoint Type")
+endpoint_type_for_openrouter:value(common.endpoint.type.default, common.endpoint.type.default)
+endpoint_type_for_openrouter:value(common.endpoint.type.custom, common.endpoint.type.custom)
+endpoint_type_for_openrouter.description = "Default: " .. common.ai.service.openrouter.endpoint
+endpoint_type_for_openrouter:depends("name", common.ai.service.openrouter.name)
 
--- openrouter_custom_endpoint = service:option(Value, "openrouter_custom_endpoint", "Custom Endpoint")
--- openrouter_custom_endpoint:depends("openrouter_endpoint_type", common.endpoint.type.custom)
+openrouter_custom_endpoint = service:option(Value, "openrouter_custom_endpoint", "Custom Endpoint")
+openrouter_custom_endpoint:depends("openrouter_endpoint_type", common.endpoint.type.custom)
 
 api_key = service:option(Value, "api_key", "API Key")
 api_key.password = true
@@ -134,5 +134,6 @@ model = service:option(Value, "model", "Model")
 model:depends("name", common.ai.service.ollama.name)
 model:depends("name", common.ai.service.openai.name)
 model:depends("name", common.ai.service.gemini.name)
+model:depends("name", common.ai.service.openrouter.name)
 
 return m
