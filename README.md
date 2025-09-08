@@ -69,6 +69,11 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > #### 2.1. Gemini API Key  
 > Please create an API Key on your Google AI Studio.  
 > https://aistudio.google.com/welcome
+> 
+> #### 2.3. Gemini LLM Models (Example)
+> - gemini-2.0-flash
+> - gemini-2.5-flash
+> - etc ...
 
 ### 3. Example OpenRouter Setup
 > [!NOTE]
