@@ -113,8 +113,6 @@ To have Oasis recognize the scripts you've created, you’ll need to either rebo
 root@OpenWrt~# service olt_tool restart
 root@OpenWrt~# service rpcd restart
 ```
-> [!NOTE]
-> If your script includes multiple module imports or similar operations, it may take a few minutes (typically 1 to 3) before it’s recognized by the Oasis/OpenWrt system.
 
 ## Recognition of OLT server scripts
 Once scripts such as Lua or ucode are recognized by the Oasis/OpenWrt system, they become visible in the WebUI.
