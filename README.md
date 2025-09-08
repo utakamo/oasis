@@ -47,7 +47,8 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > - Custom Endpoint ----> User-specified endpoint
 >
 > #### 1.2. OpenAI API Key  
-> Please create an API Key on your OpenAI Platform page.  
+> Please create an API Key on your OpenAI Platform page.
+> https://platform.openai.com/docs/overview
 >
 > #### 1.3. OpenAI LLM Models (Example)
 > - gpt-3.5-turbo
@@ -55,7 +56,6 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > - gpt-4o
 > - etc...
 >  
-> For details, please refer to the OpenAI website.
 
 ### 2. Example Ollama Setup
 <img width="853" alt="Image" src="https://github.com/user-attachments/assets/7cc74e68-c920-4f2a-b0df-c0eba7264774" />
