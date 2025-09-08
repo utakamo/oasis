@@ -59,11 +59,33 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > Show more:  
 > https://platform.openai.com/docs/models
 
-### 2. Example Ollama Setup
+### 2. Example Gemini Setup
+> [!NOTE]
+> #### 2.1. Gemini Endpoint
+> If you want to use OpenAI, you need to set the Endpoint Type.  
+> - Default Endpoint ----> https://generativelanguage.googleapis.com
+> - Custom Endpoint ----> User-specified endpoint  
+>
+> #### 2.1. Gemini API Key  
+> Please create an API Key on your Google AI Studio.  
+> https://aistudio.google.com/welcome
+
+### 3. Example OpenRouter Setup
+> [!NOTE]
+> #### 3.1. OpenRouter Endpoint
+> If you want to use OpenRouter, you need to set the Endpoint Type.
+> - Default Endpoint ----> https://openrouter.ai/api/v1/chat/completions
+> - Custom Endpoint ----> User-specified endpoint
+>
+> #### 3.2. OpenRouter API Key  
+> Please create an API Key on your OpenRouter Account page.  
+> https://openrouter.ai/
+
+### 4. Example Ollama Setup
 <img width="853" alt="Image" src="https://github.com/user-attachments/assets/7cc74e68-c920-4f2a-b0df-c0eba7264774" />
 
 > [!NOTE]
-> #### 2.1. About Ollama (AI Server) Setup
+> #### 4.1. About Ollama (AI Server) Setup
 > If you want to use Ollama, you need to set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.  
 > ```
 > OLLAMA_HOST=0.0.0.0
@@ -74,14 +96,14 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > My technical blog has an introductory page on the above Ollama setup, which describes the setup on Windows and Linux (Japanese Page).
 > https://utakamo.com/article/ai/llm/ollama/setup/index.html#network-support
 >
-> #### 2.2. Ollama Endpoint
+> #### 4.2. Ollama Endpoint
 > Ollama Endpoint Format: ```http://<Your Ollama PC Address>:11434/api/chat ```  
 > In the example above, Ollama's IP address is 192.168.1.109/24, so ```http://192.168.1.109:11434/api/chat``` is set as the endpoint.
 >
-> #### 2.3. Ollama API Key
+> #### 4.3. Ollama API Key
 > When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.
 >
-> #### 2.4. LLM Models
+> #### 4.4. LLM Models
 > https://ollama.com/library
 
 ## 1. Chat with AI
