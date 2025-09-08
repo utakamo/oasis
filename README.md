@@ -87,7 +87,7 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > https://openrouter.ai/
 >
 > #### 3.3. OpenRouter LLM Models
-> Check this.
+> Please check OpenRouter website.  
 > https://openrouter.ai/models
 
 ### 4. Example Ollama Setup
