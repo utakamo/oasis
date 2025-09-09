@@ -160,7 +160,7 @@ local function get_output_formats()
     output.format_2 = "%-64s >> %s"
 
     -- Field labels
-    output.service = "Service (\"Ollama\", \"OpenAI\" or \"Gemini\" or \"OpenRouter\")"
+    output.service = "Service (\"Ollama\", \"OpenAI\", \"Anthropic\", \"Gemini\" or \"OpenRouter\")"
     output.endpoint = "Endpoint"
     output.api_key = "API KEY (leave blank if none)"
     output.model = "LLM MODEL"
@@ -248,10 +248,10 @@ local function collect_anthropic_config(output)
         io.flush()
         config.type = io.read()
     until (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled) 
-        or (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enable)
+        or (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled)
 
     -- Budget Tokens (if thinking enabled)
-    if config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enable then
+    if config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
         repeat
             io.write(string.format(output.format_1, output.budget_tokens))
             io.flush()
@@ -344,6 +344,12 @@ local add = function(args)
         setup.max_tokens = anthropic_config.max_tokens
         setup.type = anthropic_config.type
         setup.budget_tokens = anthropic_config.budget_tokens
+        -- Persist 'thinking' for UI compatibility; keep 'type' for backward compatibility
+        if anthropic_config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+            setup.thinking = SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled
+        else
+            setup.thinking = SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled
+        end
     end
 
     -- Determine endpoint field name

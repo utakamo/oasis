@@ -56,7 +56,7 @@ end
 name = service:option(ListValue, "name", "Service")
 name:value(common.ai.service.ollama.name, common.ai.service.ollama.name)
 name:value(common.ai.service.openai.name, common.ai.service.openai.name)
--- name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
+name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
 name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
 name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
 
@@ -76,14 +76,14 @@ openai_custom_endpoint = service:option(Value, "openai_custom_endpoint", "Custom
 openai_custom_endpoint:depends("openai_endpoint_type", common.endpoint.type.custom)
 
 -- Anthropic
--- endpoint_type_for_anthropic = service:option(ListValue, "anthropic_endpoint_type", "Endpoint Type")
--- endpoint_type_for_anthropic:value(common.endpoint.type.default, common.endpoint.type.default)
--- endpoint_type_for_anthropic:value(common.endpoint.type.custom, common.endpoint.type.custom)
--- endpoint_type_for_anthropic.description = "Default: " .. common.ai.service.anthropic.endpoint
--- endpoint_type_for_anthropic:depends("name", common.ai.service.anthropic.name)
+endpoint_type_for_anthropic = service:option(ListValue, "anthropic_endpoint_type", "Endpoint Type")
+endpoint_type_for_anthropic:value(common.endpoint.type.default, common.endpoint.type.default)
+endpoint_type_for_anthropic:value(common.endpoint.type.custom, common.endpoint.type.custom)
+endpoint_type_for_anthropic.description = "Default: " .. common.ai.service.anthropic.endpoint
+endpoint_type_for_anthropic:depends("name", common.ai.service.anthropic.name)
 
--- anthropic_custom_endpoint = service:option(Value, "anthropic_custom_endpoint", "Custom Endpoint")
--- anthropic_custom_endpoint:depends("anthropic_endpoint_type", common.endpoint.type.custom)
+anthropic_custom_endpoint = service:option(Value, "anthropic_custom_endpoint", "Custom Endpoint")
+anthropic_custom_endpoint:depends("anthropic_endpoint_type", common.endpoint.type.custom)
 
 -- Google Gemini
 endpoint_type_for_gemini = service:option(ListValue, "gemini_endpoint_type", "Endpoint Type")
@@ -135,5 +135,6 @@ model:depends("name", common.ai.service.ollama.name)
 model:depends("name", common.ai.service.openai.name)
 model:depends("name", common.ai.service.gemini.name)
 model:depends("name", common.ai.service.openrouter.name)
+model:depends("name", common.ai.service.anthropic.name)
 
 return m
