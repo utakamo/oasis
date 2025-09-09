@@ -165,7 +165,8 @@ end
 
 commands.prompt = function(args)
     if args[2] then
-        oasis.prompt({ message = args[2] })
+        local message = table.concat(args, " ", 2)
+        oasis.prompt({ message = message })
     else
         help()
     end
