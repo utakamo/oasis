@@ -5,8 +5,8 @@
 > - OpenAI
 > - Ollama
 > - Google Gemini
-> - Anthropic (Work in Progress:Final review stage before release)
-> - OpenRouter (Work in Progress:Final review stage before release)
+> - Anthropic (Work in Progress :Final review stage before release)
+> - OpenRouter (Work in Progress :Final review stage before release)
 > - LM Studio (Work In Progress)
 
 This software provides the ability to link OpenWrt and AI. Based on user input, the AI provides the optimal settings for OpenWrt; the OpenWrt device itself analyzes the information provided by the AI, verifies the validity of that information, and then notifies the user.
