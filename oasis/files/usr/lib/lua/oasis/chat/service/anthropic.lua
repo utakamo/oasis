@@ -129,7 +129,13 @@ anthropic.new = function()
             body = calling.inject_schema(self, body)
 
             local user_msg_json = jsonc.stringify(body, false)
-            user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
+            -- NOTE (why this replacement is required): Anthropic requires tool arguments ("input"/"arguments") to be a JSON object (dictionary).
+            -- Some upstream paths can emit an empty array [] for these fields after serialization. To satisfy Anthropic's schema,
+            -- we normalize empty arrays to empty objects here.
+            user_msg_json = user_msg_json
+                :gsub('"input"%s*:%s*%[%s*%]', '"input":{}')
+                :gsub('"arguments"%s*:%s*%[%s*%]', '"arguments":{}')
+                :gsub('"properties"%s*:%s*%[%]', '"properties":{}')
             debug:log("oasis.log", "anthropic.convert_schema", string.format("messages=%d, json_len=%d", #(messages or {}), #user_msg_json))
             debug:log("oasis.log", "anthropic.convert_schema", user_msg_json)
             return user_msg_json
