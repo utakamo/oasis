@@ -204,7 +204,7 @@ gemini.new = function()
                 return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
             end
 
-            -- Detect functionCall via calling module - execute local tool and return tool_used
+            -- Detect functionCall via calling module ---> execute local tool and return tool_used
             do
                 local t_plain, t_json, t_speaker, t_used = calling.process(self, chunk_json)
                 if t_plain ~= nil then
