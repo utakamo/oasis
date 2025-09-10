@@ -64,6 +64,9 @@ ai.service.gemini.endpoint          = "https://generativelanguage.googleapis.com
 ai.service.openrouter               = {}
 ai.service.openrouter.name          = "OpenRouter"
 ai.service.openrouter.endpoint      = "https://openrouter.ai/api/v1/chat/completions"
+ai.service.lmstudio                 = {}
+ai.service.lmstudio.name            = "LM Studio"
+ai.service.lmstudio.endpoint        = "http://[LM Studio ip address]:1234/v1/chat/completions"
 ai.format                           = {}
 ai.format.chat                      = "chat"
 ai.format.prompt                    = "prompt"
@@ -148,6 +151,8 @@ local select_service_obj = function()
         --    (e.g. response format or tool-calling), consider creating a
         --    dedicated oasis.chat.service.openrouter module and mapping back.
         target = require("oasis.chat.service.openai")
+    elseif service == ai.service.lmstudio.name then
+        target = require("oasis.chat.service.lmstudio")
     end
 
     return target

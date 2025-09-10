@@ -59,11 +59,17 @@ name:value(common.ai.service.openai.name, common.ai.service.openai.name)
 name:value(common.ai.service.anthropic.name, common.ai.service.anthropic.name)
 name:value(common.ai.service.gemini.name, common.ai.service.gemini.name)
 name:value(common.ai.service.openrouter.name, common.ai.service.openrouter.name)
+name:value(common.ai.service.lmstudio.name, common.ai.service.lmstudio.name)
 
 -- Ollama
 ollama_endpoint = service:option(Value, "ollama_endpoint", "Endpoint")
 ollama_endpoint.default = common.ai.service.ollama.endpoint
 ollama_endpoint:depends("name", common.ai.service.ollama.name)
+
+-- LM Studio
+lmstudio_endpoint = service:option(Value, "lmstudio_endpoint", "Endpoint")
+lmstudio_endpoint.default = common.ai.service.lmstudio.endpoint
+lmstudio_endpoint:depends("name", common.ai.service.lmstudio.name)
 
 -- OpenAI
 endpoint_type_for_openai = service:option(ListValue, "openai_endpoint_type", "Endpoint Type")

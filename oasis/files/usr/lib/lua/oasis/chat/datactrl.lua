@@ -67,6 +67,9 @@ local get_ai_service_cfg = function(arg, opts)
                     cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openrouter_custom_endpoint")
                 end
                 break
+            elseif cfg.service == ai_ref.service.lmstudio.name then
+                cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "lmstudio_endpoint")
+                break
             end
         end
     end

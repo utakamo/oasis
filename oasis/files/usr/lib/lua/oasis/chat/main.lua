@@ -97,7 +97,8 @@ local SERVICE_CONFIG = {
         common.ai.service.openai.name,
         common.ai.service.anthropic.name,
         common.ai.service.gemini.name,
-        common.ai.service.openrouter.name
+        common.ai.service.openrouter.name,
+        common.ai.service.lmstudio.name
     },
 
     ENDPOINT_FIELDS = {
@@ -105,7 +106,8 @@ local SERVICE_CONFIG = {
         [common.ai.service.openai.name] = "openai_custom_endpoint",
         [common.ai.service.anthropic.name] = "anthropic_custom_endpoint",
         [common.ai.service.gemini.name] = "gemini_custom_endpoint",
-        [common.ai.service.openrouter.name] = "openrouter_custom_endpoint"
+        [common.ai.service.openrouter.name] = "openrouter_custom_endpoint",
+        [common.ai.service.lmstudio.name] = "lmstudio_endpoint"
     },
 
     ENDPOINT_TYPES = {
@@ -147,6 +149,11 @@ local SERVICE_CONFIG = {
             endpoint_field = "openrouter_custom_endpoint",
             endpoint_type_field = "openrouter_endpoint_type",
             endpoint_type_value = common.endpoint.type.custom
+        },
+        [common.ai.service.lmstudio.name] = {
+            endpoint_field = "lmstudio_endpoint",
+            endpoint_type_field = nil,
+            endpoint_type_value = nil
         }
     }
 }
@@ -159,8 +166,16 @@ local function get_output_formats()
     output.format_1 = "%-64s >> "
     output.format_2 = "%-64s >> %s"
 
+    -- Supported services header
+    local service_names = {}
+    for _, name in ipairs(SERVICE_CONFIG.VALID_SERVICES or {}) do
+        table.insert(service_names, name)
+    end
+    output.supported_title = "[Supported AI Service LIst]"
+    output.supported_line = table.concat(service_names, ", ")
+
     -- Field labels
-    output.service = "Service (\"Ollama\", \"OpenAI\", \"Anthropic\", \"Gemini\" or \"OpenRouter\")"
+    output.service = "AI Service Name"
     output.endpoint = "Endpoint"
     output.api_key = "API KEY (leave blank if none)"
     output.model = "LLM MODEL"
@@ -247,7 +262,7 @@ local function collect_anthropic_config(output)
         io.write(string.format(output.format_1, output.type))
         io.flush()
         config.type = io.read()
-    until (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled) 
+    until (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled)
         or (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled)
 
     -- Budget Tokens (if thinking enabled)
@@ -328,6 +343,10 @@ end
 -- Main add function (refactored)
 local add = function(args)
     local output = get_output_formats()
+
+    -- Show supported services first
+    print(output.supported_title)
+    print(output.supported_line)
 
     -- Collect service configuration
     local setup = {
@@ -526,6 +545,8 @@ local show_service_list = function()
                     elseif (tbl.gemini_endpoint_type) and (tbl.gemini_endpoint_type == common.endpoint.type.custom) then
                         output.item(endpoint_str, tbl.gemini_custom_endpoint)
                     end
+                elseif tbl.name == common.ai.service.lmstudio.name then
+                    output.item(endpoint_str, tbl.lmstudio_endpoint)
                 end
             end
 
