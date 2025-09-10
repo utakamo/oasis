@@ -97,13 +97,13 @@ local write_file = function(filename, data)
 end
 
 local read_file = function(filename)
-    local file = io.open(filename, "r")  -- 読み取りモードで開く
+    local file = io.open(filename, "r")  -- open in read mode
     if not file then
         return nil, "Failed to open file"
     end
 
-    local content = file:read("*a")  -- ファイル全体を読み込む
-    file:close()  -- ファイルを閉じる
+    local content = file:read("*a")  -- read the entire file
+    file:close()  -- close the file
     return content
 end
 

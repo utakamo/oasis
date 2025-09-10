@@ -306,7 +306,7 @@ local update_server_info = function()
     end
 
     -- 4) Restore 'enable' to its previous value only for entries that exactly match (do not restore other settings)
-    -- 差分理由を出力する補助関数
+    -- Helper function to output the reason for differences
     local function diff_reason(a, b)
         if a.name ~= b.name then return "name" end
         if a.script ~= b.script then return "script" end

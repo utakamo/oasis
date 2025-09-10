@@ -66,7 +66,7 @@ gemini.new = function()
                         contents[#contents + 1] = { role = "user", parts = { { text = text } } }
                         self._last_user_text = text
                     elseif role == common.role.assistant then
-                        -- assistant に tool_calls がある場合は Gemini の functionCall に変換
+                        -- If assistant has tool_calls, convert them into Gemini functionCall
                         if has_tool_calls then
                             local parts = {}
                             for _, tc in ipairs(m.tool_calls) do
@@ -204,7 +204,7 @@ gemini.new = function()
                 return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
             end
 
-            -- Detect functionCall via calling module → execute local tool and return tool_used
+            -- Detect functionCall via calling module - execute local tool and return tool_used
             do
                 local t_plain, t_json, t_speaker, t_used = calling.process(self, chunk_json)
                 if t_plain ~= nil then
@@ -251,7 +251,7 @@ gemini.new = function()
             local info = jsonc.parse(tool_info)
             if not info or not info.tool_outputs then return false end
 
-            -- 1) functionCall（assistant.tool_calls）を先に履歴へ追加
+            -- 1) First add functionCall (assistant.tool_calls) to history
             local tool_calls = {}
             for _, t in ipairs(info.tool_outputs or {}) do
                 local tool_id = t.tool_call_id or t.id or ""
@@ -271,7 +271,7 @@ gemini.new = function()
                     string.format("insert assistant tool_calls: count=%d", #tool_calls))
             end
 
-            -- 2) 続けて functionResponse（role=function を含む tool メッセージ）を追加
+            -- 2) Then append functionResponse (tool messages that include role=function)
             local count = 0
             for _, t in ipairs(info.tool_outputs or {}) do
                 local content = t.output
