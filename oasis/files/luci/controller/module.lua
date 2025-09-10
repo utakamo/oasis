@@ -472,6 +472,19 @@ function upload_icon_data()
         return
     end
 
+    -- Validate filename: allow only basename and safe characters + safe extensions (case-insensitive)
+    local base = filename:gsub("^.*[/\\]", "")
+    local ok_name = base:match("^[A-Za-z0-9._%-]+$")
+    local base_l = base:lower()
+    local ext = base_l:match("%.([a-z0-9]+)$")
+    local allowed = { png=true, jpg=true, jpeg=true, gif=true, webp=true }
+    if (not ok_name) or (not ext) or (not allowed[ext]) then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ error = "Invalid filename" })
+        return
+    end
+    filename = base
+
     local data = common.load_conf_file("/etc/oasis/oasis.conf")
 
     local icon_key_suffix
@@ -479,9 +492,10 @@ function upload_icon_data()
         icon_key_suffix = icon_key:match("icon_(%d+)")
 
         if icon_key_suffix then
-            if name == filename then
+            if type(name) == "string" and name:lower() == base_l then
                 luci_http.prepare_content("application/json")
                 luci_http.write_json({ error = "An image file with the same name already exists" })
+                return
             end
         end
     end

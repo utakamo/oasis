@@ -359,6 +359,30 @@
                 .replace(/'/g, "&#039;");
     }
 
+    // Basic sanitizer to drop style/script/iframe and inline event/style attrs
+    function sanitizeHTML(dirtyHtml) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = dirtyHtml || '';
+
+        const disallowed = new Set(['style','script','iframe','object','embed','link','meta','svg','math','form','template','audio','video','source','picture']);
+        const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_ELEMENT, null, false);
+        const toRemove = [];
+        while (walker.nextNode()) {
+            const el = walker.currentNode;
+            const tag = el.tagName ? el.tagName.toLowerCase() : '';
+            if (disallowed.has(tag)) { toRemove.push(el); continue; }
+            const attrs = Array.from(el.attributes || []);
+            for (const attr of attrs) {
+                const n = attr.name.toLowerCase();
+                if (n === 'style' || n.startsWith('on') || n === 'srcset' || n === 'xlink:href') {
+                    el.removeAttribute(attr.name);
+                }
+            }
+        }
+        toRemove.forEach(n => n.remove());
+        return tmp.innerHTML;
+    }
+
     function closeRenamePopup() {
         const popup = document.getElementById('rename-popup');
         const overlay = document.getElementById('rename-popup-overlay');
@@ -1388,7 +1412,7 @@
         const messageTextContainer = document.createElement('div');
         messageTextContainer.className = 'message-text';
         //messageTextContainer.textContent = messageText;
-        messageTextContainer.innerHTML = convertMarkdownToHTML(messageText);
+        messageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(messageText));
 
         messageContainer.appendChild(messageTextContainer);
 
@@ -1704,7 +1728,7 @@
             }
 
             uci_info += '```\n';
-            messageTextContainer.innerHTML += convertMarkdownToHTML(uci_info);
+            messageTextContainer.innerHTML += sanitizeHTML(convertMarkdownToHTML(uci_info));
 
         } catch (error) {
             console.error('Error:', error);
@@ -1789,7 +1813,7 @@
 
             if (!response.ok) {
                 console.error('HTTP Error:', response.status, response.statusText);
-                receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('A network error occurred. Please try again later.');
+                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('A network error occurred. Please try again later.'));
                 return;
             }
 
@@ -1994,10 +2018,10 @@
             const __hasErrorNotice = !!(errorNoticesHtml && errorNoticesHtml.length > 0);
             const __finalText = (fullMessage || '').trim();
             if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
-                receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('No response from AI service. Please check settings.');
+                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('No response from AI service. Please check settings.'));
             } else {
                 // Render only errors + assistant content. Tool notice is shown in a separate bubble.
-                receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(__finalText);
+                receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(__finalText));
             }
             if (receivedMessageTextContainer._typingTimer) {
                 clearInterval(receivedMessageTextContainer._typingTimer);
@@ -2014,7 +2038,7 @@
             }
         } catch (error) {
             console.error('Request failed', error);
-            receivedMessageTextContainer.innerHTML = convertMarkdownToHTML('A network error occurred. Please check your network connection and AI service settings.');
+            receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('A network error occurred. Please check your network connection and AI service settings.'));
         } finally {
             message_outputing = false;
             activeConversation = false;
@@ -2072,7 +2096,7 @@
 
                     if (message.role === 'user' || message.role === 'assistant') {
                         messageTextDiv.className = 'message-text';
-                        message.content = convertMarkdownToHTML(message.content);
+                        message.content = sanitizeHTML(convertMarkdownToHTML(message.content));
                         messageTextDiv.innerHTML = message.content;
                         //messageTextDiv.textContent = message.content;
 

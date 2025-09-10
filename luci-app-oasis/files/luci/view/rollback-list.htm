@@ -112,7 +112,8 @@
         reversedData.forEach((entry, index) => {
             const textBox = document.createElement('div');
             textBox.className = 'text-box';
-            textBox.innerHTML = entry.text.replace(/\n/g, '<br>');
+            textBox.style.whiteSpace = 'pre-wrap';
+            textBox.textContent = entry.text;
 
             const button = document.createElement('button');
             button.className = 'rollback-button load-button';
