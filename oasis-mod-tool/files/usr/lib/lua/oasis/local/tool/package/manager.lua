@@ -150,7 +150,6 @@ local install_pkg = function(pkg)
         local rc = tonumber(out)
         return (rc == 0)
     elseif target_pkg_manager == "apk" then
-        -- fixed: echo $? instead of incorrect echo ?$
         local out = util.exec("apk add " .. quoted_pkg .. " >/dev/null 2>&1; echo $?") or ""
         out = out:gsub("%s+$", "")
         local rc = tonumber(out)
