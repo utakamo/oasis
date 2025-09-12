@@ -142,5 +142,6 @@ model:depends("name", common.ai.service.openai.name)
 model:depends("name", common.ai.service.gemini.name)
 model:depends("name", common.ai.service.openrouter.name)
 model:depends("name", common.ai.service.anthropic.name)
+model:depends("name", common.ai.service.lmstudio.name)
 
 return m
