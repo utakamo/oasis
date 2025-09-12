@@ -15,21 +15,15 @@ local system_reboot_after_10sec = function() schedule_reboot(10) end
 local system_reboot_after_15sec = function() schedule_reboot(15) end
 local system_reboot_after_20sec = function() schedule_reboot(20) end
 
-function sanitize(str)
-  return str:gsub("[;&|><`]", "")
-end
-
-function is_safe_input(str)
-  return str:match("^[%w%-_%.]+$") ~= nil
-end
-
 local system_command = function(cmd)
 
-    if not is_safe_input(cmd) then
+    local guard = require("oasis.security.guard")
+
+    if not guard.check_safe_string(cmd) then
         return false
     end
 
-    sanitize(str)
+    guard.sanitize(cmd)
 
     local command = cmd .. " >/dev/null 2>&1; echo $?"
 
@@ -40,7 +34,6 @@ local system_command = function(cmd)
 end
 
 return {
-    schedule_reboot = schedule_reboot,
     system_reboot_after_5sec  = system_reboot_after_5sec,
     system_reboot_after_10sec = system_reboot_after_10sec,
     system_reboot_after_15sec = system_reboot_after_15sec,
