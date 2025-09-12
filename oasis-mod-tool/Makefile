@@ -30,6 +30,8 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_DIR) $(1)$(UCODE_UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/package
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/system
 	$(INSTALL_DIR) $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool
 	$(INSTALL_BIN) ./files/usr/bin/oasis_tool_setup $(1)$(USR_BIN_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/olt_tool.init $(1)$(INIT_DIR)/olt_tool
@@ -37,6 +39,8 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_DATA) ./files/usr/share/rpcd/ucode/oasis_plugin_server.uc $(1)$(UCODE_UBUS_SERVER_APP_DIR)/oasis_plugin_server.uc
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/client.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/client.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/server.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/server.lua
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/package/manager.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/package/manager.lua
+		$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/system/command.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/system/command.lua
 	$(INSTALL_DATA) ./files/usr/share/ucode/oasis/local/tool/server.uc $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool/server.uc
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/anthropic.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/anthropic.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/google.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/google.lua
