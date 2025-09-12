@@ -28,6 +28,8 @@ end
 -- Add check to install_pkg as well
 local install_pkg = function(pkg)
 
+    local guard = require("oasis.security.guard")
+
     -- Validate package name and reject if invalid
     if not check_safe_string(pkg) then
         return false
