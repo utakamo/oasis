@@ -152,7 +152,8 @@ local select_service_obj = function()
         --    dedicated oasis.chat.service.openrouter module and mapping back.
         target = require("oasis.chat.service.openai")
     elseif service == ai.service.lmstudio.name then
-        target = require("oasis.chat.service.lmstudio")
+        -- LM Studio is fully compatible with OpenAI's API and JSON schema.
+        target = require("oasis.chat.service.openai")
     end
 
     return target
