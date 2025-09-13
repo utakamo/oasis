@@ -6,7 +6,6 @@ local schedule_reboot = function(delay_seconds)
     delay_seconds = tonumber(delay_seconds) or 0
     if delay_seconds < 0 then delay_seconds = 0 end
 
-    -- Use sh -c to ensure the sleep+reboot runs in a subshell and is backgrounded.
     util.exec("sleep " .. tostring(delay_seconds) .. " && reboot' >/dev/null 2>&1 &")
 end
 
