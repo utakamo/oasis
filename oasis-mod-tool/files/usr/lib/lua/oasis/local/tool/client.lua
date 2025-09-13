@@ -157,6 +157,8 @@ local setup_ucode_server_config = function(server_name)
             uci:set(common.db.uci.cfg, s, "enable", "0")
             uci:set(common.db.uci.cfg, s, "type", "function")
             uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
+            uci:set(common.db.uci.cfg, s, "execution_message", def.exec_msg or "")
+            uci:set(common.db.uci.cfg, s, "download_message", def.download_msg or "")
             uci:set(common.db.uci.cfg, s, "conflict", "0")
 
             -- required / properties: set_list with arrays for all params
