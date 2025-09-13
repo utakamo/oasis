@@ -7,7 +7,7 @@ local schedule_reboot = function(delay_seconds)
     if delay_seconds < 0 then delay_seconds = 0 end
 
     -- Use sh -c to ensure the sleep+reboot runs in a subshell and is backgrounded.
-    util.exec("sh -c 'sleep " .. tostring(delay_seconds) .. " && reboot' >/dev/null 2>&1 &")
+    util.exec("sleep " .. tostring(delay_seconds) .. " && reboot' >/dev/null 2>&1 &")
 end
 
 local system_reboot_after_5sec  = function() schedule_reboot(5)  end
@@ -23,7 +23,7 @@ local system_command = function(cmd)
         return false
     end
 
-    guard.sanitize(cmd)
+    cmd = guard.sanitize(cmd)
 
     local command = cmd .. " >/dev/null 2>&1; echo $?"
 
