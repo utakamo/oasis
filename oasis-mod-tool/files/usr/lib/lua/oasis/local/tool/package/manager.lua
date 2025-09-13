@@ -4,6 +4,31 @@ local util  = require("luci.util")
 
 local target_pkg_manager = "ipk"
 
+local search_installed_pkg(pkg)
+
+    local guard = require("oasis.security.guard")
+
+    -- Validate package name and reject if invalid
+    if not guard.check_safe_string(pkg) then
+        return false
+    end
+
+    pkg = guard.sanitize(pkg)
+
+    if target_pkg_manager == "ipk" then
+        local out = util.exec("opkg list-installed | grep " .. pkg .." >/dev/null 2>&1; echo $?")
+        out = out:gsub("%s+$", "")
+        local rc = tonumber(out)
+        return (rc == 0)
+    elseif target_pkg_manager == "apk" then
+        local out = util.exec("apk info -vv | grep " .. pkg .. " >/dev/null 2>&1; echo $?")
+        out = out:gsub("%s+$", "")
+        local rc = tonumber(out)
+        return (rc == 0)
+    end
+
+    return false
+end
 
 local update_pkg_info = function(pkg_manager)
     
@@ -54,6 +79,7 @@ local install_pkg = function(pkg)
 end
 
 return {
+    search_installed_pkg = search_installed_pkg,
     update_pkg_info = update_pkg_info,
     install_pkg = install_pkg,
 }
