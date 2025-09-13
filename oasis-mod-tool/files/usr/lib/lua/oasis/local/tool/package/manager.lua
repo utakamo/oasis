@@ -4,7 +4,7 @@ local util  = require("luci.util")
 
 local target_pkg_manager = "ipk"
 
-local search_installed_pkg(pkg)
+local check_installed_pkg(pkg)
 
     local guard = require("oasis.security.guard")
 
@@ -79,7 +79,7 @@ local install_pkg = function(pkg)
 end
 
 return {
-    search_installed_pkg = search_installed_pkg,
+    check_installed_pkg = check_installed_pkg,
     update_pkg_info = update_pkg_info,
     install_pkg = install_pkg,
 }
