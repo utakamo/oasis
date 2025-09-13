@@ -103,7 +103,7 @@ local check_safe_string = function(str)
     --     return false
     -- end
 
-    pkg = pkg:match("^%s*(.-)%s*$") or ""
+    str = str:match("^%s*(.-)%s*$") or ""
 
     -- Check for encoding spoofing (non-ASCII/invalid UTF-8/BIDI/zero-width/combining marks etc.)
     local spoofed, reason = detect_encoding_spoof(str)
@@ -112,7 +112,7 @@ local check_safe_string = function(str)
     end
 
     -- Allowed characters: alphanumerics, underscore, dot, @, :, +, =, - only
-    if pkg:match("^[%w._@:+=-]+$") then
+    if str:match("^[%w._@:+=-]+$") then
         return true
     end
 
