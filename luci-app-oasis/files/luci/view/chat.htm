@@ -34,6 +34,44 @@
 @media (max-width: 768px) {
   #scroll-bottom-btn { bottom: 106px; }
 }
+
+/* download overlay */
+.download-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.download-overlay.show { display: flex; }
+.download-card {
+  min-width: 240px;
+  max-width: 80vw;
+  background: #1e1e1e;
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+}
+.download-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  display: grid;
+  place-items: center;
+}
+.download-icon .material-icons { font-size: 24px; animation: dlBounce 1.2s ease-in-out infinite; }
+@keyframes dlBounce {
+  0%, 100% { transform: translateY(0); opacity: .9; }
+  50% { transform: translateY(-4px); opacity: 1; }
+}
+.download-text { font-size: 14px; line-height: 1.5; word-break: break-word; }
 </style>
 
 <div class="oasis-container">
@@ -60,6 +98,12 @@
         <button id="scroll-bottom-btn" aria-label="Scroll to latest">
             <span class="material-icons">arrow_drop_down</span>
         </button>
+        <div class="download-overlay" id="download-overlay" aria-hidden="true">
+            <div class="download-card" role="status" aria-live="polite">
+                <div class="download-icon"><span class="material-icons">download</span></div>
+                <div class="download-text" id="download-overlay-text">Downloading...</div>
+            </div>
+        </div>
         <div class="chat-input">
             <div class="chat-input-fields">
                 <div class="inline-sysmsg-field">
@@ -164,6 +208,43 @@
     let scrollLockEnabled = false;
     let isKeyboardOpen = false;
     let pendingBottomOnKeyboardOpen = false;
+
+    // Overlay helpers
+    function showDownloadOverlay(text) {
+        const ov = document.getElementById('download-overlay');
+        const tx = document.getElementById('download-overlay-text');
+        if (tx && typeof text === 'string') tx.textContent = text;
+        if (ov) {
+            ov.classList.add('show');
+            ov.setAttribute('aria-hidden', 'false');
+        }
+    }
+    function hideDownloadOverlay() {
+        const ov = document.getElementById('download-overlay');
+        if (ov) {
+            ov.classList.remove('show');
+            ov.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    // Tool execution notice (use existing look & feel as Tool used)
+    function showToolExecutionNotice(message) {
+        const iconPath = `${resourcePath}/oasis/${icon_name}`;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message received';
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'icon';
+        iconDiv.style.backgroundImage = `url(${iconPath})`;
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text chat-bubble';
+        const safe = typeof message === 'string' && message.length ? message : 'Executing tool...';
+        textDiv.innerHTML = `<div class="tool-notice">${sanitizeHTML(safe)}</div>`;
+        msgDiv.appendChild(iconDiv);
+        msgDiv.appendChild(textDiv);
+        const chatRoot = document.querySelector('.chat-messages');
+        if (chatRoot) chatRoot.appendChild(msgDiv);
+        keepLatestMessageVisible(false);
+    }
 
     // Center popups within the right column (.chat-container)
     function centerElementInChat(element) {
@@ -1897,6 +1978,19 @@
                         continue;
                     }
 
+                    // Custom stream events: execution/download
+                    if (evt && typeof evt.type === 'string') {
+                        if (evt.type === 'execution') {
+                            if (evt.message) showToolExecutionNotice(evt.message);
+                            else showToolExecutionNotice('Executing tool...');
+                            continue;
+                        }
+                        if (evt.type === 'download') {
+                            showDownloadOverlay(evt.message || 'Downloading...');
+                            continue;
+                        }
+                    }
+
                     // Tool execution notice
                     // Expected JSON: {"tool_outputs":[{"tool_call_id":"...","output":"...","name":"..."}], "service":"..."}
                     if (evt && Array.isArray(evt.tool_outputs)) {
@@ -1972,6 +2066,8 @@
 
                     // Assistant message (streaming)
                     if (evt.message && typeof evt.message.content === 'string') {
+                        // On assistant response, hide download overlay if visible
+                        hideDownloadOverlay();
                         fullMessage += evt.message.content;
                         if (!isSmallViewport) {
                             receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(fullMessage);
@@ -2055,7 +2151,16 @@
                         }
                     }
 
+                    if (evt && typeof evt.type === 'string') {
+                        if (evt.type === 'execution') {
+                            if (evt.message) showToolExecutionNotice(evt.message);
+                        } else if (evt.type === 'download') {
+                            showDownloadOverlay(evt.message || 'Downloading...');
+                        }
+                    }
+
                     if (evt.message && typeof evt.message.content === 'string') {
+                        hideDownloadOverlay();
                         fullMessage += evt.message.content;
                     }
                     if (evt.id && isNumeric(evt.id)) {
