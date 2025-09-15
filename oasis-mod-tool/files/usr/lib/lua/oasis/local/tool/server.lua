@@ -93,6 +93,7 @@ local run = function(arg)
                 tool_desc = tl.tool_desc or "",
                 exec_msg = tl.exec_msg or "",
                 download_msg = tl.download_msg or "",
+                timeout = tl.timeout or "",
             }
         end
         print((jsonc.stringify(rv):gsub(":%[%]", ":{}")))
