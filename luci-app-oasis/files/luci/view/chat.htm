@@ -227,6 +227,15 @@
         }
     }
 
+    function hideDownloadOverlayAndWait() {
+        hideDownloadOverlay();
+        return new Promise((resolve) => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+            });
+        });
+    }
+
     // Tool execution notice (use existing look & feel as Tool used)
     function showToolExecutionNotice(message) {
         const iconPath = `${resourcePath}/oasis/${icon_name}`;
@@ -2067,7 +2076,7 @@
                     // Assistant message (streaming)
                     if (evt.message && typeof evt.message.content === 'string') {
                         // On assistant response, hide download overlay if visible
-                        hideDownloadOverlay();
+                        await hideDownloadOverlayAndWait();
                         fullMessage += evt.message.content;
                         if (!isSmallViewport) {
                             receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(fullMessage);
@@ -2160,7 +2169,7 @@
                     }
 
                     if (evt.message && typeof evt.message.content === 'string') {
-                        hideDownloadOverlay();
+                        await hideDownloadOverlayAndWait();
                         fullMessage += evt.message.content;
                     }
                     if (evt.id && isNumeric(evt.id)) {
