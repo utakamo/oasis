@@ -39,7 +39,7 @@
 .download-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.28);
   display: none;
   align-items: center;
   justify-content: center;
@@ -48,21 +48,28 @@
 .download-overlay.show { display: flex; }
 .download-card {
   min-width: 240px;
-  max-width: 80vw;
-  background: #1e1e1e;
+  max-width: 72vw;
+  background: linear-gradient(180deg, rgba(30,30,30,0.86), rgba(22,22,22,0.9));
   color: #fff;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.40), 0 2px 0 rgba(255,255,255,0.03) inset;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: grid;
   grid-template-columns: 36px 1fr;
   gap: 12px;
+  transform: translateY(6px) scale(.98);
+  opacity: 0;
+  transition: transform .24s ease, opacity .24s ease, box-shadow .24s ease;
 }
+.download-overlay.show .download-card { transform: translateY(0) scale(1); opacity: 1; }
 .download-icon {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.12);
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
   display: grid;
   place-items: center;
 }
@@ -71,7 +78,7 @@
   0%, 100% { transform: translateY(0); opacity: .9; }
   50% { transform: translateY(-4px); opacity: 1; }
 }
-.download-text { font-size: 14px; line-height: 1.5; word-break: break-word; }
+.download-text { font-size: 14px; line-height: 1.55; word-break: break-word; color: rgba(255,255,255,0.92); }
 </style>
 
 <div class="oasis-container">
