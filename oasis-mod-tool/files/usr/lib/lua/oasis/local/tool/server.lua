@@ -90,7 +90,9 @@ local run = function(arg)
             rv[name] = {
                 args = tl.args or {},
                 args_desc = tl.args_desc or {},
-                tool_desc = tl.tool_desc or ""
+                tool_desc = tl.tool_desc or "",
+                exec_msg = tl.exec_msg or "",
+                download_msg = tl.download_msg or "",
             }
         end
         print((jsonc.stringify(rv):gsub(":%[%]", ":{}")))

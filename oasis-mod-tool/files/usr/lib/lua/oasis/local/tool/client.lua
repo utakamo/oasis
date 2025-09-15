@@ -76,6 +76,8 @@ local setup_lua_server_config = function(server_name)
         uci:set(common.db.uci.cfg, s, "enable", "0")
         uci:set(common.db.uci.cfg, s, "type", "function")
         uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
+        uci:set(common.db.uci.cfg, s, "execution_message", tool.exec_msg or "")
+        uci:set(common.db.uci.cfg, s, "download_message", tool.download_msg or "")
         uci:set(common.db.uci.cfg, s, "conflict", "0")
 
         -- required / properties: set_list with arrays for all params
@@ -506,6 +508,31 @@ local exec_server_tool = function(tool, data)
     debug:log("oasis.log", "exec_server_tool", "config: s.name   = " .. s.name)
     debug:log("oasis.log", "exec_server_tool", "config: s.enable = " .. s.enable)
         if s.name == tool and s.enable == "1" then
+
+            if s.execution_message then
+                local option = {}
+                option.type = "execution"
+                option.message = s.execution_message
+                option_json = jsonc.stringify(option, false)
+                if option_json and (#option_json > 0) then
+                    debug:log("oasis.log", "exec_server_tool", option_json)
+                    io.write(option_json)
+                    io.flush()
+                end
+            end
+
+            if s.download_message then
+                local option = {}
+                option.type = "download"
+                option.message = s.download_message
+                option_json = jsonc.stringify(option, false)
+                if option_json and (#option_json > 0) then
+                    debug:log("oasis.log", "exec_server_tool", option_json)
+                    io.write(option_json)
+                    io.flush()
+                end
+            end
+
             found = true
             debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
             result = util.ubus(s.server, s.name, data)
