@@ -42,13 +42,39 @@
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 local debug     = require("oasis.chat.debug")
-local util      = require("luci.util")
 local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
 
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
+
+function ubus_call(path, method, param, timeout)
+
+    local ubus = require("ubus")
+    local conn = ubus.connect()
+
+    if timeout and type(timeout) == "string" and #timeout > 0 then
+        conn = ubus.connect(nil, tonumber(timeout))
+    elseif timeout and type(timeout) == "number" and timeout ~= 0 then
+        conn = ubus.connect(nil, timeout)
+    else
+        conn = ubus.connect()
+    end
+
+    if not conn then
+        return jsonc.stringify({ error = "Failed to connect to ubus" }, false)
+    end
+
+    local result, err = conn:call(path, method, param)
+    conn:close()
+
+    if not result then
+        return jsonc.stringify({ error = err or "Failed to execute ubus call" }, false)
+    end
+
+    return jsonc.stringify(result, false)
+end
 
 local setup_lua_server_config = function(server_name)
     local server_path = lua_ubus_server_app_dir .. server_name
@@ -78,6 +104,7 @@ local setup_lua_server_config = function(server_name)
         uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
         uci:set(common.db.uci.cfg, s, "execution_message", tool.exec_msg or "")
         uci:set(common.db.uci.cfg, s, "download_message", tool.download_msg or "")
+        uci:set(common.db.uci.cfg, s, "timeout", tool.timeout or "")
         uci:set(common.db.uci.cfg, s, "conflict", "0")
 
         -- required / properties: set_list with arrays for all params
@@ -161,6 +188,7 @@ local setup_ucode_server_config = function(server_name)
             uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
             uci:set(common.db.uci.cfg, s, "execution_message", def.exec_msg or "")
             uci:set(common.db.uci.cfg, s, "download_message", def.download_msg or "")
+            uci:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
             uci:set(common.db.uci.cfg, s, "conflict", "0")
 
             -- required / properties: set_list with arrays for all params
@@ -535,7 +563,7 @@ local exec_server_tool = function(tool, data)
 
             found = true
             debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
-            result = util.ubus(s.server, s.name, data)
+            result = ubus_call(s.server, s.name, data, s.timeout)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
         end
     end)
