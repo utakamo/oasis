@@ -63,17 +63,17 @@ function ubus_call(path, method, param, timeout)
     end
 
     if not conn then
-        return jsonc.stringify({ error = "Failed to connect to ubus" }, false)
+        return { error = "Failed to connect to ubus" }
     end
 
     local result, err = conn:call(path, method, param)
     conn:close()
 
     if not result then
-        return jsonc.stringify({ error = err or "Failed to execute ubus call" }, false)
+        return { error = err or "Failed to execute ubus call" }
     end
 
-    return jsonc.stringify(result, false)
+    return result
 end
 
 local setup_lua_server_config = function(server_name)
