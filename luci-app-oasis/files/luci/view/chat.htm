@@ -208,6 +208,7 @@
     let scrollLockEnabled = false;
     let isKeyboardOpen = false;
     let pendingBottomOnKeyboardOpen = false;
+    let currentAssistantMessageDiv = null;
 
     // Overlay helpers
     function showDownloadOverlay(text) {
@@ -251,7 +252,13 @@
         msgDiv.appendChild(iconDiv);
         msgDiv.appendChild(textDiv);
         const chatRoot = document.querySelector('.chat-messages');
-        if (chatRoot) chatRoot.appendChild(msgDiv);
+        if (chatRoot) {
+            if (currentAssistantMessageDiv && chatRoot.contains(currentAssistantMessageDiv)) {
+                chatRoot.insertBefore(msgDiv, currentAssistantMessageDiv);
+            } else {
+                chatRoot.appendChild(msgDiv);
+            }
+        }
         keepLatestMessageVisible(false);
     }
 
@@ -1608,6 +1615,7 @@
         receivedMessageContainer.appendChild(receivedMessageTextContainer);
 
         chatMessagesRoot.appendChild(receivedMessageContainer);
+        currentAssistantMessageDiv = receivedMessageContainer;
         // If this is the very first conversation while IME is open, anchor start to top
         const vp = window.visualViewport;
         const keyboardShown = vp ? (window.innerHeight - vp.height - vp.offsetTop) > 0 : false;
@@ -2213,6 +2221,7 @@
             message_outputing = false;
             activeConversation = false;
             setChatScrollLock(false);
+            currentAssistantMessageDiv = null;
         }
     }
 
