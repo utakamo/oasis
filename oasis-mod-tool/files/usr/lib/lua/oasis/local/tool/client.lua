@@ -529,38 +529,37 @@ config tool
     }
 ]]
 
-local exec_server_tool = function(tool, data)
+local function handle_option_message(msg, msg_type, format)
+    if not msg then return end
+
+    local option = {
+        type = msg_type,
+        message = msg
+    }
+    local option_json = jsonc.stringify(option, false)
+
+    if (format == common.ai.format.output) and option_json and (#option_json > 0) then
+        debug:log("oasis.log", "handle_option_message", option_json)
+        io.write(option_json)
+        io.flush()
+    elseif ((format == common.ai.format.chat) or (format == common.ai.format.prompt)) and option.message then
+        io.write(option.message)
+        io.flush()
+    end
+end
+
+local exec_server_tool = function(format, tool, data)
     local found = false
     local result = {}
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-    debug:log("oasis.log", "exec_server_tool", "config: s.server = " .. s.server)
-    debug:log("oasis.log", "exec_server_tool", "config: s.name   = " .. s.name)
-    debug:log("oasis.log", "exec_server_tool", "config: s.enable = " .. s.enable)
+
+        debug:log("oasis.log", "exec_server_tool", "config: s.server = " .. s.server)
+        debug:log("oasis.log", "exec_server_tool", "config: s.name   = " .. s.name)
+        debug:log("oasis.log", "exec_server_tool", "config: s.enable = " .. s.enable)
+
         if s.name == tool and s.enable == "1" then
-
-            if s.execution_message then
-                local option = {}
-                option.type = "execution"
-                option.message = s.execution_message
-                option_json = jsonc.stringify(option, false)
-                if option_json and (#option_json > 0) then
-                    debug:log("oasis.log", "exec_server_tool", option_json)
-                    io.write(option_json)
-                    io.flush()
-                end
-            end
-
-            if s.download_message then
-                local option = {}
-                option.type = "download"
-                option.message = s.download_message
-                option_json = jsonc.stringify(option, false)
-                if option_json and (#option_json > 0) then
-                    debug:log("oasis.log", "exec_server_tool", option_json)
-                    io.write(option_json)
-                    io.flush()
-                end
-            end
+            handle_option_message(s.execution_message, "execution", format)
+            handle_option_message(s.download_message,  "download",  format)
 
             found = true
             debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
