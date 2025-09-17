@@ -574,21 +574,6 @@ local exec_server_tool = function(format, tool, data)
     return result
 end
 
-local function function_call(response)
-
-    local choice = response.choices[1]
-
-    if choice and choice.message and choice.message.function_call then
-        local tool_name = choice.message.function_call.name
-        local args = choice.message.function_call.arguments
-        -- local args = jsonc.parse(args_json)
-        local result = exec_server_tool(tool_name, args)
-        return result
-    end
-
-    -- Todo: write some ai service code
-end
-
 return {
     setup_lua_server_config = setup_lua_server_config,
     setup_ucode_server_config = setup_ucode_server_config,
