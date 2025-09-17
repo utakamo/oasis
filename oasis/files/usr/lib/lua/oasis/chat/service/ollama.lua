@@ -104,7 +104,7 @@ ollama.new = function()
 				end
 
 				debug:log("oasis.log", "recv_ai_msg", "ollama func = " .. tostring(func))
-				local result = client.exec_server_tool(func, args)
+				local result = client.exec_server_tool(self:get_format(), func, args)
 				debug:log("oasis.log", "recv_ai_msg", jsonc.stringify(result, true))
 
 				local output = jsonc.stringify(result, false)

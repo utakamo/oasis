@@ -53,7 +53,7 @@ function M.process(self, message)
 			debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. tostring(call_id))
 		else
 			self.processed_tool_call_ids[call_id] = true
-			local result = client.exec_server_tool(func, args)
+			local result = client.exec_server_tool(self:get_format(), func, args)
 			debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
 
 			local output = jsonc.stringify(result, false)

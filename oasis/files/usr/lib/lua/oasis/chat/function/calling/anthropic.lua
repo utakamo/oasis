@@ -76,7 +76,7 @@ function M.process(self, message)
                     debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. call_id)
                 else
                     self.processed_tool_call_ids[call_id] = true
-                    local result = client.exec_server_tool(func, args)
+                    local result = client.exec_server_tool(self:get_format(), func, args)
                     local output = jsonc.stringify(result, false)
                     table.insert(function_call.tool_outputs, {
                         tool_call_id = call_id,
@@ -94,7 +94,7 @@ function M.process(self, message)
                     if first_output_str == "" then first_output_str = output end
                 end
             else
-                local result = client.exec_server_tool(func, args)
+                local result = client.exec_server_tool(self:get_format(), func, args)
                 local output = jsonc.stringify(result, false)
                 table.insert(function_call.tool_outputs, { output = output, name = func })
                 table.insert(speaker.tool_calls, {
@@ -124,7 +124,7 @@ function M.process(self, message)
                         debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_use id = " .. call_id)
                     else
                         self.processed_tool_call_ids[call_id] = true
-                        local result = client.exec_server_tool(func, args)
+                        local result = client.exec_server_tool(self:get_format(), func, args)
                         local output = jsonc.stringify(result, false)
                         table.insert(function_call.tool_outputs, {
                             tool_call_id = call_id,
@@ -142,7 +142,7 @@ function M.process(self, message)
                         if first_output_str == "" then first_output_str = output end
                     end
                 else
-                    local result = client.exec_server_tool(func, args)
+                    local result = client.exec_server_tool(self:get_format(), func, args)
                     local output = jsonc.stringify(result, false)
                     table.insert(function_call.tool_outputs, { output = output, name = func })
                     table.insert(speaker.tool_calls, {
