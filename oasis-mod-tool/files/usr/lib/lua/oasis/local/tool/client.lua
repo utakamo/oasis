@@ -56,10 +56,11 @@ function ubus_call(path, method, param, timeout)
 
     if timeout and type(timeout) == "string" and #timeout > 0 then
         conn = ubus.connect(nil, tonumber(timeout))
-    elseif timeout and type(timeout) == "number" and timeout ~= 0 then
+    elseif timeout and type(timeout) == "number" and timeout > 0 then
         conn = ubus.connect(nil, timeout)
     else
-        conn = ubus.connect()
+        -- default: 60s
+        conn = ubus.connect(nil, 60000)
     end
 
     if not conn then
