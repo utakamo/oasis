@@ -579,6 +579,5 @@ return {
     setup_ucode_server_config = setup_ucode_server_config,
     update_server_info = update_server_info,
     get_function_call_schema = get_function_call_schema,
-    function_call = function_call,
     exec_server_tool = exec_server_tool,
 }
