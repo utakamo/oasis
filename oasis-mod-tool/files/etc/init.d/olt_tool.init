@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 
-START=99
+START=5
 
 start() {
     lua /usr/bin/oasis_tool_setup init

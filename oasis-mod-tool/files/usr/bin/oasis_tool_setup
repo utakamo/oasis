@@ -2,10 +2,32 @@
 
 -- olt: Oasis Local Tool
 local common        = require("oasis.common")
+local misc          = require("oasis.chat.misc")
 local olt_client    = require("oasis.local.tool.client")
 local uci           = require("luci.model.uci").cursor()
 
 if arg[1] == "init" then
+
+    if misc.check_file_exist("/etc/config/uhttpd") then
+        local current_timeout = uci:get("httpd", "main", "network_timeout") or ""
+        if #current_timeout > 0 then
+            if tonumber(current_timeout) < 60 then
+                uci:set("httpd", "main", "network_timeout", "60")
+                uci:commit("httpd")
+            end
+        end
+    end
+
+    if misc.check_file_exist("/etc/config/rpcd") then
+        local current_timeout = uci:get("rpcd", "@rpcd[0]", "timeout") or ""
+        if #current_timeout > 0 then
+            if tonumber(current_timeout) < 60 then
+                uci:set("rpcd", "@rpcd[0]", "timeout", "60")
+                uci:commit("rpcd")
+            end
+        end
+    end
+
     olt_client.update_server_info()
 elseif arg[1] == "delete" then
     uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "0")
