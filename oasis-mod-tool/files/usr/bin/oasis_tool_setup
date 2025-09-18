@@ -9,11 +9,12 @@ local uci           = require("luci.model.uci").cursor()
 if arg[1] == "init" then
 
     if misc.check_file_exist("/etc/config/uhttpd") then
-        local current_timeout = uci:get("httpd", "main", "network_timeout") or ""
+        local current_timeout = uci:get("uhttpd", "main", "network_timeout") or ""
         if #current_timeout > 0 then
-            if tonumber(current_timeout) < 60 then
-                uci:set("httpd", "main", "network_timeout", "60")
-                uci:commit("httpd")
+            local numeric_timeout = tonumber(current_timeout)
+            if numeric_timeout and (numeric_timeout < 60) then
+                uci:set("uhttpd", "main", "network_timeout", "60")
+                uci:commit("uhttpd")
             end
         end
     end
@@ -21,7 +22,8 @@ if arg[1] == "init" then
     if misc.check_file_exist("/etc/config/rpcd") then
         local current_timeout = uci:get("rpcd", "@rpcd[0]", "timeout") or ""
         if #current_timeout > 0 then
-            if tonumber(current_timeout) < 60 then
+            local numeric_timeout = tonumber(current_timeout)
+            if numeric_timeout and (numeric_timeout < 60) then
                 uci:set("rpcd", "@rpcd[0]", "timeout", "60")
                 uci:commit("rpcd")
             end
