@@ -105,6 +105,11 @@ local setup_lua_server_config = function(server_name)
         uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
         uci:set(common.db.uci.cfg, s, "execution_message", tool.exec_msg or "")
         uci:set(common.db.uci.cfg, s, "download_message", tool.download_msg or "")
+        if tool.reboot then
+            uci:set(common.db.uci.cfg, s, "reboot", "1")
+        else
+            uci:set(common.db.uci.cfg, s, "reboot", "0")
+        end
         uci:set(common.db.uci.cfg, s, "timeout", tool.timeout or "")
         uci:set(common.db.uci.cfg, s, "conflict", "0")
 
@@ -189,6 +194,11 @@ local setup_ucode_server_config = function(server_name)
             uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
             uci:set(common.db.uci.cfg, s, "execution_message", def.exec_msg or "")
             uci:set(common.db.uci.cfg, s, "download_message", def.download_msg or "")
+            if def.reboot then
+                uci:set(common.db.uci.cfg, s, "reboot", "1")
+            else
+                uci:set(common.db.uci.cfg, s, "reboot", "0")
+            end
             uci:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
             uci:set(common.db.uci.cfg, s, "conflict", "0")
 

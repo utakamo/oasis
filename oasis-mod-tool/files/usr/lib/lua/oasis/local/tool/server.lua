@@ -93,6 +93,7 @@ local run = function(arg)
                 tool_desc = tl.tool_desc or "",
                 exec_msg = tl.exec_msg or "",
                 download_msg = tl.download_msg or "",
+                reboot = tl.reboot or false,
                 timeout = tl.timeout or "",
             }
         end
