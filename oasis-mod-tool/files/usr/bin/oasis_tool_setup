@@ -17,6 +17,15 @@ if arg[1] == "init" then
                 uci:commit("uhttpd")
             end
         end
+
+        current_timeout = uci:get("uhttpd", "main", "script_timeout") or ""
+        if #current_timeout > 0 then
+            local numeric_timeout = tonumber(current_timeout)
+            if numeric_timeout and (numeric_timeout < 60) then
+                uci:set("uhttpd", "main", "script_timeout", "60")
+                uci:commit("uhttpd")
+            end
+        end
     end
 
     if misc.check_file_exist("/etc/config/rpcd") then
