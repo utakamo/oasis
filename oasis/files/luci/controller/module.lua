@@ -58,6 +58,7 @@ function index()
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "local-tool-info"}, call("local_tool_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "refresh-tools"}, call("refresh_tools"), nil).leaf = true
+    entry({"admin", "network", "oasis", "system-reboot"}, call("system_reboot"), nil).leaf = true
 end
 
 function uci_show_config(target)
@@ -973,6 +974,22 @@ end
 function refresh_tools()
     sys.exec("service olt_tool restart >/dev/null 2>&1")
     sys.exec("service rpcd restart >/dev/null 2>&1")
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({ status = "OK" })
+end
+
+function system_reboot()
+    local is_support = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+
+    if not is_support then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ status = "NG" })
+        return
+    end
+
+    local cmd = require("oasis.local.tool.system.command")
+    cmd.system_reboot_after_5sec()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json({ status = "OK" })
