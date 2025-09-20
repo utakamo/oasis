@@ -79,6 +79,13 @@
   50% { transform: translateY(-4px); opacity: 1; }
 }
 .download-text { font-size: 14px; line-height: 1.55; word-break: break-word; color: rgba(255,255,255,0.92); }
+/* reboot announce animation */
+@keyframes rebootPulse {
+  0% { transform: scale(0.98); opacity: .85; }
+  50% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+#reboot_announce.reboot-animate { animation: rebootPulse 1s ease-in-out 2; }
 </style>
 
 <div class="oasis-container">
@@ -242,6 +249,40 @@
                 requestAnimationFrame(resolve);
             });
         });
+    }
+
+    // Reboot progress (5s) and completion animation
+    function startRebootProgress(totalMs = 5000) {
+        const applyingPopup = document.getElementById('applying-popup');
+        const title = document.getElementById('applying-popup-title');
+        const progressBar = document.getElementById('progressBar');
+        const info = document.getElementById('progressInfo');
+        const announce = document.getElementById('reboot_announce');
+        if (!applyingPopup || !title || !progressBar) return;
+
+        title.textContent = 'Rebooting...';
+        applyingPopup.style.display = 'block';
+        centerElementInChat(applyingPopup);
+        progressBar.style.width = '0%';
+        if (announce) { announce.style.display = 'none'; announce.classList.remove('reboot-animate'); }
+
+        const startTs = Date.now();
+        const tick = () => {
+            const elapsed = Date.now() - startTs;
+            const pct = Math.min(100, Math.round((elapsed / totalMs) * 100));
+            progressBar.style.width = pct + '%';
+            if (info) {
+                const remainMs = Math.max(0, totalMs - elapsed);
+                const remainSec = Math.ceil(remainMs / 1000);
+                info.textContent = `Rebooting in ${remainSec}s (${pct}%)`;
+            }
+            if (elapsed >= totalMs) {
+                if (announce) { announce.style.display = 'block'; announce.classList.add('reboot-animate'); }
+            } else {
+                requestAnimationFrame(tick);
+            }
+        };
+        requestAnimationFrame(tick);
     }
 
     // Tool execution notice (use existing look & feel as Tool used)
@@ -1892,6 +1933,12 @@
                 try { data = await res.json(); } catch (_) {}
                 if (!data || data.status !== 'OK') {
                     console.error('system-reboot NG:', data);
+                } else {
+                    // Close confirm bubble
+                    const el = document.getElementById("oasis-reboot");
+                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                    // Show 5s progress and completion animation
+                    startRebootProgress(5000);
                 }
             } catch (e) {
                 console.error('system-reboot failed:', e);
