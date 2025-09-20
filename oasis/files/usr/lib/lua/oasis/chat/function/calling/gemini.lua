@@ -75,11 +75,9 @@ function M.process(self, message)
 			end
 			self.processed_tool_call_ids[call_id] = true
 		end
-        local result = client.exec_server_tool(self:get_format(), name or "", args or {})
+        local result, is_reboot = client.exec_server_tool(self:get_format(), name or "", args or {})
 		debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) [gemini] = " .. jsonc.stringify(result, true))
-        if type(result) == "table" and result.reboot == true then
-            reboot = true
-        end
+        reboot = is_reboot
 		local output = jsonc.stringify(result, false)
 		table.insert(function_call.tool_outputs, {
 			tool_call_id = call_id,

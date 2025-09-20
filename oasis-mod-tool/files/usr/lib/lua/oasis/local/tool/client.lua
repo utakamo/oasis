@@ -559,8 +559,12 @@ local function handle_option_message(msg, msg_type, format)
 end
 
 local exec_server_tool = function(format, tool, data)
+
     local found = false
     local result = {}
+
+    local is_reboot = false
+
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
 
         debug:log("oasis.log", "exec_server_tool", "config: s.server = " .. s.server)
@@ -575,13 +579,16 @@ local exec_server_tool = function(format, tool, data)
             debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
             result = ubus_call(s.server, s.name, data, s.timeout)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
+            if s.reboot then
+                is_reboot = (s.reboot == "1")
+            end
         end
     end)
     if not found then
     debug:log("oasis.log", "exec_server_tool", string.format("Tool '%s' not found or not enabled.", tool))
     end
 
-    return result
+    return result, is_reboot
 end
 
 return {

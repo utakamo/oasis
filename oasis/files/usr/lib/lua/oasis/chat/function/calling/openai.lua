@@ -54,11 +54,9 @@ function M.process(self, message)
 			debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. tostring(call_id))
 		else
 			self.processed_tool_call_ids[call_id] = true
-			local result = client.exec_server_tool(self:get_format(), func, args)
+			local result, is_reboot = client.exec_server_tool(self:get_format(), func, args)
 			debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
-			if type(result) == "table" and result.reboot == true then
-				reboot = true
-			end
+			reboot = is_reboot
 
 			local output = jsonc.stringify(result, false)
 			table.insert(function_call.tool_outputs, {
