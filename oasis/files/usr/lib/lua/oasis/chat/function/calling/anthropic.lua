@@ -59,6 +59,7 @@ function M.process(self, message)
     local function_call = { service = "Anthropic", tool_outputs = {} }
     local first_output_str = ""
     local speaker = { role = "assistant", tool_calls = {} }
+    local reboot = false
 
     -- Case 1: OpenAI-like tool_calls (fallback)
     if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
@@ -78,6 +79,9 @@ function M.process(self, message)
                     self.processed_tool_call_ids[call_id] = true
                     local result = client.exec_server_tool(self:get_format(), func, args)
                     local output = jsonc.stringify(result, false)
+                    if type(result) == "table" and result.reboot == true then
+                        reboot = true
+                    end
                     table.insert(function_call.tool_outputs, {
                         tool_call_id = call_id,
                         output = output,
@@ -157,6 +161,7 @@ function M.process(self, message)
     end
 
     local plain_text_for_console = first_output_str
+    function_call.reboot = reboot
     local response_ai_json = jsonc.stringify(function_call, false)
     if self then self.chunk_all = "" end
     return plain_text_for_console, response_ai_json, speaker, true

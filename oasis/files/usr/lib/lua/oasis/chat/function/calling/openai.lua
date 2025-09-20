@@ -39,6 +39,7 @@ function M.process(self, message)
 	local function_call = { service = "OpenAI", tool_outputs = {} }
 	local first_output_str = ""
 	local speaker = { role = "assistant", tool_calls = {} }
+	local reboot = false
 
 	for _, tc in ipairs(message.tool_calls or {}) do
 		local func = tc["function"] and tc["function"].name or ""
@@ -55,6 +56,9 @@ function M.process(self, message)
 			self.processed_tool_call_ids[call_id] = true
 			local result = client.exec_server_tool(self:get_format(), func, args)
 			debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
+			if type(result) == "table" and result.reboot == true then
+				reboot = true
+			end
 
 			local output = jsonc.stringify(result, false)
 			table.insert(function_call.tool_outputs, {
@@ -77,6 +81,7 @@ function M.process(self, message)
 	end
 
 	local plain_text_for_console = first_output_str
+	function_call.reboot = reboot
 	local response_ai_json = jsonc.stringify(function_call, false)
 	debug:log("oasis.log", "recv_ai_msg", "response_ai_json = " .. response_ai_json)
 	debug:log("oasis.log", "recv_ai_msg",

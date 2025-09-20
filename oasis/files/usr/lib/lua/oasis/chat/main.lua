@@ -1059,7 +1059,11 @@ local rpc_output = function(arg)
 
     debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] message = " .. message)
 
-    return { status = common.status.ok }, new_chat_info, message
+    local reboot = false
+    if service.get_reboot_required then
+        reboot = service:get_reboot_required() or false
+    end
+    return { status = common.status.ok }, new_chat_info, message, reboot
 end
 
 local rename = function(arg)

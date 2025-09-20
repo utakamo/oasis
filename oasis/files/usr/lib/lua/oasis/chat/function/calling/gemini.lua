@@ -61,9 +61,10 @@ function M.process(self, message)
 	debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled) [gemini]")
 	local client = require("oasis.local.tool.client")
 
-	local function_call = { service = "Gemini", tool_outputs = {} }
-	local first_output_str = ""
-	local speaker = { role = "assistant", tool_calls = {} }
+    local function_call = { service = "Gemini", tool_outputs = {} }
+    local first_output_str = ""
+    local speaker = { role = "assistant", tool_calls = {} }
+    local reboot = false
 
 	local function handle_one_call(name, args, id)
 		local call_id = id or ""
@@ -74,8 +75,11 @@ function M.process(self, message)
 			end
 			self.processed_tool_call_ids[call_id] = true
 		end
-		local result = client.exec_server_tool(self:get_format(), name or "", args or {})
+        local result = client.exec_server_tool(self:get_format(), name or "", args or {})
 		debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) [gemini] = " .. jsonc.stringify(result, true))
+        if type(result) == "table" and result.reboot == true then
+            reboot = true
+        end
 		local output = jsonc.stringify(result, false)
 		table.insert(function_call.tool_outputs, {
 			tool_call_id = call_id,
@@ -129,8 +133,9 @@ function M.process(self, message)
 		end
 	end
 
-	local plain_text_for_console = first_output_str
-	local response_ai_json = jsonc.stringify(function_call, false)
+    local plain_text_for_console = first_output_str
+    function_call.reboot = reboot
+    local response_ai_json = jsonc.stringify(function_call, false)
 	debug:log("oasis.log", "recv_ai_msg", "response_ai_json [gemini] = " .. response_ai_json)
 	debug:log("oasis.log", "recv_ai_msg",
 		string.format("return speaker(tool_calls=%d), tool_outputs=%d [gemini]",

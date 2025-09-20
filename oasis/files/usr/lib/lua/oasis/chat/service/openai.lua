@@ -22,6 +22,7 @@ openai.new = function()
         obj.processed_tool_call_ids = {}
         obj.cfg = nil
         obj.format = nil
+        obj._reboot_required = false
 
         obj.initialize = function(self, arg, format)
             self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
@@ -153,6 +154,10 @@ openai.new = function()
             return self.format
         end
 
+        obj.get_reboot_required = function(self)
+            return self._reboot_required or false
+        end
+
         obj.convert_schema = function(self, user_msg)
 
             -- When role:tool is present, it indicates that results are sent to AI
@@ -238,6 +243,9 @@ openai.new = function()
 
             local tool_info_tbl = jsonc.parse(tool_info)
             if tool_info_tbl then
+                if tool_info_tbl.reboot == true then
+                    self._reboot_required = true
+                end
                 -- Insert assistant message with tool_calls first to satisfy OpenAI sequencing
                 local tool_calls = {}
 

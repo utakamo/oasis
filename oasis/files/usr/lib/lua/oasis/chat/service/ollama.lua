@@ -21,6 +21,7 @@ ollama.new = function()
         obj.cfg = nil
         obj.format = nil
         obj.tool = false
+        obj._reboot_required = false
 
         obj.initialize = function(self, arg, format)
             self.cfg =  datactrl.get_ai_service_cfg(arg, {format = format})
@@ -215,6 +216,10 @@ ollama.new = function()
             return self.format
         end
 
+        obj.get_reboot_required = function(self)
+            return self._reboot_required or false
+        end
+
         obj.convert_schema = function(self, user_msg)
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
             local model = (self.cfg and self.cfg.model) or ""
@@ -305,6 +310,9 @@ ollama.new = function()
 
             local tool_info_tbl = jsonc.parse(tool_info)
             if tool_info_tbl then
+                if tool_info_tbl.reboot == true then
+                    self._reboot_required = true
+                end
                 -- Insert assistant message with tool_calls first to satisfy Ollama sequencing
                 local tool_calls = {}
 

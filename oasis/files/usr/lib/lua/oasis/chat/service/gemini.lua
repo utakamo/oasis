@@ -25,6 +25,7 @@ gemini.new = function()
         obj._sysmsg_text = nil
         obj._last_user_text = ""
         obj._last_assistant_text = ""
+        obj._reboot_required = false
 
         obj.initialize = function(self, arg, format)
             self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
@@ -250,6 +251,9 @@ gemini.new = function()
             if not tool_info then return false end
             local info = jsonc.parse(tool_info)
             if not info or not info.tool_outputs then return false end
+            if info.reboot == true then
+                self._reboot_required = true
+            end
 
             -- 1) First add functionCall (assistant.tool_calls) to history
             local tool_calls = {}
@@ -341,6 +345,10 @@ gemini.new = function()
         -- Align method name with other services (used by transfer.lua)
         obj.get_format = function(self)
             return self.format
+        end
+
+        obj.get_reboot_required = function(self)
+            return self._reboot_required or false
         end
 
         -- Backward-compat alias (in case any code relied on previous name)

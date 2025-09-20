@@ -23,6 +23,7 @@ anthropic.new = function()
         obj.cfg = nil
         obj.format = nil
         obj._sysmsg_text = nil
+        obj._reboot_required = false
 
         obj.initialize = function(self, arg, format)
             self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
@@ -229,12 +230,19 @@ anthropic.new = function()
             return self.format
         end
 
+        obj.get_reboot_required = function(self)
+            return self._reboot_required or false
+        end
+
         -- Handle tool outputs: inject assistant tool_calls and tool result messages into chat
         obj.handle_tool_output = function(self, tool_info, chat)
             debug:log("oasis.log", "anthropic.handle_tool_output", "tool_info type = " .. type(tool_info))
             if not tool_info then return false end
             local info = jsonc.parse(tool_info)
             if not info or not info.tool_outputs then return false end
+            if info.reboot == true then
+                self._reboot_required = true
+            end
 
             local tool_calls = {}
             for _, t in ipairs(info.tool_outputs or {}) do
