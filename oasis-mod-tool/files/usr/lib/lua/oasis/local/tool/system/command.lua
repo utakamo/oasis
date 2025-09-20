@@ -6,7 +6,7 @@ local schedule_reboot = function(delay_seconds)
     delay_seconds = tonumber(delay_seconds) or 0
     if delay_seconds < 0 then delay_seconds = 0 end
 
-    util.exec("sleep " .. tostring(delay_seconds) .. " && reboot' >/dev/null 2>&1 &")
+    util.exec("(sleep " .. tostring(delay_seconds) .. " && reboot) >/dev/null 2>&1 &")
 end
 
 local system_reboot_after_5sec  = function() schedule_reboot(5)  end
