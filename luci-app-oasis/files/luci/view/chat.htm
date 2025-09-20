@@ -1903,12 +1903,8 @@
         messageTextDiv.className = "message-text";
 
         const titleDiv = document.createElement("div");
-        titleDiv.textContent = "System reboot is required";
+        titleDiv.textContent = "System reboot is required. Reboot now?";
         messageTextDiv.appendChild(titleDiv);
-
-        const questionDiv = document.createElement("div");
-        questionDiv.textContent = "Reboot now?";
-        messageTextDiv.appendChild(questionDiv);
 
         const popupButtonsDiv = document.createElement("div");
         popupButtonsDiv.className = "uci-popup-buttons";
