@@ -1882,9 +1882,22 @@
             rebootButton.disabled = true;
             cancelButton.disabled = true;
             try {
-                await fetch('<%=build_url("admin", "network", "oasis", "system-reboot")%>', { method: 'POST' });
+                const res = await fetch('<%=build_url("admin", "network", "oasis", "system-reboot")%>', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let data = null;
+                try { data = await res.json(); } catch (_) {}
+                if (!data || data.status !== 'OK') {
+                    console.error('system-reboot NG:', data);
+                }
             } catch (e) {
                 console.error('system-reboot failed:', e);
+            } finally {
+                rebootButton.disabled = false;
+                cancelButton.disabled = false;
             }
         });
 
