@@ -1851,6 +1851,64 @@
         // overlay removed
     }
 
+    function show_reboot_popup() {
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+        const systemMessage = document.createElement("div");
+
+        systemMessage.classList.add("message", "oasis-system");
+        systemMessage.id = "oasis-reboot";
+
+        const messageTextDiv = document.createElement("div");
+        messageTextDiv.className = "message-text";
+
+        const titleDiv = document.createElement("div");
+        titleDiv.textContent = "System reboot is required";
+        messageTextDiv.appendChild(titleDiv);
+
+        const questionDiv = document.createElement("div");
+        questionDiv.textContent = "Reboot now?";
+        messageTextDiv.appendChild(questionDiv);
+
+        const popupButtonsDiv = document.createElement("div");
+        popupButtonsDiv.className = "uci-popup-buttons";
+
+        const popupDiv = document.createElement("div");
+        popupDiv.className = "uci-popup";
+
+        const rebootButton = document.createElement("button");
+        rebootButton.id = "apply";
+        rebootButton.textContent = "Reboot";
+        rebootButton.addEventListener('click', async function () {
+            rebootButton.disabled = true;
+            cancelButton.disabled = true;
+            try {
+                await fetch('<%=build_url("admin", "network", "oasis", "system-reboot")%>', { method: 'POST' });
+            } catch (e) {
+                console.error('system-reboot failed:', e);
+            }
+        });
+
+        const cancelButton = document.createElement("button");
+        cancelButton.id = "uci-cancel";
+        cancelButton.textContent = "Cancel";
+        cancelButton.addEventListener('click', function () {
+            const el = document.getElementById("oasis-reboot");
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        });
+
+        popupDiv.appendChild(rebootButton);
+        popupDiv.appendChild(cancelButton);
+
+        popupButtonsDiv.appendChild(popupDiv);
+        messageTextDiv.appendChild(popupButtonsDiv);
+        systemMessage.appendChild(messageTextDiv);
+        chatMessagesContainer.appendChild(systemMessage);
+
+        if (typeof keepLatestMessageVisible === 'function') {
+            keepLatestMessageVisible(true);
+        }
+    }
+
 
     // TODO: Temporary Fix
     // This function will be removed later.
@@ -1910,6 +1968,7 @@
         let errorNoticesHtml = '';
         let toolNoticeShown = false;
         let toolNoticeMessageDiv = null;
+        let rebootRequired = false;
 
         // Utility to extract complete JSON objects from the buffer
         function extractJsonObjects(text) {
@@ -2001,6 +2060,9 @@
                     } catch (e) {
                         continue;
                     }
+                    console.log('[AI evt]', evt);
+
+                    if (evt && evt.reboot === true) { rebootRequired = true }
 
                     // Custom stream events: execution/download
                     if (evt && typeof evt.type === 'string') {
@@ -2125,6 +2187,9 @@
             if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
                 try {
                     const evt = JSON.parse(trimmed);
+                    console.log('[AI single evt]', evt);
+
+                    if (evt && evt.reboot === true) { rebootRequired = true }
 
                     // Tool execution notice (single JSON)
                     if (evt && Array.isArray(evt.tool_outputs)) {
@@ -2202,11 +2267,19 @@
             const __hasToolNotice = !!(toolNoticesHtml && toolNoticesHtml.length > 0);
             const __hasErrorNotice = !!(errorNoticesHtml && errorNoticesHtml.length > 0);
             const __finalText = (fullMessage || '').trim();
+            console.log('[AI final text]', __finalText);
             if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
                 receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('No response from AI service. Please check settings.'));
             } else {
                 // Render only errors + assistant content. Tool notice is shown in a separate bubble.
                 receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(__finalText));
+            }
+
+            // Prompt reboot if required by tool results
+            if (rebootRequired === true) {
+                setTimeout(async () => {
+                    show_reboot_popup();
+                }, 0);
             }
             if (receivedMessageTextContainer._typingTimer) {
                 clearInterval(receivedMessageTextContainer._typingTimer);
