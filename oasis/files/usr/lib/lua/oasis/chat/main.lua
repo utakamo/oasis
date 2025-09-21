@@ -505,7 +505,11 @@ local show_service_list = function()
 
     output.item = function(name, value)
         local display_value = value or "(not set)"
-        io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, display_value))
+        if (name == "API KEY") and value then
+            io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, "******************************"))
+        else
+            io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, display_value))
+        end
         io.flush()
     end
 
