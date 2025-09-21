@@ -222,6 +222,9 @@ Pressing the Upload button stores the icon in the OpenWrt device.
 ### Alpha Theme
 <img width="959" height="442" alt="image" src="https://github.com/user-attachments/assets/c335f8f8-a85a-440d-9b2c-4610047a6f95" />
 
+### Argon Theme
+<img width="949" height="440" alt="image" src="https://github.com/user-attachments/assets/b95b96ef-dfe5-4ce9-adb7-061a60caab68" />
+
 ## Oasis CLI Commands
 ```
 root@OpenWrt:~# oasis
