@@ -296,7 +296,7 @@
         const textDiv = document.createElement('div');
         textDiv.className = 'message-text chat-bubble';
         const safe = typeof message === 'string' && message.length ? message : 'Executing tool...';
-        textDiv.innerHTML = `<div class="tool-notice">${sanitizeHTML(safe)}</div>`;
+        textDiv.innerHTML = sanitizeHTML(safe);
         msgDiv.appendChild(iconDiv);
         msgDiv.appendChild(textDiv);
         const chatRoot = document.querySelector('.chat-messages');
