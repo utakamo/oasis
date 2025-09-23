@@ -80,10 +80,14 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
                 if tbl.name then
                     io.write(VALUE .. tbl.name)
                 end
+
+                if tbl.output.user_only then
+                    io.write("\n" .. tbl.output.user_only)
+                    tbl.output.user_only = nil
+                end
             end
             io.write(RESET .. '\n')
             io.flush()
-
         elseif (text_for_console) and (#text_for_console) > 0 then
             io.write(text_for_console)
             io.flush()
@@ -94,6 +98,15 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
         if (response_ai_json) and (#response_ai_json > 0) then
             io.write(response_ai_json)
             io.flush()
+        end
+
+        if tool_used then
+            local tool_info = jsonc.parse(response_ai_json)
+            for idx, tbl in ipairs(tool_info.tool_outputs) do
+                if tbl.output.user_only then
+                    tbl.output.user_only = nil
+                end
+            end
         end
     end
 end
