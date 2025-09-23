@@ -2182,6 +2182,54 @@
                                     keepLatestMessageVisible(false);
                                 }
                             }
+
+                            // Show user_only message(s) right after the Tool Used bubble
+                            try {
+                                const outputs = Array.isArray(evt.tool_outputs) ? evt.tool_outputs : [];
+                                outputs.forEach(o => {
+                                    if (!o || typeof o.output !== 'string') return;
+                                    try {
+                                        const parsed = JSON.parse(o.output);
+                                        const userOnly = (parsed && typeof parsed.user_only === 'string') ? parsed.user_only.trim() : '';
+                                        if (!userOnly) return;
+
+                                        const iconPath2 = `${resourcePath}/oasis/${icon_name}`;
+                                        const msgDiv2 = document.createElement('div');
+                                        msgDiv2.className = 'message received oasis-user-only';
+                                        const iconDiv2 = document.createElement('div');
+                                        iconDiv2.className = 'icon';
+                                        iconDiv2.style.backgroundImage = `url(${iconPath2})`;
+                                        const textDiv2 = document.createElement('div');
+                                        textDiv2.className = 'message-text';
+                                        const safeText = 'user only message\n' + userOnly;
+                                        textDiv2.innerHTML = sanitizeHTML(convertMarkdownToHTML(safeText));
+                                        msgDiv2.appendChild(iconDiv2);
+                                        msgDiv2.appendChild(textDiv2);
+
+                                        const chatRoot2 = document.querySelector('.chat-messages');
+                                        const parentMsg2 = receivedMessageTextContainer && receivedMessageTextContainer.parentNode;
+                                        if (chatRoot2) {
+                                            if (toolNoticeMessageDiv && chatRoot2.contains(toolNoticeMessageDiv)) {
+                                                if (toolNoticeMessageDiv.nextSibling) {
+                                                    chatRoot2.insertBefore(msgDiv2, toolNoticeMessageDiv.nextSibling);
+                                                } else {
+                                                    chatRoot2.appendChild(msgDiv2);
+                                                }
+                                            } else if (parentMsg2 && chatRoot2.contains(parentMsg2)) {
+                                                chatRoot2.insertBefore(msgDiv2, parentMsg2);
+                                            } else {
+                                                chatRoot2.appendChild(msgDiv2);
+                                            }
+                                        }
+                                        if (isKeyboardOpen) {
+                                            keepLatestMessageVisible(true);
+                                            setChatScrollLock(true);
+                                        } else {
+                                            keepLatestMessageVisible(false);
+                                        }
+                                    } catch (_) {}
+                                });
+                            } catch (_) {}
                         } else {
                             const missing = [];
                             if (!hasService) missing.push('service');
@@ -2287,6 +2335,49 @@
                                     keepLatestMessageVisible(false);
                                 }
                             }
+
+                            // Show user_only message(s) right after the Tool Used bubble
+                            try {
+                                const outputs = Array.isArray(evt.tool_outputs) ? evt.tool_outputs : [];
+                                outputs.forEach(o => {
+                                    if (!o || typeof o.output !== 'string') return;
+                                    try {
+                                        const parsed = JSON.parse(o.output);
+                                        const userOnly = (parsed && typeof parsed.user_only === 'string') ? parsed.user_only.trim() : '';
+                                        if (!userOnly) return;
+
+                                        const iconPath2 = `${resourcePath}/oasis/${icon_name}`;
+                                        const msgDiv2 = document.createElement('div');
+                                        msgDiv2.className = 'message received oasis-user-only';
+                                        const iconDiv2 = document.createElement('div');
+                                        iconDiv2.className = 'icon';
+                                        iconDiv2.style.backgroundImage = `url(${iconPath2})`;
+                                        const textDiv2 = document.createElement('div');
+                                        textDiv2.className = 'message-text';
+                                        const safeText = 'user only message\n' + userOnly;
+                                        textDiv2.innerHTML = sanitizeHTML(convertMarkdownToHTML(safeText));
+                                        msgDiv2.appendChild(iconDiv2);
+                                        msgDiv2.appendChild(textDiv2);
+
+                                        const chatRoot2 = document.querySelector('.chat-messages');
+                                        if (chatRoot2 && toolNoticeMessageDiv && chatRoot2.contains(toolNoticeMessageDiv)) {
+                                            if (toolNoticeMessageDiv.nextSibling) {
+                                                chatRoot2.insertBefore(msgDiv2, toolNoticeMessageDiv.nextSibling);
+                                            } else {
+                                                chatRoot2.appendChild(msgDiv2);
+                                            }
+                                        } else if (chatRoot2) {
+                                            chatRoot2.appendChild(msgDiv2);
+                                        }
+                                        if (isKeyboardOpen) {
+                                            keepLatestMessageVisible(true);
+                                            setChatScrollLock(true);
+                                        } else {
+                                            keepLatestMessageVisible(false);
+                                        }
+                                    } catch (_) {}
+                                });
+                            } catch (_) {}
                         } else {
                             const missing = [];
                             if (!hasService) missing.push('service');

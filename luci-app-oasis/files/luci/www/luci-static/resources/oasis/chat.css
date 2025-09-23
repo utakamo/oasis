@@ -1143,3 +1143,9 @@ pre {
     background-color: #7A828C;
 }
 
+/* User-only message bubble */
+.oasis-user-only .message-text {
+    background: linear-gradient(180deg, #fff7eb 0%, #ffe9cc 100%);
+    border: 1px solid #ffd8a8;
+    color: #7a4e00;
+}
