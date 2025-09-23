@@ -2201,8 +2201,14 @@
                                         iconDiv2.style.backgroundImage = `url(${iconPath2})`;
                                         const textDiv2 = document.createElement('div');
                                         textDiv2.className = 'message-text';
-                                        const safeText = 'user only message\n' + userOnly;
-                                        textDiv2.innerHTML = sanitizeHTML(convertMarkdownToHTML(safeText));
+                                        const titleEl = document.createElement('div');
+                                        titleEl.className = 'oasis-user-only-title';
+                                        titleEl.textContent = 'user only message';
+                                        const bodyEl = document.createElement('div');
+                                        bodyEl.className = 'oasis-user-only-body';
+                                        bodyEl.innerHTML = sanitizeHTML(convertMarkdownToHTML(userOnly));
+                                        textDiv2.appendChild(titleEl);
+                                        textDiv2.appendChild(bodyEl);
                                         msgDiv2.appendChild(iconDiv2);
                                         msgDiv2.appendChild(textDiv2);
 
@@ -2354,8 +2360,14 @@
                                         iconDiv2.style.backgroundImage = `url(${iconPath2})`;
                                         const textDiv2 = document.createElement('div');
                                         textDiv2.className = 'message-text';
-                                        const safeText = 'user only message\n' + userOnly;
-                                        textDiv2.innerHTML = sanitizeHTML(convertMarkdownToHTML(safeText));
+                                        const titleEl = document.createElement('div');
+                                        titleEl.className = 'oasis-user-only-title';
+                                        titleEl.textContent = 'user only message';
+                                        const bodyEl = document.createElement('div');
+                                        bodyEl.className = 'oasis-user-only-body';
+                                        bodyEl.innerHTML = sanitizeHTML(convertMarkdownToHTML(userOnly));
+                                        textDiv2.appendChild(titleEl);
+                                        textDiv2.appendChild(bodyEl);
                                         msgDiv2.appendChild(iconDiv2);
                                         msgDiv2.appendChild(textDiv2);
 

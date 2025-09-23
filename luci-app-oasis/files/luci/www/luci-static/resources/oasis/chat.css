@@ -1149,3 +1149,19 @@ pre {
     border: 1px solid #ffd8a8;
     color: #7a4e00;
 }
+
+/* Title inside user-only message bubble */
+.oasis-user-only .oasis-user-only-title {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .2px;
+    margin-bottom: 6px;
+    color: #7a4e00;
+    border-bottom: 1px dashed #ffd8a8;
+    padding-bottom: 2px;
+}
+
+/* Body inside user-only message bubble */
+.oasis-user-only .oasis-user-only-body {
+    margin-top: 4px;
+}
