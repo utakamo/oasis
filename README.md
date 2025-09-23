@@ -76,26 +76,41 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > - gemini-2.5-flash
 > - etc ...
 
-### 3. Example OpenRouter Setup
+### 3. Example Anthropic Setup
 > [!NOTE]
-> #### 3.1. OpenRouter Endpoint
+> #### 3.1. Anthropic Endpoint
+> If you want to use Anthropic, you need to set the Endpoint Type.
+> - Default Endpoint ----> https://api.anthropic.com/v1/messages
+> - Custom Endpoint ----> User-specified endpoint
+>
+> #### 3.2. Anthropic API Key  
+> Please create an API Key on your Anthropic Account page.  
+> https://docs.claude.com/en/api/admin-api/apikeys/get-api-key
+>
+> #### 3.3. Anthropic LLM Models
+> Please check Anthropic website.  
+> https://docs.claude.com/en/docs/about-claude/models/overview
+
+### 4. Example OpenRouter Setup
+> [!NOTE]
+> #### 4.1. OpenRouter Endpoint
 > If you want to use OpenRouter, you need to set the Endpoint Type.
 > - Default Endpoint ----> https://openrouter.ai/api/v1/chat/completions
 > - Custom Endpoint ----> User-specified endpoint
 >
-> #### 3.2. OpenRouter API Key  
+> #### 4.2. OpenRouter API Key  
 > Please create an API Key on your OpenRouter Account page.  
 > https://openrouter.ai/
 >
-> #### 3.3. OpenRouter LLM Models
+> #### 4.3. OpenRouter LLM Models
 > Please check OpenRouter website.  
 > https://openrouter.ai/models
 
-### 4. Example Ollama Setup
+### 5. Example Ollama Setup
 <img width="853" alt="Image" src="https://github.com/user-attachments/assets/7cc74e68-c920-4f2a-b0df-c0eba7264774" />
 
 > [!NOTE]
-> #### 4.1. About Ollama (AI Server) Setup
+> #### 5.1. About Ollama (AI Server) Setup
 > If you want to use Ollama, you need to set the Ollama parameters (OLLAMA_HOST and OLLAMA_ORIGINS) with the values shown below.  
 > ```
 > OLLAMA_HOST=0.0.0.0
@@ -106,14 +121,14 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > My technical blog has an introductory page on the above Ollama setup, which describes the setup on Windows and Linux (Japanese Page).
 > https://utakamo.com/article/ai/llm/ollama/setup/index.html#network-support
 >
-> #### 4.2. Ollama Endpoint
+> #### 5.2. Ollama Endpoint
 > Ollama Endpoint Format: ```http://<Your Ollama PC Address>:11434/api/chat ```  
 > In the example above, Ollama's IP address is 192.168.1.109/24, so ```http://192.168.1.109:11434/api/chat``` is set as the endpoint.
 >
-> #### 4.3. Ollama API Key
+> #### 5.3. Ollama API Key
 > When using Ollama, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.
 >
-> #### 4.4. LLM Models
+> #### 5.4. LLM Models
 > https://ollama.com/library
 
 ## 1. Chat with AI
