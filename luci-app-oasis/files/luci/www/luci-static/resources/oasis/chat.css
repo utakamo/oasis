@@ -1145,9 +1145,8 @@ pre {
 
 /* User-only message bubble */
 .oasis-user-only .message-text {
-    background: linear-gradient(180deg, #fff7eb 0%, #ffe9cc 100%);
-    border: 1px solid #ffd8a8;
-    color: #7a4e00;
+    background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 1px solid #81C784;
 }
 
 /* Title inside user-only message bubble */
@@ -1156,8 +1155,8 @@ pre {
     font-size: 13px;
     letter-spacing: .2px;
     margin-bottom: 6px;
-    color: #7a4e00;
-    border-bottom: 1px dashed #ffd8a8;
+    color: #388E3C;
+    border-bottom: 1px dashed #81C784;
     padding-bottom: 2px;
 }
 
