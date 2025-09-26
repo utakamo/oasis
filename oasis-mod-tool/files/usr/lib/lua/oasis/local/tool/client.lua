@@ -49,10 +49,10 @@ local fs        = require("nixio.fs")
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
 
-function ubus_call(path, method, param, timeout)
+local ubus_call = function(path, method, param, timeout)
 
     local ubus = require("ubus")
-    local conn = ubus.connect()
+    local conn
 
     if timeout and type(timeout) == "string" and #timeout > 0 then
         conn = ubus.connect(nil, tonumber(timeout))
@@ -105,11 +105,6 @@ local setup_lua_server_config = function(server_name)
         uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
         uci:set(common.db.uci.cfg, s, "execution_message", tool.exec_msg or "")
         uci:set(common.db.uci.cfg, s, "download_message", tool.download_msg or "")
-        if tool.reboot then
-            uci:set(common.db.uci.cfg, s, "reboot", "1")
-        else
-            uci:set(common.db.uci.cfg, s, "reboot", "0")
-        end
         uci:set(common.db.uci.cfg, s, "timeout", tool.timeout or "")
         uci:set(common.db.uci.cfg, s, "conflict", "0")
 
@@ -194,11 +189,6 @@ local setup_ucode_server_config = function(server_name)
             uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
             uci:set(common.db.uci.cfg, s, "execution_message", def.exec_msg or "")
             uci:set(common.db.uci.cfg, s, "download_message", def.download_msg or "")
-            if def.reboot then
-                uci:set(common.db.uci.cfg, s, "reboot", "1")
-            else
-                uci:set(common.db.uci.cfg, s, "reboot", "0")
-            end
             uci:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
             uci:set(common.db.uci.cfg, s, "conflict", "0")
 
@@ -563,8 +553,6 @@ local exec_server_tool = function(format, tool, data)
     local found = false
     local result = {}
 
-    local is_reboot = false
-
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
 
         debug:log("oasis.log", "exec_server_tool", "config: s.server = " .. s.server)
@@ -579,16 +567,14 @@ local exec_server_tool = function(format, tool, data)
             debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
             result = ubus_call(s.server, s.name, data, s.timeout)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
-            if s.reboot then
-                is_reboot = (s.reboot == "1")
-            end
         end
     end)
+
     if not found then
-    debug:log("oasis.log", "exec_server_tool", string.format("Tool '%s' not found or not enabled.", tool))
+        debug:log("oasis.log", "exec_server_tool", string.format("Tool '%s' not found or not enabled.", tool))
     end
 
-    return result, is_reboot
+    return result
 end
 
 return {

@@ -74,13 +74,17 @@ function M.process(self, message)
             local call_id = tostring(tc.id or "")
             if self and self.processed_tool_call_ids and call_id ~= "" then
                 if self.processed_tool_call_ids[call_id] then
-                    debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. call_id)
+                    debug:log("oasis.log", "process", "skip duplicate tool_call id = " .. call_id)
                 else
                     self.processed_tool_call_ids[call_id] = true
-                    local result, is_reboot = client.exec_server_tool(self:get_format(), func, args)
-                    local output = jsonc.stringify(result, false)
-                    reboot = is_reboot
+                    local result = client.exec_server_tool(self:get_format(), func, args)
 
+                    if result.reboot then
+                        debug:log("oasis.log", "process", "result.reboot = true")
+                        reboot = result.reboot
+                    end
+
+                    local output = jsonc.stringify(result, false)
                     table.insert(function_call.tool_outputs, {
                         tool_call_id = call_id,
                         output = output,

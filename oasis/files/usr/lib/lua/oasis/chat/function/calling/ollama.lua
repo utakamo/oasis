@@ -48,15 +48,19 @@ function M.process(self, message)
 			args = jsonc.parse(tc["function"].arguments) or {}
 		end
 
-		debug:log("oasis.log", "recv_ai_msg", "func = " .. tostring(func) .. " (detected function name)")
+		debug:log("oasis.log", "process", "func = " .. tostring(func) .. " (detected function name)")
 		local call_id = tc.id or ""
 		if self.processed_tool_call_ids[call_id] then
-			debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_call id = " .. tostring(call_id))
+			debug:log("oasis.log", "process", "skip duplicate tool_call id = " .. tostring(call_id))
 		else
 			self.processed_tool_call_ids[call_id] = true
-            local result, is_reboot = client.exec_server_tool(self:get_format(), func, args)
-            debug:log("oasis.log", "recv_ai_msg", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
-            reboot = is_reboot
+            local result = client.exec_server_tool(self:get_format(), func, args)
+            debug:log("oasis.log", "process", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
+
+			if result.reboot then
+				debug:log("oasis.log", "process", "result.reboot = true")
+				reboot = result.reboot
+			end
 
 			local output = jsonc.stringify(result, false)
 			table.insert(function_call.tool_outputs, {
