@@ -309,11 +309,6 @@ gemini.new = function()
 
             msg.name = speaker.name
             msg.content = speaker.content or speaker.message or ""
-
-            if msg.content.user_only then
-                msg.content.user_only = nil
-            end
-
             msg.tool_call_id = speaker.tool_call_id
 
             table.insert(chat.messages, msg)

@@ -160,6 +160,16 @@ local setup_msg = function(service, chat, speaker)
     debug:log("oasis.log", "setup_msg", string.format("speaker.content = %s", tostring(speaker and speaker.content or "nil")))
     debug:log("oasis.log", "setup_msg", string.format("speaker.tool_calls = %s", tostring((speaker and (speaker.tool_calls ~= nil)) and "true" or "nil")))
 
+    -- Remove User Only Message
+    if speaker and speaker.content and type(speaker.content) == "string" then
+        debug:log("oasis.log", "setup_msg", "Remove User Only Message.")
+        local content = jsonc.parse(speaker.content)
+        if content and content.user_only then
+            content.user_only = nil
+            speaker.content = jsonc.stringify(content, false)
+        end
+    end
+
     if (not speaker) or (not speaker.role) then
         debug:log("oasis.log", "setup_msg", "No speaker or role, returning false")
         return false

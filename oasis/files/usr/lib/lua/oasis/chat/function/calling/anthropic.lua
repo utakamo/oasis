@@ -216,12 +216,6 @@ function M.convert_tool_result(chat, speaker, msg)
 
     msg.name = speaker.name
     msg.content = speaker.content or speaker.message or ""
-
-	-- Remove User Only Message (Hidden from LLM)
-	if msg.content and msg.content.user_only then
-		msg.content.user_only = nil
-	end
-
     msg.tool_call_id = speaker.tool_call_id
 
     table.insert(chat.messages, msg)

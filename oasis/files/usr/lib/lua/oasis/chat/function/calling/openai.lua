@@ -134,12 +134,6 @@ function M.convert_tool_result(chat, speaker, msg)
 
 	msg.name = speaker.name
 	msg.content = speaker.content
-
-	-- Remove User Only Message (Hidden from LLM)
-	if msg.content and msg.content.user_only then
-		msg.content.user_only = nil
-	end
-
 	msg.tool_call_id = speaker.tool_call_id  -- OpenAI tool id requirement
 
 	debug:log("oasis.log", "convert_tool_result", string.format("append TOOL msg: name=%s, len=%d", tostring(msg.name or ""), (msg.content and #tostring(msg.content)) or 0))
