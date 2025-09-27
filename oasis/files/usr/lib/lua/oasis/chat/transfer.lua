@@ -73,6 +73,9 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
             local RESET = "\27[0m"
             io.write(LABEL .. "Tool Used: ")
             for idx, tbl in ipairs(tool_info.tool_outputs) do
+
+                debug:log("oasis.log", "output_response_msg", jsonc.stringify(tbl, true))
+
                 if idx > 1 then
                     io.write(LABEL .. ", ")
                 end
@@ -81,9 +84,11 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
                     io.write(VALUE .. tbl.name)
                 end
 
-                if tbl.output.user_only then
-                    io.write("\n" .. tbl.output.user_only)
-                    tbl.output.user_only = nil
+                if tbl.output and type(tbl.output) == "string" then
+                    local output = jsonc.parse(tbl.output)
+                    if output.user_only then
+                        io.write(RESET .. "\n\n\27[32m[User Only Message]\27[0m\n" .. output.user_only)
+                    end
                 end
             end
             io.write(RESET .. '\n')
@@ -98,15 +103,6 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
         if (response_ai_json) and (#response_ai_json > 0) then
             io.write(response_ai_json)
             io.flush()
-        end
-
-        if tool_used then
-            local tool_info = jsonc.parse(response_ai_json)
-            for idx, tbl in ipairs(tool_info.tool_outputs) do
-                if tbl.output.user_only then
-                    tbl.output.user_only = nil
-                end
-            end
         end
     end
 end
