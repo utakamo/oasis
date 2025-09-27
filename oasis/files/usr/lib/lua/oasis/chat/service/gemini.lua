@@ -145,12 +145,12 @@ gemini.new = function()
             user_msg_json = user_msg_json:gsub('"properties"%s*:%s*%[%]', '"properties":{}')
             user_msg_json = user_msg_json:gsub('"args"%s*:%s*%[%s*%]', '"args":{}')
             debug:log("oasis.log", "gemini.convert_schema", string.format("contents=%d, json_len=%d", #(body.contents or {}), #user_msg_json))
-            
+
             -- Add: Detailed JSON log sent to Gemini
             debug:log("oasis.log", "gemini.convert_schema", "=== GEMINI REQUEST JSON ===")
             debug:log("oasis.log", "gemini.convert_schema", user_msg_json)
             debug:log("oasis.log", "gemini.convert_schema", "=== END GEMINI REQUEST JSON ===")
-            
+
             return user_msg_json
         end
 
@@ -278,10 +278,13 @@ gemini.new = function()
             -- 2) Then append functionResponse (tool messages that include role=function)
             local count = 0
             for _, t in ipairs(info.tool_outputs or {}) do
+
                 local content = t.output
-                if type(content) ~= "string" then
+
+                if type(content) == "table" then
                     content = jsonc.stringify(content, false)
                 end
+
                 ous.setup_msg(self, chat, {
                     role = "tool",
                     tool_call_id = t.tool_call_id or t.id,
@@ -306,6 +309,11 @@ gemini.new = function()
 
             msg.name = speaker.name
             msg.content = speaker.content or speaker.message or ""
+
+            if msg.content.user_only then
+                msg.content.user_only = nil
+            end
+
             msg.tool_call_id = speaker.tool_call_id
 
             table.insert(chat.messages, msg)

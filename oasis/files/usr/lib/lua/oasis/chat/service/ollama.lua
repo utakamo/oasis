@@ -344,7 +344,8 @@ ollama.new = function()
                 for _, t in ipairs(tool_info_tbl.tool_outputs) do
 
                     local content = t.output
-                    if type(content) ~= "string" then
+
+                    if type(content) == "table" then
                         content = jsonc.stringify(content, false)
                     end
 

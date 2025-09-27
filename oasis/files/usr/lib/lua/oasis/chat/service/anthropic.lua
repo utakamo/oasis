@@ -262,10 +262,13 @@ anthropic.new = function()
             end
 
             for _, t in ipairs(info.tool_outputs or {}) do
+
                 local content = t.output
-                if type(content) ~= "string" then
+
+                if type(content) == "table" then
                     content = jsonc.stringify(content, false)
                 end
+
                 ous.setup_msg(self, chat, {
                     role = "tool",
                     tool_call_id = t.tool_call_id or t.id,
@@ -281,6 +284,9 @@ anthropic.new = function()
             if (not speaker) or (speaker.role ~= "tool") then return nil end
             msg.name = speaker.name
             msg.content = speaker.content or speaker.message or ""
+            if msg.content.user_only then
+                msg.content.user_only = nil
+            end
             msg.tool_call_id = speaker.tool_call_id
             table.insert(chat.messages, msg)
             return true
