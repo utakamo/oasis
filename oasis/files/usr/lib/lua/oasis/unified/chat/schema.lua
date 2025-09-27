@@ -180,8 +180,7 @@ local setup_msg = function(service, chat, speaker)
         return h_tool_call_res
     end
 
-    local handle_normal_msg = handle_normal_msg(chat, speaker, msg)
-    return handle_normal_msg
+    return handle_normal_msg(chat, speaker, msg)
 end
 
 local append_chat_data = function(service, chat)
