@@ -7,7 +7,7 @@ After installing oasis-mod-tool, you can create Lua or ucode scripts using the s
 <img width="789" height="254" alt="Image" src="https://github.com/user-attachments/assets/a5f616a4-d899-459f-814a-a915796f1aa8" />
 
 > [!IMPORTANT]
-> In Oasis tools, network communication is generally not recommended. 
+> In Oasis local tools, network communication is generally not recommended. 
 > This is because, on OpenWrt devices, user scenarios such as AI applications on general-purpose PCs accessing MCP servers like GitHub or Atlassian are not expected. 
 > That said, the tools themselves are technically capable of performing network communication.
 
