@@ -8,6 +8,10 @@ local uci           = require("luci.model.uci").cursor()
 
 if arg[1] == "init" then
 
+    -- Oasis assumes that the common usage is AI interaction via LuCI.
+    -- Users chat with AI through the LuCI UI, and the AI may execute tools.
+    -- Some tools (e.g., downloading external data over the network) may take time.
+    -- To handle such cases, Oasis applies the following timeout settings.
     if misc.check_file_exist("/etc/config/uhttpd") then
         local current_timeout = uci:get("uhttpd", "main", "network_timeout") or ""
         if #current_timeout > 0 then
