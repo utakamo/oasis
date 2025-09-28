@@ -568,7 +568,19 @@ local exec_server_tool = function(format, tool, data)
             result = ubus_call(s.server, s.name, data, s.timeout)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
 
-            -- Control install package
+            -- [Control install package]
+            -- The following code monitors the installation of packages triggered by the AI tool
+            -- (UBUS server application). Once the installation process is complete, it verifies
+            -- whether the package was successfully installed. If a failure is detected,
+            -- it overrides the AI tool’s standard response and notifies the AI with the message
+            -- : "Failed to install <pkg> package."
+            --
+            -- Note (Tips):
+            -- The UBUS server application cannot monitor the package installation process.
+            -- This is because the UBUS server application experiences a deadlock immediately
+            -- after the package manager software begins unpacking the package. Therefore,
+            -- the UBUS process is terminated before the deadlock occurs, and the monitoring and installation
+            -- completion verification are performed at this point.
             if misc.check_file_exist("/tmp/oasis/install_pkg_pid") then
                 local install_pkg_info = misc.read_file("/tmp/oasis/install_pkg_pid")
                 os.remove("/tmp/oasis/install_pkg_pid")
