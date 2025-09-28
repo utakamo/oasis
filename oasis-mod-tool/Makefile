@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-tool
-PKG_VERSION:=1.0.4
+PKG_VERSION:=1.0.6
 PKG_RELEASE:=1
 
 USR_BIN_DIR = /usr/bin
