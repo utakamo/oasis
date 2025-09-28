@@ -125,3 +125,16 @@ The image below shows an example of how the tools page appears in Oasis.
 <img width="947" height="439" alt="image" src="https://github.com/user-attachments/assets/64dc5250-266f-4e4f-b0f6-f89a987b0e90" />
 <img width="947" height="439" alt="image" src="https://github.com/user-attachments/assets/3af40cee-db26-4ae3-9621-4d40f966470e" />
 
+## AI tool parameter
+| Param name | Desc | Required |
+|----------|----------|----------|
+| tool_desc    |  | |
+| args_desc    | | |
+| exec_msg    | | |
+| download_msg | | |
+
+## Response Field
+
+- reboot = true
+
+- user_only = &lt;message&gt;
