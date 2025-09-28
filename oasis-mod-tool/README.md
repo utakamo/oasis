@@ -136,9 +136,9 @@ The image below shows an example of how the tools page appears in Oasis.
 ## Response Field
 The tool’s response data is provided as a table in Lua or ucode. Certain fields and their values have special meanings or effects.
 
-- reboot = true
+- `reboot = true`  
 If reboot = true exists in the table, the user will be notified to confirm whether to execute a system reboot when the AI’s final response is received.
 
-- user_only = &lt;message&gt;
+- `user_only = &lt;message&gt;`  
 As the name suggests, this is the tool execution result that is notified only to the user. It is not sent to the LLM. The tool execution result sent to the AI will have the user_only field removed.
   
