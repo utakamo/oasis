@@ -2116,7 +2116,7 @@
                     } catch (e) {
                         continue;
                     }
-                    console.log('[AI evt]', evt);
+                    //console.log('[AI evt]', evt);
 
                     if (evt && evt.reboot === true) { rebootRequired = true }
 
@@ -2297,7 +2297,7 @@
             if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
                 try {
                     const evt = JSON.parse(trimmed);
-                    console.log('[AI single evt]', evt);
+                    //console.log('[AI single evt]', evt);
 
                     if (evt && evt.reboot === true) { rebootRequired = true }
 
@@ -2426,7 +2426,7 @@
             const __hasToolNotice = !!(toolNoticesHtml && toolNoticesHtml.length > 0);
             const __hasErrorNotice = !!(errorNoticesHtml && errorNoticesHtml.length > 0);
             const __finalText = (fullMessage || '').trim();
-            console.log('[AI final text]', __finalText);
+            //console.log('[AI final text]', __finalText);
             if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
                 receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('No response from AI service. Please check settings.'));
             } else {
