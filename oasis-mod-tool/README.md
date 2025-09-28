@@ -128,10 +128,10 @@ The image below shows an example of how the tools page appears in Oasis.
 ## AI tool parameter
 | Param name | Desc | Required |
 |----------|----------|----------|
-| tool_desc    |  | |
-| args_desc    | | |
-| exec_msg    | | |
-| download_msg | | |
+| tool_desc    |  | YES |
+| args_desc    | | YES |
+| exec_msg    | | NO |
+| download_msg | | NO |
 
 ## Tool Response Field
 The tool’s response data is provided as a table in Lua or ucode. Certain fields and their values have special meanings or effects.
