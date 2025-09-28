@@ -140,5 +140,10 @@ The tool’s response data is provided as a table in Lua or ucode. Certain field
 If reboot = true exists in the table, the user will be notified to confirm whether to execute a system reboot when the AI’s final response is received.
 
 - `user_only = <message>`  
-As the name suggests, this is the tool execution result that is notified only to the user. It is not sent to the LLM. The tool execution result sent to the AI will have the user_only field removed.
-  
+As the name suggests, this is the tool execution result that is notified only to the user. It is not sent to the LLM. The tool execution result sent to the AI will have the user_only field removed.  
+
+### Reference (sample)
+- Lua  
+  https://github.com/utakamo/oasis-tool-box/blob/main/oasis-tool-test/files/usr/libexec/rpcd/oasis.lua.test.tool
+- ucode  
+  https://github.com/utakamo/oasis-tool-box/blob/main/oasis-tool-test/files/usr/share/rpcd/ucode/oasis.ucode.test.manager.uc
