@@ -2,6 +2,7 @@
 
 local util  = require("luci.util")
 local misc  = require("oasis.chat.misc")
+local common = require("oasis.common")
 local debug = require("oasis.chat.debug")
 
 local target_pkg_manager = "ipk"
@@ -96,7 +97,7 @@ local install_pkg = function(pkg)
         return false
     end
 
-    misc.write_file("/tmp/oasis/install_pkg_pid", pkg .. "|" .. pid)
+    misc.write_file(common.file.pkg.install, pkg .. "|" .. pid)
 
     return true
 end

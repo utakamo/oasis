@@ -75,6 +75,10 @@ ai.format.output                    = "output"
 ai.format.rpc_output               = "rpc-output"
 ai.format.title                     = "ai_create_title"
 
+local file       = {}
+file.pkg         = {}
+file.pkg.install = "/tmp/oasis/installing_pkg_info"
+
 local endpoint = {}
 endpoint.type = {}
 endpoint.type.default   = "default"
@@ -411,6 +415,7 @@ end
 return {
     db = db,
     ai = ai,
+    file = file,
     endpoint = endpoint,
     flag = flag,
     role = role,

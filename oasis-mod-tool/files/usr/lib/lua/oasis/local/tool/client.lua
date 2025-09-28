@@ -581,9 +581,9 @@ local exec_server_tool = function(format, tool, data)
             -- after the package manager software begins unpacking the package. Therefore,
             -- the UBUS process is terminated before the deadlock occurs, and the monitoring and installation
             -- completion verification are performed at this point.
-            if misc.check_file_exist("/tmp/oasis/install_pkg_pid") then
-                local install_pkg_info = misc.read_file("/tmp/oasis/install_pkg_pid")
-                os.remove("/tmp/oasis/install_pkg_pid")
+            if misc.check_file_exist(common.file.pkg.install) then
+                local install_pkg_info = misc.read_file(common.file.pkg.install)
+                os.remove(common.file.pkg.install)
                 debug:log("oasis.log", "exec_server_tool", "pid = " .. install_pkg_info)
 
                 local pkg, pid = install_pkg_info:match("([^|]+)|([^|]+)")
