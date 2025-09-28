@@ -41,6 +41,8 @@
 
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
+local misc      = require("oasis.chat.misc")
+local mgr       = require("oasis.local.tool.package.manager")
 local debug     = require("oasis.chat.debug")
 local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
@@ -141,8 +143,6 @@ local setup_lua_server_config = function(server_name)
 end
 
 local setup_ucode_server_config = function(server_name)
-
-    local misc = require("oasis.chat.misc")
 
     -- Check ucode binary
     if not misc.check_file_exist("/usr/bin/ucode") then
@@ -567,6 +567,46 @@ local exec_server_tool = function(format, tool, data)
             debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
             result = ubus_call(s.server, s.name, data, s.timeout)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
+
+            -- Control install package
+            if misc.check_file_exist("/tmp/oasis/install_pkg_pid") then
+                local install_pkg_info = misc.read_file("/tmp/oasis/install_pkg_pid")
+                os.remove("/tmp/oasis/install_pkg_pid")
+                debug:log("oasis.log", "exec_server_tool", "pid = " .. install_pkg_info)
+
+                local pkg, pid = install_pkg_info:match("([^|]+)|([^|]+)")
+
+                local timeout = tonumber(uci:get("rpcd", "@rpcd[0]", "timeout")) or 30
+                local elapsed = 0
+
+                local is_install_success = false
+
+                while elapsed < timeout do
+                    debug:log("oasis.log", "install_pkg", "elapsed = " .. elapsed)
+                    if not mgr.check_process_alive(pid) then
+                        debug:log("oasis.log", "install_pkg", "child exited")
+
+                        if mgr.check_installed_pkg(pkg) then
+                            debug:log("oasis.log", "install_pkg", "Check Installed Package OK (" .. pkg .. ")")
+                            is_install_success = true
+                            break
+                        else
+                            debug:log("oasis.log", "install_pkg", "Check Installed Package FAILED (" .. pkg .. ")")
+                            is_install_success = false
+                            break
+                        end
+                    end
+
+                    os.execute("sleep 1")
+                    elapsed = elapsed + 1
+                end
+
+                if not is_install_success then
+                    debug:log("oasis.log", "exec_server_tool", "Failed to install package.")
+                    -- Overwrite UBUS Result
+                    result = { error = "Failed to install " .. pkg .. " package." }
+                end
+            end
         end
     end)
 

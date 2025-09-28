@@ -1,6 +1,8 @@
 #!/usr/bin/env lua
 
 local util  = require("luci.util")
+local misc  = require("oasis.chat.misc")
+local debug = require("oasis.chat.debug")
 
 local target_pkg_manager = "ipk"
 
@@ -31,7 +33,7 @@ local check_installed_pkg = function(pkg)
 end
 
 local update_pkg_info = function(pkg_manager)
-    
+
     target_pkg_manager = pkg_manager
     local result = false
 
@@ -50,36 +52,58 @@ local update_pkg_info = function(pkg_manager)
     return result
 end
 
--- Add check to install_pkg as well
-local install_pkg = function(pkg)
+local function check_process_alive(pid)
+    local ok = os.execute("kill -0 " .. tonumber(pid) .. " >/dev/null 2>&1")
+    return ok == true or ok == 0
+end
 
+local start_install_pkg = function(pkg)
     local guard = require("oasis.security.guard")
 
-    -- Validate package name and reject if invalid
     if not guard.check_safe_string(pkg) then
+        return 0
+    end
+
+    local cmd
+    if target_pkg_manager == "ipk" then
+        cmd = "/bin/opkg"
+    elseif target_pkg_manager == "apk" then
+        cmd = "/bin/apk"
+    else
+        return 0
+    end
+
+    local pipe = io.popen(string.format("%s install %s >/dev/null 2>&1 & echo $!", cmd, pkg))
+    local pid = tonumber(pipe:read("*l"))
+    pipe:close()
+
+    if not pid then
+        debug:log("oasis.log", "install_pkg", "pid failed")
+        return 0
+    end
+
+    return pid
+end
+
+local install_pkg = function(pkg)
+    local pid = start_install_pkg(pkg)
+
+    if type(pid) ~= "number" then
         return false
     end
 
-    -- Shell-escape the package name (defensive; whitelist already restricts allowed chars)
-    local quoted_pkg = "'" .. tostring(pkg):gsub("'", "'\\''") .. "'"
-
-    if target_pkg_manager == "ipk" then
-        local out = util.exec("opkg install " .. quoted_pkg .. " >/dev/null 2>&1; echo $?")
-        out = out:gsub("%s+$", "")
-        local rc = tonumber(out)
-        return (rc == 0)
-    elseif target_pkg_manager == "apk" then
-        local out = util.exec("apk add " .. quoted_pkg .. " >/dev/null 2>&1; echo $?") or ""
-        out = out:gsub("%s+$", "")
-        local rc = tonumber(out)
-        return (rc == 0)
+    if pid == 0 then
+        return false
     end
 
-    return false
+    misc.write_file("/tmp/oasis/install_pkg_pid", pkg .. "|" .. pid)
+
+    return true
 end
 
 return {
     check_installed_pkg = check_installed_pkg,
     update_pkg_info = update_pkg_info,
     install_pkg = install_pkg,
+    check_process_alive = check_process_alive,
 }
