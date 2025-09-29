@@ -482,7 +482,7 @@ local exec_server_tool = function(format, tool, data)
                 -- However, this flag is designed with the assumption that the user may ignore the prompt and later ask
                 -- the AI to execute tools that function correctly only after a reboot.
                 -- Tools that need to run post-reboot can use the check_pkg_reboot_required function to verify whether
-                -- the system has been rebooted. If no file exists in /tmp/oasis/pkg_reboot_required, it is considered
+                -- the system has been rebooted. If no <pkg> file exists in /tmp/oasis/pkg_reboot_required, it is considered
                 -- that the reboot has been completed.
                 if result.reboot then
                     misc.touch(common.file.pkg.reboot_required_path  .. pkg)
