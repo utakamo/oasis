@@ -72,12 +72,13 @@ ai.format.chat                      = "chat"
 ai.format.prompt                    = "prompt"
 ai.format.call                      = "call"
 ai.format.output                    = "output"
-ai.format.rpc_output               = "rpc-output"
+ai.format.rpc_output                = "rpc-output"
 ai.format.title                     = "ai_create_title"
 
-local file       = {}
-file.pkg         = {}
-file.pkg.install = "/tmp/oasis/installing_pkg_info"
+local file                      = {}
+file.pkg                        = {}
+file.pkg.install                = "/tmp/oasis/installing_pkg_info"
+file.pkg.reboot_required_path   = "/tmp/oasis/pkg_reboot_required/"
 
 local endpoint = {}
 endpoint.type = {}

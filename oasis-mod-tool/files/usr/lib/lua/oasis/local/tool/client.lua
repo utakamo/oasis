@@ -473,6 +473,20 @@ local exec_server_tool = function(format, tool, data)
                     -- Overwrite UBUS Result
                     result = { error = "Failed to install " .. pkg .. " package." }
                 end
+
+                -- After a package is successfully installed, the system checks whether a reboot is required.
+                -- If a reboot is necessary, a file named after the corresponding package is placed in
+                -- /tmp/oasis/pkg_reboot_required. Normally, when reboot = true, the WebUI displays a popup
+                -- prompting the user to reboot the system.
+
+                -- However, this flag is designed with the assumption that the user may ignore the prompt and later ask
+                -- the AI to execute tools that function correctly only after a reboot.
+                -- Tools that need to run post-reboot can use the check_pkg_reboot_required function to verify whether
+                -- the system has been rebooted. If no file exists in /tmp/oasis/pkg_reboot_required, it is considered
+                -- that the reboot has been completed.
+                if result.reboot then
+                    misc.touch(common.file.pkg.reboot_required_path  .. pkg)
+                end
             end
         end
     end)

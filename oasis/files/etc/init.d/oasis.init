@@ -4,6 +4,7 @@ START=99
 
 start() {
 
+    mkdir -p /tmp/oasis/pkg_reboot_required
     mkdir -p /tmp/oasis/apply
     # rollback timer start!!
     lua /usr/bin/oasisd boot &
