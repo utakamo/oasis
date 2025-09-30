@@ -64,8 +64,7 @@ server.tool("get_lan_ipaddr", {
     call = function()
         local util = require("luci.util")
         local ip = util.trim(util.exec("uci get network.lan.ipaddr 2>/dev/null"))
-        local res = server.response({lan_ipaddr = ip ~= "" and ip or nil})
-        return res
+        return server.response({lan_ipaddr = ip ~= "" and ip or nil})
     end
 })
 
@@ -74,11 +73,10 @@ server.tool("get_wan_status", {
     call = function()
         local util = require("luci.util")
         local wan_status = util.ubus("network.interface.wan", "status", {})
-        local res = server.response({
+        return server.response({
             up = wan_status and wan_status.up or false,
             ipv4_address = wan_status and wan_status['ipv4-address'] and wan_status['ipv4-address'][1] and wan_status['ipv4-address'][1].address or nil
         })
-        return res
     end
 })
 
@@ -226,12 +224,11 @@ server.tool("get_system_load", {
         local meminfo = util.exec("cat /proc/meminfo")
         local mem_total = meminfo:match("MemTotal:%s+(%d+)")
         local mem_free = meminfo:match("MemFree:%s+(%d+)")
-        local res =  server.response({
+        return server.response({
             uptime = util.trim(uptime_info),
             mem_total_kb = tonumber(mem_total),
             mem_free_kb = tonumber(mem_free)
         })
-        return res
     end
 })
 
@@ -241,13 +238,12 @@ server.tool("get_storage_usage", {
         local util = require("luci.util")
         local df = util.exec("df -h / 2>/dev/null | tail -n 1")
         local size, used, avail, usep = df:match("%S+%s+(%S+)%s+(%S+)%s+(%S+)%s+(%S+)")
-        local res = server.response({
+        return server.response({
             size = size,
             used = used,
             available = avail,
             usage_percent = usep
         })
-        return res
     end
 })
 
@@ -257,8 +253,7 @@ server.tool("get_cpu_temp", {
         local util = require("luci.util")
         local temp = util.exec("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null")
         local temp_c = tonumber(temp) and tonumber(temp) / 1000 or nil
-        local res = server.response({cpu_temp_c = temp_c})
-        return res
+        return server.response({cpu_temp_c = temp_c})
     end
 })
 
