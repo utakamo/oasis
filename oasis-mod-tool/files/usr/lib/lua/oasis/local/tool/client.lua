@@ -398,7 +398,7 @@ local function handle_option_message(msg, msg_type, format)
         io.write(option_json)
         io.flush()
     elseif ((format == common.ai.format.chat) or (format == common.ai.format.prompt)) and option.message then
-        io.write(option.message)
+        io.write(option.message .. "\n\n")
         io.flush()
     end
 end
