@@ -262,4 +262,16 @@ server.tool("get_cpu_temp", {
     end
 })
 
+server.tool("system_reboot", {
+    tool_desc = "Request a System Reboot on the OpenWrt System.",
+    call = function()
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the reboot request. Inform the user that the reboot will proceed once they grant permission.",
+                reboot = true
+            }
+        )
+    end
+})
+
 server.run(arg)
