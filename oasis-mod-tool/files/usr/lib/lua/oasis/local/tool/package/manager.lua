@@ -102,9 +102,14 @@ local install_pkg = function(pkg)
     return true
 end
 
+local check_pkg_reboot_required = function(pkg)
+    return misc.check_file_exist(common.file.pkg.reboot_required_path  .. pkg)
+end
+
 return {
     check_installed_pkg = check_installed_pkg,
     update_pkg_info = update_pkg_info,
     install_pkg = install_pkg,
     check_process_alive = check_process_alive,
+    check_pkg_reboot_required = check_pkg_reboot_required,
 }
