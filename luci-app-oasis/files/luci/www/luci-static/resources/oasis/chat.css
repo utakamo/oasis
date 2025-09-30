@@ -995,6 +995,7 @@ textarea:focus-visible {
 .message-text h4,
 .message-text h5,
 .message-text h6 {
+    color: #6495ED;
     margin: 8px 0 6px;
     line-height: 1.3;
 }

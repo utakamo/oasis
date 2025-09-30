@@ -506,11 +506,11 @@
             } else if (isCodeBlock) {
                 html += escapeHTML(line) + '\n';
             } else {
-                line = line.replace(/^###### (.+)$/gm, '<h6 style="color:#DCDCDC;">$1</h6>');
-                line = line.replace(/^##### (.+)$/gm, '<h5 style="color:#708090;">$1</h5>');
-                line = line.replace(/^#### (.+)$/gm, '<h4 style="color:#B0C4DE;">$1</h4>');
-                line = line.replace(/^### (.+)$/gm, '<h3 style="color:#4682B4;">$1</h3>');
-                line = line.replace(/^## (.+)$/gm, '<h2 style="color:#6495ED;">$1</h2>');
+                line = line.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
+                line = line.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
+                line = line.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+                line = line.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+                line = line.replace(/^## (.+)$/gm, '<h2>$1</h2>');
                 line = line.replace(/^# (.+)$/gm, '<h1>$1</h1>');
                 line = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
                 line = line.replace(/\*(.+?)\*/g, '<i>$1</i>');
