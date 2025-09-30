@@ -7,6 +7,7 @@ local jsonc     = require("luci.jsonc")
 local datactrl  = require("oasis.chat.datactrl")
 local util      = require("luci.util")
 local ous       = require("oasis.unified.chat.schema")
+local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 
 -- Create a shallow copy of chat and drop transient messages before persisting
@@ -67,6 +68,7 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
         or (format == common.ai.format.prompt) then
 
         if tool_used then
+            debug:log("oasis.log", "output_response_msg", response_ai_json)
             local tool_info = jsonc.parse(response_ai_json)
             local LABEL = "\27[1;37;44m"  -- bold white on blue (match Title/ID label)
             local VALUE = "\27[1;33;44m"  -- bold yellow on blue (match title/id value)
@@ -86,13 +88,20 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
 
                 if tbl.output and type(tbl.output) == "string" then
                     local output = jsonc.parse(tbl.output)
+
                     if output.user_only then
                         io.write(RESET .. "\n\n\27[32m[User Only Message]\27[0m\n" .. output.user_only)
                     end
                 end
             end
+
             io.write(RESET .. '\n')
             io.flush()
+
+            if tool_info.reboot then
+                misc.write_file(common.file.console.reboot_required, "reboot")
+            end
+
         elseif (text_for_console) and (#text_for_console) > 0 then
             io.write(text_for_console)
             io.flush()

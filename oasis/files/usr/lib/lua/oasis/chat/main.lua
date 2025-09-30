@@ -656,6 +656,21 @@ end
 local function get_user_input(chat)
     local your_message
     repeat
+        if misc.check_file_exist(common.file.console.reboot_required) then
+
+            io.write("System Reboot [Y/N]: ")
+            io.flush()
+
+            local reply = io.read()
+            if reply == "Y" then
+                os.execute("reboot")
+            end
+
+            io.write("\n")
+
+            os.remove(common.file.console.reboot_required)
+        end
+
         io.write("\27[32m\nYou :\27[0m")
         io.flush()
         your_message = io.read()

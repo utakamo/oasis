@@ -79,6 +79,8 @@ local file                      = {}
 file.pkg                        = {}
 file.pkg.install                = "/tmp/oasis/installing_pkg_info"
 file.pkg.reboot_required_path   = "/tmp/oasis/pkg_reboot_required/"
+file.console                    = {}
+file.console.reboot_required    = "/tmp/oasis/reboot_required"
 
 local endpoint = {}
 endpoint.type = {}
