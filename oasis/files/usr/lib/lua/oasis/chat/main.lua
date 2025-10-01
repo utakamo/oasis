@@ -652,25 +652,31 @@ local function initialize_chat_service(arg)
     return service
 end
 
+local function judge_system_reboot()
+
+    if not misc.check_file_exist(common.file.console.reboot_required) then
+        return
+    end
+
+    io.write("System Reboot [Y/N]: ")
+    io.flush()
+
+    local reply = io.read()
+    if reply == "Y" then
+        os.execute("reboot")
+    end
+
+    io.write("\n")
+
+    os.remove(common.file.console.reboot_required)
+    os.exit(0)
+end
+
 -- Get user input
 local function get_user_input(chat)
     local your_message
     repeat
-        if misc.check_file_exist(common.file.console.reboot_required) then
-
-            io.write("System Reboot [Y/N]: ")
-            io.flush()
-
-            local reply = io.read()
-            if reply == "Y" then
-                os.execute("reboot")
-            end
-
-            io.write("\n")
-
-            os.remove(common.file.console.reboot_required)
-        end
-
+        judge_system_reboot()
         io.write("\27[32m\nYou :\27[0m")
         io.flush()
         your_message = io.read()
@@ -852,6 +858,8 @@ local prompt = function(arg)
             print()
         end
     end
+
+    judge_system_reboot()
 end
 
 local sysmsg = function(arg)
