@@ -492,6 +492,15 @@ local exec_server_tool = function(format, tool, data)
     end)
 
     if not found then
+        -- Handles cases where the AI requests a non-existent tool.
+        -- This typically indicates hallucination. The system notifies the AI accordingly.
+        -- This does not fix LLM-level issues, but helps prevent JSON or communication errors between AI and system.
+        result = {
+            error = "tool_not_recognized",
+            message ="The requested tool is not recognized on this system.",
+            cause = "hallucination"
+        }
+
         debug:log("oasis.log", "exec_server_tool", string.format("Tool '%s' not found or not enabled.", tool))
     end
 
