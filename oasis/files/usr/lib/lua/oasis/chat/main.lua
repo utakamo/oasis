@@ -25,8 +25,12 @@ end
 local storage = function(args)
 
     local storage = {}
-    local current_storage_path = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "path")
-    local chat_max = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "chat_max")
+    local current_storage_path = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "path") or ""
+    local chat_max = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "chat_max") or ""
+
+    local function is_valid_path(p)
+        return (type(p) == "string") and p:match("^[%w%._/-]+$")
+    end
 
     local output = {}
     output.title = {}
@@ -50,7 +54,7 @@ local storage = function(args)
     if (not args.path) then
         io.write(string.format(output.format_2, output.path))
         io.flush()
-        storage.path = io.read()
+        storage.path = io.read() or ""
     else
         print(string.format(output.format_1, "path", args.path))
         storage.path = args.path
@@ -59,22 +63,24 @@ local storage = function(args)
     if (not args.chat_max) then
         io.write(string.format(output.format_2, output.chat_max))
         io.flush()
-        storage.chat_max = io.read()
+        storage.chat_max = io.read() or ""
     else
         print(string.format(output.format_1, "chat-max", args.chat_max))
         storage.chat_max = args.chat_max
     end
 
     if #storage.path > 0 then
-        local prefix = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "prefix")
+        local prefix = (uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "prefix") or "")
 
         if (#current_storage_path == 0) or (#prefix == 0) then
             print(output.error.config)
             return
         end
 
-        if storage.path:match("^[%w/]+$") then
-            sys.exec("mv " .. current_storage_path .. "/" .. prefix .. "* " .. storage.path)
+        if is_valid_path(storage.path) then
+            -- ensure destination exists and move existing chat files safely
+            local cmd = string.format("mkdir -p %q && mv %q/%s* %q", storage.path, current_storage_path, prefix, storage.path)
+            sys.exec(cmd)
         else
             print(output.error.path)
             return
@@ -83,7 +89,7 @@ local storage = function(args)
         uci:set(common.db.uci.cfg, common.db.uci.sect.storage, "path", storage.path)
     end
 
-    if #storage.chat_max > 0 then
+    if storage.chat_max and (#storage.chat_max > 0) then
         uci:set(common.db.uci.cfg, common.db.uci.sect.storage, "chat_max", storage.chat_max)
     end
 
