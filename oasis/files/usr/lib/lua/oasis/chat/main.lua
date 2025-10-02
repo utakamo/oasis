@@ -702,6 +702,23 @@ end
 -- Process message and communicate with AI
 local function process_message(service, chat, message)
 
+    -- Per-chat turn limit: block when user message count reached chat_max
+    local function is_turns_exceeded_for_chat(chat)
+        local uci = require("luci.model.uci").cursor()
+        local max = tonumber(uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "chat_max") or "0") or 0
+        if max <= 0 then return false end
+        local cnt = 0
+        for _, m in ipairs(chat.messages or {}) do
+            if m.role == common.role.user then cnt = cnt + 1 end
+        end
+        return cnt >= max
+    end
+
+    if is_turns_exceeded_for_chat(chat) then
+        print("Error: maximum chat turns reached for this chat.")
+        return false
+    end
+
     if not ous.setup_msg(service, chat, {role = common.role.user, message = message}) then
         return false
     end

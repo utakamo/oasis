@@ -30,6 +30,7 @@ local methods = {
             local uci           = require("luci.model.uci").cursor()
             local oasis_ubus    = require("oasis.ubus.util")
             local common        = require("oasis.common")
+            local util          = require("luci.util")
             -- debug:log("oasis.log", "send", "\n--- [oasis.chat][send] ---")
 
             local r = {}
@@ -43,6 +44,30 @@ local methods = {
             if not is_service then
                 r.result = jsonc.stringify({ status = "No AI Service ..." })
                 return r
+            end
+
+            -- Per-chat turn limit (count user messages in saved chat)
+            local function is_chat_turns_exceeded(id)
+                local max = tonumber(uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "chat_max") or "0") or 0
+                if max <= 0 then return false end
+
+                if not id or (#id == 0) then return false end
+
+                local loaded = util.ubus("oasis.chat", "load", { id = id }) or {}
+                local cnt = 0
+                if loaded and loaded.messages then
+                    for _, m in ipairs(loaded.messages) do
+                        if m.role == common.role.user then cnt = cnt + 1 end
+                    end
+                end
+                return cnt >= max
+            end
+
+            if args.id and (#args.id > 0) then
+                if is_chat_turns_exceeded(args.id) then
+                    r.result = jsonc.stringify({ status = common.status.error, desc = "Maximum chat turns reached for this chat" })
+                    return r
+                end
             end
 
             local oasis = require("oasis.chat.main")
