@@ -9,6 +9,7 @@ local schedule_reboot = function(delay_seconds)
     util.exec("(sleep " .. tostring(delay_seconds) .. " && reboot) >/dev/null 2>&1 &")
 end
 
+local system_reboot = function() schedule_reboot(0) end
 local system_reboot_after_5sec  = function() schedule_reboot(5)  end
 local system_reboot_after_10sec = function() schedule_reboot(10) end
 local system_reboot_after_15sec = function() schedule_reboot(15) end
@@ -33,12 +34,10 @@ local system_command = function(cmd)
 end
 
 return {
+    system_reboot = system_reboot,
     system_reboot_after_5sec  = system_reboot_after_5sec,
     system_reboot_after_10sec = system_reboot_after_10sec,
     system_reboot_after_15sec = system_reboot_after_15sec,
     system_reboot_after_20sec = system_reboot_after_20sec,
     system_command = system_command,
 }
-
-
-
