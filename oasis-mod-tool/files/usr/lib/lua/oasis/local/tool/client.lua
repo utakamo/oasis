@@ -487,6 +487,19 @@ local exec_server_tool = function(format, tool, data)
                 if result.reboot then
                     misc.touch(common.file.pkg.reboot_required_path  .. pkg)
                 end
+
+                if result.restart_service then
+                    -- The variable restart_service stores the name of the service to be restarted (e.g., "network").
+                    -- It checks whether the service exists directly under /etc/init.d; if it does not exist, restart_service is deleted.
+                    -- If the service exists, a restart request flag is created under /tmp/oasis.
+                    local svc = tostring(result.restart_service or "")
+                    if not misc.check_init_script_exists(svc) then
+                        result.restart_service = nil
+                    else
+                        misc.touch(common.file.service.restart_required)
+                        misc.write_file(common.file.service.restart_required, svc)
+                    end
+                end
             end
         end
     end)
