@@ -33,6 +33,34 @@ local system_command = function(cmd)
     return (rc == 0)
 end
 
+local restart_service = function(service_name)
+	local misc  = require("oasis.chat.misc")
+	local guard = require("oasis.security.guard")
+
+	if type(service_name) ~= "string" then
+		return false
+	end
+
+	service_name = service_name:match("^%s*(.-)%s*$") or ""
+	if #service_name == 0 then
+		return false
+	end
+
+	if not misc.check_init_script_exists(service_name) then
+		return false
+	end
+
+	if not guard.check_safe_string(service_name) then
+		return false
+	end
+
+	service_name = guard.sanitize(service_name)
+
+	local out = util.exec("service " .. service_name .. " restart >/dev/null 2>&1; echo $?")
+	out = tostring(out or ""):gsub("%s+$", "")
+	return tonumber(out) == 0
+end
+
 return {
     system_reboot = system_reboot,
     system_reboot_after_5sec  = system_reboot_after_5sec,
@@ -40,4 +68,5 @@ return {
     system_reboot_after_15sec = system_reboot_after_15sec,
     system_reboot_after_20sec = system_reboot_after_20sec,
     system_command = system_command,
+	restart_service = restart_service,
 }
