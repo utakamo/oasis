@@ -33,6 +33,7 @@ local storage = function(args)
     end
 
     local output = {}
+    output.error = {}
     output.title = {}
     output.title.current    = "[Current Storage Config]"
     output.title.setup      = "[Setup New Storage Config]"
@@ -47,7 +48,7 @@ local storage = function(args)
     print(output.title.current)
     print(string.format(output.format_1, "path", current_storage_path))
     print(string.format(output.format_1, "chat-max", chat_max))
-
+    print()
     print(output.title.setup)
     print(output.title.input)
 
@@ -703,14 +704,14 @@ end
 local function process_message(service, chat, message)
 
     -- Per-chat turn limit: block when user message count reached chat_max
-    local function is_turns_exceeded_for_chat(chat)
-        local uci = require("luci.model.uci").cursor()
+    local function is_turns_exceeded_for_chat(data)
         local max = tonumber(uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "chat_max") or "0") or 0
         if max <= 0 then return false end
         local cnt = 0
-        for _, m in ipairs(chat.messages or {}) do
+        for _, m in ipairs(data.messages or {}) do
             if m.role == common.role.user then cnt = cnt + 1 end
         end
+        debug:log("oasis.log", "process_message", "cnt = " .. cnt .. ", max = " .. max)
         return cnt >= max
     end
 
@@ -720,6 +721,7 @@ local function process_message(service, chat, message)
     end
 
     if not ous.setup_msg(service, chat, {role = common.role.user, message = message}) then
+        debug:log("oasis.log", "process_message", "setup message error")
         return false
     end
 
