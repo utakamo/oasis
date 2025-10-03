@@ -124,6 +124,29 @@ local copy_file = function(src, dest)
     return true
 end
 
+-- Check whether /etc/init.d/<service_name> exists (with safe validation)
+local check_init_script_exists = function(service_name)
+	if type(service_name) ~= "string" then
+		return false
+	end
+
+	local guard = require("oasis.security.guard")
+
+	service_name = service_name:match("^%s*(.-)%s*$") or ""
+	if #service_name == 0 then
+		return false
+	end
+
+	if not guard.check_safe_string(service_name) then
+		return false
+	end
+
+	service_name = guard.sanitize(service_name)
+
+	local init_script = "/etc/init.d/" .. service_name
+	return check_file_exist(init_script)
+end
+
 return {
     markdown = markdown,
     get_uptime = get_uptime,
@@ -133,4 +156,5 @@ return {
     write_file = write_file,
     read_file = read_file,
     copy_file = copy_file,
+    check_init_script_exists = check_init_script_exists,
 }
