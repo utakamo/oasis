@@ -1,6 +1,7 @@
 #!/usr/bin/env lua
 
 local util  = require("luci.util")
+local debug = require("oasis.chat.debug")
 
 local markdown = function(mark, message)
 
@@ -124,26 +125,28 @@ local copy_file = function(src, dest)
     return true
 end
 
--- Check whether /etc/init.d/<service_name> exists (with safe validation)
-local check_init_script_exists = function(service_name)
-	if type(service_name) ~= "string" then
+-- Check whether /etc/init.d/<service> exists (with safe validation)
+local check_init_script_exists = function(service)
+
+	if type(service) ~= "string" then
 		return false
 	end
 
 	local guard = require("oasis.security.guard")
 
-	service_name = service_name:match("^%s*(.-)%s*$") or ""
-	if #service_name == 0 then
+	service = service:match("^%s*(.-)%s*$") or ""
+	if #service == 0 then
 		return false
 	end
 
-	if not guard.check_safe_string(service_name) then
+	if not guard.check_safe_string(service) then
 		return false
 	end
 
-	service_name = guard.sanitize(service_name)
+	service = guard.sanitize(service)
 
-	local init_script = "/etc/init.d/" .. service_name
+	local init_script = "/etc/init.d/" .. service
+    debug:log("oasis.log", "check_init_script_exists", "service = " .. service)
 	return check_file_exist(init_script)
 end
 
