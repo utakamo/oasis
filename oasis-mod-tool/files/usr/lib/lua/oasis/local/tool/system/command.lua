@@ -75,7 +75,7 @@ local system_command = function(cmd)
 
     local command = cmd .. " >/dev/null 2>&1; echo $?"
 
-    local out = util.exec(cmd)
+    local out = util.exec(command)
     out = out:gsub("%s+$", "")
     local rc = tonumber(out)
     return (rc == 0)
