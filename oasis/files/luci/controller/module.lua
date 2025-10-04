@@ -1013,12 +1013,8 @@ function restart_service()
 	svc = svc:gsub("%s+$", "")
 
 	local cmd = require("oasis.local.tool.system.command")
-	local ok = cmd.restart_service(svc)
+	cmd.restart_service_after_3sec(svc)
 
 	luci_http.prepare_content("application/json")
-	if ok then
-		luci_http.write_json({ status = "OK" })
-	else
-		luci_http.write_json({ status = "NG" })
-	end
+	luci_http.write_json({ status = "OK" })
 end
