@@ -679,11 +679,48 @@ local function judge_system_reboot()
     os.exit(0)
 end
 
+local function judge_service_restart()
+
+	local path = common.file.service.restart_required
+    local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+
+    if not is_tool then
+        os.remove(path)
+        return
+    end
+
+	if not misc.check_file_exist(path) then
+		return
+	end
+
+	local svc = misc.read_file(path) or ""
+	svc = svc:gsub("%s+$", "")
+	if #svc == 0 then
+		os.remove(path)
+		return
+	end
+
+	io.write("Restart Service (" .. svc .. ") [Y/N]: ")
+	io.flush()
+
+	local reply = io.read()
+	if reply == "Y" then
+        local cmd = require("oasis.local.tool.system.command")
+        cmd.restart_service(svc)
+
+		print("\nService restart.")
+	end
+
+	io.write("\n")
+	os.remove(path)
+end
+
 -- Get user input
 local function get_user_input(chat)
     local your_message
     repeat
         judge_system_reboot()
+        judge_service_restart()
         io.write("\27[32m\nYou :\27[0m")
         io.flush()
         your_message = io.read()
@@ -885,6 +922,7 @@ local prompt = function(arg)
     end
 
     judge_system_reboot()
+    judge_service_restart()
 end
 
 local sysmsg = function(arg)
