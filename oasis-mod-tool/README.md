@@ -129,7 +129,7 @@ The image below shows an example of how the tools page appears in Oasis.
 | Param name | Desc | Required |
 |----------|----------|----------|
 | tool_desc    | Tool overview description. The AI uses this information to understand what kind of tool it is. | YES |
-| args_desc    | Explanation of tool parameters used by the AI to configure arguments during execution. | YES |
+| args_desc    | Explanation of tool parameters used by the AI to configure arguments during execution. | NO |
 | exec_msg    |  pre-execution message | NO |
 | download_msg | download message and effect | NO |
 
@@ -138,6 +138,9 @@ The tool’s response data is provided as a table in Lua or ucode. Certain field
 
 - `reboot = true`  
 If reboot = true exists in the table, the user will be notified to confirm whether to execute a system reboot when the AI’s final response is received.
+
+- `restart_service = <service>`
+If restart_service = <service> (e.g. "network") exists in the table, the system will prompt the user for confirmation before proceeding.
 
 - `user_only = <message>`  
 As the name suggests, this is the tool execution result that is notified only to the user. It is not sent to the LLM. The tool execution result sent to the AI will have the user_only field removed.  
