@@ -129,7 +129,7 @@ The image below shows an example of how the tools page appears in Oasis.
 | Param name | Desc | Required |
 |----------|----------|----------|
 | tool_desc    | Tool overview description. The AI uses this information to understand what kind of tool it is. | YES |
-| args_desc    | Explanation of tool parameters used by the AI to configure arguments during execution. | NO |
+| args_desc    | Explanation of tool parameters used by the AI to configure arguments during execution. Not required if the tool does not take any arguments. | NO |
 | exec_msg    |  pre-execution message | NO |
 | download_msg | download message and effect | NO |
 
