@@ -706,9 +706,9 @@ local function judge_service_restart()
 	local reply = io.read()
 	if reply == "Y" then
         local cmd = require("oasis.local.tool.system.command")
-        cmd.restart_service(svc)
+        cmd.restart_service_after_3sec(svc)
 
-		print("\nService restart.")
+		print("\nService restart will start in 3 seconds.")
 	end
 
 	io.write("\n")
@@ -753,13 +753,12 @@ local function process_message(service, chat, message)
     end
 
     if is_turns_exceeded_for_chat(chat) then
-        print("Error: maximum chat turns reached for this chat.")
-        return false
+        return false, "maximum chat turns reached for this chat"
     end
 
     if not ous.setup_msg(service, chat, {role = common.role.user, message = message}) then
         debug:log("oasis.log", "process_message", "setup message error")
-        return false
+        return false, "setup message error"
     end
 
     datactrl.record_chat_data(service, chat)
@@ -775,6 +774,8 @@ local function process_message(service, chat, message)
     if tool_used then
         if service:handle_tool_output(tool_info, chat) then
             transfer.chat_with_ai(service, chat)
+        else
+            return false, "failed to handle tool output"
         end
     end
 
@@ -794,8 +795,9 @@ local function chat_loop(service, chat)
             break
         end
 
-        if not process_message(service, chat, message) then
-            print("Error: Failed to process message")
+        local ok, err = process_message(service, chat, message)
+        if not ok then
+            print("Error: " .. (err or "Failed to process message"))
         end
     end
 end
