@@ -35,6 +35,8 @@ end
 
 local schedule_restart = function(delay_seconds, service)
 
+	local common = require("oasis.common")
+
     if not check_service(service) then
         return
     end
@@ -52,6 +54,8 @@ local schedule_restart = function(delay_seconds, service)
     end
 
     util.exec(cmd)
+
+	os.remove(common.file.service.restart_required)
 end
 
 -- System Reboot
