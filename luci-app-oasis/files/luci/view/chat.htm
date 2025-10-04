@@ -2261,9 +2261,9 @@
                     }
 
                     // Restart service popup trigger (streaming) -> defer to final phase
-                    if (evt && typeof evt.restart_service === 'string' && evt.restart_service.trim().length > 0) {
-                        console.log('[oasis] detected restart_service (stream top-level):', evt.restart_service);
-                        pendingServiceRestart = evt.restart_service.trim();
+                    if (evt && typeof evt.prepare_service_restart === 'string' && evt.prepare_service_restart.trim().length > 0) {
+                        console.log('[oasis] detected prepare_service_restart (stream top-level):', evt.prepare_service_restart);
+                        pendingServiceRestart = evt.prepare_service_restart.trim();
                     }
 
                     // Tool execution notice
@@ -2323,11 +2323,11 @@
                                     if (!o || typeof o.output !== 'string') return;
                                     try {
                                         const parsed = JSON.parse(o.output);
-                                        // Detect restart_service inside tool output JSON
-                                        if (parsed && typeof parsed.restart_service === 'string') {
-                                            const svc = parsed.restart_service.trim();
+                                        // Detect prepare_service_restart inside tool output JSON
+                                        if (parsed && typeof parsed.prepare_service_restart === 'string') {
+                                            const svc = parsed.prepare_service_restart.trim();
                                             if (svc) {
-                                                console.log('[oasis] detected restart_service in tool_outputs (stream):', svc);
+                                                console.log('[oasis] detected prepare_service_restart in tool_outputs (stream):', svc);
                                                 pendingServiceRestart = svc;
                                             }
                                         }
@@ -2490,11 +2490,11 @@
                                     if (!o || typeof o.output !== 'string') return;
                                     try {
                                         const parsed = JSON.parse(o.output);
-                                        // Detect restart_service inside tool output JSON (single JSON path)
-                                        if (parsed && typeof parsed.restart_service === 'string') {
-                                            const svc = parsed.restart_service.trim();
+                                        // Detect prepare_service_restart inside tool output JSON (single JSON path)
+                                        if (parsed && typeof parsed.prepare_service_restart === 'string') {
+                                            const svc = parsed.prepare_service_restart.trim();
                                             if (svc) {
-                                                console.log('[oasis] detected restart_service in tool_outputs (single):', svc);
+                                                console.log('[oasis] detected prepare_service_restart in tool_outputs (single):', svc);
                                                 pendingServiceRestart = svc;
                                             }
                                         }
@@ -2522,9 +2522,9 @@
                     }
 
                     // Restart service popup trigger (single JSON) -> defer to final phase
-                    if (evt && typeof evt.restart_service === 'string' && evt.restart_service.trim().length > 0) {
-                        console.log('[oasis] detected restart_service (single top-level):', evt.restart_service);
-                        pendingServiceRestart = evt.restart_service.trim();
+                    if (evt && typeof evt.prepare_service_restart === 'string' && evt.prepare_service_restart.trim().length > 0) {
+                        console.log('[oasis] detected prepare_service_restart (single top-level):', evt.prepare_service_restart);
+                        pendingServiceRestart = evt.prepare_service_restart.trim();
                     }
 
                     if (evt.message && typeof evt.message.content === 'string') {
