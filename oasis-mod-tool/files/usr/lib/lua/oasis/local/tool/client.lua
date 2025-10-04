@@ -496,7 +496,6 @@ local exec_server_tool = function(format, tool, data)
                     if not misc.check_init_script_exists(svc) then
                         result.restart_service = nil
                     else
-                        misc.touch(common.file.service.restart_required)
                         misc.write_file(common.file.service.restart_required, svc)
                     end
                 end
