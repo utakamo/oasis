@@ -86,6 +86,22 @@
   100% { transform: scale(1); opacity: 1; }
 }
 #reboot_announce.reboot-animate { animation: rebootPulse 1s ease-in-out 2; }
+
+/* Restart Service popup buttons */
+.uci-popup .btn-restart {
+  background: #1976d2;      /* blue */
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.uci-popup .btn-restart:hover { background: #1565c0; }
+.uci-popup .btn-restart:disabled { background: #6ea8de; cursor: not-allowed; }
+
+.uci-popup button + button {
+  margin-left: 10px;        /* space between Restart and Cancel */
+}
 </style>
 
 <div class="oasis-container">
@@ -278,6 +294,39 @@
             }
             if (elapsed >= totalMs) {
                 if (announce) { announce.style.display = 'block'; announce.classList.add('reboot-animate'); }
+            } else {
+                requestAnimationFrame(tick);
+            }
+        };
+        requestAnimationFrame(tick);
+    }
+
+    function startServiceRestartProgress(totalMs = 10000) {
+        const applyingPopup = document.getElementById('applying-popup');
+        const title = document.getElementById('applying-popup-title');
+        const progressBar = document.getElementById('progressBar');
+        const info = document.getElementById('progressInfo');
+        if (!applyingPopup || !title || !progressBar) return;
+
+        title.textContent = 'Restarting service...';
+        applyingPopup.style.display = 'block';
+        centerElementInChat(applyingPopup);
+        progressBar.style.width = '0%';
+        if (info) info.textContent = '';
+
+        const startTs = Date.now();
+        const tick = () => {
+            const elapsed = Date.now() - startTs;
+            const pct = Math.min(100, Math.round((elapsed / totalMs) * 100));
+            progressBar.style.width = pct + '%';
+            if (info) {
+                const remainMs = Math.max(0, totalMs - elapsed);
+                const remainSec = Math.ceil(remainMs / 1000);
+                info.textContent = `Please wait ${remainSec}s (${pct}%)`;
+            }
+            if (elapsed >= totalMs) {
+                if (info) info.textContent = '';
+                applyingPopup.style.display = 'none';
             } else {
                 requestAnimationFrame(tick);
             }
@@ -1965,6 +2014,83 @@
         }
     }
 
+    function show_restart_service_popup(serviceName) {
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+        if (!chatMessagesContainer) return;
+
+        if (document.getElementById("oasis-restart-service")) return;
+
+        const systemMessage = document.createElement("div");
+        systemMessage.classList.add("message", "oasis-system");
+        systemMessage.id = "oasis-restart-service";
+
+        const messageTextDiv = document.createElement("div");
+        messageTextDiv.className = "message-text";
+
+        const titleDiv = document.createElement("div");
+        titleDiv.textContent = (serviceName && serviceName.length)
+            ? `Service "${serviceName}" needs restart. Restart now?`
+            : "Service restart is required. Restart now?";
+        messageTextDiv.appendChild(titleDiv);
+
+        const popupButtonsDiv = document.createElement("div");
+        popupButtonsDiv.className = "uci-popup-buttons";
+
+        const popupDiv = document.createElement("div");
+        popupDiv.className = "uci-popup";
+
+        const restartBtn = document.createElement("button");
+        restartBtn.textContent = "Restart";
+        restartBtn.className = "btn-restart";
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.id = "uci-cancel";
+        cancelBtn.textContent = "Cancel";
+
+        restartBtn.addEventListener("click", async () => {
+            restartBtn.disabled = true;
+            cancelBtn.disabled = true;
+            try {
+                const res = await fetch('<%=build_url("admin", "network", "oasis", "restart-service")%>', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let data = null;
+                try { data = await res.json(); } catch (_) {}
+                if (!data || data.status !== 'OK') {
+                    console.error('restart-service NG:', data);
+                } else {
+                    const el = document.getElementById("oasis-restart-service");
+                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                    startServiceRestartProgress(10000);
+                }
+            } catch (e) {
+                console.error('restart-service failed:', e);
+            } finally {
+                restartBtn.disabled = false;
+                cancelBtn.disabled = false;
+            }
+        });
+
+        cancelBtn.addEventListener("click", () => {
+            const el = document.getElementById("oasis-restart-service");
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        });
+
+        popupDiv.appendChild(restartBtn);
+        popupDiv.appendChild(cancelBtn);
+        popupButtonsDiv.appendChild(popupDiv);
+        messageTextDiv.appendChild(popupButtonsDiv);
+        systemMessage.appendChild(messageTextDiv);
+        chatMessagesContainer.appendChild(systemMessage);
+
+        if (typeof keepLatestMessageVisible === 'function') {
+            keepLatestMessageVisible(true);
+        }
+    }
+
 
     // TODO: Temporary Fix
     // This function will be removed later.
@@ -2025,6 +2151,7 @@
         let toolNoticeShown = false;
         let toolNoticeMessageDiv = null;
         let rebootRequired = false;
+        let pendingServiceRestart = '';
 
         // Utility to extract complete JSON objects from the buffer
         function extractJsonObjects(text) {
@@ -2133,6 +2260,12 @@
                         }
                     }
 
+                    // Restart service popup trigger (streaming) -> defer to final phase
+                    if (evt && typeof evt.restart_service === 'string' && evt.restart_service.trim().length > 0) {
+                        console.log('[oasis] detected restart_service (stream top-level):', evt.restart_service);
+                        pendingServiceRestart = evt.restart_service.trim();
+                    }
+
                     // Tool execution notice
                     // Expected JSON: {"tool_outputs":[{"tool_call_id":"...","output":"...","name":"..."}], "service":"..."}
                     if (evt && Array.isArray(evt.tool_outputs)) {
@@ -2190,6 +2323,14 @@
                                     if (!o || typeof o.output !== 'string') return;
                                     try {
                                         const parsed = JSON.parse(o.output);
+                                        // Detect restart_service inside tool output JSON
+                                        if (parsed && typeof parsed.restart_service === 'string') {
+                                            const svc = parsed.restart_service.trim();
+                                            if (svc) {
+                                                console.log('[oasis] detected restart_service in tool_outputs (stream):', svc);
+                                                pendingServiceRestart = svc;
+                                            }
+                                        }
                                         const userOnly = (parsed && typeof parsed.user_only === 'string') ? parsed.user_only.trim() : '';
                                         if (!userOnly) return;
 
@@ -2349,44 +2490,17 @@
                                     if (!o || typeof o.output !== 'string') return;
                                     try {
                                         const parsed = JSON.parse(o.output);
+                                        // Detect restart_service inside tool output JSON (single JSON path)
+                                        if (parsed && typeof parsed.restart_service === 'string') {
+                                            const svc = parsed.restart_service.trim();
+                                            if (svc) {
+                                                console.log('[oasis] detected restart_service in tool_outputs (single):', svc);
+                                                pendingServiceRestart = svc;
+                                            }
+                                        }
                                         const userOnly = (parsed && typeof parsed.user_only === 'string') ? parsed.user_only.trim() : '';
                                         if (!userOnly) return;
-
-                                        const iconPath2 = `${resourcePath}/oasis/${icon_name}`;
-                                        const msgDiv2 = document.createElement('div');
-                                        msgDiv2.className = 'message received oasis-user-only';
-                                        const iconDiv2 = document.createElement('div');
-                                        iconDiv2.className = 'icon';
-                                        iconDiv2.style.backgroundImage = `url(${iconPath2})`;
-                                        const textDiv2 = document.createElement('div');
-                                        textDiv2.className = 'message-text';
-                                        const titleEl = document.createElement('div');
-                                        titleEl.className = 'oasis-user-only-title';
-                                        titleEl.textContent = 'user only message';
-                                        const bodyEl = document.createElement('div');
-                                        bodyEl.className = 'oasis-user-only-body';
-                                        bodyEl.innerHTML = sanitizeHTML(convertMarkdownToHTML(userOnly));
-                                        textDiv2.appendChild(titleEl);
-                                        textDiv2.appendChild(bodyEl);
-                                        msgDiv2.appendChild(iconDiv2);
-                                        msgDiv2.appendChild(textDiv2);
-
-                                        const chatRoot2 = document.querySelector('.chat-messages');
-                                        if (chatRoot2 && toolNoticeMessageDiv && chatRoot2.contains(toolNoticeMessageDiv)) {
-                                            if (toolNoticeMessageDiv.nextSibling) {
-                                                chatRoot2.insertBefore(msgDiv2, toolNoticeMessageDiv.nextSibling);
-                                            } else {
-                                                chatRoot2.appendChild(msgDiv2);
-                                            }
-                                        } else if (chatRoot2) {
-                                            chatRoot2.appendChild(msgDiv2);
-                                        }
-                                        if (isKeyboardOpen) {
-                                            keepLatestMessageVisible(true);
-                                            setChatScrollLock(true);
-                                        } else {
-                                            keepLatestMessageVisible(false);
-                                        }
+                                        // ... existing code ...
                                     } catch (_) {}
                                 });
                             } catch (_) {}
@@ -2405,6 +2519,12 @@
                         } else if (evt.type === 'download') {
                             showDownloadOverlay(evt.message || 'Downloading...');
                         }
+                    }
+
+                    // Restart service popup trigger (single JSON) -> defer to final phase
+                    if (evt && typeof evt.restart_service === 'string' && evt.restart_service.trim().length > 0) {
+                        console.log('[oasis] detected restart_service (single top-level):', evt.restart_service);
+                        pendingServiceRestart = evt.restart_service.trim();
                     }
 
                     if (evt.message && typeof evt.message.content === 'string') {
@@ -2439,6 +2559,11 @@
                 setTimeout(async () => {
                     show_reboot_popup();
                 }, 0);
+            }
+            // Show restart-service popup at the same timing as reboot popup (final phase)
+            if (pendingServiceRestart && pendingServiceRestart.length > 0) {
+                console.log('[oasis] pendingServiceRestart(final):', pendingServiceRestart);
+                setTimeout(() => { show_restart_service_popup(pendingServiceRestart); }, 0);
             }
             if (receivedMessageTextContainer._typingTimer) {
                 clearInterval(receivedMessageTextContainer._typingTimer);
