@@ -139,7 +139,7 @@ The tool’s response data is provided as a table in Lua or ucode. Certain field
 - `reboot = true`  
 If reboot = true exists in the table, the user will be notified to confirm whether to execute a system reboot when the AI’s final response is received.
 
-- `restart_service = <service>`
+- `restart_service = <service>`  
 If restart_service = <service> (e.g. "network") exists in the table, the system will prompt the user for confirmation before proceeding.
 
 - `user_only = <message>`  
