@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 
 local util  = require("luci.util")
-local debug = require("oasis.chat.debug")
+-- local debug = require("oasis.chat.debug")
 
 local markdown = function(mark, message)
 
@@ -146,7 +146,7 @@ local check_init_script_exists = function(service)
 	service = guard.sanitize(service)
 
 	local init_script = "/etc/init.d/" .. service
-    debug:log("oasis.log", "check_init_script_exists", "service = " .. service)
+    -- debug:log("oasis.log", "check_init_script_exists", "service = " .. service)
 	return check_file_exist(init_script)
 end
 
