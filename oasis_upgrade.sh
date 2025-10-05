@@ -8,10 +8,12 @@ TOOL_VER="${TOOL_VER:-}"
 REBOOT="${REBOOT:-}"
 
 API_URL="https://api.github.com/repos/utakamo/oasis/releases/latest"
-BASE_URL_FALLBACK="https://github.com/utakamo/oasis/releases/download"
 TMP_DIR="/tmp"
 BACKUP_FILE="/tmp/oasis/backup"
 
+#------------------------------------------------------------
+# File download function
+#------------------------------------------------------------
 dl() {
   if command -v uclient-fetch >/dev/null 2>&1; then
     uclient-fetch -O "$1" "$2"
@@ -20,37 +22,64 @@ dl() {
   fi
 }
 
+#------------------------------------------------------------
+# Get installed version
+#------------------------------------------------------------
 get_installed_ver() {
   opkg status "$1" 2>/dev/null | awk -F': ' '/^Version:/ {print $2; exit}'
 }
 
+#------------------------------------------------------------
+# Get latest release information from GitHub API
+#------------------------------------------------------------
 get_latest_info_from_github() {
   tmp_json="${TMP_DIR}/oasis_latest.json"
   dl "$tmp_json" "$API_URL"
   RELEASE_TAG="${RELEASE_TAG:-$(grep -m1 '"tag_name"' "$tmp_json" | sed -E 's/.*"tag_name" *: *"([^"]+)".*/\1/')}"
+
   OASIS_VER="${OASIS_VER:-$(grep -o 'oasis_[0-9][^_]*_all.ipk' "$tmp_json" | head -n1 | sed -E 's/oasis_([^_]+)_all.ipk/\1/')}"
   LUCI_VER="${LUCI_VER:-$(grep -o 'luci-app-oasis_[0-9][^_]*_all.ipk' "$tmp_json" | head -n1 | sed -E 's/luci-app-oasis_([^_]+)_all.ipk/\1/')}"
   TOOL_VER="${TOOL_VER:-$(grep -o 'oasis-mod-tool_[0-9][^_]*_all.ipk' "$tmp_json" | head -n1 | sed -E 's/oasis-mod-tool_([^_]+)_all.ipk/\1/')}"
 }
 
+#------------------------------------------------------------
+# Version comparison (opkg compare-versions + fallback)
+#------------------------------------------------------------
 compare_lt() {
-  opkg compare-versions "$1" lt "$2"
+  # On newer opkg environments use it directly
+  if opkg compare-versions "$1" lt "$2" 2>/dev/null; then
+    return 0
+  # On older environments compare with sort -V
+  elif [ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -n1)" != "$2" ]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
+#------------------------------------------------------------
+# Backup/restore configuration
+#------------------------------------------------------------
 backup_cfg() {
   mkdir -p "$(dirname "$BACKUP_FILE")"
-  uci export oasis > "$BACKUP_FILE"
+  uci export oasis > "$BACKUP_FILE" 2>/dev/null || true
 }
 
 restore_cfg() {
   [ -f "$BACKUP_FILE" ] && uci -f "$BACKUP_FILE" import oasis || true
 }
 
+#------------------------------------------------------------
+# Restart services
+#------------------------------------------------------------
 restart_services() {
-  service olt_tool restart || true
-  service rpcd restart || true
+  /etc/init.d/olt_tool restart 2>/dev/null || true
+  /etc/init.d/rpcd restart 2>/dev/null || true
 }
 
+#------------------------------------------------------------
+# Reboot prompt
+#------------------------------------------------------------
 prompt_reboot_if_needed() {
   if [ "$REBOOT" = "1" ] || [ "$REBOOT" = "true" ]; then
     echo "System Rebooting ..."
@@ -70,6 +99,9 @@ prompt_reboot_if_needed() {
   fi
 }
 
+#------------------------------------------------------------
+# Main process
+#------------------------------------------------------------
 main() {
   opkg update
 
@@ -93,12 +125,12 @@ main() {
 
   need_upgrade=0
 
-  # If any package is not installed, mark for upgrade
+  # If package is not installed, mark upgrade required
   [ -z "$cur_oasis" ] && need_upgrade=1
   [ -z "$cur_luci" ] && need_upgrade=1
   [ -z "$cur_tool" ] && need_upgrade=1
 
-  # If any package is older than the latest, mark for upgrade
+  # Upgrade when existing versions are older
   if [ $need_upgrade -eq 0 ]; then
     if compare_lt "$cur_oasis" "$OASIS_VER"; then need_upgrade=1; fi
     if compare_lt "$cur_luci" "$LUCI_VER"; then need_upgrade=1; fi
