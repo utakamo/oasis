@@ -1,22 +1,20 @@
 #!/usr/bin/env lua
 
 local jsonc = require("luci.jsonc")
-local uci = require("luci.model.uci").cursor()
-local common = require("oasis.common")
-local oasis_ubus = require("oasis.ubus.util")
 
 --[[
  In ubus server scripts written in Lua, you must not define global functions.
  Doing so may significantly increase the time it takes for the rpcd module to load the script.
  Similarly, be cautious when using the require function to import libraries.
  Depending on the library, it may also affect the loading time of rpcd.
- To avoid this, make sure to call require inside the call field of each method within the methods table. 
+ To avoid this, make sure to call require inside the call field of each method within the methods table.
 ]]
 
 local methods = {
 
     config = {
         call = function()
+            local oasis_ubus = require("oasis.ubus.util")
             local r = {}
             r.result = oasis_ubus.retrieve_config()
             return r
@@ -26,6 +24,7 @@ local methods = {
     load_icon_info = {
 
         call = function()
+            local oasis_ubus = require("oasis.ubus.util")
             local r = {}
             r.result = oasis_ubus.retrieve_icon_info("/etc/oasis/oasis.conf", "json")
             return r
@@ -36,6 +35,7 @@ local methods = {
         args = { using = "a_string" },
 
         call = function(args)
+            local common = require("oasis.common")
             local r = {}
 
             local data = common.load_conf_file("/etc/oasis/oasis.conf")
@@ -62,6 +62,7 @@ local methods = {
         args = { target = "a_string"},
 
         call = function(args)
+            local common = require("oasis.common")
             local r = {}
 
             local data = common.load_conf_file("/etc/oasis/oasis.conf")
@@ -108,6 +109,7 @@ local methods = {
     load_sysmsg_data = {
 
         call = function()
+            local oasis_ubus = require("oasis.ubus.util")
             local r = {}
             r.result = oasis_ubus.retrieve_sysmsg("/etc/oasis/oasis.conf", "json")
             return r
@@ -117,6 +119,7 @@ local methods = {
     load_sysmsg_list = {
 
         call = function()
+            local oasis_ubus = require("oasis.ubus.util")
             local r = {}
             r.result = oasis_ubus.retrieve_sysmsg_info("/etc/oasis/oasis.conf", "json")
             return r
@@ -127,6 +130,7 @@ local methods = {
         args = { title = "a_string", message = "a_string"},
 
         call = function(args)
+            local common = require("oasis.common")
             local r = {}
 
             local data = common.load_conf_file("/etc/oasis/oasis.conf")
@@ -161,6 +165,7 @@ local methods = {
         args = { target = "a_string", title = "a_string", message = "a_string"},
 
         call = function(args)
+            local common = require("oasis.common")
             local r = {}
 
             local data = common.load_conf_file("/etc/oasis/oasis.conf")
@@ -190,6 +195,7 @@ local methods = {
         args = { target = "a_string" },
 
         call = function(args)
+            local common = require("oasis.common")
             local r = {}
 
             local data = common.load_conf_file("/etc/oasis/oasis.conf")
@@ -216,6 +222,8 @@ local methods = {
     -- confirm temporary setting
     confirm = {
         call = function()
+            local uci = require("luci.model.uci").cursor()
+            local common = require("oasis.common")
             local r = {}
             local is_rollback_confirm = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
 
@@ -242,6 +250,8 @@ local methods = {
         args = { id = "a_string", name = "a_string", model = "a_string"},
 
         call = function(args)
+            local uci = require("luci.model.uci").cursor()
+            local common = require("oasis.common")
             local r = {}
             local target_uid = ""
             local data = uci:get_all(common.db.uci.cfg);
@@ -284,6 +294,9 @@ local methods = {
         args = { message = "a_string"},
 
         call = function(args)
+            local uci = require("luci.model.uci").cursor()
+            local oasis_ubus = require("oasis.ubus.util")
+            local common = require("oasis.common")
             local r = {}
 
             local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")
@@ -301,6 +314,9 @@ local methods = {
 
     base_info = {
         call = function()
+            local uci = require("luci.model.uci").cursor()
+            local oasis_ubus = require("oasis.ubus.util")
+            local common = require("oasis.common")
             local r = {}
 
             local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")

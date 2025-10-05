@@ -31,9 +31,6 @@ local methods = {
 
             debug:log("oasis.log", "auto_set", "file path = " .. file_path)
 
-            local rpath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
-            local sysmsg = common.load_conf_file(rpath)
-
             local service = common.select_service_obj()
 
             if not service then
@@ -53,12 +50,12 @@ local methods = {
                 return r
             end
 
-            local load_chat_data = function(file_path)
+            local load_chat_data = function(path)
 
                 debug:log("oasis.log", "\n--- [oasis.title][load_chat_data] ---")
-                debug:log("oasis.log", "file path = " .. file_path)
+                debug:log("oasis.log", "file path = " .. path)
 
-                local file = io.open(file_path, "r")
+                local file = io.open(path, "r")
 
                 if not file then
                     return ""
@@ -83,7 +80,7 @@ local methods = {
                 return r
             end
 
-            local save_chat_title = function(id, title)
+            local save_chat_title = function(id, t)
 
                 local unnamed_section = common.get_target_id_section(id)
 
@@ -91,7 +88,7 @@ local methods = {
                     return false
                 end
 
-                uci:set(common.db.uci.cfg, unnamed_section, "title", title)
+                uci:set(common.db.uci.cfg, unnamed_section, "title", t)
                 uci:commit(common.db.uci.cfg)
 
                 return true
