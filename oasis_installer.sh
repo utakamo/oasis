@@ -35,22 +35,5 @@ rm -f "/tmp/${OASIS_IPK}" \
       "/tmp/${TOOL_IPK}"
 
 # Completion message
-echo "Oasis installation completed successfully!"
-if [ "$REBOOT" = "1" ] || [ "$REBOOT" = "true" ]; then
 echo "System Rebooting ..."
 reboot
-elif [ -z "$REBOOT" ]; then
-printf "Reboot now? [y/N]: "
-read ans
-case "$ans" in
-  y|Y|yes|YES|Yes)
-    echo "System Rebooting ..."
-    reboot
-    ;;
-  *)
-    echo "Skipping reboot."
-    ;;
-esac
-else
-echo "Skipping reboot. REBOOT=$REBOOT"
-fi
