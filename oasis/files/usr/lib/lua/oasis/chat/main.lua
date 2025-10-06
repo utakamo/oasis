@@ -797,7 +797,7 @@ local function chat_loop(service, chat)
 
         local ok, err = process_message(service, chat, message)
         if not ok then
-            print("Error: " .. (err or "Failed to process message"))
+            print("\27[31mError: " .. (err or "Failed to process message") .. "\27[0m")
         end
     end
 end
