@@ -671,6 +671,8 @@ local function judge_system_reboot()
     local reply = io.read()
     if reply == "Y" then
         os.execute("reboot")
+    else
+        return
     end
 
     io.write("\n")
