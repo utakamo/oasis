@@ -4,7 +4,7 @@ Oasis provides the oasis-mod-tool as a plugin module, enabling AI systems to lev
 The oasis-mod-tool utilizes Lua and ucode scripts that can run as ubus server applications, enabled by OpenWrt’s ubus and rpcd modules.
 After installing oasis-mod-tool, you can create Lua or ucode scripts using the syntax rules shown in the examples below. By placing the scripts in the appropriate directory, AI will detect the functionalities defined within them and recognize them as tools.  
 
-<img width="789" height="254" alt="Image" src="https://github.com/user-attachments/assets/a5f616a4-d899-459f-814a-a915796f1aa8" />
+<img width="743" height="258" alt="oasis-local-tool(olt)-structure" src="https://github.com/user-attachments/assets/ef70cee2-8618-4c44-8387-c7e9ba469f54" />
 
 > [!IMPORTANT]
 > In Oasis local tools, network communication is generally not recommended. 
