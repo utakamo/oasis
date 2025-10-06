@@ -665,13 +665,14 @@ local function judge_system_reboot()
         return
     end
 
-    io.write("System Reboot [Y/N]: ")
+    io.write("\nSystem Reboot [Y/N]: ")
     io.flush()
 
     local reply = io.read()
     if reply == "Y" then
         os.execute("reboot")
     else
+        os.remove(common.file.console.reboot_required)
         return
     end
 
