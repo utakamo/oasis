@@ -702,7 +702,7 @@ local function judge_service_restart()
 		return
 	end
 
-	io.write("Restart Service (" .. svc .. ") [Y/N]: ")
+	io.write("\nRestart Service (" .. svc .. ") [Y/N]: ")
 	io.flush()
 
 	local reply = io.read()
