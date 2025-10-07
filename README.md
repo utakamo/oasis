@@ -43,6 +43,13 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 ```
 wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_upgrade.sh | sh
 ```
+# 🧹Uninstall Oasis
+```
+opkg remove oasis-mod-tool
+opkg remove luci-app-oasis
+opkg remove oasis
+rm -r /etc/oasis
+```
 
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
