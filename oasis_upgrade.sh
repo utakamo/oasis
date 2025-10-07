@@ -177,7 +177,6 @@ main() {
   restart_services
 
   echo "Upgrade completed successfully!"
-  prompt_reboot_if_needed
 }
 
 main "$@"
