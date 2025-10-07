@@ -36,6 +36,14 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > root@OpenWrt:~# /etc/init.d/sysntpd restart
 > ```
 
+# 🚀Upgrade to the latest version of Oasis
+> [!IMPORTANT]
+> This update script is available for Oasis version 3.0.0 and later. If you are using an older version, please uninstall it first and then reinstall using the installation script.
+>
+```
+wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_upgrade.sh | sh
+```
+
 ## AI Setting
 [Main] ---> [Network] ---> [Oasis] ---> [General Setting]
 ### 1. Example OpenAI Setup
