@@ -451,6 +451,13 @@ fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
 - **Response**: JSON (`{ status: "OK" }` or `{ status: "NG" }`)
 - **Description**: Trigger system reboot (available only when local tool support is enabled)
 
+#### 10.2 Restart Service
+- **URL**: `/cgi-bin/luci/admin/network/oasis/restart-service`
+- **Method**: POST
+- **Parameters**: None
+- **Response**: JSON (`{ status: "OK" }` or `{ status: "NG" }`)
+- **Description**: Restart related services required by Oasis (e.g., local tool server, rpcd). Used by the chat UI when a service restart is necessary after applying settings.
+
 ## Error Responses
 
 All APIs return the following format when an error occurs:
