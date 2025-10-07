@@ -1,10 +1,10 @@
 #!/bin/sh
 set -e  # Exit immediately if a command fails
 
-OASIS_VER="${OASIS_VER:-3.2.0-r1}"
-LUCI_VER="${LUCI_VER:-3.2.0-r1}"
-TOOL_VER="${TOOL_VER:-1.0.4-r1}"
-RELEASE_TAG="${RELEASE_TAG:-v3.2.0}"
+OASIS_VER="${OASIS_VER:-3.2.4-r1}"
+LUCI_VER="${LUCI_VER:-3.2.4-r1}"
+TOOL_VER="${TOOL_VER:-1.1.0-r1}"
+RELEASE_TAG="${RELEASE_TAG:-v3.2.4}"
 
 BASE_URL="https://github.com/utakamo/oasis/releases/download/${RELEASE_TAG}"
 
