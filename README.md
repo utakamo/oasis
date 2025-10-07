@@ -40,6 +40,7 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > [!IMPORTANT]
 > This update script is available for Oasis version 3.0.0 and later. If you are using an older version, please uninstall it first and then reinstall using the installation script.
 >
+The upgrade script updates Oasis to the latest version while keeping your current settings intact.
 ```
 wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_upgrade.sh | sh
 ```
