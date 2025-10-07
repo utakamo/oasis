@@ -147,6 +147,21 @@ rm -r /etc/oasis
 > #### 5.4. LLM Models
 > https://ollama.com/library
 
+### 6. LM Studio
+
+> [!NOTE]
+> #### 6.1. Select LLM Model
+> <img width="959" height="503" alt="image" src="https://github.com/user-attachments/assets/306c9fcc-8e7e-4d28-b36f-7f1fc9cc25dd" />
+> 
+> #### 6.2. LM Studio (AI Server) Setup & Endpoint
+> <img width="1918" height="1005" alt="image" src="https://github.com/user-attachments/assets/b49c1a16-276a-404f-82fe-62f357869aef" />
+>
+> #### 6.3. LM Studio API Key
+> When using LM Studio, an API key is typically not required, so nothing needs to be entered in the API Key field on this settings page.
+>
+
+
+
 ## 1. Chat with AI
 [Main] ---> [Network] ---> [Oasis] ---> [Chat with AI]
 <img width="940" height="447" alt="Image" src="https://github.com/user-attachments/assets/0e264254-1c3f-4a66-80ad-833145b7421a" /> 
