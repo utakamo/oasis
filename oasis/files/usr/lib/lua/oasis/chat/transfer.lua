@@ -159,11 +159,11 @@ local chat_with_ai = function(service, chat)
 
     local format = service:get_format()
     ous.setup_system_msg(service, chat)
-    
+
     output_llm_model(format, chat.model)
 
-    debug:log("oasis.log", "chat_with_ai", "dump chat data")
-    debug:dump("oasis.log", chat)
+    -- debug:log("oasis.log", "chat_with_ai", "dump chat data")
+    -- debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
     local tool_info, ai_response_tbl, tool_used = send_user_msg(service, chat)
@@ -200,7 +200,7 @@ local chat_with_ai = function(service, chat)
 
         local cfg = service:get_config()
 
-        debug:dump("oasis.log", cfg)
+        -- debug:dump("oasis.log", cfg)
 
         if (not cfg.id) or (#cfg.id == 0) then
                         debug:log("oasis.log", "chat_with_ai", "first called")

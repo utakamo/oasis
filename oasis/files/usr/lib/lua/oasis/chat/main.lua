@@ -1090,7 +1090,7 @@ local output = function(arg)
 
     local chat_ctx = datactrl.load_chat_data(service)
     debug:log("oasis.log", "output", "Load chat data ...")
-    debug:dump("oasis.log", chat_ctx)
+    -- debug:dump("oasis.log", chat_ctx)
 
     local new_chat_info, plain_text_ai_message = process_output_message(service, chat_ctx, arg.message)
     -- Log returned values for diagnostics
@@ -1134,8 +1134,8 @@ local rpc_output = function(arg)
 
     local rpc_output = datactrl.load_chat_data(service)
 
-    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] Load chat data ...")
-    debug:dump("oasis.log", rpc_output)
+    -- debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] Load chat data ...")
+    -- debug:dump("oasis.log", rpc_output)
 
     local new_chat_info, message = ""
 
