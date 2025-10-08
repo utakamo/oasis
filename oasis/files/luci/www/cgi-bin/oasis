@@ -13,12 +13,12 @@ local function validate_request()
     if request_method ~= "POST" then
         return nil, "This script only handles POST requests."
     end
-    
+
     local content_length = tonumber(os.getenv("CONTENT_LENGTH") or 0)
     if content_length <= 0 then
         return nil, "Invalid content length."
     end
-    
+
     return content_length, nil
 end
 
@@ -27,21 +27,21 @@ local function parse_post_data(content_length)
     local post_data = io.read(content_length)
     debug:log("oasis.log", "parse_post_data", "content_length=" .. tostring(content_length))
     debug:log("oasis.log", "parse_post_data", "raw body=" .. tostring(post_data))
-    
+
     local json_tbl = jsonc.parse(post_data)
     debug:log("oasis.log", "parse_post_data", "json parsed: " .. tostring(json_tbl ~= nil))
-    
+
     if not json_tbl then
         return nil, "Message Format Error."
     end
-    
+
     return json_tbl, nil
 end
 
 -- Process AI response
 local function process_ai_response(json_tbl)
     debug:log("oasis.log", "process_ai_response", "call oasis.output")
-    
+
     -- Call directly without pcall; rely on return values to detect failure
     local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
 
@@ -49,7 +49,7 @@ local function process_ai_response(json_tbl)
     if (not new_chat_info) and (not plain_text_ai_message) then
         return nil, nil, "Internal error: oasis.output failed"
     end
-    
+
     debug:log("oasis.log", "process_ai_response", "oasis.output returned: new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
         .. ", message_len=" .. tostring((plain_text_ai_message and #plain_text_ai_message) or 0))
 
@@ -59,7 +59,7 @@ local function process_ai_response(json_tbl)
     if plain_text_ai_message and #plain_text_ai_message > 0 then
         debug:log("oasis.log", "process_ai_response", "message=" .. tostring(plain_text_ai_message))
     end
-    
+
     return new_chat_info, plain_text_ai_message, nil
 end
 
@@ -67,19 +67,19 @@ end
 local function handle_uci_notifications(plain_text_ai_message)
     local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.assist, "enable")
     debug:log("oasis.log", "handle_uci_notifications", "assist.enable=" .. tostring(enable))
-    
+
     if not enable or not plain_text_ai_message then
         return nil
     end
-    
+
     local uci_cmd_notification = {}
     uci_cmd_notification.uci_list = filter.uci_cmd_filter(plain_text_ai_message)
     uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification.uci_list)
-    
+
     if uci_cmd_notification.uci_notify then
         return jsonc.stringify(uci_cmd_notification, false)
     end
-    
+
     return nil
 end
 
@@ -91,7 +91,7 @@ local function send_response(new_chat_info, uci_notification)
         os.execute("sleep 1")
     debug:log("oasis.log", "send_response", "wrote uci notification json")
     end
-    
+
     if new_chat_info and #new_chat_info > 0 then
         io.write(new_chat_info)
         io.flush()
@@ -103,14 +103,14 @@ end
 local function main()
     print("Content-Type: text/plain\n")
     debug:log("oasis.log", "main", "--- [cgi] request start ---")
-    
+
     -- Validate request
     local content_length, error_msg = validate_request()
     if not content_length then
         io.write(error_msg)
         return
     end
-    
+
     -- Parse POST data
     local json_tbl, error_msg = parse_post_data(content_length)
     if not json_tbl then
@@ -118,7 +118,7 @@ local function main()
     debug:log("oasis.log", "main", "json parse error")
         return
     end
-    
+
     -- Process AI response
     local new_chat_info, plain_text_ai_message, error_msg = process_ai_response(json_tbl)
     if not new_chat_info and not plain_text_ai_message then
@@ -127,13 +127,13 @@ local function main()
         io.flush()
         return
     end
-    
+
     -- Handle UCI notifications
     local uci_notification = handle_uci_notifications(plain_text_ai_message)
-    
+
     -- Send response
     send_response(new_chat_info, uci_notification)
-    
+
     debug:log("oasis.log", "main", "--- [cgi] request end ---")
 end
 
