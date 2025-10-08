@@ -405,6 +405,7 @@ end
 
 local exec_server_tool = function(format, tool, data)
 
+    local nixio = require("nixio")
     local found = false
     local result = {}
 
@@ -464,7 +465,7 @@ local exec_server_tool = function(format, tool, data)
                         end
                     end
 
-                    os.execute("sleep 1")
+                    nixio.nanosleep(1, 0)
                     elapsed = elapsed + 1
                 end
 
