@@ -103,6 +103,13 @@
   margin-left: 10px;        /* space between Restart and Cancel */
 }
 
+/* Responsive wrapper for wide markdown tables */
+.md-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Markdown table (light UI) */
 .md-table {
   width: 100%;
@@ -653,7 +660,7 @@
             if (tbl) {
                 const { heads, aligns } = tbl;
                 const colCount = Math.max(heads.length, aligns.length);
-                html += '<table class="md-table"><thead><tr>';
+                html += '<div class="md-table-wrap"><table class="md-table"><thead><tr>';
                 for (let c = 0; c < colCount; c++) {
                     const cell = heads[c] || '';
                     const align = aligns[c] || 'left';
@@ -679,7 +686,7 @@
                     html += '</tr>';
                     i++;
                 }
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
                 i--; // compensate for for-loop increment
                 continue;
             }
