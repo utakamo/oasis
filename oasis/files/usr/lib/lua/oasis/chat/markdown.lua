@@ -80,4 +80,30 @@ M.image = function(alt, url)
     return string.format("![%s](%s)", alt, url)
 end
 
+-- Table
+M.table = function(tbl)
+  if #tbl == 0 then return "" end
+
+  local col_count = #tbl[1]
+
+  local header = "| " .. table.concat(tbl[1], " | ") .. " |"
+
+  local sep_parts = {}
+  for _ = 1, col_count do
+    table.insert(sep_parts, "----")
+  end
+  local separator = "| " .. table.concat(sep_parts, " | ") .. " |"
+
+  local rows = {}
+  for i = 2, #tbl do
+    local row = {}
+    for j = 1, col_count do
+      row[j] = tbl[i][j] or ""
+    end
+    table.insert(rows, "| " .. table.concat(row, " | ") .. " |")
+  end
+
+  return table.concat({ header, separator, table.concat(rows, "\n") }, "\n")
+end
+
 return M
