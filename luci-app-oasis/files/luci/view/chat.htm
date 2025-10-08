@@ -102,6 +102,53 @@
 .uci-popup button + button {
   margin-left: 10px;        /* space between Restart and Cancel */
 }
+
+/* Markdown table (light UI) */
+.md-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 8px 0;
+  background: #fff;
+  border: 1px solid #e6e9ef;
+  border-radius: 8px;
+}
+
+.md-table thead th {
+  background: #f6f8fa;
+  color: #222;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eaeef4;
+}
+
+.md-table th,
+.md-table td {
+  padding: 10px 12px;
+  font-size: 0.95em;
+  color: #222;
+  vertical-align: top;
+  word-break: break-word;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.md-table tbody tr:nth-child(odd) td {
+  background: #fafbfc;
+}
+
+.md-table tbody tr:hover td {
+  background: #f2f5fa;
+}
+
+.md-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* honor markdown align hints */
+.md-table th[align="left"], .md-table td[align="left"] { text-align: left; }
+.md-table th[align="center"], .md-table td[align="center"] { text-align: center; }
+.md-table th[align="right"], .md-table td[align="right"] { text-align: right; }
 </style>
 
 <div class="oasis-container">
@@ -538,10 +585,51 @@
         let currentLanguage = '';
         const lines = input.split('\n');
 
-        for (let line of lines) {
+        // Markdown table utilities
+        const splitCells = (line) => {
+            const body = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+            return body.split('|').map(c => c.trim());
+        };
+        const parseAligns = (sepLine) => {
+            // supports: :--- (left), :---: (center), ---: (right), --- (left)
+            const parts = splitCells(sepLine);
+            if (!parts.length) return null;
+            const aligns = [];
+            for (const p of parts) {
+                const s = p.replace(/\s+/g, '');
+                if (!/^:?-{3,}:?$/.test(s)) return null;
+                if (s.startsWith(':') && s.endsWith(':')) aligns.push('center');
+                else if (s.endsWith(':')) aligns.push('right');
+                else aligns.push('left');
+            }
+            return aligns;
+        };
+        const isTableHeaderStart = (i) => {
+            if (i + 1 >= lines.length) return null;
+            const head = lines[i].trim();
+            const sep = lines[i + 1].trim();
+            if (!head.includes('|')) return null;
+            const aligns = parseAligns(sep);
+            if (!aligns) return null;
+            const heads = splitCells(head);
+            if (heads.length < 2) return null;
+            return { heads, aligns };
+        };
+        const formatInline = (s) => {
+            // mimic non-table inline formatting
+            s = s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+            s = s.replace(/\*(.+?)\*/g, '<i>$1</i>');
+            s = s.replace(/`([^`]+)`/g, '<code class="inline-code">$1<\/code>');
+            s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1<\/a>');
+            s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1<\/a>');
+            return s;
+        };
 
-            const trimmedLine = line.trim()
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            const trimmedLine = line.trim();
 
+            // fenced code block
             if (trimmedLine.startsWith('```')) {
                 if (!isCodeBlock) {
                     currentLanguage = trimmedLine.slice(3).trim();
@@ -552,27 +640,69 @@
                     html += '</pre>';
                     isCodeBlock = false;
                 }
-            } else if (isCodeBlock) {
-                html += escapeHTML(line) + '\n';
-            } else {
-                line = line.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
-                line = line.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
-                line = line.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
-                line = line.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-                line = line.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-                line = line.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-                line = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-                line = line.replace(/\*(.+?)\*/g, '<i>$1</i>');
-                // Blockquote
-                line = line.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
-                // Inline code
-                line = line.replace(/`([^`]+)`/g, '<code class="inline-code">$1<\/code>');
-                // Markdown links [text](url)
-                line = line.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1<\/a>');
-                // Autolink bare URLs
-                line = line.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1<\/a>');
-                html += line + '<br>';
+                continue;
             }
+
+            if (isCodeBlock) {
+                html += escapeHTML(line) + '\n';
+                continue;
+            }
+
+            // table detection
+            const tbl = isTableHeaderStart(i);
+            if (tbl) {
+                const { heads, aligns } = tbl;
+                const colCount = Math.max(heads.length, aligns.length);
+                html += '<table class="md-table"><thead><tr>';
+                for (let c = 0; c < colCount; c++) {
+                    const cell = heads[c] || '';
+                    const align = aligns[c] || 'left';
+                    html += `<th align="${align}">` + formatInline(cell) + '</th>';
+                }
+                html += '</tr></thead><tbody>';
+                i += 2; // skip header + separator
+
+                // body rows
+                while (i < lines.length) {
+                    const rowLine = lines[i];
+                    if (!rowLine.trim().includes('|')) break;
+                    const cells = splitCells(rowLine);
+                    // stop if this looks like a new section (e.g., heading) with no real table cells
+                    if (cells.length === 1 && cells[0] === '') break;
+
+                    html += '<tr>';
+                    for (let c = 0; c < colCount; c++) {
+                        const cell = cells[c] || '';
+                        const align = aligns[c] || 'left';
+                        html += `<td align="${align}">` + formatInline(cell) + '</td>';
+                    }
+                    html += '</tr>';
+                    i++;
+                }
+                html += '</tbody></table>';
+                i--; // compensate for for-loop increment
+                continue;
+            }
+
+            // existing inline/line-level markdown
+            line = line.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
+            line = line.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
+            line = line.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+            line = line.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            line = line.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            line = line.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+            line = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+            line = line.replace(/\*(.+?)\*/g, '<i>$1</i>');
+            // Blockquote
+            line = line.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+            // Inline code
+            line = line.replace(/`([^`]+)`/g, '<code class="inline-code">$1<\/code>');
+            // Markdown links [text](url)
+            line = line.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1<\/a>');
+            // Autolink bare URLs
+            line = line.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1<\/a>');
+
+            html += line + '<br>';
         }
 
         if (isCodeBlock) {
