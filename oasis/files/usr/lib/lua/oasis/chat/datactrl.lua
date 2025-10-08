@@ -188,9 +188,9 @@ local record_chat_data = function(service, chat)
     -- chat.messages[6] ... user message
     -- chat.messages[7] ... ai message <---- Save chat data
 
-    debug:log("oasis.log", "record_chat_data", "\n--- [datactrl.lua][record_chat_data] ---")
-    debug:log("oasis.log", "record_chat_data", tostring(#chat.messages))
-    debug:dump("oasis.log", chat)
+    -- debug:log("oasis.log", "record_chat_data", "\n--- [datactrl.lua][record_chat_data] ---")
+    -- debug:log("oasis.log", "record_chat_data", tostring(#chat.messages))
+    -- debug:dump("oasis.log", chat)
 
     -- First Conversation
     if #chat.messages == 3 then
@@ -198,7 +198,7 @@ local record_chat_data = function(service, chat)
         set_chat_title(service, chat_id)
     -- Conversation after the second
     elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
-        debug:dump("oasis.log", chat)
+        -- debug:dump("oasis.log", chat)
         ous.append_chat_data(service, chat)
     end
 end
