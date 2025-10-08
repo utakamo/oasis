@@ -1,10 +1,10 @@
 #!/usr/bin/env lua
 
-local sys       = require("luci.sys")
 local uci       = require("luci.model.uci").cursor()
 local oasis     = require("oasis.chat.apply")
 local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
+local nixio     = require("nixio")
 
 local is_rollback_confirm = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm")
 local limit_time = uci:get(common.db.uci.cfg, common.db.uci.sect.rollback, "time") or "300"
@@ -43,6 +43,5 @@ while true do
         return 0
     end
 
-    sys.exec("sleep 1")
-
+    nixio.nanosleep(1, 0)
 end
