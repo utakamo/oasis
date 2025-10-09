@@ -79,6 +79,7 @@ restore_cfg() {
   else
     echo "Warning: /tmp/oasis/oasis.conf not found, skipping file restore" >&2
   fi
+
   [ -f "$BACKUP_FILE" ] && uci -f "$BACKUP_FILE" import oasis || true
 }
 
