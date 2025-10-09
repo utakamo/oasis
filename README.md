@@ -281,8 +281,8 @@ Options:
  -k <api-key>           Set the API key
  -m <model>             Set the LLM model
  -p <storage>           Set the storage path
- -s <system message>    Set the new system message (for sysmsg command)
- -c <sysmsg key>        Set the system message key (for sysmsg command)
+ -s <sysmsg key>        Select the system message key  (for sysmsg command)
+ -c <system message>    Create new system message data (for sysmsg command)
 
 Commands:
  storage <path> [<chat-max>]

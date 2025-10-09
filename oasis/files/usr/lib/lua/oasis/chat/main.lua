@@ -998,6 +998,7 @@ local sysmsg = function(arg)
         return
     end
 
+    -- Select system message key
     if (arg.option == "-s") and arg.param then
         local category, target = arg.param:match("^([^.]+)%.([^.]+)$")
         if (category and target) and (sysmsg[category]) and (sysmsg[category][target]) then
@@ -1007,34 +1008,30 @@ local sysmsg = function(arg)
         else
             print("Not Found ...")
         end
+
+    -- Create new system message data
     elseif (arg.option == "-c") and (arg.param) then
 
-        local target_idx = 1
-
+        -- Add a new custom section with next index: custom_(max+1)
+        local max_suffix = 0
         for key, _ in pairs(sysmsg) do
-            local suffix_str = key:match("^custom_(%d+)$")
-            if suffix_str then
-                local suffix_int = tonumber(suffix_str)
-                if (suffix_int) and (target_idx > suffix_int) then
-                    target_idx = suffix_int
-                end
+            local s = tonumber(key:match("^custom_(%d+)$"))
+            if s and (s > max_suffix) then
+                max_suffix = s
             end
         end
 
-        local category = "custom_" .. target_idx
-
-        if not sysmsg[category] then
-            sysmsg[category] = {}
-        end
-
+        local category = "custom_" .. (max_suffix + 1)
+        sysmsg[category] = sysmsg[category] or {}
         sysmsg[category][arg.cmd] = arg.param
+
         local is_update = common.update_conf_file("/etc/oasis/oasis.conf", sysmsg)
 
         if not is_update then
             print("error!")
         end
 
-        print("Update Success!!")
+        print("Update Success!!  (added " .. category .. ")")
     end
 end
 
