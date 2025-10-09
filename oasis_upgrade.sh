@@ -61,11 +61,24 @@ compare_lt() {
 # Backup/restore configuration
 #------------------------------------------------------------
 backup_cfg() {
+  mkdir -p /tmp/oasis
+  if [ -f /etc/oasis/oasis.conf ]; then
+    cp /etc/oasis/oasis.conf /tmp/oasis/oasis.conf
+  else
+    echo "Warning: /etc/oasis/oasis.conf not found, skipping file backup" >&2
+  fi
+
   mkdir -p "$(dirname "$BACKUP_FILE")"
   uci export oasis > "$BACKUP_FILE" 2>/dev/null || true
 }
 
 restore_cfg() {
+  if [ -f /tmp/oasis/oasis.conf ]; then
+    cp /tmp/oasis/oasis.conf /etc/oasis/oasis.conf
+    rm -f /tmp/oasis/oasis.conf
+  else
+    echo "Warning: /tmp/oasis/oasis.conf not found, skipping file restore" >&2
+  fi
   [ -f "$BACKUP_FILE" ] && uci -f "$BACKUP_FILE" import oasis || true
 }
 
