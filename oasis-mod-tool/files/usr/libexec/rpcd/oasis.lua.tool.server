@@ -260,16 +260,6 @@ server.tool("get_storage_usage", {
     end
 })
 
-server.tool("get_cpu_temp", {
-    tool_desc = "Get the CPU temperature of this OpenWrt device.",
-    call = function()
-        local util = require("luci.util")
-        local temp = util.exec("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null")
-        local temp_c = tonumber(temp) and tonumber(temp) / 1000 or nil
-        return server.response({cpu_temp_c = temp_c})
-    end
-})
-
 server.tool("system_reboot", {
     tool_desc = "Request a System Reboot on the OpenWrt System.",
     call = function()
