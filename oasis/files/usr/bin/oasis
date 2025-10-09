@@ -173,10 +173,17 @@ commands.prompt = function(args)
 end
 
 commands.sysmsg = function(args)
+    local option = args[3]
+    local param  = args[4]
+
+    if option == "-c" and args[4] then
+        param = table.concat(args, " ", 4)
+    end
+
     oasis.sysmsg({
-        cmd                 = args[2],
-        option              = args[3],
-        param               = args[4]
+        cmd    = args[2],
+        option = option,
+        param  = param
     })
 end
 
