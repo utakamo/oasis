@@ -174,45 +174,58 @@ server.tool("wifi_scan", {
     args = { ifname = "a_string"},
 
     call = function(args)
-        local util = require("luci.util")
+        local util  = require("luci.util")
         local jsonc = require("luci.jsonc")
+        local mkd   = require("oasis.chat.markdown")
+        local debug = require("oasis.chat.debug")
+
         local ifname = args and args.ifname or nil
+
         if not ifname or ifname == "" then
-            return server.response({ error = "Please ask the user for the name of the interface. [ex: interface name 'wlan0'] "})
+            return server.response(
+                {
+                    error = "Please ask the user for the name of the interface. [ex: interface name 'wlan0'] ",
+                    toolEnableInstruction = "The default tool includes get_ifname_list. If it's currently disabled, please instruct the user to enable it from the Tools tab in Oasis, and then ask them to retrieve the interface."
+                }
+            )
         end
 
         local out = util.ubus("iwinfo", "scan", { device = ifname })
-        local results = {}
+
+        local entry = {}
+        entry[#entry + 1] = { "ssid", "bssid", "mode", "band", "channel", "signal" }
 
         if out and out.results and type(out.results) == "table" then
             for _, r in ipairs(out.results) do
-                local entry = {}
-                entry.ssid = r.ssid
-                entry.bssid = r.bssid
-                entry.mode = r.mode
-                entry.band = r.band
-                entry.channel = r.channel or r.primary_channel
-                -- entry.mhz = r.mhz
-                entry.signal = r.signal
-                -- entry.quality = r.quality
-                -- encryption summary
-                if r.encryption then
-                    entry.encryption = {}
-                    entry.encryption.enabled = r.encryption.enabled
-                    if r.encryption.wpa then entry.encryption.wpa = r.encryption.wpa end
-                    if r.encryption.authentication then entry.encryption.authentication = r.encryption.authentication end
-                    if r.encryption.ciphers then entry.encryption.ciphers = r.encryption.ciphers end
-                    if r.encryption.wep then entry.encryption.wep = r.encryption.wep end
-                end
-                table.insert(results, entry)
+                local idx = #entry + 1
+                entry[idx] = {}
+                entry[idx][1] = r.ssid
+                entry[idx][2] = r.bssid
+                entry[idx][3] = r.mode
+                entry[idx][4] = r.band
+                entry[idx][5] = r.channel or r.primary_channel
+                entry[idx][6] = r.signal
             end
         end
 
-        if #results == 0 then
-            return server.response( { scan_results = "not found" , announce = "Wi-Fi may not be enabled. Please check with the user." })
+        if #entry <= 1 then
+                return server.response(
+                    {
+                        result = "not found",
+                        announce = "Wi-Fi may not be enabled. Please check with the user."
+                    }
+                )
         end
 
-        return server.response({ scan_results = results, request = "Show the scan results in list format."})
+        local markdown_scan_tbl = mkd.table(entry)
+
+        return server.response(
+            {
+                result = "success",
+                user_only = markdown_scan_tbl,
+                request = "The user has been notified of the WiFi scan results. Please prompt the user to review the scan results.",
+            }
+        )
     end
 })
 
