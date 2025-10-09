@@ -18,7 +18,7 @@ This software provides the ability to link OpenWrt and AI. Based on user input, 
 |  oasis-mod-tool |  This is a plugin that enables AI to use tools.  |
 <img width="936" height="445" alt="Image" src="https://github.com/user-attachments/assets/169aa8dd-e3c1-4f44-a1d9-0e5d452a5fd0" />
 
-# 🚀Install oasis
+# 🚀First Installation
 
 |  Detail  |         description       |
 | :---: | :---  |
@@ -36,7 +36,7 @@ wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_
 > root@OpenWrt:~# /etc/init.d/sysntpd restart
 > ```
 
-# 🚀Upgrade to the latest version of Oasis
+# 🚀Upgrade to the latest version
 > [!IMPORTANT]
 > This update script is available for Oasis version 3.0.0 and later. If you are using an older version, please uninstall it first and then reinstall using the installation script.
 >
