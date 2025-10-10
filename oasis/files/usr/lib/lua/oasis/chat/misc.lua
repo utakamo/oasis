@@ -108,20 +108,25 @@ local read_file = function(filename)
     return content
 end
 
+local function copy_file(src, dst)
+    local rf, err1 = io.open(src, "rb")
+    if not rf then return false, "Failed to open source: " .. (err1 or "") end
 
-local copy_file = function(src, dest)
-    local src_file = io.open(src, "rb")
-    if not src_file then return false, "Source file not found" end
+    local wf, err2 = io.open(dst, "wb")
+    if not wf then rf:close(); return false, "Failed to open destination: " .. (err2 or "") end
 
-    local content = src_file:read("*a")
-    src_file:close()
+    local chunk_size = 64 * 1024
+    while true do
+        local data = rf:read(chunk_size)
+        if not data then break end
+        local ok, write_err = wf:write(data)
+        if not ok then
+            rf:close(); wf:close()
+            return false, "Write failed: " .. (write_err or "")
+        end
+    end
 
-    local dest_file = io.open(dest, "wb")
-    if not dest_file then return false, "Failed to create destination file" end
-
-    dest_file:write(content)
-    dest_file:close()
-
+    rf:close(); wf:close()
     return true
 end
 
