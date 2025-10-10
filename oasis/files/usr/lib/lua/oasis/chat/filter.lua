@@ -114,9 +114,9 @@ local check_uci_cmd_candidate = function(lines)
 		for cmd, pattern in pairs(patterns) do
 			local param = line:match(pattern)
 			if param then
-				if cmd ~= "add" then
-					param:gsub("%s+", "")
-				end
+                if cmd ~= "add" then
+                    param = param:gsub("%s+", "")
+                end
 				uci_list[cmd][#uci_list[cmd] + 1] = {
 					param = param
 				}
