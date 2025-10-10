@@ -1,6 +1,7 @@
 #!/usr/bin/env lua
 
 local sys               = require("luci.sys")
+local fs                = require("nixio.fs")
 local util              = require("luci.util")
 local uci               = require("luci.model.uci").cursor()
 local jsonc             = require("luci.jsonc")
@@ -79,9 +80,31 @@ local storage = function(args)
         end
 
         if is_valid_path(storage.path) then
-            -- ensure destination exists and move existing chat files safely
-            local cmd = string.format("mkdir -p %q && mv %q/%s* %q", storage.path, current_storage_path, prefix, storage.path)
-            sys.exec(cmd)
+            -- ensure destination exists
+            fs.mkdirr(storage.path)
+
+            -- move only files that start with prefix from current_storage_path to storage.path
+            local function safe_join(dir, name)
+                if dir:sub(-1) ~= "/" then dir = dir .. "/" end
+                return dir .. name
+            end
+
+            for name in (fs.dir(current_storage_path) or function() return nil end) do
+                -- skip special entries
+                if name ~= "." and name ~= ".." then
+                    -- only plain filename characters
+                    if name:match("^[%w%._%-]+$") and name:sub(1, #prefix) == prefix then
+                        local src = safe_join(current_storage_path, name)
+                        local dst = safe_join(storage.path, name)
+                        -- try rename first (same filesystem), fallback to copy+remove
+                        if not fs.rename(src, dst) then
+                            if misc.copy_file(src, dst) then
+                                os.remove(src)
+                            end
+                        end
+                    end
+                end
+            end
         else
             print(output.error.path)
             return
