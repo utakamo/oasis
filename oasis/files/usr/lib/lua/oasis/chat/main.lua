@@ -1,6 +1,5 @@
 #!/usr/bin/env lua
 
-local sys               = require("luci.sys")
 local fs                = require("nixio.fs")
 local util              = require("luci.util")
 local uci               = require("luci.model.uci").cursor()
