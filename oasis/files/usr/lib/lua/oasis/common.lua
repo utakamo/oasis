@@ -109,6 +109,17 @@ status.ok           = "OK"
 status.error        = "ERROR"
 status.not_found    = "NOT FOUND"
 
+-- Console color/style constants for unified CLI output
+local console = {}
+console.color = {
+    RESET = "\27[0m",
+    INFO  = "\27[32m",
+    WARN  = "\27[33m",
+    ERR   = "\27[31m",
+    LABEL = "\27[1;37;44m",
+    VALUE = "\27[1;33;44m",
+}
+
 local rollback  = {}
 rollback.dir                = "/etc/oasis/backup/"
 rollback.list_item_name     = "list"
@@ -426,6 +437,7 @@ return {
     role = role,
     select_service_obj = select_service_obj,
     status = status,
+    console = console,
     rollback = rollback,
     get_target_id_section = get_target_id_section,
     search_chat_id = search_chat_id,
