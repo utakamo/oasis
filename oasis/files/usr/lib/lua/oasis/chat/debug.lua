@@ -32,6 +32,9 @@ debug.new = function()
         obj.dest = "/tmp/"
     end
 
+    --- Write a log line.
+    -- @param filename string output file name
+    -- @param ... any message parts
     obj.log = function(self, filename, ...)
         if self.disabled then return end
 
@@ -70,6 +73,9 @@ debug.new = function()
         end
     end
 
+    --- Dump a table recursively.
+    -- @param filename string
+    -- @param data table|any
     obj.dump = function(self, filename, data)
         if self.disabled then return end
         if type(data) ~= "table" then
@@ -77,6 +83,27 @@ debug.new = function()
             return
         end
         self:recursive_dump(filename, data, "data")
+    end
+
+    --- Convenience: info level log (alias to log)
+    -- @param filename string
+    -- @param msg string
+    obj.info = function(self, filename, msg)
+        self:log(filename, msg)
+    end
+
+    --- Convenience: warn level log (alias to log with prefix)
+    -- @param filename string
+    -- @param msg string
+    obj.warn = function(self, filename, msg)
+        self:log(filename, "WARN", msg)
+    end
+
+    --- Convenience: error level log (alias to log with prefix)
+    -- @param filename string
+    -- @param msg string
+    obj.error = function(self, filename, msg)
+        self:log(filename, "ERROR", msg)
     end
 
     return obj
