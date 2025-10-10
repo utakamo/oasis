@@ -78,23 +78,38 @@ local check_file_exist = function(filename)
     return false
 end
 
+--- Create an empty file if it does not exist.
+-- @param filename string: path to create
+-- @return boolean ok, string|nil err
 local touch = function(filename)
 
     if not check_file_exist(filename) then
-        local file = io.open(filename, "w")
-        if file then
-            file:close()
-            return true
+        local file, err = io.open(filename, "w")
+        if not file then
+            return false, err or "failed to open file"
         end
+        file:close()
+        return true, nil
     end
 
-    return false
+    return true, nil
 end
 
+--- Write data to a file (overwrite).
+-- @param filename string
+-- @param data string
+-- @return boolean ok, string|nil err
 local write_file = function(filename, data)
-    local file = io.open(filename, "w")
-    file:write(data)
+    local file, err = io.open(filename, "w")
+    if not file then
+        return false, err or "failed to open file"
+    end
+    local ok, werr = file:write(data)
     file:close()
+    if not ok then
+        return false, werr or "failed to write"
+    end
+    return true, nil
 end
 
 local read_file = function(filename)

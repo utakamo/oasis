@@ -33,6 +33,10 @@ local function clone_chat_without_tool_messages(chat)
     return cloned
 end
 
+--- Post a JSON payload to the AI service and stream the response to callback.
+-- @param service table Service object (must implement prepare_post_to_server)
+-- @param user_msg_json string JSON string of request body
+-- @param callback function Chunk handler for response body
 local post_to_server = function(service, user_msg_json, callback)
 
     local easy = curl.easy()
@@ -50,6 +54,9 @@ local post_to_server = function(service, user_msg_json, callback)
     easy:close()
 end
 
+--- Issue a GET request to url and stream response to callback.
+-- @param url string
+-- @param callback function
 local get_to_server = function(url, callback)
     local easy = curl.easy()
     easy:setopt_url(url)
@@ -58,21 +65,25 @@ local get_to_server = function(url, callback)
     easy:close()
 end
 
+--- Output response for console/webui based on format.
+-- @param format string One of common.ai.format.*
+-- @param text_for_console string
+-- @param response_ai_json string
+-- @param tool_used boolean
 local output_response_msg = function(format, text_for_console, response_ai_json, tool_used)
 
     debug:log("oasis.log", "post_to_server", text_for_console)
     debug:log("oasis.log", "post_to_server", response_ai_json)
 
     -- Response: output console
-    if (format == common.ai.format.chat)
-        or (format == common.ai.format.prompt) then
+    if (format == common.ai.format.chat) or (format == common.ai.format.prompt) then
 
         if tool_used then
             debug:log("oasis.log", "output_response_msg", response_ai_json)
             local tool_info = jsonc.parse(response_ai_json)
-            local LABEL = "\27[1;37;44m"  -- bold white on blue (match Title/ID label)
-            local VALUE = "\27[1;33;44m"  -- bold yellow on blue (match title/id value)
-            local RESET = "\27[0m"
+            local LABEL = common.console.color.LABEL  -- bold white on blue (match Title/ID label)
+            local VALUE = common.console.color.VALUE  -- bold yellow on blue (match title/id value)
+            local RESET = common.console.color.RESET
             io.write(LABEL .. "Tool Used: ")
             for idx, tbl in ipairs(tool_info.tool_outputs) do
 
@@ -106,6 +117,7 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
             io.write(text_for_console)
             io.flush()
         end
+        return
 
     -- Response: output webui
     elseif (format == common.ai.format.output) then
@@ -113,9 +125,16 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
             io.write(response_ai_json)
             io.flush()
         end
+        return
     end
+
+    -- Other formats: no output
 end
 
+--- Convert chat to service schema, send, and process streaming response.
+-- @param service table
+-- @param chat table
+-- @return string response_ai_json, table recv_raw_msg, boolean tool_used
 local send_user_msg = function(service, chat)
 
     local recv_raw_msg = ""
@@ -144,6 +163,12 @@ local send_user_msg = function(service, chat)
     return response_ai_json, recv_raw_msg, tool_used
 end
 
+--- High-level chat flow orchestration.
+-- Returns:
+--  - when tool_used: tool JSON string, nil, true
+--  - otherwise: new_chat_info(string|nil), assistant_text(string), false
+-- @param service table
+-- @param chat table
 local chat_with_ai = function(service, chat)
 
     debug:log("oasis.log", "chat_with_ai", "\n--- [transfer.lua][chat_with_ai] ---")

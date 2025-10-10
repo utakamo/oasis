@@ -44,6 +44,8 @@ local options_spec = {
     ["-s"] = "s"
 }
 
+-- Print CLI help text.
+-- @return nil
 local function help()
     print([=[
 Usage: oasis <command> [[<options>] arguments]...
@@ -75,6 +77,10 @@ Docs:
     ]=])
 end
 
+-- Parse key-value style options starting from index.
+-- @param args table argv
+-- @param start_index integer
+-- @return table options
 local function parse_options(args, start_index)
     local options = {}
     local i = start_index
@@ -92,6 +98,9 @@ local function parse_options(args, start_index)
     return options
 end
 
+-- Extract numeric value from a token like "no=3".
+-- @param arg_str string
+-- @return string|nil
 local function extract_no(arg_str)
     local prefix = "no="
     if arg_str and arg_str:sub(1, #prefix) == prefix then
