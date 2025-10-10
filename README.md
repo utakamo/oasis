@@ -44,7 +44,7 @@ The upgrade script updates Oasis to the latest version while keeping your curren
 ```
 wget -O - https://raw.githubusercontent.com/utakamo/oasis/refs/heads/main/oasis_upgrade.sh | sh
 ```
-# 🧹Uninstall Oasis
+# 🧹Uninstall
 ```
 opkg remove oasis-mod-tool
 opkg remove luci-app-oasis
