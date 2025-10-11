@@ -139,9 +139,8 @@
                 const cmdList = entry[cmdType];
                 if (Array.isArray(cmdList) && cmdList.length > 0) {
                     cmdList.forEach(item => {
-                        if (item.class && item.class.config && item.class.section && item.class.option) {
-                            const value = item.class.value;
-                            cmds.push(`uci ${cmdType} ${item.class.config}.${item.class.section}.${item.class.option}=${value}`);
+                        if (item && typeof item.param === 'string' && item.param.length > 0) {
+                            cmds.push(`uci ${cmdType} ${item.param}`);
                         }
                     });
                 }
@@ -149,7 +148,7 @@
 
             return {
                 id: index + 1,
-                text: cmds.join('\n') || 'No UCI commands found.'
+                text: cmds.length ? cmds.join('\n') : 'No UCI commands found.'
             };
         });
 
