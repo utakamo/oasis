@@ -20,8 +20,8 @@ To apply the Lua script, place it in /usr/libexec/rpcd.
 
 local server = require("oasis.local.tool.server")
 
-server.tool("get_hello", {
-    tool_desc = "Return a fixed greeting message.",
+server.tool("say_hello", {
+    tool_desc = "Return a simple greeting. No inputs.",
     call = function()
         local res = server.response({ message = "Hello, world!" })
         return res
