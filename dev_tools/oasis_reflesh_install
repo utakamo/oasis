@@ -35,9 +35,9 @@ opkg remove oasis-mod-tool
 opkg remove oasis
 
 # Install new versions
-opkg install oasis_3.2.4-r1_all.ipk
-opkg install luci-app-oasis_3.2.4-r1_all.ipk
-opkg install oasis-mod-tool_1.1.0-r1_all.ipk
+opkg install oasis_3.2.6-r1_all.ipk
+opkg install luci-app-oasis_3.2.6-r1_all.ipk
+opkg install oasis-mod-tool_1.1.1-r1_all.ipk
 
 # Restore configuration if migrate mode is enabled
 if [ "$MODE" = "migrate" ]; then
