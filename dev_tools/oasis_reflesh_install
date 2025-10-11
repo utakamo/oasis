@@ -29,6 +29,10 @@ if [ "$MODE" = "migrate" ]; then
     cp -r /etc/oasis/oasis.conf /tmp/oasis/oasis.conf
 fi
 
+# Remove tool plugins
+opkg remove oasis-tool-test
+opkg remove oasis-tool-wireguard
+
 # Remove old versions
 opkg remove luci-app-oasis
 opkg remove oasis-mod-tool
