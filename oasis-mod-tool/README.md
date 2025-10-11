@@ -122,8 +122,9 @@ root@OpenWrt~# service rpcd restart
 ## Recognition of OLT server scripts
 Once scripts such as Lua or ucode are recognized by the Oasis/OpenWrt system, they become visible in the WebUI.
 The image below shows an example of how the tools page appears in Oasis.
-<img width="947" height="439" alt="image" src="https://github.com/user-attachments/assets/64dc5250-266f-4e4f-b0f6-f89a987b0e90" />
-<img width="947" height="439" alt="image" src="https://github.com/user-attachments/assets/3af40cee-db26-4ae3-9621-4d40f966470e" />
+<img width="947" height="419" alt="image" src="https://github.com/user-attachments/assets/53b14416-4435-440c-b065-0276591010b8" />
+<img width="947" height="392" alt="image" src="https://github.com/user-attachments/assets/98ce6ac1-e533-4b61-b32f-5a82279bc74d" />
+<img width="947" height="140" alt="image" src="https://github.com/user-attachments/assets/5680e487-60a6-4f95-b323-1747bf7fd15c" />
 
 ## AI tool parameter
 | Param name | Desc | Required |
