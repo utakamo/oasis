@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
-PKG_VERSION:=3.2.4
+PKG_VERSION:=3.2.6
 PKG_RELEASE:=1
 
 APP_DIR = /usr/bin
