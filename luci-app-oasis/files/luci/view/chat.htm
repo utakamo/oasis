@@ -2135,7 +2135,15 @@
         const cancelButton = document.createElement("button");
         cancelButton.id = "uci-cancel";
         cancelButton.textContent = "Cancel";
-        cancelButton.addEventListener('click', function () {
+        cancelButton.addEventListener('click', async function () {
+            try {
+                await fetch('<%=build_url("admin", "network", "oasis", "system-reboot")%>', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'cancel=1'
+                });
+            } catch (_) {}
             const el = document.getElementById("oasis-reboot");
             if (el && el.parentNode) el.parentNode.removeChild(el);
         });
@@ -2213,7 +2221,15 @@
             }
         });
 
-        cancelBtn.addEventListener("click", () => {
+        cancelBtn.addEventListener("click", async () => {
+            try {
+                await fetch('<%=build_url("admin", "network", "oasis", "restart-service")%>', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'cancel=1'
+                });
+            } catch (_) {}
             const el = document.getElementById("oasis-restart-service");
             if (el && el.parentNode) el.parentNode.removeChild(el);
         });

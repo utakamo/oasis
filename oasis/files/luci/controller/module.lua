@@ -981,6 +981,15 @@ function refresh_tools()
 end
 
 function system_reboot()
+    -- Handle cancel: remove pending reboot flag and return OK
+    local cancel = luci_http.formvalue("cancel")
+    if cancel == "1" or cancel == "true" then
+        os.remove(common.file.console.reboot_required)
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ status = "OK", canceled = true })
+        return
+    end
+
     local is_support = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 
     if not is_support then
@@ -996,6 +1005,15 @@ function system_reboot()
 end
 
 function restart_service()
+	-- Handle cancel: remove pending service restart flag and return OK
+	local cancel = luci_http.formvalue("cancel")
+	if cancel == "1" or cancel == "true" then
+		os.remove(common.file.service.restart_required)
+		luci_http.prepare_content("application/json")
+		luci_http.write_json({ status = "OK", canceled = true })
+		return
+	end
+
 	local path = common.file.service.restart_required
 	if not misc.check_file_exist(path) then
 		luci_http.prepare_content("application/json")
