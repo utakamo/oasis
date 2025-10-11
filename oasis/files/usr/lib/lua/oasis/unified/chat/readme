@@ -94,3 +94,35 @@ within service-specific modules (e.g., openai.lua, ollama.lua, gemini.lua, Anthr
 }
 
 # 2. Tool Use (Function Calling)
+This section documents the tool invocation output format used by Oasis. The external format is similar to OpenAI's function calling: each tool invocation produces an entry in the `tool_outputs` array. Oasis stores the tool-returned payload in the `output` field as a JSON-encoded string.
+
+Schema (summary)
+- `service` : AI service name (e.g. `Ollama`, `OpenAI`).
+- `tool_outputs` : array of tool invocation result objects.
+- per-entry fields: `tool_call_id` (string), `name` (string), `output` (string containing JSON).
+
+Processing rules
+- Consumers MUST JSON-parse the `output` string before interpreting tool data.
+- Services and modules are responsible for validating and converting tool-specific schemas into the oasis unified chat schema as needed. Tool implementations may vary; do not assume a fixed sub-schema inside `output`.
+- Certain field names inside the parsed `output` are reserved or treated specially by Oasis components (for example, `user_only`). Using these reserved names can influence message visibility, rendering, or subsequent processing.
+
+Operational considerations
+- Size and nesting: `output` may contain large or deeply nested objects. Implementations should guard against excessive memory use and consider truncation/streaming if necessary.
+- Security: treat parsed data as untrusted. Validate types and sizes, and sanitize fields before executing any side effects or rendering.
+- Responsibility: service modules (e.g. `oasis-mod-tool`) are the correct place to implement tool-specific parsing, validation, and conversion logic.
+
+Reference
+For service-specific behavior and a list of fields treated specially by Oasis, see the oasis-mod-tool repository:
+https://github.com/utakamo/oasis/tree/main/oasis-mod-tool
+
+Example (external payload):
+{
+  "service": "oasis.lua.tool.server",
+  "tool_outputs": [
+    {
+      "tool_call_id": "123",
+      "name": "get_weather",
+      "output": "{\"result\":\"It's 22°C in Tokyo.\"}"
+    }
+  ]
+}
