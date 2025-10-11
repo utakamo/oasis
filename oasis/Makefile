@@ -81,6 +81,7 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/openai.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/anthropic.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/gemini.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/console.lua $(1)$(LUA_LIBRARY_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/common.lua $(1)$(LUA_LIBRARY_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/ubus/util.lua $(1)$(LUA_LIBRARY_DIR)/oasis/ubus
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis $(1)$(UBUS_SERVER_APP_DIR)
