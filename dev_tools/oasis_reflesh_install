@@ -26,6 +26,7 @@ if [ "$MODE" = "migrate" ]; then
     mkdir -p /tmp/oasis
     touch /tmp/oasis/backup
     uci export oasis > /tmp/oasis/backup
+    cp -r /etc/oasis/oasis.conf /tmp/oasis/oasis.conf
 fi
 
 # Remove old versions
@@ -41,6 +42,7 @@ opkg install oasis-mod-tool_1.1.0-r1_all.ipk
 # Restore configuration if migrate mode is enabled
 if [ "$MODE" = "migrate" ]; then
     uci -f /tmp/oasis/backup import oasis
+    cp -r /tmp/oasis/oasis.conf /etc/oasis/oasis.conf
 fi
 
 # Restart services
