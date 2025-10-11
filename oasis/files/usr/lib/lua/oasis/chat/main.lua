@@ -16,6 +16,15 @@ local error_msg = {}
 error_msg.load_service1 = "Error!\n\tThere is no AI service configuration."
 error_msg.load_service2 = "\tPlease add the service configuration with the add command."
 
+-- Clear any remaining reboot or service restart flags from the previous chat session.
+-- This situation is not expected under normal conditions,
+-- but the flag is cleared here as a safety measure to prevent unintended reboot requests
+-- from being triggered in the current chat.
+local clear_flg = function()
+    os.remove(common.file.console.reboot_required)
+    os.remove(common.file.service.restart_required)
+end
+
 -- Print chat history as JSON for debugging.
 -- @param chat table
 local chat_history = function(chat)
@@ -704,7 +713,7 @@ local function judge_system_reboot()
 
     console.write("\nSystem Reboot [Y/N]: ")
     console.flush()
-    
+
     local reply = console.read()
     if reply == "Y" then
         os.execute("reboot")
@@ -938,6 +947,8 @@ local prompt = function(arg)
 
     local service = common.select_service_obj()
 
+    clear_flg()
+
     if not service then
         print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
         return
@@ -1131,6 +1142,8 @@ local output = function(arg)
         return nil, nil
     end
 
+    clear_flg()
+
     os.execute("mkdir -p /tmp/oasis")
 
     local chat_ctx = datactrl.load_chat_data(service)
@@ -1171,6 +1184,8 @@ local rpc_output = function(arg)
     end
 
     local service = common.select_service_obj()
+
+    clear_flg()
 
     if not service then
         return { status = common.status.error, desc = "AI Service Not Found." }, nil, nil
