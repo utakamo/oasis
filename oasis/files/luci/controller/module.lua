@@ -336,27 +336,29 @@ end
 function finalize()
 
     -- debug:log("oasis.log", "\n--- [module.lua][finalize] ---")
-    local result = sys.exec("touch /tmp/oasis/apply/complete;echo $?")
+    local out = sys.exec("touch /tmp/oasis/apply/complete;echo $?") or ""
+    out = out:gsub("%s+$", "")
+    local rc = tonumber(out) or 1
 
     luci_http.prepare_content("application/json")
-
-    if result == 0 then
-        luci_http.write_json({status = "ERROR"})
+    if rc == 0 then
+        luci_http.write_json({ status = "OK" })
     else
-        luci_http.write_json({status = "OK"})
+        luci_http.write_json({ status = "ERROR" })
     end
 end
 
 function rollback()
     -- debug:log("oasis.log", "\n--- [module.lua][rollback] ---")
-    local result = sys.exec("touch /tmp/oasis/apply/rollback;echo $?")
+    local out = sys.exec("touch /tmp/oasis/apply/rollback;echo $?") or ""
+    out = out:gsub("%s+$", "")
+    local rc = tonumber(out) or 1
 
     luci_http.prepare_content("application/json")
-
-    if result == 0 then
-        luci_http.write_json({status = "ERROR"})
+    if rc == 0 then
+        luci_http.write_json({ status = "OK" })
     else
-        luci_http.write_json({status = "OK"})
+        luci_http.write_json({ status = "ERROR" })
     end
 end
 
