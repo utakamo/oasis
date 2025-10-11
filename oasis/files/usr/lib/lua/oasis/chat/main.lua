@@ -8,6 +8,7 @@ local misc              = require("oasis.chat.misc")
 local transfer          = require("oasis.chat.transfer")
 local datactrl          = require("oasis.chat.datactrl")
 local common            = require("oasis.common")
+local console           = require("oasis.console")
 local ous               = require("oasis.unified.chat.schema")
 local debug             = require("oasis.chat.debug")
 
@@ -18,10 +19,10 @@ error_msg.load_service2 = "\tPlease add the service configuration with the add c
 -- Print chat history as JSON for debugging.
 -- @param chat table
 local chat_history = function(chat)
-    print(#chat.messages)
-    print()
+    console.print(#chat.messages)
+    console.print()
     local chat_json = jsonc.stringify(chat, false)
-    print(chat_json)
+    console.print(chat_json)
 end
 
 -- Interactive storage configuration (path/chat_max). Reads from args or stdin.
@@ -49,28 +50,28 @@ local storage = function(args)
     output.error.config     = "Error! Failed to load configuration information."
     output.error.path       = "Error! Invalid directory path."
 
-    print(output.title.current)
-    print(string.format(output.format_1, "path", current_storage_path))
-    print(string.format(output.format_1, "chat-max", chat_max))
-    print()
-    print(output.title.setup)
-    print(output.title.input)
+    console.print(output.title.current)
+    console.print(string.format(output.format_1, "path", current_storage_path))
+    console.print(string.format(output.format_1, "chat-max", chat_max))
+    console.print()
+    console.print(output.title.setup)
+    console.print(output.title.input)
 
     if (not args.path) then
-        io.write(string.format(output.format_2, output.path))
-        io.flush()
-        storage.path = io.read() or ""
+        console.printf(output.format_2, output.path)
+        console.flush()
+        storage.path = console.read() or ""
     else
-        print(string.format(output.format_1, "path", args.path))
+        console.print(string.format(output.format_1, "path", args.path))
         storage.path = args.path
     end
 
     if (not args.chat_max) then
-        io.write(string.format(output.format_2, output.chat_max))
-        io.flush()
-        storage.chat_max = io.read() or ""
+        console.printf(output.format_2, output.chat_max)
+        console.flush()
+        storage.chat_max = console.read() or ""
     else
-        print(string.format(output.format_1, "chat-max", args.chat_max))
+        console.print(string.format(output.format_1, "chat-max", args.chat_max))
         storage.chat_max = args.chat_max
     end
 
@@ -78,7 +79,7 @@ local storage = function(args)
         local prefix = (uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "prefix") or "")
 
         if (#current_storage_path == 0) or (#prefix == 0) then
-            print(output.error.config)
+            console.print(output.error.config)
             return
         end
 
@@ -109,7 +110,7 @@ local storage = function(args)
                 end
             end
         else
-            print(output.error.path)
+            console.print(output.error.path)
             return
         end
 
@@ -269,11 +270,11 @@ end
 -- Collect endpoint input
 local function collect_endpoint(args, output)
     if not args.endpoint then
-        io.write(string.format(output.format_1, output.endpoint))
-        io.flush()
-        return io.read() or ""
+        console.printf(output.format_1, output.endpoint)
+        console.flush()
+        return console.read() or ""
     else
-        print(string.format(output.format_2, output.endpoint, args.endpoint))
+        console.print(string.format(output.format_2, output.endpoint, args.endpoint))
         return args.endpoint or ""
     end
 end
@@ -284,26 +285,26 @@ local function collect_anthropic_config(output)
 
     -- Max Tokens
     repeat
-        io.write(string.format(output.format_1, output.max_tokens))
-        io.flush()
-        config.max_tokens = io.read()
+        console.printf(output.format_1, output.max_tokens)
+        console.flush()
+        config.max_tokens = console.read()
     until (tonumber(config.max_tokens) >= SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.min)
         and (tonumber(config.max_tokens) <= SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.max)
 
     -- Thinking Type
     repeat
-        io.write(string.format(output.format_1, output.type))
-        io.flush()
-        config.type = io.read()
+        console.printf(output.format_1, output.type)
+        console.flush()
+        config.type = console.read()
     until (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled)
         or (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled)
 
     -- Budget Tokens (if thinking enabled)
     if config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
         repeat
-            io.write(string.format(output.format_1, output.budget_tokens))
-            io.flush()
-            config.budget_tokens = io.read()
+            console.printf(output.format_1, output.budget_tokens)
+            console.flush()
+            config.budget_tokens = console.read()
         until (tonumber(config.budget_tokens) >= SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.min)
             and (tonumber(config.budget_tokens) <= SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.max)
     end
@@ -314,11 +315,11 @@ end
 -- Collect API key input
 local function collect_api_key(args, output)
     if not args.api_key then
-        io.write(string.format(output.format_1, output.api_key))
-        io.flush()
-        return io.read() or ""
+        console.printf(output.format_1, output.api_key)
+        console.flush()
+        return console.read() or ""
     else
-        print(string.format(output.format_2, output.api_key, args.api_key))
+        console.print(string.format(output.format_2, output.api_key, args.api_key))
         return args.api_key or ""
     end
 end
@@ -326,11 +327,11 @@ end
 -- Collect model name input
 local function collect_model(args, output)
     if not args.model then
-        io.write(string.format(output.format_1, output.model))
-        io.flush()
-        return io.read() or ""
+        console.printf(output.format_1, output.model)
+        console.flush()
+        return console.read() or ""
     else
-        print(string.format(output.format_2, output.model, args.model))
+        console.print(string.format(output.format_2, output.model, args.model))
         return args.model or ""
     end
 end
@@ -516,11 +517,11 @@ local function change(arg, opt)
     local is_found, is_update = find_and_update_service(arg, opt)
 
     if is_found and is_update then
-        print(output.service.update)
+        console.print(output.service.update)
     elseif not is_found then
-        print(output.service.not_found)
+        console.print(output.service.not_found)
     else
-        print("No changes made.")
+        console.print("No changes made.")
     end
 end
 
@@ -531,25 +532,25 @@ local show_service_list = function()
     output.service = {}
 
     output.service.in_use = function(no)
-        print("\n\27[1;34mService No: " .. no .. " \27[1;32m(in use)\27[0m")
+        console.print("\n\27[1;34mService No: " .. no .. " \27[1;32m(in use)\27[0m")
     end
 
     output.service.not_in_use = function(no)
-        print("\n\27[1;34mService No: " .. no .. "\27[0m")
+        console.print("\n\27[1;34mService No: " .. no .. "\27[0m")
     end
 
     output.line = function()
-        print("-----------------------------------------------")
+        console.print("-----------------------------------------------")
     end
 
     output.item = function(name, value)
         local display_value = value or "(not set)"
         if (name == "API KEY") and value then
-            io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, "******************************"))
+            console.printf("%-8s >> \27[33m%s\27[0m\n", name, "******************************")
         else
-            io.write(string.format("%-8s >> \27[33m%s\27[0m\n", name, display_value))
+            console.printf("%-8s >> \27[33m%s\27[0m\n", name, display_value)
         end
-        io.flush()
+        console.flush()
     end
 
     local index = 0
@@ -663,7 +664,7 @@ local select_cmd = function(arg)
     local target_section = get_service_id_by_number(arg)
 
     if #target_section == 0 then
-        print("Service No: " .. arg.no .. " is not found.")
+        console.print("Service No: " .. arg.no .. " is not found.")
         return
     end
 
@@ -672,8 +673,8 @@ local select_cmd = function(arg)
     uci:commit(common.db.uci.cfg)
 
     local model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
-    print("Service No: " .. arg.no .. " is selected.")
-    print("Target model: \27[33m" .. model .. "\27[0m")
+    console.print("Service No: " .. arg.no .. " is selected.")
+    console.print("Target model: \27[33m" .. model .. "\27[0m")
 end
 
 -- Initialize and display service information
@@ -687,10 +688,10 @@ local function initialize_chat_service(arg)
     service:initialize(arg, common.ai.format.chat)
     local cfg = service:get_config()
 
-    print("-----------------------------------")
-    print(string.format("%-14s :\27[33m %s \27[0m", "AI Service", cfg.service))
-    print(string.format("%-14s :\27[33m %s \27[0m", "Model", cfg.model))
-    print("-----------------------------------")
+    console.print("-----------------------------------")
+    console.print(string.format("%-14s :\27[33m %s \27[0m", "AI Service", cfg.service))
+    console.print(string.format("%-14s :\27[33m %s \27[0m", "Model", cfg.model))
+    console.print("-----------------------------------")
 
     return service
 end
@@ -701,10 +702,10 @@ local function judge_system_reboot()
         return
     end
 
-    io.write("\nSystem Reboot [Y/N]: ")
-    io.flush()
-
-    local reply = io.read()
+    console.write("\nSystem Reboot [Y/N]: ")
+    console.flush()
+    
+    local reply = console.read()
     if reply == "Y" then
         os.execute("reboot")
     else
@@ -712,7 +713,7 @@ local function judge_system_reboot()
         return
     end
 
-    io.write("\n")
+    console.write("\n")
 
     os.remove(common.file.console.reboot_required)
     os.exit(0)
@@ -739,18 +740,18 @@ local function judge_service_restart()
 		return
 	end
 
-	io.write("\nRestart Service (" .. svc .. ") [Y/N]: ")
-	io.flush()
+    console.write("\nRestart Service (" .. svc .. ") [Y/N]: ")
+    console.flush()
 
-	local reply = io.read()
+    local reply = console.read()
 	if reply == "Y" then
         local cmd = require("oasis.local.tool.system.command")
         cmd.restart_service_after_3sec(svc)
 
-		print("\nService restart will start in 3 seconds.")
+        console.print("\nService restart will start in 3 seconds.")
 	end
 
-	io.write("\n")
+    console.write("\n")
 	os.remove(path)
 end
 
@@ -760,9 +761,9 @@ local function get_user_input(chat)
     repeat
         judge_system_reboot()
         judge_service_restart()
-        io.write("\27[32m\nYou :\27[0m")
-        io.flush()
-        your_message = io.read()
+        console.write("\27[32m\nYou :\27[0m")
+        console.flush()
+        your_message = console.read()
 
         if not your_message then
             return nil
@@ -836,7 +837,7 @@ local function chat_loop(service, chat)
 
         local ok, err = process_message(service, chat, message)
         if not ok then
-            print("\27[31mError: " .. (err or "Failed to process message") .. "\27[0m")
+            console.print("\27[31mError: " .. (err or "Failed to process message") .. "\27[0m")
         end
     end
 end
@@ -844,14 +845,14 @@ end
 local display_chat_history = function(chat)
     for _, tbl in ipairs(chat.messages) do
         if tbl.role == common.role.user then
-            print("\27[32m\nYou :\27[0m" .. tbl.content)
+            console.print("\27[32m\nYou :\27[0m" .. tbl.content)
         elseif tbl.role == common.role.assistant then
 
             local content = misc.markdown(nil, tbl.content)
 
-            print()
-            print("\27[34m" .. chat.model .. "\27[0m")
-            print(content)
+            console.print()
+            console.print("\27[34m" .. chat.model .. "\27[0m")
+            console.print(content)
         end
     end
 end
@@ -901,17 +902,17 @@ local delchat = function(arg)
     arg.id = get_chat_data_by_number(arg)
 
     if arg.id then
-        io.write("Do you delete chat data no=" ..arg.no .. " ? (Y/N):")
-        io.flush()
+        console.write("Do you delete chat data no=" ..arg.no .. " ? (Y/N):")
+        console.flush()
 
-        local reply = io.read()
+        local reply = console.read()
 
         if reply == 'N' then
-            print("canceled.")
+            console.print("canceled.")
             return
         end
     else
-        print("No chat data found for no=" .. arg.no)
+        console.print("No chat data found for no=" .. arg.no)
         return
     end
 
@@ -928,7 +929,7 @@ local delchat = function(arg)
 
     uci:commit(common.db.uci.cfg)
 
-    print("Delete chat data no=" .. arg.no)
+    console.print("Delete chat data no=" .. arg.no)
 end
 
 -- One-shot prompt command: prints assistant reply to console.
@@ -953,7 +954,7 @@ local prompt = function(arg)
     end
 
     local tool_info, _, tool_used = transfer.chat_with_ai(service, prompt)
-    print()
+    console.print()
 
     debug:log("oasis.log", "prompt", "tool_used = " .. tostring(tool_used))
     debug:log("oasis.log", "prompt", "tool_info = " .. tostring(tool_info))
@@ -1007,7 +1008,7 @@ local sysmsg = function(arg)
         print("\27[32m--- Default ---\27[0m")
         print("\27[33mSystem message for chat command: \27[34m[default.chat] \27[0m")
         print(sysmsg.default.chat)
-        print()
+        console.print()
 
         print("\27[33mSystem message for prompt command: \27[34m[default.prompt] \27[0m")
         print(sysmsg.default.prompt)

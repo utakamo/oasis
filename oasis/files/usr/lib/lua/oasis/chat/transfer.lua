@@ -3,6 +3,7 @@
 -- local uci = require("luci.model.uci").cursor()
 local curl      = require("cURL.safe")
 local common    = require("oasis.common")
+local console   = require("oasis.console")
 local jsonc     = require("luci.jsonc")
 local datactrl  = require("oasis.chat.datactrl")
 local util      = require("luci.util")
@@ -84,46 +85,46 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
             local LABEL = common.console.color.LABEL  -- bold white on blue (match Title/ID label)
             local VALUE = common.console.color.VALUE  -- bold yellow on blue (match title/id value)
             local RESET = common.console.color.RESET
-            io.write(LABEL .. "Tool Used: ")
+            console.write(LABEL .. "Tool Used: ")
             for idx, tbl in ipairs(tool_info.tool_outputs) do
 
                 debug:log("oasis.log", "output_response_msg", jsonc.stringify(tbl, true))
 
                 if idx > 1 then
-                    io.write(LABEL .. ", ")
+                    console.write(LABEL .. ", ")
                 end
 
                 if tbl.name then
-                    io.write(VALUE .. tbl.name)
+                    console.write(VALUE .. tbl.name)
                 end
 
                 if tbl.output and type(tbl.output) == "string" then
                     local output = jsonc.parse(tbl.output)
 
                     if output.user_only then
-                        io.write(RESET .. "\n\n\27[32m[User Only Message]\27[0m\n" .. output.user_only)
+                        console.write(RESET .. "\n\n\27[32m[User Only Message]\27[0m\n" .. output.user_only)
                     end
                 end
             end
 
-            io.write(RESET .. '\n')
-            io.flush()
+            console.write(RESET .. '\n')
+            console.flush()
 
             if tool_info.reboot then
                 misc.write_file(common.file.console.reboot_required, "reboot")
             end
 
         elseif (text_for_console) and (#text_for_console) > 0 then
-            io.write(text_for_console)
-            io.flush()
+            console.write(text_for_console)
+            console.flush()
         end
         return
 
     -- Response: output webui
     elseif (format == common.ai.format.output) then
         if (response_ai_json) and (#response_ai_json > 0) then
-            io.write(response_ai_json)
-            io.flush()
+            console.write(response_ai_json)
+            console.flush()
         end
         return
     end

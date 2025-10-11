@@ -1,6 +1,7 @@
 #!/usr/bin/env lua
 
 local common = require("oasis.common")
+local console = require("oasis.console")
 
 if common.check_unloaded_plugin("oasis") then
     print("\27[31mOasis has been installed. A reboot of OpenWrt is required to use it.\27[0m")
@@ -47,7 +48,7 @@ local options_spec = {
 -- Print CLI help text.
 -- @return nil
 local function help()
-    print([=[
+    console.print([=[
 Usage: oasis <command> [[<options>] arguments]...
 
 Options:
