@@ -169,7 +169,7 @@ server.tool("get_connected_clients", {
 })
 
 server.tool("wifi_scan", {
-    tool_desc = "Scan for nearby Wireless networks via iwinfo",
+    tool_desc = "Scan for nearby Wireless networks",
     args_desc = { "Wireless interface name [ex: wlan0]" },
     args = { ifname = "a_string"},
 
@@ -181,11 +181,33 @@ server.tool("wifi_scan", {
 
         local ifname = args and args.ifname or nil
 
-        if not ifname or ifname == "" then
+        local wlan_vif = util.ubus("iwinfo", "devices", {})
+
+        if not wlan_vif or not wlan_vif.devices or #wlan_vif.devices == 0 then
             return server.response(
                 {
-                    error = "Please ask the user for the name of the interface. [ex: interface name 'wlan0'] ",
-                    toolEnableInstruction = "The default tool includes get_ifname_list. If it's currently disabled, please instruct the user to enable it from the Tools tab in Oasis, and then ask them to retrieve the interface."
+                    error = "No valid wireless interface found.",
+                    request = "Instruct the user to enable Wi-Fi. If they are unsure how to do so, encourage them to ask the AI (you) for guidance.",
+                }
+            )
+        end
+
+        local is_wlan_vif = false
+        local wlan_vif_list = ""
+        for _, vif in ipairs(wlan_vif.devices or {}) do
+            wlan_vif_list = wlan_vif_list .. vif
+            if vif == ifname then
+                is_wlan_vif = true
+                break
+            end
+            wlan_vif_list = wlan_vif_list .. ", "
+        end
+
+        if not is_wlan_vif then
+            return server.response(
+                {
+                    error = "The specified interface is not intended for wireless use.",
+                    wlan_vif_list = wlan_vif_list
                 }
             )
         end
