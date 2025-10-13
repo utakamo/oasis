@@ -13,7 +13,7 @@ After installing oasis-mod-tool, you can create Lua or ucode scripts using the s
 
 ## Lua OLT Server Example
 This section presents an example of managing three tools within the tool group oasis.lua.template.tool.
-In Lua, the tool group name corresponds to the script’s filename.
+In Lua, the tool group name corresponds to the script’s filename.  
 To apply the Lua script, grant it executable permission and place it in /usr/libexec/rpcd
 ```
 #!/usr/bin/env lua
