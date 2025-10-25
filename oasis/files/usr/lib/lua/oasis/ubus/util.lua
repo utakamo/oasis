@@ -4,7 +4,6 @@ local jsonc     = require("luci.jsonc")
 local util      = require("luci.util")
 local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
-local filter    = require("oasis.chat.filter")
 -- local debug     = require("oasis.chat.debug")
 
 ------------------------------
@@ -213,6 +212,15 @@ local retrieve_uci_config = function(format)
 end
 
 local parse_uci_cmd_sequence = function(message, format)
+    local misc = require("oasis.chat.misc")
+
+    local is_exist = misc.check_file_exist("/usr/lib/lua/oasis/chat/filter.lua")
+
+    if not is_exist then
+        return nil
+    end
+
+    local filter    = require("oasis.chat.filter")
     local uci_cmd_notification = {}
     uci_cmd_notification.uci_list = filter.uci_cmd_filter(message)
     uci_cmd_notification.uci_notify = filter.check_uci_list_exist(uci_cmd_notification.uci_list)
