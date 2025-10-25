@@ -1,6 +1,8 @@
 > [!IMPORTANT]
 > This module contains deprecated features.  
 > Therefore, its installation is not recommended.
+>
+> The following is a description of deprecated features.
 
 ## Ask OpenWrt Setting (Basic Usage)
 Oasis is customizing the AI to specialize in OpenWrt. Therefore, it may prompt users to ask about OpenWrt. If a user requests configuration related to OpenWrt, the AI will suggest changes using UCI commands.  
