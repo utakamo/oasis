@@ -442,21 +442,32 @@ fetch('<%=build_url("admin", "network", "oasis", "apply-uci-cmd")%>', {
 - **Response**: JSON
 - **Description**: Remove remote MCP server definition
 
+#### 9.7 Change Tool Enable
+- **URL**: `/cgi-bin/luci/admin/network/oasis/change-tool-enable`
+- **Method**: POST
+- **Parameters**:
+  - `name` (string): Tool name
+  - `enable` (string): "0" or "1"
+- **Response**: JSON
+- **Description**: Toggle enable state of a tool directly (UI should prefer 9.2/9.3)
+
 ### 10. System Functions
 
 #### 10.1 System Reboot
 - **URL**: `/cgi-bin/luci/admin/network/oasis/system-reboot`
 - **Method**: POST
-- **Parameters**: None
-- **Response**: JSON (`{ status: "OK" }` or `{ status: "NG" }`)
-- **Description**: Trigger system reboot (available only when local tool support is enabled)
+- **Parameters**:
+  - `cancel` (string, optional): "1" or "true" to cancel a pending reboot request (returns `{ status: "OK", canceled: true }`)
+- **Response**: JSON (`{ status: "OK" }` or `{ status: "NG" }` or `{ status: "OK", canceled: true }`)
+- **Description**: Trigger system reboot (available only when local tool support is enabled) or cancel a pending reboot request
 
 #### 10.2 Restart Service
 - **URL**: `/cgi-bin/luci/admin/network/oasis/restart-service`
 - **Method**: POST
-- **Parameters**: None
-- **Response**: JSON (`{ status: "OK" }` or `{ status: "NG" }`)
-- **Description**: Restart related services required by Oasis (e.g., local tool server, rpcd). Used by the chat UI when a service restart is necessary after applying settings.
+- **Parameters**:
+  - `cancel` (string, optional): "1" or "true" to cancel a pending service-restart request (returns `{ status: "OK", canceled: true }`)
+- **Response**: JSON (`{ status: "OK" }` or `{ status: "NG" }` or `{ status: "OK", canceled: true }`)
+- **Description**: Restart related services required by Oasis (e.g., local tool server, rpcd) or cancel a pending service restart. Used by the chat UI when a service restart is necessary after applying settings.
 
 ## Error Responses
 
