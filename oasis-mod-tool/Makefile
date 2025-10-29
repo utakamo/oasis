@@ -5,6 +5,7 @@ PKG_VERSION:=1.1.1
 PKG_RELEASE:=1
 
 USR_BIN_DIR = /usr/bin
+RPCD_ACL_DIR = /usr/share/rpcd/acl.d
 INIT_DIR = /etc/init.d
 LUA_LIBRARY_DIR = /usr/lib/lua
 UCODE_LIBRARY_DIR = /usr/share/ucode
@@ -26,6 +27,7 @@ endef
 define Package/oasis-mod-tool/install
 	$(INSTALL_DIR) $(1)$(USR_BIN_DIR)
 	$(INSTALL_DIR) $(1)$(INIT_DIR)
+	$(INSTALL_DIR) $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(UCODE_UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service
@@ -35,6 +37,7 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_DIR) $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool
 	$(INSTALL_BIN) ./files/usr/bin/oasis_tool_setup $(1)$(USR_BIN_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/olt_tool.init $(1)$(INIT_DIR)/olt_tool
+	$(INSTALL_DATA) ./files/usr/share/rpcd/acl.d/oasis-mod-tool.json $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.lua.tool.server $(1)$(LUA_UBUS_SERVER_APP_DIR)/oasis.lua.tool.server
 	$(INSTALL_DATA) ./files/usr/share/rpcd/ucode/oasis_plugin_server.uc $(1)$(UCODE_UBUS_SERVER_APP_DIR)/oasis_plugin_server.uc
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/client.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/client.lua

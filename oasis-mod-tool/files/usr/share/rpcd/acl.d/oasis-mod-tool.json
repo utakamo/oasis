@@ -1,0 +1,16 @@
+{
+        "oasis": {
+                "description": "Access Oasis Local Tool",
+                "write": {
+                        "ubus": {
+                                "oasis.rpc.tool": [ "set_tool_enabled", "set_tool_disabled" ]
+                        }
+                },
+
+                "read": {
+                        "ubus": {
+                            "oasis.rpc.tool": [ "get_tool_info" ]
+                        }
+                }
+        }
+}
