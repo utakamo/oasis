@@ -1,0 +1,11 @@
+{
+        "oasis": {
+                "description": "Access Oasis Local Tool (AI Edge Use)",
+
+                "read": {
+                        "ubus": {
+                            "oasis.tool.edge": [ "function_calling" ]
+                        }
+                }
+        }
+}
