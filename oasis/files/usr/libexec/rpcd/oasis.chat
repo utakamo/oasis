@@ -86,9 +86,10 @@ local methods = {
             end
 
             local uci_parse_tbl = oasis_ubus.parse_uci_cmd_sequence(plain_text_ai_message, "table")
+            local tool_info = response.tool_info
 
             if not new_chat_info then
-                r.result = jsonc.stringify({ content = plain_text_ai_message, uci_parse_tbl = uci_parse_tbl, reboot = reboot})
+                r.result = jsonc.stringify({ content = plain_text_ai_message, uci_parse_tbl = uci_parse_tbl, reboot = reboot, tool_info = tool_info})
                 return r
             end
 
@@ -101,7 +102,8 @@ local methods = {
                                         id              = new_chat_tbl.id,
                                         title           = new_chat_tbl.title,
                                         uci_parse_tbl   = uci_parse_tbl,
-                                        reboot          = reboot })
+                                        reboot          = reboot,
+                                        tool_info       = tool_info })
 
             return r
         end

@@ -1195,18 +1195,39 @@ local rpc_output = function(arg)
 
     debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] Service initialize done ...")
 
-    local rpc_output = datactrl.load_chat_data(service)
+    local chat_ctx = datactrl.load_chat_data(service)
 
     -- debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] Load chat data ...")
-    -- debug:dump("oasis.log", rpc_output)
+    -- debug:dump("oasis.log", chat_ctx)
 
-    local new_chat_info, message = ""
+    local new_chat_info, message = nil, nil
+    local status_tbl = { status = common.status.ok }
+    local tool_info = nil
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
-    if ous.setup_msg(service, rpc_output, { role = common.role.user, message = arg.message}) then
-        datactrl.record_chat_data(service, rpc_output)
+    if ous.setup_msg(service, chat_ctx, { role = common.role.user, message = arg.message}) then
+        datactrl.record_chat_data(service, chat_ctx)
         debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] record_chat_data done ...")
-        new_chat_info, message = transfer.chat_with_ai(service, rpc_output)
+
+        -- First call
+        local first, plain_text, tool_used = transfer.chat_with_ai(service, chat_ctx)
+
+        if tool_used then
+            -- Keep tool JSON for external device
+            tool_info = first
+            -- Provide tool outputs back to model
+            if service:handle_tool_output(tool_info, chat_ctx) then
+                -- Second call to get assistant text (and possibly new chat info)
+                local post_new_chat_info, post_message = transfer.chat_with_ai(service, chat_ctx)
+                new_chat_info, message = post_new_chat_info, post_message
+            else
+                return { status = common.status.error, desc = "failed to handle tool output" }, nil, nil
+            end
+        else
+            -- No tools used
+            new_chat_info, message = first, plain_text
+        end
+
         debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] chat_with_ai done ...")
     end
 
@@ -1215,13 +1236,18 @@ local rpc_output = function(arg)
         debug:log("oasis.log", "rpc_output", new_chat_info)
     end
 
-    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] message = " .. message)
+    debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] message = " .. tostring(message))
+
+    -- Attach tool_info for external device consumption (backward compatible)
+    if tool_info then
+        status_tbl.tool_info = tool_info
+    end
 
     local reboot = false
     if service.get_reboot_required then
         reboot = service:get_reboot_required() or false
     end
-    return { status = common.status.ok }, new_chat_info, message, reboot
+    return status_tbl, new_chat_info, message, reboot
 end
 
 -- Rename chat title by chat number.
