@@ -1,6 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# --------------------------------------------------------------------
+# Oasis Build & Upload Automation Script
+#
+# Usage:
+#   ./oasis_build_and_upload.sh
+#       → Runs automatically using saved settings (if available).
+#
+#   ./oasis_build_and_upload.sh --reset
+#       → Deletes stored settings and asks for inputs again.
+#
+# What this script does:
+#   1. Reads or creates a configuration file in: $HOME/oasis_build_and_upload/
+#   2. Stores:
+#        - The package (.ipk) directory (BASE)
+#        - Target device IP address (TARGET_IP)
+#        - SSH password (SSH_PASS)
+#   3. Automatically builds OpenWrt packages.
+#   4. Automatically uploads the built .ipk files to the target device via SCP.
+#
+# Requirements:
+#   - sshpass installed (recommended) or SSH key authentication available
+#   - OpenWrt build environment configured and functional
+#
+# After upload:
+#   SSH into your device and run:
+#       opkg install /root/*.ipk
+#
+# --------------------------------------------------------------------
+
 # ====================================
 # Package Version Variables
 # ====================================
@@ -12,108 +41,92 @@ EDGE_VER="1.0.0-r1"
 TEST_VER="1.0.0-r1"
 
 # ====================================
-# Config File Location (CHANGED TO USER HOME)
+# Config File (User Home)
 # ====================================
 CONFIG_DIR="$HOME/oasis_build_and_upload"
 CONFIG_FILE="$CONFIG_DIR/deploy-oasis.conf"
 
-# Ensure config directory exists
-if [[ ! -d "$CONFIG_DIR" ]]; then
-  echo "Creating config directory: $CONFIG_DIR"
-  mkdir -p "$CONFIG_DIR"
-  chmod 700 "$CONFIG_DIR"
+mkdir -p "$CONFIG_DIR"
+chmod 700 "$CONFIG_DIR"
+
+# ====================================
+# --reset option
+# ====================================
+if [[ "${1:-}" == "--reset" ]]; then
+  echo "Resetting stored settings..."
+  rm -f "$CONFIG_FILE"
+  echo "Done. Re-run the script to set up again."
+  exit 0
 fi
 
 # ====================================
 # Load or Create Config
 # ====================================
 if [[ ! -f "$CONFIG_FILE" ]]; then
-  echo "Config file not found: $CONFIG_FILE"
-  echo "You need to specify the package .ipk directory path (BASE)."
-  echo
-  read -rp "Enter the path to the directory containing .ipk files (BASE): " INPUT_BASE
-
-  if [[ -z "$INPUT_BASE" ]]; then
-    echo "Error: BASE cannot be empty."
-    exit 1
-  fi
-
-  if [[ ! -d "$INPUT_BASE" ]]; then
-   read -rp "Directory does not exist. Continue anyway? (Y/N): " CONFIRM_DIR
-    case "$CONFIRM_DIR" in
-      Y|y|yes|YES) ;;
-      *)
-        echo "Operation cancelled."
-        exit 1
-        ;;
-    esac
-  fi
-
   echo "# Auto-generated config file" > "$CONFIG_FILE"
-  echo "BASE=\"$INPUT_BASE\"" >> "$CONFIG_FILE"
   chmod 600 "$CONFIG_FILE"
-  echo "Config file created: $CONFIG_FILE"
-  echo
 fi
 
-# Load config
 source "$CONFIG_FILE"
 
+# ====================================
+# BASE setup
+# ====================================
 if [[ -z "${BASE:-}" ]]; then
-  echo "Error: BASE is not defined in the config file."
-  exit 1
+  echo "You need to set the .ipk directory path (BASE)."
+  read -rp "Enter the path to the .ipk directory (BASE): " BASE
+  echo "BASE=\"$BASE\"" >> "$CONFIG_FILE"
+  echo "Saved BASE in config."
 fi
 
 echo "Using BASE directory: $BASE"
 
 # ====================================
-# IP / Password Input
+# IP setup
 # ====================================
-DEFAULT_IP="192.168.1.1"
-DEFAULT_PASS="1qaz2wsx3edc"
+if [[ -z "${TARGET_IP:-}" ]]; then
+  read -rp "Enter target device IP (default: 192.168.1.1): " TARGET_IP
+  TARGET_IP="${TARGET_IP:-192.168.1.1}"
+  echo "TARGET_IP=\"$TARGET_IP\"" >> "$CONFIG_FILE"
+  echo "Saved TARGET_IP in config."
+fi
 
-read -rp "Enter target IP (default: $DEFAULT_IP): " IP
-IP="${IP:-$DEFAULT_IP}"
+# ====================================
+# Password setup
+# ====================================
+if [[ -z "${SSH_PASS:-}" ]]; then
+  read -rsp "Enter SSH password: " SSH_PASS
+  echo
+  echo "SSH_PASS=\"$SSH_PASS\"" >> "$CONFIG_FILE"
+  echo "Saved SSH_PASS in config."
+fi
 
-read -rsp "Enter SSH password (default will be used if empty): " PASS
-echo
-PASS="${PASS:-$DEFAULT_PASS}"
+chmod 600 "$CONFIG_FILE"
 
 echo
 echo "--------------------------------------"
-echo "Target Host : $IP"
-echo "SSH Password: (hidden)"
+echo "Target Host : $TARGET_IP"
+echo "Password    : (hidden)"
 echo "BASE Path   : $BASE"
+echo "Config File : $CONFIG_FILE"
 echo "--------------------------------------"
 echo
 
 read -rp "Proceed with these settings? (Y/N): " CONFIRM
 case "$CONFIRM" in
   Y|y|yes|YES) ;;
-  *)
-    echo "Operation cancelled."
-    exit 1
-    ;;
+  *) echo "Cancelled."; exit 1 ;;
 esac
 
 # ====================================
-# Determine OpenWrt Build Root & Switch Directory
+# Detect OpenWrt Root
 # ====================================
-echo "==> Detecting OpenWrt root directory..."
 OPENWRT_DIR=$(echo "$BASE" | sed 's|\(.*openwrt\).*|\1|')
-
-if [[ ! -d "$OPENWRT_DIR" ]]; then
-  echo "Error: Could not determine OpenWrt directory from BASE: $BASE"
-  exit 1
-fi
-
-echo "Switching to OpenWrt build directory: $OPENWRT_DIR"
 cd "$OPENWRT_DIR"
 
 # ====================================
-# Run Build Commands
+# Build
 # ====================================
-echo "==> Running build commands..."
 make package/oasis/{clean,compile}
 make package/oasis-mod-tool/{clean,compile}
 make package/oasis-mod-retired/{clean,compile}
@@ -122,7 +135,7 @@ make package/oasis-tool-edge/{clean,compile}
 make package/oasis-mod-test/{clean,compile}
 
 # ====================================
-# Upload Files
+# Upload
 # ====================================
 FILES=(
   "oasis_${OASIS_VER}_all.ipk"
@@ -133,31 +146,15 @@ FILES=(
   "oasis-mod-test_${TEST_VER}_all.ipk"
 )
 
-if command -v sshpass >/dev/null 2>&1; then
-  USE_SSHPASS=1
-else
-  USE_SSHPASS=0
-  echo "Warning: sshpass not found, using scp (requires SSH key auth)."
-fi
-
 for f in "${FILES[@]}"; do
   src="$BASE/$f"
-  if [[ ! -f "$src" ]]; then
-    echo "Warning: file not found, skipping: $src"
-    continue
-  fi
-
-  echo "Uploading $f to root@$IP:/root/"
-  if [[ $USE_SSHPASS -eq 1 ]]; then
-    sshpass -p "$PASS" scp "$src" "root@$IP:/root/"
-  else
-    scp "$src" "root@$IP:/root/"
-  fi
+  [[ -f "$src" ]] && sshpass -p "$SSH_PASS" scp "$src" "root@$TARGET_IP:/root/" || echo "Skipping missing file: $f"
 done
 
 echo
 echo "✅ Upload complete."
 echo
-echo "To install packages:"
-echo "  ssh root@$IP"
-echo "  opkg install /root/*.ipk"
+echo "To install on device:"
+echo "ssh root@$TARGET_IP"
+echo "opkg install /root/*.ipk"
+echo
