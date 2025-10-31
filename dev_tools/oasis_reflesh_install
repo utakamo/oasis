@@ -36,6 +36,7 @@ opkg remove oasis-tool-wireguard
 # Remove old versions
 opkg remove oasis-tool-edge
 opkg remove luci-app-oasis
+opkg remove oasis-mod-test
 opkg remove oasis-mod-tool
 opkg remove oasis-mod-retired
 opkg remove oasis
@@ -46,6 +47,7 @@ opkg install luci-app-oasis_3.2.6-r1_all.ipk
 opkg install oasis-mod-tool_1.1.1-r1_all.ipk
 opkg install oasis-mod-retired_1.0.0-r1_all.ipk
 opkg install oasis-tool-edge_1.0.0-r1_all.ipk
+opkg install oasis-mod-test_1.0.0-r1_all.ipk
 
 # Restore configuration if migrate mode is enabled
 if [ "$MODE" = "migrate" ]; then
