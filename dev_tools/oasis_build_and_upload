@@ -11,24 +11,39 @@ set -euo pipefail
 #   ./oasis_build_and_upload.sh --reset
 #       → Deletes stored settings and asks for inputs again.
 #
-# What this script does:
-#   1. Reads or creates a configuration file in: $HOME/oasis_build_and_upload/
-#   2. Stores:
-#        - The package (.ipk) directory (BASE)
-#        - Target device IP address (TARGET_IP)
-#        - SSH password (SSH_PASS)
-#   3. Automatically builds OpenWrt packages.
-#   4. Automatically uploads the built .ipk files to the target device via SCP.
-#
 # Requirements:
-#   - sshpass installed (recommended) or SSH key authentication available
-#   - OpenWrt build environment configured and functional
+#   - OpenWrt build environment set up correctly
+#   - sshpass installed (required for automated SCP password auth)
 #
-# After upload:
-#   SSH into your device and run:
-#       opkg install /root/*.ipk
-#
+# If sshpass is missing, this script will tell you how to install it.
 # --------------------------------------------------------------------
+
+# ====================================
+# Check Required Commands
+# ====================================
+if ! command -v sshpass >/dev/null 2>&1; then
+  echo "❌ ERROR: 'sshpass' is not installed."
+  echo
+  echo "Install it using one of the following commands depending on your OS:"
+  echo
+  echo "Ubuntu / Debian:"
+  echo "  sudo apt update && sudo apt install -y sshpass"
+  echo
+  echo "CentOS / RHEL:"
+  echo "  sudo yum install -y epel-release && sudo yum install -y sshpass"
+  echo
+  echo "Fedora:"
+  echo "  sudo dnf install -y sshpass"
+  echo
+  echo "Arch Linux:"
+  echo "  sudo pacman -S sshpass"
+  echo
+  echo "macOS (Homebrew):"
+  echo "  brew install hudochenkov/sshpass/sshpass"
+  echo
+  echo "After installing sshpass, run this script again."
+  exit 1
+fi
 
 # ====================================
 # Package Version Variables
