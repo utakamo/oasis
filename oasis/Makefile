@@ -8,7 +8,6 @@ APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
 UCI_CONFIG_DIR = /etc/config
 OASIS_DIR = /etc/oasis
-INIT_DIR = /etc/init.d
 RPCD_ACL_DIR = /usr/share/rpcd/acl.d
 STORAGE_DIR = $(OASIS_DIR)/chat_data
 BACKUP_DIR = $(OASIS_DIR)/backup
@@ -25,7 +24,7 @@ define Package/oasis
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= AI Support Application
-    DEPENDS:=+lua-curl-v3 +luci-compat
+    DEPENDS:=+lua-curl-v3 +libubus-lua +luci-lua-runtime
     PKGARCH:=all
 endef
 
@@ -59,7 +58,6 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(LUCI_MODULEDIR)/oasis
 	$(INSTALL_DIR) $(1)$(LUCI_MODELDIR)/oasis
 	$(INSTALL_DIR) $(1)$(LUCI_CGI_BIN_DIR)
-	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
 	$(INSTALL_DATA) ./files/usr/share/rpcd/acl.d/oasis.json $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/datactrl.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
