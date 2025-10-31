@@ -4,9 +4,9 @@ PKG_NAME:=oasis-mod-retired
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
+INIT_DIR = /etc/init.d
 APP_DIR = /usr/bin
 LUA_LIBRARY_DIR = /usr/lib/lua
-INIT_DIR = /etc/init.d
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,10 +22,11 @@ define Build/Compile
 endef
 
 define Package/oasis-mod-retired/install
-    $(INSTALL_DIR) $(1)$(APP_DIR)
+	$(INSTALL_DIR) $(1)$(INIT_DIR)
+	$(INSTALL_DIR) $(1)$(APP_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat
-	$(INSTALL_BIN) ./files/usr/bin/oasisd $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
+	$(INSTALL_BIN) ./files/usr/bin/oasisd $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/filter.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 endef
 
