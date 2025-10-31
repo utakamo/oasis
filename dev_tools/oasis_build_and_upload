@@ -1,53 +1,163 @@
-#!/bin/sh
-#
-# Usage:
-#   oasis_build_and_upload <ssh_host>
-#
-# Description:
-#   - On the first run, if BUILDROOT_DIR or SSH_PASS are not found in config,
-#     the user will be prompted to enter them interactively.
-#   - SSH_HOST must always be specified as an argument.
-#
+#!/usr/bin/env bash
+set -euo pipefail
 
-CONFIG_FILE="$HOME/.oasis_build.conf"
+# ====================================
+# Package Version Variables
+# ====================================
+OASIS_VER="3.2.6-r1"
+LUCIOASIS_VER="3.2.6-r1"
+TOOL_VER="1.1.1-r1"
+RETIRED_VER="1.0.0-r1"
+EDGE_VER="1.0.0-r1"
+TEST_VER="1.0.0-r1"
 
-# --- Load saved config if exists ---
-if [ -f "$CONFIG_FILE" ]; then
-    . "$CONFIG_FILE"
+# ====================================
+# Config File Location (CHANGED TO USER HOME)
+# ====================================
+CONFIG_DIR="$HOME/oasis_build_and_upload"
+CONFIG_FILE="$CONFIG_DIR/deploy-oasis.conf"
+
+# Ensure config directory exists
+if [[ ! -d "$CONFIG_DIR" ]]; then
+  echo "Creating config directory: $CONFIG_DIR"
+  mkdir -p "$CONFIG_DIR"
+  chmod 700 "$CONFIG_DIR"
 fi
 
-# --- Prompt for missing values ---
-if [ -z "$BUILDROOT_DIR" ]; then
-    read -p "Enter OpenWrt Buildroot directory path: " BUILDROOT_DIR
-fi
+# ====================================
+# Load or Create Config
+# ====================================
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "Config file not found: $CONFIG_FILE"
+  echo "You need to specify the package .ipk directory path (BASE)."
+  echo
+  read -rp "Enter the path to the directory containing .ipk files (BASE): " INPUT_BASE
 
-if [ -z "$SSH_PASS" ]; then
-    read -s -p "Enter SSH password for root: " SSH_PASS
-    echo ""
-fi
-
-# --- Save config if updated ---
-cat > "$CONFIG_FILE" <<EOF
-BUILDROOT_DIR="$BUILDROOT_DIR"
-SSH_PASS="$SSH_PASS"
-EOF
-chmod 600 "$CONFIG_FILE"
-
-# --- Require SSH_HOST as argument ---
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <ssh_host>"
+  if [[ -z "$INPUT_BASE" ]]; then
+    echo "Error: BASE cannot be empty."
     exit 1
-fi
-SSH_HOST="$1"
+  fi
 
-# --- Build packages ---
-cd "$BUILDROOT_DIR" || { echo "Directory not found: $BUILDROOT_DIR"; exit 1; }
+  if [[ ! -d "$INPUT_BASE" ]]; then
+   read -rp "Directory does not exist. Continue anyway? (Y/N): " CONFIRM_DIR
+    case "$CONFIRM_DIR" in
+      Y|y|yes|YES) ;;
+      *)
+        echo "Operation cancelled."
+        exit 1
+        ;;
+    esac
+  fi
+
+  echo "# Auto-generated config file" > "$CONFIG_FILE"
+  echo "BASE=\"$INPUT_BASE\"" >> "$CONFIG_FILE"
+  chmod 600 "$CONFIG_FILE"
+  echo "Config file created: $CONFIG_FILE"
+  echo
+fi
+
+# Load config
+source "$CONFIG_FILE"
+
+if [[ -z "${BASE:-}" ]]; then
+  echo "Error: BASE is not defined in the config file."
+  exit 1
+fi
+
+echo "Using BASE directory: $BASE"
+
+# ====================================
+# IP / Password Input
+# ====================================
+DEFAULT_IP="192.168.1.1"
+DEFAULT_PASS="1qaz2wsx3edc"
+
+read -rp "Enter target IP (default: $DEFAULT_IP): " IP
+IP="${IP:-$DEFAULT_IP}"
+
+read -rsp "Enter SSH password (default will be used if empty): " PASS
+echo
+PASS="${PASS:-$DEFAULT_PASS}"
+
+echo
+echo "--------------------------------------"
+echo "Target Host : $IP"
+echo "SSH Password: (hidden)"
+echo "BASE Path   : $BASE"
+echo "--------------------------------------"
+echo
+
+read -rp "Proceed with these settings? (Y/N): " CONFIRM
+case "$CONFIRM" in
+  Y|y|yes|YES) ;;
+  *)
+    echo "Operation cancelled."
+    exit 1
+    ;;
+esac
+
+# ====================================
+# Determine OpenWrt Build Root & Switch Directory
+# ====================================
+echo "==> Detecting OpenWrt root directory..."
+OPENWRT_DIR=$(echo "$BASE" | sed 's|\(.*openwrt\).*|\1|')
+
+if [[ ! -d "$OPENWRT_DIR" ]]; then
+  echo "Error: Could not determine OpenWrt directory from BASE: $BASE"
+  exit 1
+fi
+
+echo "Switching to OpenWrt build directory: $OPENWRT_DIR"
+cd "$OPENWRT_DIR"
+
+# ====================================
+# Run Build Commands
+# ====================================
+echo "==> Running build commands..."
 make package/oasis/{clean,compile}
 make package/oasis-mod-tool/{clean,compile}
+make package/oasis-mod-retired/{clean,compile}
 make package/luci-app-oasis/{clean,compile}
+make package/oasis-tool-edge/{clean,compile}
+make package/oasis-mod-test/{clean,compile}
 
-# --- Upload packages ---
-PKG_DIR="$BUILDROOT_DIR/bin/packages/aarch64_cortex-a53/ai"
-sshpass -p "$SSH_PASS" scp "$PKG_DIR"/oasis_*.ipk root@"$SSH_HOST":/root
-sshpass -p "$SSH_PASS" scp "$PKG_DIR"/luci-app-oasis_*.ipk root@"$SSH_HOST":/root
-sshpass -p "$SSH_PASS" scp "$PKG_DIR"/oasis-mod-tool_*.ipk root@"$SSH_HOST":/root
+# ====================================
+# Upload Files
+# ====================================
+FILES=(
+  "oasis_${OASIS_VER}_all.ipk"
+  "luci-app-oasis_${LUCIOASIS_VER}_all.ipk"
+  "oasis-mod-tool_${TOOL_VER}_all.ipk"
+  "oasis-mod-retired_${RETIRED_VER}_all.ipk"
+  "oasis-tool-edge_${EDGE_VER}_all.ipk"
+  "oasis-mod-test_${TEST_VER}_all.ipk"
+)
+
+if command -v sshpass >/dev/null 2>&1; then
+  USE_SSHPASS=1
+else
+  USE_SSHPASS=0
+  echo "Warning: sshpass not found, using scp (requires SSH key auth)."
+fi
+
+for f in "${FILES[@]}"; do
+  src="$BASE/$f"
+  if [[ ! -f "$src" ]]; then
+    echo "Warning: file not found, skipping: $src"
+    continue
+  fi
+
+  echo "Uploading $f to root@$IP:/root/"
+  if [[ $USE_SSHPASS -eq 1 ]]; then
+    sshpass -p "$PASS" scp "$src" "root@$IP:/root/"
+  else
+    scp "$src" "root@$IP:/root/"
+  fi
+done
+
+echo
+echo "✅ Upload complete."
+echo
+echo "To install packages:"
+echo "  ssh root@$IP"
+echo "  opkg install /root/*.ipk"
