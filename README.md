@@ -477,9 +477,27 @@ root@OpenWrt:~# ubus -v list oasis.title
 ```
 
 
-# Dependency Package
-- lua-curl-v3
+# Oasis Dependency Package
+- libnghttp2-14.
+- libcurl4.
+- liblua5.1.5.
+- lua.
+- lua-curl-v3.
+- libubus-lua.
+- luci-lib-nixio.
+- luci-lib-ip.
+- luci-lib-jsonc.
+- liblucihttp-lua.
+- luci-lib-base.
+- ucode-mod-lua.
+- luci-lua-runtime.
+
+# Luci-app-oasis Depedency Package
 - luci-compat
+- oasis
+
+# Other oasis module Dependency Package
+- oasis
 
 ## License
 
