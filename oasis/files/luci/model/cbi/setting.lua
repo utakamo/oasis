@@ -1,11 +1,15 @@
 local common = require("oasis.common")
+local misc = require("oasis.chat.misc")
 
 m = Map("oasis", nil)
 
-assist = m:section(TypedSection, "basic")
-assist_enable = assist:option(Flag, "enable", "Enable", "Enable setting change suggestions by AI")
-assist_enable.enabled = "1"
-assist_enable.disabled = "0"
+-- check install oasis-mod-retired package
+if misc.check_file_exist("/usr/lib/lua/oasis/chat/filter.lua") then
+    assist = m:section(TypedSection, "basic")
+    assist_enable = assist:option(Flag, "enable", "Enable", "Enable setting change suggestions by AI")
+    assist_enable.enabled = "1"
+    assist_enable.disabled = "0"
+end
 
 rpc = m:section(TypedSection, "rpc")
 rpc_enable = rpc:option(Flag, "enable", "Enable")
