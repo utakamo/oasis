@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+REFRESH_SCRIPT_DIR="$(pwd)"
+
 # --------------------------------------------------------------------
 # Oasis Build & Upload Automation Script
 #
@@ -150,7 +152,7 @@ make package/oasis-tool-edge/{clean,compile}
 make package/oasis-mod-test/{clean,compile}
 
 # ====================================
-# Upload
+# Upload .ipk files
 # ====================================
 FILES=(
   "oasis_${OASIS_VER}_all.ipk"
@@ -166,10 +168,24 @@ for f in "${FILES[@]}"; do
   [[ -f "$src" ]] && sshpass -p "$SSH_PASS" scp "$src" "root@$TARGET_IP:/root/" || echo "Skipping missing file: $f"
 done
 
+# ====================================
+# Upload oasis_reflesh_install script
+# ====================================
+REFRESH_SCRIPT="$REFRESH_SCRIPT_DIR/oasis_reflesh_install"
+
+if [[ -f "$REFRESH_SCRIPT" ]]; then
+  echo "Uploading oasis_reflesh_install..."
+  sshpass -p "$SSH_PASS" scp "$REFRESH_SCRIPT" "root@$TARGET_IP:/root/"
+  echo "✅ oasis_reflesh_install uploaded."
+else
+  echo "⚠️ oasis_reflesh_install not found: $REFRESH_SCRIPT"
+fi
+
 echo
 echo "✅ Upload complete."
 echo
 echo "To install on device:"
 echo "ssh root@$TARGET_IP"
-echo "opkg install /root/*.ipk"
+echo "root@OpenWrt:~# chmod +x oasis_reflesh_install"
+echo "root@OpenWrt:~# ./oasis_reflesh_install"
 echo
