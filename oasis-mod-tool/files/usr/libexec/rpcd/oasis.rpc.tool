@@ -5,21 +5,85 @@ local jsonc = require("luci.jsonc")
 local methods = {
     get_tool_info = {
         call = function()
+            local debug = require("oasis.chat.debug")
+            local uci = require("luci.model.uci").cursor()
+            local jsonc = require("luci.jsonc")
+            local tool = {}
+
+            local info = uci:get_all("oasis")
+
+            for _, target in pairs(info) do
+                if (target[".type"] == "tool")  then
+                    tool[#tool + 1] = {
+                        server = target.server,
+                        name   = target.name,
+                        enable = target.enable
+                    }
+                end
+            end
+
             local r = {}
+            r.result = jsonc.stringify({ tool = tool })
             return r
         end
     },
 
     set_tool_enabled = {
-        call = function()
+        args = { tool = "a_string" },
+        call = function(args)
+            local uci = require("luci.model.uci").cursor()
+            local jsonc = require("luci.jsonc")
+
+            local info = uci:get_all("oasis")
+            local is_changed = false
+
+            for sect, _ in pairs(info) do
+                local target = info[sect]
+                if (target[".type"] == "tool") and (target.name == args.tool) then
+                    uci:set("oasis", sect, "enable", 1)
+                    uci:commit("oasis")
+                    is_changed = true
+                    break
+                end
+            end
+
             local r = {}
+            r.result = jsonc.stringify({status = "NG"})
+
+            if is_changed then
+                r.result = jsonc.stringify({status = "OK"})
+            end
+
             return r
         end
     },
 
     set_tool_disabled = {
-        call = function()
+        args = { tool = "a_string" },
+        call = function(args)
+            local uci = require("luci.model.uci").cursor()
+            local jsonc = require("luci.jsonc")
+
+            local info = uci:get_all("oasis")
+            local is_changed = false
+
+            for sect, _ in pairs(info) do
+                local target = info[sect]
+                if (target[".type"] == "tool") and (target.name == args.tool) then
+                    uci:set("oasis", sect, "enable", 0)
+                    uci:commit("oasis")
+                    is_changed = true
+                    break
+                end
+            end
+
             local r = {}
+            r.result = jsonc.stringify({status = "NG"})
+
+            if is_changed then
+                r.result = jsonc.stringify({status = "OK"})
+            end
+
             return r
         end
     },
