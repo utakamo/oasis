@@ -4,12 +4,81 @@ local jsonc = require("luci.jsonc")
 
 local methods = {
     function_calling = {
-        args = { func = "a_string", param = "a_string" },
-        -- func = "get_lan_ipaddr", param = ""
-        call = function()
-            -- MOCK CODE
+        args = { tool = "a_string", param = "a_string" },
+
+        call = function(args)
+            local uci = require("luci.model.uci").cursor()
+            local jsonc = require("luci.jsonc")
+
+            local info = uci:get_all("oasis") or {}
+
+            -- Search for the tool definition
+            local target_def
+            for sect, _ in pairs(info) do
+                local target = info[sect]
+                if target and tostring(target[".type"]) == "tool" and target.name == args.tool then
+                    target_def = target
+                    break
+                end
+            end
+
             local r = {}
-            r.result = '{"result":"192.168.1.1"}'
+
+            if not target_def then
+                r.result = jsonc.stringify({status = "Not Found"})
+                return r
+            end
+
+            -- 1) Try requiring the server as a Lua module and invoke it
+            if target_def.server then
+                local ok, mod = pcall(require, target_def.server)
+                if ok then
+                    -- If the module is a function itself
+                    if type(mod) == "function" then
+                        local succ, res = pcall(mod, { tool = args.tool, param = args.param })
+                        if succ then
+                            r.result = jsonc.stringify(res or { status = "OK" })
+                            return r
+                        else
+                            r.result = jsonc.stringify({ status = "module call failed", error = tostring(res) })
+                            return r
+                        end
+                    end
+
+                    -- If it's a table, try common callable fields (call/run/main)
+                    if type(mod) == "table" then
+                        local fn = mod.call or mod.run or mod.main
+                        if type(fn) == "function" then
+                            local succ, res = pcall(fn, { tool = args.tool, param = args.param })
+                            if succ then
+                                r.result = jsonc.stringify(res or { status = "OK" })
+                                return r
+                            else
+                                r.result = jsonc.stringify({ status = "module call failed", error = tostring(res) })
+                                return r
+                            end
+                        end
+                    end
+                end
+            end
+
+            -- 2) Try calling via ubus using luci.util.ubus
+            local util = require("luci.util")
+            local success, ret = pcall(function()
+                -- Many ubus services use different method names; try 'call' and adjust if needed
+                return util.ubus(target_def.server, "call", { tool = args.tool, param = args.param }) or {}
+            end)
+
+            if success then
+                r.result = jsonc.stringify(ret)
+                return r
+            else
+                r.result = jsonc.stringify({ status = "ubus call failed", error = tostring(ret) })
+                return r
+            end
+
+            -- If no executable server was found
+            r.result = jsonc.stringify({ status = "No executable server for tool", server = tostring(target_def.server) })
             return r
         end
     },
