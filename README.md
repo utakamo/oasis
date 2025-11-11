@@ -369,6 +369,9 @@ Target Tool No: 7
 ```
 
 # Oasis RPC (json-rpc2.0)
+The RPC functionality is used for integration with external devices. In OASIS, this feature is primarily supported with the expectation of integration with chat applications on smartphones and similar platforms.  
+oasis-mobile-client: https://github.com/utakamo/oasis-mobile-client
+
 Dependency Package: `uhttpd-mod-ubus`
 > [!NOTE]
 > If you wish to use this functionality, you may need to install uhttpd-mod-ubus.
