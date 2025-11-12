@@ -25,8 +25,12 @@ local methods = {
             local r = {}
 
             if not target_def then
-                r.result = jsonc.stringify({status = "Not Found"})
+                r.result = jsonc.stringify({error = "Not Found"})
                 return r
+            end
+
+            if target_def.enable then
+                r.result = jsonc.stringify({error = "Execution of the specified tool is prohibited."})
             end
 
             -- 1) Try requiring the server as a Lua module and invoke it
