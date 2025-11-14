@@ -2,7 +2,7 @@
 
 local server = require("oasis.local.tool.server")
 
-server.tool("get_tool_info", {
+server.tool("get_tool_list", {
     tool_desc = "Get tool list",
     call = function()
         local uci = require("luci.model.uci").cursor()
