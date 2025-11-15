@@ -3,56 +3,41 @@
 local util  = require("luci.util")
 -- local debug = require("oasis.chat.debug")
 
-local markdown = function(mark, message)
+local function apply_markdown_tokens(msg, counters)
 
-    if not mark then
-        message = message:gsub("```", "\27[1;32;47m")
-        message = message:gsub("\27%[1;32;47m(.-)\27%[1;32;47m", "\27[1;32;47m%1\27[0m")
-        message = message:gsub("%*%*", "\27[1;33m")
-        message = message:gsub("\27%[1;33m(.-)\27%[1;33m", "\27[1;33m%1\27[0m")
-    else
-        if not mark.cnt then
-            mark.cnt = {}
-            mark.cnt.code_block = 0
-            mark.cnt.bold_text = 0
-        end
+    counters.code_block = counters.code_block or 0
+    counters.bold_text = counters.bold_text or 0
 
-        while true do
-            local is_code_block = (message:match("```") ~= nil)
-
-            if not is_code_block then
-                break
-            end
-
-            mark.cnt.code_block = mark.cnt.code_block + 1
-
-            -- replace code blocks
-            if (mark.cnt.code_block % 2) == 1 then
-                message = message:gsub("```", "\27[1;32;47m", 1)
-            else
-                message = message:gsub("```", "\27[0m", 1)
-            end
-        end
-
-        while true do
-            local is_bold_text = (message:match("%*%*") ~= nil)
-
-            if not is_bold_text then
-                break
-            end
-
-            mark.cnt.bold_text = mark.cnt.bold_text + 1
-
-            -- replace bold blocks
-            if (mark.cnt.bold_text % 2) == 1 then
-                message = message:gsub("%*%*", "\27[1;33m")
-            else
-                message = message:gsub("%*%*", "\27[0m")
-            end
+    while msg:find("```", 1, true) do
+        counters.code_block = counters.code_block + 1
+        if (counters.code_block % 2) == 1 then
+            msg = msg:gsub("```", "\27[1;32;47m", 1)
+        else
+            msg = msg:gsub("```", "\27[0m", 1)
         end
     end
 
-    return message
+    while msg:find("%*%*") do
+        counters.bold_text = counters.bold_text + 1
+        if (counters.bold_text % 2) == 1 then
+            msg = msg:gsub("%*%*", "\27[1;33m", 1)
+        else
+            msg = msg:gsub("%*%*", "\27[0m", 1)
+        end
+    end
+
+    return msg
+end
+
+local markdown = function(mark, message)
+
+    if not mark then
+        local local_counters = { code_block = 0, bold_text = 0 }
+        return apply_markdown_tokens(message, local_counters)
+    end
+
+    mark.cnt = mark.cnt or { code_block = 0, bold_text = 0 }
+    return apply_markdown_tokens(message, mark.cnt)
 end
 
 local get_uptime = function()
