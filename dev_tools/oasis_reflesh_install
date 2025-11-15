@@ -34,6 +34,10 @@ opkg remove oasis-tool-test
 opkg remove oasis-tool-wireguard
 
 # Remove old versions
+opkg remove oasis-tool-analysis
+opkg remove oasis-tool-template
+opkg remove oasis-tool-wireguard
+opkg remove oasis-tool-test
 opkg remove oasis-tool-edge
 opkg remove luci-app-oasis
 opkg remove oasis-mod-test
