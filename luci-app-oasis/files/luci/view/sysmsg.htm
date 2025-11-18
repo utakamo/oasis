@@ -1,50 +1,6 @@
 <%+header%>
 
-<style>
-    /* Unified button style aligned with chat.css (#import-button/#new-button/#send-button) */
-    .add-button, .load-button, .update-button, .delete-button {
-        display: inline-block;
-        padding: 0 14px;
-        width: 7.5rem;
-        height: 2.5rem;
-        line-height: 2.5rem;
-        color: #ffffff;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-    .add-button, .load-button {
-        background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
-    }
-    .update-button { background: linear-gradient(180deg, #ff5bbd 0%, #ff1493 100%); }
-    .update-button.done { background: linear-gradient(180deg, #ffd24d 0%, #ffbf00 100%); color: #ffffff; }
-    .delete-button { background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%); margin-left: 10px; }
-    .add-button:active, .load-button:active, .update-button:active, .delete-button:active { transform: translateY(1px); }
-
-    /* Layout unify */
-    .section { margin-top: 12px; border-bottom: 1px solid #bbbbbb; padding-bottom: 12px; }
-    .field-row { display:block; margin: 6px 0; }
-    .input-text { padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; }
-    .sysmsg-textarea { margin-top:10px; width:100%; resize:none; border: 1px solid #ddd; border-radius: 10px; padding: 10px 12px; box-sizing: border-box; line-height: 1.4; }
-    .form-actions { margin: 10px 0; display:flex; gap:10px; flex-wrap: wrap; }
-
-    /* Toast */
-    .toast { position: sticky; top: 8px; background:#212529; color:#fff; padding:10px 12px; border-radius:8px; margin-bottom:8px; display:none; z-index: 10; }
-    .toast.show { display:block; }
-    .toast.success { background:#198754; }
-    .toast.error { background:#dc3545; }
-    .toast.info { background:#0d6efd; }
-
-    /* Confirm dialog */
-    .confirm-modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1300; }
-    .confirm-modal.show { display: flex; }
-    .confirm-card { background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 18px 20px; width: min(92vw, 420px); }
-    .confirm-card p { margin: 0 0 12px; font-weight: 600; text-align: center; font-size: 1.1rem; }
-    .cancel-button { display:inline-block; padding: 0 14px; width: 7.5rem; height: 2.5rem; line-height: 2.5rem; color:#ffffff; border:none; border-radius:10px; cursor:pointer; font-weight:600; background: linear-gradient(180deg, #6c757d 0%, #495057 100%); }
-    .confirm-card .form-actions { justify-content: center; gap: 12px; width: 100%; }
-    .confirm-card .delete-button { margin-left: 0; }
-</style>
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/sysmsg.css">
 
 <div id="sysmsg-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
 

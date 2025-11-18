@@ -1,0 +1,214 @@
+/* Layout */
+#oasis-tool-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h2 {
+    margin: 0 0 8px;
+}
+
+h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #555;
+}
+
+.server-block {
+    width: 100%;
+    max-width: 760px;
+    margin-top: 22px;
+}
+
+/* Head action container */
+.tools-head-block {
+    width: 100%;
+    max-width: 760px;
+    margin: 8px auto;
+}
+
+.server-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+/* Card */
+.cell {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cell-title {
+    color: #333;
+    font-weight: 700;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-pill {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e9ecef;
+    color: #495057;
+}
+
+.status-pill.enabled {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.pill-conflict {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #ff4da6;
+    color: #ffffff;
+}
+
+.pill-script {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: #ffffff;
+}
+
+.pill-script.script-lua {
+    background: #2a84ff;
+}
+
+.pill-script.script-ucode {
+    background: #7b61ff;
+}
+
+.cell-description {
+    font-size: 0.92rem;
+    color: #444;
+    line-height: 1.45;
+}
+
+.cell-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Unified button styles */
+.add-button,
+.load-button,
+.update-button,
+.delete-button,
+.cancel-button {
+    display: inline-block;
+    padding: 0 14px;
+    width: 7.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.load-button {
+    background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
+}
+
+.delete-button,
+.cancel-button {
+    background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%);
+}
+
+.load-button:active,
+.delete-button:active,
+.cancel-button:active {
+    transform: translateY(1px);
+}
+
+.load-button.fullwidth {
+    width: 100%;
+}
+
+/* Toast */
+.toast {
+    position: sticky;
+    top: 8px;
+    background: #212529;
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: none;
+    z-index: 10;
+}
+
+.toast.show {
+    display: block;
+}
+
+.toast.success {
+    background: #198754;
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+.toast.info {
+    background: #0d6efd;
+}
+
+/* Simple error modal */
+.tools-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+}
+
+.tools-modal.show {
+    display: flex;
+}
+
+.tools-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 18px 20px;
+    width: min(92vw, 420px);
+}
+
+.tools-card p {
+    margin: 0 0 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.form-actions {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+

@@ -1,0 +1,154 @@
+.add-button,
+.load-button,
+.update-button,
+.delete-button,
+.cancel-button {
+    display: inline-block;
+    padding: 0 14px;
+    width: 7.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.add-button,
+.load-button {
+    background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
+}
+
+.update-button {
+    background: linear-gradient(180deg, #ff5bbd 0%, #ff1493 100%);
+}
+
+.delete-button,
+.cancel-button {
+    background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%);
+}
+
+.load-button:active,
+.update-button:active,
+.delete-button:active,
+.cancel-button:active {
+    transform: translateY(1px);
+}
+
+.load-button.done {
+    background: linear-gradient(180deg, #ffd24d 0%, #ffbf00 100%);
+    color: #ffffff;
+}
+
+.preview-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#upload-image-container {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    background-color: white;
+    border: 1px solid #aaa;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    text-align: center;
+    padding: 20px;
+}
+
+#upload-image-container h3 {
+    color: #696969;
+}
+
+.custom-button:disabled {
+    background-color: #4caf50;
+}
+
+#oasis-icon-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 8px 0 18px;
+}
+
+.icon-label {
+    cursor: pointer;
+    text-align: center;
+    margin-right: 15px;
+}
+
+.icon-label img {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    border: 3px solid transparent;
+    transition: 0.3s;
+    background-color: #ffffff;
+}
+
+input[type="radio"]:checked + img {
+    border-color: #007bff;
+}
+
+.icon-label input {
+    display: none;
+}
+
+#dropArea {
+    display: inline-block;
+    width: 80%;
+    max-width: 400px;
+    padding: 20px;
+    margin: 20px auto;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+#dropArea.highlight {
+    background-color: #e0f7fa;
+}
+
+.preview {
+    margin-top: 20px;
+    max-width: 100%;
+    height: auto;
+}
+
+.confirm-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.confirm-modal.show {
+    display: flex !important;
+}
+
+.confirm-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 18px 20px;
+    width: min(92vw, 420px);
+}
+
+.form-actions {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+

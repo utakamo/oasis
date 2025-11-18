@@ -1,0 +1,224 @@
+/* Layout */
+.rollback-list {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.rollback-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    color: #333;
+}
+
+.text-box {
+    margin-top: 5px;
+    margin-bottom: 12px;
+    border-left: 4px solid #ffa500;
+    padding-left: 12px;
+}
+
+/* Unified buttons (aligned with chat/sysmsg) */
+.add-button,
+.load-button,
+.update-button,
+.delete-button,
+.cancel-button {
+    display: inline-block;
+    padding: 0 14px;
+    width: 7.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.add-button,
+.load-button {
+    background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
+}
+
+.update-button {
+    background: linear-gradient(180deg, #ff5bbd 0%, #ff1493 100%);
+}
+
+.delete-button,
+.cancel-button {
+    background: linear-gradient(180deg, #9aa0a6 0%, #80868b 100%);
+}
+
+.add-button:active,
+.load-button:active,
+.update-button:active,
+.delete-button:active,
+.cancel-button:active {
+    transform: translateY(1px);
+}
+
+.form-actions {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Toast */
+.toast {
+    position: sticky;
+    top: 8px;
+    background: #212529;
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: none;
+    z-index: 10;
+}
+
+.toast.show {
+    display: block;
+}
+
+.toast.success {
+    background: #198754;
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+.toast.info {
+    background: #0d6efd;
+}
+
+/* Confirm dialog */
+.confirm-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+}
+
+.confirm-modal.show {
+    display: flex;
+}
+
+.confirm-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 18px 20px;
+    width: min(92vw, 420px);
+}
+
+.confirm-card p {
+    margin: 0 0 12px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.confirm-card .form-actions {
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+}
+
+/* Overlay message + animation */
+#loadingOverlay .overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 0 16px;
+}
+
+#loadingOverlay .overlay-message {
+    font-size: 16px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+#loadingOverlay .overlay-message .dots {
+    display: inline-flex;
+    gap: 2px;
+    margin-left: 2px;
+}
+
+#loadingOverlay .overlay-message .dots span {
+    opacity: 0.2;
+    animation: dots-blink 1.2s infinite;
+}
+
+#loadingOverlay .overlay-message .dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+#loadingOverlay .overlay-message .dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes dots-blink {
+    0% {
+        opacity: 0.2;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.2;
+    }
+}
+
+#loadingOverlay .overlay-progress {
+    position: relative;
+    width: 280px;
+    max-width: 70vw;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+#loadingOverlay .overlay-progress::before {
+    content: "";
+    position: absolute;
+    left: -40%;
+    top: 0;
+    height: 100%;
+    width: 40%;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: inherit;
+    animation: indeterminate-slide 1.2s linear infinite;
+}
+
+@keyframes indeterminate-slide {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(350%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #loadingOverlay .overlay-message .dots span {
+        animation: none;
+        opacity: 0.4;
+    }
+
+    #loadingOverlay .overlay-progress::before {
+        animation: none;
+        left: 0;
+        width: 100%;
+        opacity: 0.35;
+    }
+}
+
