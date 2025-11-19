@@ -27,16 +27,23 @@ endef
 define Package/luci-app-oasis/install
 	$(INSTALL_DIR) $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis
+	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis/css
+	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/icons.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/sysmsg.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/chat.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/rollback-list.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/tools.htm $(1)$(LUCI_VIEWDIR)/oasis
-	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/chat.css $(1)$(LUCI_RESOURCES_DIR)/oasis
-	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/icons.css $(1)$(LUCI_RESOURCES_DIR)/oasis
-	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/rollback-list.css $(1)$(LUCI_RESOURCES_DIR)/oasis
-	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/sysmsg.css $(1)$(LUCI_RESOURCES_DIR)/oasis
-	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/tools.css $(1)$(LUCI_RESOURCES_DIR)/oasis
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/chat.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/icons.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/rollback-list.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/sysmsg.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/tools.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/icons.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/rollback.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/sysmsg.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/tools.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/operator.png $(1)$(LUCI_RESOURCES_DIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/openwrt.png $(1)$(LUCI_RESOURCES_DIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/fonts/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2 $(1)$(LUCI_RESOURCES_DIR)/oasis/fonts
