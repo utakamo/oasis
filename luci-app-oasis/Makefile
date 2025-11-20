@@ -55,5 +55,4 @@ define Package/luci-app-oasis/postinst
 	uci commit oasis
 endef
 
-
 $(eval $(call BuildPackage,luci-app-oasis))
