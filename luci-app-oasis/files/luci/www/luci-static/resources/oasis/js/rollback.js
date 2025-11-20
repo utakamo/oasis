@@ -3,6 +3,8 @@
 
     const config = window.OasisRollbackConfig || {};
     const urls = config.urls || {};
+    const STR = window.OasisRollbackStrings || {};
+    const t = (key, fallback) => (Object.prototype.hasOwnProperty.call(STR, key) ? STR[key] : fallback);
 
     function getUrl(key) {
         const value = urls[key];
@@ -48,7 +50,7 @@
             const button = document.createElement('button');
             button.className = 'rollback-button load-button';
             button.dataset.id = entry.id;
-            button.textContent = 'Rollback';
+            button.textContent = t('rollback', 'Rollback');
 
             card.appendChild(textBox);
             card.appendChild(button);
@@ -78,19 +80,19 @@
 
             return {
                 id: index + 1,
-                text: cmds.length ? cmds.join('\n') : 'No UCI commands found.'
+                text: cmds.length ? cmds.join('\n') : t('noCommands', 'No UCI commands found.')
             };
         });
 
         renderRollbackData(rollbackData);
     })
     .catch(error => {
-        container.innerHTML = '<p>No Rollback Data</p>';
+        container.innerHTML = `<p>${t('noData', 'No Rollback Data')}</p>`;
     });
 
     function showLoadingOverlay(message) {
         const overlay = document.getElementById('loadingOverlay');
-        overlay.querySelector('div').textContent = message || 'Loading...';
+        overlay.querySelector('div').textContent = message || t('loading', 'Loading...');
         overlay.style.display = 'flex';
     }
 
@@ -118,7 +120,7 @@
         confirmModal.setAttribute('aria-hidden', 'true');
 
         // Replace content immediately with final instruction
-        const finalMsg = 'Rollback has been executed. You can access the UI again once the system has fully restarted.';
+        const finalMsg = t('executed', 'Rollback has been executed. You can access the UI again once the system has fully restarted.');
         container.innerHTML = '';
         showLoadingOverlay(finalMsg);
 

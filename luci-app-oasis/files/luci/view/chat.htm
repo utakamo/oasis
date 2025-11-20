@@ -162,17 +162,17 @@
 
 <div class="oasis-container">
     <div class="chat-list-container">
-        <label for="import-chat-data" id="import-button" style="width:100%;">Import Chat Data +</label>
+        <label for="import-chat-data" id="import-button" style="width:100%;"><%:Import Chat Data +%></label>
         <input type="file" id="import-chat-data" accept=".json" style="display: none;">
         <!--<button type="button" id="import-button">Import Chat Data</button>-->
-            <button id="new-button">New Chat</button>
-            <div class="sidebar-label">System Message</div>
+            <button id="new-button"><%:New Chat%></button>
+            <div class="sidebar-label"><%:System Message%></div>
             <select id="sysmsg-select" name="sysmsg-select"></select>
-            <div class="sidebar-label">Attach UCI info</div>
+            <div class="sidebar-label"><%:Attach UCI info%></div>
             <select id="uci-config-list" name="uci-config-list">
                 <option value="---">---</option>
             </select>
-            <div class="sidebar-label">History</div>
+            <div class="sidebar-label"><%:History%></div>
         <ul id="chat-list"></ul>
     </div>
 
@@ -181,26 +181,26 @@
         <div id="keyboard-padding"></div>
         <select id="ai-service-list"></select>
         <div class="chat-messages"></div>
-        <button id="scroll-bottom-btn" aria-label="Scroll to latest">
+        <button id="scroll-bottom-btn" aria-label="<%:Scroll to latest%>">
             <span class="material-icons">arrow_drop_down</span>
         </button>
         <div class="download-overlay" id="download-overlay" aria-hidden="true">
             <div class="download-card" role="status" aria-live="polite">
                 <div class="download-icon"><span class="material-icons">download</span></div>
-                <div class="download-text" id="download-overlay-text">Downloading...</div>
+                <div class="download-text" id="download-overlay-text"><%:Downloading...%></div>
             </div>
         </div>
         <div class="chat-input">
             <div class="chat-input-fields">
                 <div class="inline-sysmsg-field">
-                    <div class="sidebar-label">System Message</div>
+                    <div class="sidebar-label"><%:System Message%></div>
                     <select id="inline-sysmsg-select" name="inline-sysmsg-select"></select>
                 </div>
-                <textarea id="message-input" placeholder="Your Message"></textarea>
+                <textarea id="message-input" placeholder="<%:Your Message (Enter to send, Shift+Enter for newline)%>"></textarea>
             </div>
             <div class="chat-buttons">
-                <button id="send-button">Send</button>
-                <button id="open-bottom-sheet" class="mobile-fab" aria-label="Open options">
+                <button id="send-button"><%:Send%></button>
+                <button id="open-bottom-sheet" class="mobile-fab" aria-label="<%:Open options%>">
                     <span class="material-icons">tune</span>
                 </button>
                 <button id="smp-send-button" style="border: none; background: none; cursor: pointer;">
@@ -215,42 +215,42 @@
         <div class="mobile-bottom-sheet" id="mobile-bottom-sheet" aria-hidden="true">
             <div class="sheet-handle"></div>
             <div class="sheet-content">
-                <label for="smp-import-chat-data" id="smp-import-button" style="width: 100%;">Import Chat Data +</label>
+                <label for="smp-import-chat-data" id="smp-import-button" style="width: 100%;"><%:Import Chat Data +%></label>
                 <input type="file" id="smp-import-chat-data" accept=".json" style="display: none;">
-                <div class="sidebar-label" style="margin-top:10px;">Attach UCI info</div>
+                <div class="sidebar-label" style="margin-top:10px;"><%:Attach UCI info%></div>
                 <select id="mb-uci-config-list" name="mb-uci-config-list">
                     <option value="---">---</option>
                 </select>
-                <div class="sidebar-label" style="margin-top:10px;">History</div>
+                <div class="sidebar-label" style="margin-top:10px;"><%:History%></div>
                 <ul id="mb-chat-list"></ul>
             </div>
         </div>
     </div>
 
     <div class="oasis-dropdown" id="oasis-dropdown">
-        <button class="oasis-menu-item" data-action="delete">Delete</button>
-        <button class="oasis-menu-item" data-action="rename">Rename</button>
-        <button class="oasis-menu-item" data-action="export">Export</button>
-        <button class="oasis-menu-item" data-action="cancel">Cancel</button>
+        <button class="oasis-menu-item" data-action="delete"><%:Delete%></button>
+        <button class="oasis-menu-item" data-action="rename"><%:Rename%></button>
+        <button class="oasis-menu-item" data-action="export"><%:Export%></button>
+        <button class="oasis-menu-item" data-action="cancel"><%:Cancel%></button>
     </div>
 
     <div class="rename-popup-overlay" id="rename-popup-overlay"></div>
     <div class="rename-popup" id="rename-popup">
-        <h3>Rename chat name</h3>
+        <h3><%:Rename chat name%></h3>
         <input type="text" id="rename-line-box" >
         <div class="rename-popup-buttons">
-            <button id="rename">Rename</button>
-            <button id="rename-cancel" onclick="closeRenamePopup()">Cancel</button>
+            <button id="rename"><%:Rename%></button>
+            <button id="rename-cancel" onclick="closeRenamePopup()"><%:Cancel%></button>
         </div>
     </div>
 
     <div class="export-popup-overlay" id="export-popup-overlay"></div>
     <div class="export-popup" id="export-popup">
-        <h3>Select Export Type</h3>
+        <h3><%:Select Export Type%></h3>
         <div class="export-popup-buttons">
-            <button id="json-export">Raw(JSON)</button>
-            <button id="text-export">Text</button>
-            <button id="export-cancel" onclick="closeExportPopup()">Cancel</button>
+            <button id="json-export"><%:Raw(JSON)%></button>
+            <button id="text-export"><%:Text%></button>
+            <button id="export-cancel" onclick="closeExportPopup()"><%:Cancel%></button>
         </div>
     </div>
 
@@ -262,16 +262,16 @@
             <div class="progress-bar" id="progressBar"></div>
         </div>
         <div class="progress-info" id="progressInfo"></div>
-        <div id="reboot_announce" style="display: none; color: #00cc06">Executed reboot system!!</div>
+        <div id="reboot_announce" style="display: none; color: #00cc06"><%:Executed reboot system!!%></div>
         <!-- <button class="close-applying-popup" id="close-applying-popup">Reload</button> -->
     </div>
 
     <div class="confirm-popup" id="confirm-popup" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-popup-pre">
-        <h2 id="confirm-title">Finalize this settings?</h2>
+        <h2 id="confirm-title"><%:Finalize this settings?%></h2>
         <pre class="console-command-color" id="confirm-popup-pre"></pre>
         <div class="confirm-popup-buttons">
-            <button id="finalize">Finalize</button>
-            <button id="rollback">Rollback</button>
+            <button id="finalize"><%:Finalize%></button>
+            <button id="rollback"><%:Rollback%></button>
         </div>
     </div>
 
@@ -296,6 +296,41 @@ window.OasisChatConfig = {
         importChat: '<%=build_url("admin", "network", "oasis", "import-chat-data")%>',
         selectAiService: '<%=build_url("admin", "network", "oasis", "select-ai-service")%>'
     }
+};
+</script>
+<script>
+window.OasisChatStrings = {
+    rebooting: '<%:Rebooting...%>',
+    rebootCountdown: '<%:Rebooting in {seconds}s ({percent}%)%>',
+    restartService: '<%:Restarting service...%>',
+    restartCountdown: '<%:Please wait {seconds}s ({percent}%)%>',
+    executingTool: '<%:Executing tool...%>',
+    downloading: '<%:Downloading...%>',
+    toolUsed: '<%:Tool used:%>',
+    invalidToolResponse: '<%:Invalid tool response: missing {fields}%>',
+    userOnlyNotice: '<%:Additional message%>',
+    noResponse: '<%:No response from AI service. Please check settings.%>',
+    networkError: '<%:A network error occurred. Please try again later.%>',
+    networkErrorDetailed: '<%:A network error occurred. Please check your network connection and AI service settings.%>',
+    deleteFailed: '<%:Failed to delete chat. Please try again.%>',
+    unexpectedFormat: '<%:Unexpected data format%>',
+    importFailed: '<%:Failed to import chat. Please try again.%>',
+    renamePlaceholder: '<%:Enter new title%>',
+    thinking: '<%:Thinking...%>',
+    rebootPrompt: '<%:System reboot is required. Reboot now?%>',
+    rebootButton: '<%:Reboot%>',
+    cancelButton: '<%:Cancel%>',
+    restartServicePrompt: '<%:Service restart is required. Restart now?%>',
+    restartServiceNamedPrompt: '<%:Service "{name}" needs restart. Restart now?%>',
+    restartButton: '<%:Restart%>',
+    confirmFinalize: '<%:Finalize this settings?%>',
+    finalizeButton: '<%:Finalize%>',
+    rollbackButton: '<%:Rollback%>',
+    exportRaw: '<%:Raw(JSON)%>',
+    exportText: '<%:Text%>',
+    inputPlaceholder: '<%:Your Message (Enter to send, Shift+Enter for newline)%>',
+    applySettings: '<%:Applying the settings...%>',
+    uciInfoTitle: '<%:### [User\'s {config} config]%>'
 };
 </script>
 <script src="<%= resource %>/oasis/js/chat.js"></script>

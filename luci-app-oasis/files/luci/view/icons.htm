@@ -4,36 +4,36 @@
 
 <div id="icons-toast" role="status" aria-live="polite" class="toast" aria-atomic="true" style="display:none;"></div>
 
-<h2 style="margin-bottom: 12px;">Select AI Icon</h2>
+<h2 style="margin-bottom: 12px;"><%:Select AI Icon%></h2>
 
 <div id="oasis-icon-container"></div>
 
 <div style="margin-top: 10px;">
-    <button type="button" id="select-button" class="load-button">Select</button>
-    <button type="button" id="delete-button" class="delete-button">Delete</button>
+    <button type="button" id="select-button" class="load-button"><%:Select%></button>
+    <button type="button" id="delete-button" class="delete-button"><%:Delete%></button>
 </div>
 
 <!-- Delete icon confirm modal -->
 <div id="icon-delete-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="confirm-card">
-    <p>Delete this icon?</p>
+    <p><%:Delete this icon?%></p>
     <div class="form-actions">
-        <button type="button" class="load-button" id="icon-confirm-yes">Yes</button>
-        <button type="button" class="delete-button" id="icon-confirm-no">No</button>
+        <button type="button" class="load-button" id="icon-confirm-yes"><%:Yes%></button>
+        <button type="button" class="delete-button" id="icon-confirm-no"><%:No%></button>
     </div>
   </div>
 </div>
-<h2 style="margin-top: 28px;">Upload AI Icon</h2>
+<h2 style="margin-top: 28px;"><%:Upload AI Icon%></h2>
 
-<div id="dropArea">Drag and Drop Image Upload</div>
+<div id="dropArea"><%:Drag and Drop Image Upload%></div>
 <input type="file" id="imageInput" accept="image/*" style="display: none;">
 
 <div id="upload-image-container">
-    <h3>Upload this image?</h3>
+    <h3><%:Upload this image?%></h3>
     <div id="oasis-preview-container"></div>
     <div class="preview-buttons">
-        <button type="button" id="upload-button" class="update-button">Upload</button>
-        <button type="button" id="cancel-button" class="cancel-button">Cancel</button>
+        <button type="button" id="upload-button" class="update-button"><%:Upload%></button>
+        <button type="button" id="cancel-button" class="cancel-button"><%:Cancel%></button>
     </div>
 </div>
 
@@ -46,6 +46,22 @@ window.OasisIconsConfig = {
         deleteIcon: '<%=build_url("admin", "network", "oasis", "delete-icon-data")%>',
         uploadIcon: '<%=build_url("admin", "network", "oasis", "upload-icon-data")%>'
     }
+};
+</script>
+<script>
+window.OasisIconsStrings = {
+    loading: '<%:Loading...%>',
+    select: '<%:Select%>',
+    done: '<%:Done%>',
+    pleaseSelectIcon: '<%:Please select an icon%>',
+    selectFailed: '<%:Select failed%>',
+    selected: '<%:Selected%>',
+    networkError: '<%:Network error%>',
+    deleteFailed: '<%:Delete failed%>',
+    deleted: '<%:Deleted%>',
+    pleaseSelectImage: '<%:Please select an image file.%>',
+    uploadFailed: '<%:Upload failed%>',
+    uploaded: '<%:Uploaded%>'
 };
 </script>
 <script src="<%= resource %>/oasis/js/icons.js"></script>

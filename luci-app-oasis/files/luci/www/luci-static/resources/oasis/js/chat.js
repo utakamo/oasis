@@ -28,6 +28,16 @@
     const URL_UCI_SHOW = getUrl('uciShow');
     const URL_IMPORT_CHAT = getUrl('importChat');
     const URL_SELECT_AI_SERVICE = getUrl('selectAiService');
+    const STR = window.OasisChatStrings || {};
+    const t = (key, fallback) => (Object.prototype.hasOwnProperty.call(STR, key) ? STR[key] : fallback);
+    function formatString(template, replacements) {
+        let result = template || '';
+        if (!replacements) return result;
+        Object.keys(replacements).forEach(key => {
+            result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), replacements[key]);
+        });
+        return result;
+    }
 
     
     let activeConversation = false;
@@ -80,7 +90,7 @@
         const announce = document.getElementById('reboot_announce');
         if (!applyingPopup || !title || !progressBar) return;
 
-        title.textContent = 'Rebooting...';
+        title.textContent = t('rebooting', 'Rebooting...');
         applyingPopup.style.display = 'block';
         centerElementInChat(applyingPopup);
         progressBar.style.width = '0%';
@@ -94,7 +104,10 @@
             if (info) {
                 const remainMs = Math.max(0, totalMs - elapsed);
                 const remainSec = Math.ceil(remainMs / 1000);
-                info.textContent = `Rebooting in ${remainSec}s (${pct}%)`;
+                info.textContent = formatString(t('rebootCountdown', 'Rebooting in {seconds}s ({percent}%)'), {
+                    seconds: remainSec,
+                    percent: pct
+                });
             }
             if (elapsed >= totalMs) {
                 if (announce) { announce.style.display = 'block'; announce.classList.add('reboot-animate'); }
@@ -112,7 +125,7 @@
         const info = document.getElementById('progressInfo');
         if (!applyingPopup || !title || !progressBar) return;
 
-        title.textContent = 'Restarting service...';
+        title.textContent = t('restartService', 'Restarting service...');
         applyingPopup.style.display = 'block';
         centerElementInChat(applyingPopup);
         progressBar.style.width = '0%';
@@ -126,7 +139,10 @@
             if (info) {
                 const remainMs = Math.max(0, totalMs - elapsed);
                 const remainSec = Math.ceil(remainMs / 1000);
-                info.textContent = `Please wait ${remainSec}s (${pct}%)`;
+                info.textContent = formatString(t('restartCountdown', 'Please wait {seconds}s ({percent}%)'), {
+                    seconds: remainSec,
+                    percent: pct
+                });
             }
             if (elapsed >= totalMs) {
                 if (info) info.textContent = '';
@@ -148,7 +164,7 @@
         iconDiv.style.backgroundImage = `url(${iconPath})`;
         const textDiv = document.createElement('div');
         textDiv.className = 'message-text chat-bubble';
-        const safe = typeof message === 'string' && message.length ? message : 'Executing tool...';
+        const safe = typeof message === 'string' && message.length ? message : t('executingTool', 'Executing tool...');
         textDiv.innerHTML = sanitizeHTML(safe);
         msgDiv.appendChild(iconDiv);
         msgDiv.appendChild(textDiv);
@@ -1071,7 +1087,7 @@
                 sendBtn.disabled = text.length === 0;
             }
 
-            messageInputEl.placeholder = 'Your Message (Enter to send, Shift+Enter for newline)';
+            messageInputEl.placeholder = t('inputPlaceholder', 'Your Message (Enter to send, Shift+Enter for newline)');
             messageInputEl.addEventListener('input', function() {
                 autoResizeTextarea();
                 toggleSendDisabled();
@@ -1350,12 +1366,12 @@
                     }
                 } else {
                     console.error("Error deleting chat:", data.error);
-                    alert("Failed to delete chat. Please try again.");
+                    alert(t('deleteFailed', 'Failed to delete chat. Please try again.'));
                 }
             })
             .catch((error) => {
                 console.error("Request failed:", error);
-                alert("Failed to delete chat. Please try again.");
+                alert(t('deleteFailed', 'Failed to delete chat. Please try again.'));
             });
         }
 
@@ -1381,7 +1397,7 @@
             });
         }
 
-            renameLineBox.setAttribute('placeholder', title);
+            renameLineBox.setAttribute('placeholder', title || t('renamePlaceholder', 'Enter new title'));
             renameLineBox.setAttribute('autocomplete', 'off');
 
             rename.addEventListener('click', function() {
@@ -1593,7 +1609,7 @@
 
         const typingText = document.createElement("span");
         typingText.classList.add("typing-text");
-        typingText.textContent = "Thinking...";
+        typingText.textContent = t('thinking', 'Thinking...');
 
         receivedMessageTextContainer.appendChild(typingDots);
         receivedMessageTextContainer.appendChild(typingText);
@@ -1717,7 +1733,7 @@
             chatMessagesContainer.removeChild(systemMessage);
         }
 
-        title.textContent = "Applying the settings...";
+        title.textContent = t('applySettings', 'Applying the settings...');
         popup.style.display = 'block';
         centerElementInChat(popup);
         progressBar.style.width = '0%';
@@ -1844,7 +1860,7 @@
         messageTextDiv.className = "message-text";
 
         const titleDiv = document.createElement("div");
-        titleDiv.textContent = "System reboot is required. Reboot now?";
+        titleDiv.textContent = t('rebootPrompt', 'System reboot is required. Reboot now?');
         messageTextDiv.appendChild(titleDiv);
 
         const popupButtonsDiv = document.createElement("div");
@@ -1855,7 +1871,7 @@
 
         const rebootButton = document.createElement("button");
         rebootButton.id = "apply";
-        rebootButton.textContent = "Reboot";
+        rebootButton.textContent = t('rebootButton', 'Reboot');
         rebootButton.addEventListener('click', async function () {
             rebootButton.disabled = true;
             cancelButton.disabled = true;
@@ -1887,7 +1903,7 @@
 
         const cancelButton = document.createElement("button");
         cancelButton.id = "uci-cancel";
-        cancelButton.textContent = "Cancel";
+        cancelButton.textContent = t('cancelButton', 'Cancel');
         cancelButton.addEventListener('click', async function () {
             try {
                 await fetch(URL_SYSTEM_REBOOT, {
@@ -1928,9 +1944,10 @@
         messageTextDiv.className = "message-text";
 
         const titleDiv = document.createElement("div");
-        titleDiv.textContent = (serviceName && serviceName.length)
-            ? `Service "${serviceName}" needs restart. Restart now?`
-            : "Service restart is required. Restart now?";
+        const restartPrompt = (serviceName && serviceName.length)
+            ? formatString(t('restartServiceNamedPrompt', 'Service "{name}" needs restart. Restart now?'), { name: serviceName })
+            : t('restartServicePrompt', 'Service restart is required. Restart now?');
+        titleDiv.textContent = restartPrompt;
         messageTextDiv.appendChild(titleDiv);
 
         const popupButtonsDiv = document.createElement("div");
@@ -1940,12 +1957,12 @@
         popupDiv.className = "uci-popup";
 
         const restartBtn = document.createElement("button");
-        restartBtn.textContent = "Restart";
+        restartBtn.textContent = t('restartButton', 'Restart');
         restartBtn.className = "btn-restart";
 
         const cancelBtn = document.createElement("button");
         cancelBtn.id = "uci-cancel";
-        cancelBtn.textContent = "Cancel";
+        cancelBtn.textContent = t('cancelButton', 'Cancel');
 
         restartBtn.addEventListener("click", async () => {
             restartBtn.disabled = true;
@@ -2029,7 +2046,8 @@
 
             const data = await response.json();
 
-            uci_info = '\n\n### [User\'s ' + target_uci_config + ' config]\n';
+            const uciTitle = formatString(t('uciInfoTitle', "### [User's {config} config]"), { config: target_uci_config });
+            uci_info = '\n\n' + uciTitle + '\n';
             uci_info += '```\n';
 
             for (let i = 0; i < data.length; i++) {
@@ -2124,7 +2142,7 @@
 
             if (!response.ok) {
                 console.error('HTTP Error:', response.status, response.statusText);
-                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('A network error occurred. Please try again later.'));
+                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(t('networkError', 'A network error occurred. Please try again later.')));
                 return;
             }
 
@@ -2159,11 +2177,11 @@
                     if (evt && typeof evt.type === 'string') {
                         if (evt.type === 'execution') {
                             if (evt.message) showToolExecutionNotice(evt.message);
-                            else showToolExecutionNotice('Executing tool...');
+                            else showToolExecutionNotice(t('executingTool', 'Executing tool...'));
                             continue;
                         }
                         if (evt.type === 'download') {
-                            showDownloadOverlay(evt.message || 'Downloading...');
+                            showDownloadOverlay(evt.message || t('downloading', 'Downloading...'));
                             continue;
                         }
                     }
@@ -2191,7 +2209,7 @@
                         const toolNamesLabel = names.length ? names.join(', ') : '(unknown)';
 
                         if (hasService && allValid) {
-                            toolNoticesHtml += `<div class=\"tool-notice\">Tool used: <span class=\"tool-name\">${escapeHTML(toolNamesLabel)}</span></div>`;
+                            toolNoticesHtml += `<div class="tool-notice">${escapeHTML(t('toolUsed', 'Tool used:'))} <span class="tool-name">${escapeHTML(toolNamesLabel)}</span></div>`;
                             if (!toolNoticeShown) {
                                 // Insert Tool Used bubble before current typing bubble
                                 const iconPath = `${resourcePath}/oasis/${icon_name}`;
@@ -2417,7 +2435,7 @@
                             if (!hasService) missing.push('service');
                             if (!hasOutputs) missing.push('tool_outputs');
                             else if (!allValid) missing.push('tool_outputs[*].output');
-                            errorNoticesHtml += `<div class=\"error-notice\">Invalid tool response: missing ${escapeHTML(missing.join(', '))}</div>`;
+                            errorNoticesHtml += `<div class="error-notice">${escapeHTML(formatString(t('invalidToolResponse', 'Invalid tool response: missing {fields}'), { fields: missing.join(', ') }))}</div>`;
                         }
                     }
 
@@ -2425,7 +2443,7 @@
                         if (evt.type === 'execution') {
                             if (evt.message) showToolExecutionNotice(evt.message);
                         } else if (evt.type === 'download') {
-                            showDownloadOverlay(evt.message || 'Downloading...');
+                            showDownloadOverlay(evt.message || t('downloading', 'Downloading...'));
                         }
                     }
 
@@ -2456,7 +2474,7 @@
             const __finalText = (fullMessage || '').trim();
             //console.log('[AI final text]', __finalText);
             if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
-                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('No response from AI service. Please check settings.'));
+                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(t('noResponse', 'No response from AI service. Please check settings.')));
             } else {
                 // Render only errors + assistant content. Tool notice is shown in a separate bubble.
                 receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(__finalText));
@@ -2488,7 +2506,7 @@
             }
         } catch (error) {
             console.error('Request failed', error);
-            receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML('A network error occurred. Please check your network connection and AI service settings.'));
+            receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(t('networkErrorDetailed', 'A network error occurred. Please check your network connection and AI service settings.')));
         } finally {
             message_outputing = false;
             activeConversation = false;
@@ -2635,7 +2653,7 @@
                 .then(data => {
 
                     if (data.error) {
-                        alert("Unexpected data format");
+                        alert(t('unexpectedFormat', 'Unexpected data format'));
                         return;
                     }
 
@@ -2691,7 +2709,7 @@
                 .then(data => {
 
                     if (data.error) {
-                        alert("Unexpected data format");
+                        alert(t('unexpectedFormat', 'Unexpected data format'));
                         return;
                     }
 

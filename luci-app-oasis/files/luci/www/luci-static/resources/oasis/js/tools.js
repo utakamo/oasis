@@ -3,6 +3,8 @@
 
   const config = window.OasisToolsConfig || {};
   const urls = config.urls || {};
+  const STR = window.OasisToolsStrings || {};
+  const t = (key, fallback) => (Object.prototype.hasOwnProperty.call(STR, key) ? STR[key] : fallback);
 
   function getUrl(key) {
     const value = urls[key];
@@ -33,7 +35,7 @@
   }
 
   function showErrorModal(message) {
-    if (errorMsgEl) errorMsgEl.textContent = message || 'An error occurred.';
+    if (errorMsgEl) errorMsgEl.textContent = message || t('errorDefault', 'An error occurred.');
     if (errorModal) {
       errorModal.classList.add('show');
       errorModal.setAttribute('aria-hidden', 'false');
@@ -50,18 +52,18 @@
     if (!refreshBtn || refreshBtn.dataset.bound === '1') return;
     refreshBtn.addEventListener('click', () => {
       refreshBtn.disabled = true;
-      refreshBtn.textContent = 'Running...';
+      refreshBtn.textContent = t('running', 'Running...');
       fetch(URL_REFRESH_TOOLS, { method: 'POST' })
         .then(r => r.json())
         .then(res => {
-          if (!res || res.status !== 'OK') throw new Error('Failed to refresh services');
+          if (!res || res.status !== 'OK') throw new Error(t('refreshFailed', 'Failed to refresh services'));
           location.reload();
         })
         .catch(err => {
           console.error('refresh-tools failed:', err);
-          showToast('Failed to refresh services', 'error', 3000);
+          showToast(t('refreshFailed', 'Failed to refresh services'), 'error', 3000);
           refreshBtn.disabled = false;
-          refreshBtn.textContent = 'Refresh';
+          refreshBtn.textContent = t('refreshLabel', 'Refresh');
         });
     });
     refreshBtn.dataset.bound = '1';
@@ -96,10 +98,10 @@
     const title = document.createElement('div');
     title.className = 'cell-title';
     const titleText = document.createElement('span');
-    titleText.textContent = tool.name || 'Unknown';
+    titleText.textContent = tool.name || t('unknownTool', 'Unknown');
     const status = document.createElement('span');
     status.className = 'status-pill' + ((tool.enable === '1') ? ' enabled' : '');
-    status.textContent = (tool.enable === '1') ? 'Enabled' : 'Disabled';
+    status.textContent = (tool.enable === '1') ? t('enabled', 'Enabled') : t('disabled', 'Disabled');
     title.appendChild(titleText);
     // script badge (lua -> blue, ucode -> purple)
     if (tool.script === 'lua' || tool.script === 'ucode') {
@@ -113,7 +115,7 @@
     if (isConflict) {
       const conflict = document.createElement('span');
       conflict.className = 'pill-conflict';
-      conflict.textContent = 'conflict';
+      conflict.textContent = t('conflict', 'conflict');
       title.appendChild(conflict);
     }
     // enable/disable status at the end
@@ -121,7 +123,7 @@
 
     const desc = document.createElement('div');
     desc.className = 'cell-description';
-    desc.textContent = tool.description || 'No description.';
+    desc.textContent = tool.description || t('noDescription', 'No description.');
 
     const footer = document.createElement('div');
     footer.className = 'cell-footer';
@@ -129,20 +131,20 @@
     const btn = document.createElement('button');
     let isEnabled = tool.enable === '1';
     btn.className = isEnabled ? 'delete-button' : 'load-button';
-    btn.textContent = isEnabled ? 'Disable' : 'Enable';
+    btn.textContent = isEnabled ? t('disableButton', 'Disable') : t('enableButton', 'Enable');
     if (isConflict) {
       btn.disabled = true;
-      btn.title = 'Conflict: cannot change state';
+      btn.title = t('conflictTitle', 'Conflict: cannot change state');
     }
 
     btn.addEventListener('click', () => {
       if (isConflict) return;
-      if (!tool.name) { showToast('Missing tool name', 'error'); return; }
+      if (!tool.name) { showToast(t('missingName', 'Missing tool name'), 'error'); return; }
       const enabling = !isEnabled; // current button action
       const url = enabling ? API_ENABLE : API_DISABLE;
       const prevText = btn.textContent;
       btn.disabled = true;
-      btn.textContent = 'Loading...';
+      btn.textContent = t('loading', 'Loading...');
       fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -150,17 +152,17 @@
       })
       .then(r => r.json())
       .then(data => {
-        if (!data || data.status !== 'OK') throw new Error((data && data.error) || 'Unexpected response');
+        if (!data || data.status !== 'OK') throw new Error((data && data.error) || t('updateFailed', 'Failed to update tool state'));
         // apply UI only on success
         isEnabled = enabling;
-        btn.textContent = isEnabled ? 'Disable' : 'Enable';
+        btn.textContent = isEnabled ? t('disableButton', 'Disable') : t('enableButton', 'Enable');
         btn.className = isEnabled ? 'delete-button' : 'load-button';
-        status.textContent = isEnabled ? 'Enabled' : 'Disabled';
+        status.textContent = isEnabled ? t('enabled', 'Enabled') : t('disabled', 'Disabled');
         status.className = 'status-pill' + (isEnabled ? ' enabled' : '');
       })
       .catch(err => {
         console.error('toggle failed:', err);
-        showErrorModal(err && err.message ? err.message : 'Failed to update tool state');
+        showErrorModal(err && err.message ? err.message : t('updateFailed', 'Failed to update tool state'));
         btn.textContent = prevText;
       })
       .finally(() => { btn.disabled = false; });
@@ -183,7 +185,7 @@
           if (container) {
             container.innerHTML = '';
             const p = document.createElement('p');
-            p.textContent = "Please install the extension module 'oasis-mod-tool' to enable local tools.";
+            p.textContent = t('installExtensionHint', "Please install the extension module 'oasis-mod-tool' to enable local tools.");
             container.appendChild(p);
           }
           return;
@@ -196,7 +198,7 @@
 
         Object.values(tools).forEach(tool => {
           if (tool[".type"] === "tool" && tool.type === "function") {
-            const server = tool.server || 'Unknown Server';
+            const server = tool.server || t('unknownServer', 'Unknown Server');
             if (!serverMap[server]) serverMap[server] = [];
             serverMap[server].push(tool);
           }

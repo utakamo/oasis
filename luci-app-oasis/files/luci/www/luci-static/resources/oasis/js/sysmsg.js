@@ -3,6 +3,8 @@
 
     const config = window.OasisSysmsgConfig || {};
     const urls = config.urls || {};
+    const STR = window.OasisSysmsgStrings || {};
+    const t = (key, fallback) => (Object.prototype.hasOwnProperty.call(STR, key) ? STR[key] : fallback);
 
     function getUrl(key) {
         const value = urls[key];
@@ -33,7 +35,7 @@
         btn.disabled = !!loading;
         if (loading) {
             btn.dataset.prevText = btn.textContent;
-            btn.textContent = 'Loading...';
+            btn.textContent = t('loading', 'Loading...');
         } else if (btn.dataset.prevText) {
             btn.textContent = btn.dataset.prevText;
             delete btn.dataset.prevText;
@@ -96,7 +98,7 @@
         // Create the span element
         const span = document.createElement('label');
         span.className = 'field-row';
-        span.textContent = '#' + name_cnt + ' TITLE:';
+        span.textContent = '#' + name_cnt + ' ' + t('titleLabel', 'TITLE:');
 
         // Create the input element
         const input = document.createElement('input');
@@ -113,17 +115,17 @@
         const updateButton = document.createElement('button');
         updateButton.type = 'button';
         updateButton.className = 'update-button'
-        updateButton.textContent = 'Update';
+        updateButton.textContent = t('update', 'Update');
 
         updateButton.addEventListener('click', function() {
 
             if (input.value.length === 0) {
-                alert('Please input system message title');
+                alert(t('pleaseEnterTitle', 'Please input system message title'));
                 return;
             }
 
             if (textarea.value.length === 0) {
-                alert('Please input system message data');
+                alert(t('pleaseEnterBody', 'Please input system message data'));
                 return;
             }
 
@@ -147,21 +149,21 @@
 
                 if (data.error) {
                     is_error = true;
-                    showToast('Update failed', 'error');
+                    showToast(t('updateFailed', 'Update failed'), 'error');
                     setLoading(updateButton, false);
                     return;
                 }
 
                 is_update = true;
                 setLoading(updateButton, false);
-                updateButton.textContent = 'Done';
+                updateButton.textContent = t('done', 'Done');
                 updateButton.classList.add('done');
             })
             .catch(error => {
                 console.error('Error:', error);
-                showToast('Network error', 'error');
+                showToast(t('networkError', 'Network error'), 'error');
                 setLoading(updateButton, false);
-                updateButton.textContent = 'Update';
+                updateButton.textContent = t('update', 'Update');
                 updateButton.classList.remove('done');
             });
         });
@@ -177,7 +179,7 @@
             // After entering something, activate the update button.
             if (is_update) {
                 is_update = false;
-                updateButton.textContent = 'Update';
+                updateButton.textContent = t('update', 'Update');
                 updateButton.classList.remove('done');
             }
             autoResizeTextarea(textarea);
@@ -190,7 +192,7 @@
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
         deleteButton.className = 'delete-button';
-        deleteButton.textContent = 'Delete';
+        deleteButton.textContent = t('delete', 'Delete');
 
         deleteButton.addEventListener('click', function() {
             openDeleteConfirm(key);
@@ -223,12 +225,12 @@
         //console.log(new_sysmsg_data.value);
 
         if (new_sysmsg_title.value.length === 0) {
-            alert('Please input system message title');
+            alert(t('pleaseEnterTitle', 'Please input system message title'));
             return;
         }
 
         if (new_sysmsg_data.value.length === 0) {
-            alert('Please input system message data');
+            alert(t('pleaseEnterBody', 'Please input system message data'));
             return;
         }
 
@@ -251,7 +253,7 @@
             //console.log(data);
 
             if (data.error) {
-                showToast('Add failed', 'error');
+                showToast(t('addFailed', 'Add failed'), 'error');
                 setLoading(addBtn, false);
                 return;
             }
@@ -278,12 +280,12 @@
         //console.log(extra_sysmsg_data.value);
 
         if (extra_sysmsg_title.value.length === 0) {
-            alert('Please input system message title');
+            alert(t('pleaseEnterTitle', 'Please input system message title'));
             return;
         }
 
         if (extra_sysmsg_data.value.length === 0) {
-            alert('Please input system message data');
+            alert(t('pleaseEnterBody', 'Please input system message data'));
             return;
         }
 
@@ -306,7 +308,7 @@
             //console.log(data);
 
             if (data.error) {
-                showToast('Add failed', 'error');
+                showToast(t('addFailed', 'Add failed'), 'error');
                 setLoading(extraAddBtn, false);
                 return;
             }
@@ -332,7 +334,7 @@
         //console.log(extra_sysmsg_url.value);
 
         if (extra_sysmsg_url.value.length === 0) {
-            alert('Please input system message server url');
+            alert(t('missingUrl', 'Please input system message server url'));
             return;
         }
 
@@ -350,7 +352,7 @@
             //console.log(data);
             extra_sysmsg_textarea.value = data.sysmsg;
             extra_sysmsg_container.style.display = "block";
-            showToast('Loaded', 'success');
+            showToast(t('loaded', 'Loaded'), 'success');
             setLoading(loadBtn, false);
         });
     });
@@ -374,20 +376,20 @@
         .then(data => {
             if (data.error) {
                 console.error("Error from server:", data.error);
-                showToast('Delete failed', 'error');
+                showToast(t('deleteFailed', 'Delete failed'), 'error');
                 closeDeleteConfirm();
                 return;
             }
             const parent = document.getElementById('system-message-list');
             const child = document.getElementById(key);
             if (parent && child) parent.removeChild(child);
-            showToast('Deleted', 'success');
+            showToast(t('deleted', 'Deleted'), 'success');
             updateLastItemBorder();
             closeDeleteConfirm();
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('Network error', 'error');
+            showToast(t('networkError', 'Network error'), 'error');
             closeDeleteConfirm();
         });
     });

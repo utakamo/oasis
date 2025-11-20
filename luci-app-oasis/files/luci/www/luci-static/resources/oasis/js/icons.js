@@ -4,6 +4,8 @@
     const config = window.OasisIconsConfig || {};
     const resourcePath = config.resourcePath || '';
     const urls = config.urls || {};
+    const STR = window.OasisIconsStrings || {};
+    const t = (key, fallback) => (Object.prototype.hasOwnProperty.call(STR, key) ? STR[key] : fallback);
 
     function getUrl(key) {
         const value = urls[key];
@@ -38,7 +40,7 @@
         btn.disabled = !!loading;
         if (loading) {
             btn.dataset.prevText = btn.textContent;
-            btn.textContent = 'Loading...';
+            btn.textContent = t('loading', 'Loading...');
         } else if (btn.dataset.prevText) {
             btn.textContent = btn.dataset.prevText;
             delete btn.dataset.prevText;
@@ -67,7 +69,7 @@
             if (using_icon_key !== key) {
                 is_select = false;
                 select_button.classList.remove('done');
-                select_button.textContent = 'Select';
+                select_button.textContent = t('select', 'Select');
             }
         });
 
@@ -89,7 +91,7 @@
         }
 
         const selected_icon = document.querySelector('input[name="icon"]:checked');
-        if (!selected_icon) { showToast('Please select an icon', 'error'); return; }
+        if (!selected_icon) { showToast(t('pleaseSelectIcon', 'Please select an icon'), 'error'); return; }
 
         setLoading(select_button, true);
         fetch(URL_SELECT_ICON, {
@@ -104,20 +106,20 @@
 
             if (data.error) {
                 console.error("Error from server:", data.error);
-                showToast('Select failed', 'error');
+                showToast(t('selectFailed', 'Select failed'), 'error');
                 setLoading(select_button, false);
                 return;
             }
 
             using_icon_key = selected_icon.value;
-            select_button.textContent = 'Done';
+            select_button.textContent = t('done', 'Done');
             select_button.classList.add('done');
-            showToast('Selected', 'success');
+            showToast(t('selected', 'Selected'), 'success');
             setLoading(select_button, false);
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('Network error', 'error');
+            showToast(t('networkError', 'Network error'), 'error');
             setLoading(select_button, false);
         });
     });
@@ -129,7 +131,7 @@
         }
 
         const selected_icon = document.querySelector('input[name="icon"]:checked');
-        if (!selected_icon) { showToast('Please select an icon', 'error'); return; }
+        if (!selected_icon) { showToast(t('pleaseSelectIcon', 'Please select an icon'), 'error'); return; }
         _pendingDeleteIconKey = selected_icon.value;
         const modal = document.getElementById('icon-delete-confirm');
         modal.classList.add('show');
@@ -159,7 +161,7 @@
             const modal = document.getElementById('icon-delete-confirm');
             if (data.error) {
                 console.error("Error from server:", data.error);
-                showToast('Delete failed', 'error');
+                showToast(t('deleteFailed', 'Delete failed'), 'error');
                 modal.classList.remove('show');
                 modal.setAttribute('aria-hidden', 'true');
                 modal.style.display = 'none';
@@ -169,7 +171,7 @@
             const container = document.getElementById('oasis-icon-container');
             const label = document.getElementById(_pendingDeleteIconKey);
             if (container && label) container.removeChild(label);
-            showToast('Deleted', 'success');
+            showToast(t('deleted', 'Deleted'), 'success');
             modal.classList.remove('show');
             modal.setAttribute('aria-hidden', 'true');
             modal.style.display = 'none';
@@ -177,7 +179,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('Network error', 'error');
+            showToast(t('networkError', 'Network error'), 'error');
             const modal = document.getElementById('icon-delete-confirm');
             modal.classList.remove('show');
             modal.setAttribute('aria-hidden', 'true');
@@ -221,7 +223,7 @@
     function handleFile(file) {
 
         if (!file.type.startsWith('image/')) {
-            showToast('Please select an image file.', 'error');
+            showToast(t('pleaseSelectImage', 'Please select an image file.'), 'error');
             return;
         }
 
@@ -264,19 +266,19 @@
 
                 if (data.error) {
                     console.error("Error from server:", data.error);
-                    showToast('Upload failed', 'error');
+                    showToast(t('uploadFailed', 'Upload failed'), 'error');
                     setLoading(uploadBtn, false);
                     return;
                 }
 
                 /* Upload Success */
                 create_icon_info(data.key, selectedFile.name, false);
-                showToast('Uploaded', 'success');
+                showToast(t('uploaded', 'Uploaded'), 'success');
                 setLoading(uploadBtn, false);
             })
             .catch(error => {
                 /* Upload Failure */
-                showToast('Upload failed', 'error');
+                showToast(t('uploadFailed', 'Upload failed'), 'error');
                 const uploadBtn = document.getElementById('upload-button');
                 setLoading(uploadBtn, false);
             });

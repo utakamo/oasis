@@ -4,47 +4,47 @@
 
 <div id="sysmsg-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
 
-<p>You can register and modify system messages for AI.</p>
+<p><%:You can register and modify system messages for AI.%></p>
 
-<h2>Create New System Message</h2>
+<h2><%:Create New System Message%></h2>
 
 <div class="section">
-    <label class="field-row" for="new-sysmsg-title">TITLE:</label>
+    <label class="field-row" for="new-sysmsg-title"><%:TITLE:%></label>
     <input id="new-sysmsg-title" class="input-text" type="text" size="15" aria-label="New system message title">
     <textarea id="new-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="New system message body"></textarea>
     <div class="form-actions">
-        <button id="add-button" class="add-button" type="button">Add</button>
+        <button id="add-button" class="add-button" type="button"><%:Add%></button>
     </div>
 </div>
 
-<h2>Load Extra System Message</h2>
+<h2><%:Load Extra System Message%></h2>
 
 <div class="section">
-    <label class="field-row" for="extra-sysmsg-url">URL:</label>
-    <input id="extra-sysmsg-url" class="input-text" name="extra-sysmsg-url" placeholder=" Please enter the server's url" type="text" style="width:80%;" aria-label="External system message URL">
+    <label class="field-row" for="extra-sysmsg-url"><%:URL:%></label>
+    <input id="extra-sysmsg-url" class="input-text" name="extra-sysmsg-url" placeholder="<%:Please enter the server's url%>" type="text" style="width:80%;" aria-label="External system message URL">
     <div class="form-actions">
-        <button id="load-button" class="load-button" type="button">Load</button>
+        <button id="load-button" class="load-button" type="button"><%:Load%></button>
     </div>
     <div id="extra-sysmsg" style="display: none;">
-        <label class="field-row" for="extra-sysmsg-title">TITLE:</label>
+        <label class="field-row" for="extra-sysmsg-title"><%:TITLE:%></label>
         <input id="extra-sysmsg-title" class="input-text" type="text" size="15" aria-label="External system message title">
         <textarea id="extra-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="External system message body"></textarea>
         <div class="form-actions">
-            <button id="extra-add-button" class="add-button" type="button">Add</button>
+            <button id="extra-add-button" class="add-button" type="button"><%:Add%></button>
         </div>
     </div>
 </div>
 
-<h2 style="margin-top: 20px;">System Message List</h2>
+<h2 style="margin-top: 20px;"><%:System Message List%></h2>
 <div id="system-message-list"></div>
 
 <!-- Delete confirm modal -->
 <div id="delete-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="confirm-card">
-    <p>Delete this system message?</p>
+    <p><%:Delete this system message?%></p>
     <div class="form-actions">
-        <button type="button" class="load-button" id="confirm-yes" style="margin-right: 10px">Yes</button>
-        <button type="button" class="delete-button" id="confirm-no" style="margin-left: 10px">No</button>
+        <button type="button" class="load-button" id="confirm-yes" style="margin-right: 10px"><%:Yes%></button>
+        <button type="button" class="delete-button" id="confirm-no" style="margin-left: 10px"><%:No%></button>
     </div>
   </div>
   
@@ -72,6 +72,23 @@ window.OasisSysmsgConfig = {
         deleteSysmsg: '<%=build_url("admin", "network", "oasis", "delete-sysmsg")%>',
         loadSysmsg: '<%=build_url("admin", "network", "oasis", "load-sysmsg")%>'
     }
+};
+</script>
+<script>
+window.OasisSysmsgStrings = {
+    loading: '<%:Loading...%>',
+    update: '<%:Update%>',
+    done: '<%:Done%>',
+    delete: '<%:Delete%>',
+    pleaseEnterTitle: '<%:Please input system message title%>',
+    pleaseEnterBody: '<%:Please input system message data%>',
+    addFailed: '<%:Add failed%>',
+    loaded: '<%:Loaded%>',
+    deleteFailed: '<%:Delete failed%>',
+    deleted: '<%:Deleted%>',
+    networkError: '<%:Network error%>',
+    updateFailed: '<%:Update failed%>',
+    missingUrl: '<%:Please input system message server url%>'
 };
 </script>
 <script src="<%= resource %>/oasis/js/sysmsg.js"></script>

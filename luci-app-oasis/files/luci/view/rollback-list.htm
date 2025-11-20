@@ -5,7 +5,7 @@
 <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color: rgba(0,0,0,0.6); z-index:1000; color:white; font-weight:600; justify-content:center; align-items:center; text-align:center;">
     <div class="overlay-content">
         <div class="overlay-message">
-            Rollback has been executed. You can access the UI again once the system has fully restarted
+            <%:Rollback has been executed. You can access the UI again once the system has fully restarted%>
             <span class="dots"><span>.</span><span>.</span><span>.</span></span>
         </div>
         <div class="overlay-progress"></div>
@@ -19,10 +19,10 @@
 <!-- Confirm modal -->
 <div id="rollback-confirm" class="confirm-modal" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="confirm-card">
-    <p>Would you like to execute the rollback?</p>
+    <p><%:Would you like to execute the rollback?%></p>
     <div class="form-actions">
-        <button type="button" class="load-button" id="confirmOk">Yes</button>
-        <button type="button" class="delete-button" id="confirmCancel">No</button>
+        <button type="button" class="load-button" id="confirmOk"><%:Yes%></button>
+        <button type="button" class="delete-button" id="confirmCancel"><%:No%></button>
     </div>
   </div>
 </div>
@@ -33,6 +33,15 @@ window.OasisRollbackConfig = {
         loadRollbackList: '<%=build_url("admin", "network", "oasis", "load-rollback-list")%>',
         rollbackTarget: '<%=build_url("admin", "network", "oasis", "rollback-target-data")%>'
     }
+};
+</script>
+<script>
+window.OasisRollbackStrings = {
+    rollback: '<%:Rollback%>',
+    noCommands: '<%:No UCI commands found.%>',
+    noData: '<%:No Rollback Data%>',
+    loading: '<%:Loading...%>',
+    executed: '<%:Rollback has been executed. You can access the UI again once the system has fully restarted.%>'
 };
 </script>
 <script src="<%= resource %>/oasis/js/rollback.js"></script>

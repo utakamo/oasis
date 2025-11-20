@@ -3,18 +3,18 @@
 <link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tools.css">
 
 <div id="tools-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
-<h2>Local Tools</h2>
+<h2><%:Local Tools%></h2>
 <div class="tools-head-block" id="tools-head" style="display:none;">
-  <button type="button" id="tools-refresh" class="load-button fullwidth">Refresh</button>
+  <button type="button" id="tools-refresh" class="load-button fullwidth"><%:Refresh%></button>
 </div>
 <div id="oasis-tool-container"></div>
 
 <!-- Error dialog -->
 <div id="tools-error-modal" class="tools-modal" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="tools-card">
-    <p id="tools-error-message">An error occurred.</p>
+    <p id="tools-error-message"><%:An error occurred.%></p>
     <div class="form-actions" style="justify-content:center;">
-      <button type="button" id="tools-error-ok" class="delete-button">OK</button>
+      <button type="button" id="tools-error-ok" class="delete-button"><%:OK%></button>
     </div>
   </div>
   
@@ -33,6 +33,27 @@ window.OasisToolsConfig = {
         refreshTools: '<%=build_url("admin", "network", "oasis", "refresh-tools")%>',
         loadTools: '<%=build_url("admin", "network", "oasis", "local-tool-info")%>'
     }
+};
+</script>
+<script>
+window.OasisToolsStrings = {
+    running: '<%:Running...%>',
+    refreshFailed: '<%:Failed to refresh services%>',
+    refreshLabel: '<%:Refresh%>',
+    errorDefault: '<%:An error occurred.%>',
+    unknownTool: '<%:Unknown%>',
+    enabled: '<%:Enabled%>',
+    disabled: '<%:Disabled%>',
+    conflict: '<%:conflict%>',
+    noDescription: '<%:No description.%>',
+    disableButton: '<%:Disable%>',
+    enableButton: '<%:Enable%>',
+    conflictTitle: '<%:Conflict: cannot change state%>',
+    missingName: '<%:Missing tool name%>',
+    loading: '<%:Loading...%>',
+    updateFailed: '<%:Failed to update tool state%>',
+    installExtensionHint: '<%:Please install the extension module \'oasis-mod-tool\' to enable local tools.%>',
+    unknownServer: '<%:Unknown Server%>'
 };
 </script>
 <script src="<%= resource %>/oasis/js/tools.js"></script>
