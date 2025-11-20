@@ -1,0 +1,463 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-oasis\n"
+"Report-Msgid-Bugs-To: 
+"
+"POT-Creation-Date: 2025-11-19 23:03+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: 
+"
+"Language: 
+"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: custom script\n"
+#: files/luci/view/chat.htm:333
+msgid "### [User\'s {config} config]"
+msgstr ""
+
+#: files/luci/view/chat.htm:314
+msgid "A network error occurred. Please check your network connection and AI service settings."
+msgstr ""
+
+#: files/luci/view/chat.htm:313
+msgid "A network error occurred. Please try again later."
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:16
+#: files/luci/view/sysmsg.htm:33
+msgid "Add"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:85
+msgid "Add failed"
+msgstr ""
+
+#: files/luci/view/chat.htm:311
+msgid "Additional message"
+msgstr ""
+
+#: files/luci/view/tools.htm:15
+#: files/luci/view/tools.htm:43
+msgid "An error occurred."
+msgstr ""
+
+#: files/luci/view/chat.htm:332
+msgid "Applying the settings..."
+msgstr ""
+
+#: files/luci/view/chat.htm:171
+#: files/luci/view/chat.htm:220
+msgid "Attach UCI info"
+msgstr ""
+
+#: files/luci/view/chat.htm:234
+#: files/luci/view/chat.htm:243
+#: files/luci/view/chat.htm:253
+#: files/luci/view/chat.htm:322
+#: files/luci/view/icons.htm:36
+msgid "Cancel"
+msgstr ""
+
+#: files/luci/view/tools.htm:51
+msgid "Conflict: cannot change state"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:9
+msgid "Create New System Message"
+msgstr ""
+
+#: files/luci/view/chat.htm:231
+#: files/luci/view/icons.htm:13
+#: files/luci/view/sysmsg.htm:82
+msgid "Delete"
+msgstr ""
+
+#: files/luci/view/icons.htm:60
+#: files/luci/view/sysmsg.htm:87
+msgid "Delete failed"
+msgstr ""
+
+#: files/luci/view/icons.htm:19
+msgid "Delete this icon?"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:44
+msgid "Delete this system message?"
+msgstr ""
+
+#: files/luci/view/icons.htm:61
+#: files/luci/view/sysmsg.htm:88
+msgid "Deleted"
+msgstr ""
+
+#: files/luci/view/tools.htm:49
+msgid "Disable"
+msgstr ""
+
+#: files/luci/view/tools.htm:46
+msgid "Disabled"
+msgstr ""
+
+#: files/luci/view/icons.htm:55
+#: files/luci/view/sysmsg.htm:81
+msgid "Done"
+msgstr ""
+
+#: files/luci/view/chat.htm:190
+#: files/luci/view/chat.htm:308
+msgid "Downloading..."
+msgstr ""
+
+#: files/luci/view/icons.htm:28
+msgid "Drag and Drop Image Upload"
+msgstr ""
+
+#: files/luci/view/tools.htm:50
+msgid "Enable"
+msgstr ""
+
+#: files/luci/view/tools.htm:45
+msgid "Enabled"
+msgstr ""
+
+#: files/luci/view/chat.htm:318
+msgid "Enter new title"
+msgstr ""
+
+#: files/luci/view/chat.htm:265
+msgid "Executed reboot system!!"
+msgstr ""
+
+#: files/luci/view/chat.htm:307
+msgid "Executing tool..."
+msgstr ""
+
+#: files/luci/view/chat.htm:233
+msgid "Export"
+msgstr ""
+
+#: files/luci/view/chat.htm:315
+msgid "Failed to delete chat. Please try again."
+msgstr ""
+
+#: files/luci/view/chat.htm:317
+msgid "Failed to import chat. Please try again."
+msgstr ""
+
+#: files/luci/view/tools.htm:41
+msgid "Failed to refresh services"
+msgstr ""
+
+#: files/luci/view/tools.htm:54
+msgid "Failed to update tool state"
+msgstr ""
+
+#: files/luci/view/chat.htm:273
+#: files/luci/view/chat.htm:327
+msgid "Finalize"
+msgstr ""
+
+#: files/luci/view/chat.htm:270
+#: files/luci/view/chat.htm:326
+msgid "Finalize this settings?"
+msgstr ""
+
+#: files/luci/view/chat.htm:175
+#: files/luci/view/chat.htm:224
+msgid "History"
+msgstr ""
+
+#: files/luci/view/chat.htm:165
+#: files/luci/view/chat.htm:218
+msgid "Import Chat Data +"
+msgstr ""
+
+#: files/luci/view/chat.htm:310
+msgid "Invalid tool response: missing {fields}"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:26
+msgid "Load"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:20
+msgid "Load Extra System Message"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:86
+msgid "Loaded"
+msgstr ""
+
+#: files/luci/view/icons.htm:53
+#: files/luci/view/rollback-list.htm:43
+#: files/luci/view/sysmsg.htm:79
+#: files/luci/view/tools.htm:53
+msgid "Loading..."
+msgstr ""
+
+#: files/luci/view/tools.htm:6
+msgid "Local Tools"
+msgstr ""
+
+#: files/luci/view/tools.htm:52
+msgid "Missing tool name"
+msgstr ""
+
+#: files/luci/view/icons.htm:59
+#: files/luci/view/sysmsg.htm:89
+msgid "Network error"
+msgstr ""
+
+#: files/luci/view/chat.htm:168
+msgid "New Chat"
+msgstr ""
+
+#: files/luci/view/icons.htm:22
+#: files/luci/view/rollback-list.htm:25
+#: files/luci/view/sysmsg.htm:47
+msgid "No"
+msgstr ""
+
+#: files/luci/view/rollback-list.htm:42
+msgid "No Rollback Data"
+msgstr ""
+
+#: files/luci/view/rollback-list.htm:41
+msgid "No UCI commands found."
+msgstr ""
+
+#: files/luci/view/tools.htm:48
+msgid "No description."
+msgstr ""
+
+#: files/luci/view/chat.htm:312
+msgid "No response from AI service. Please check settings."
+msgstr ""
+
+#: files/luci/view/tools.htm:17
+msgid "OK"
+msgstr ""
+
+#: files/luci/view/chat.htm:203
+msgid "Open options"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:24
+msgid "Please enter the server's url"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:84
+msgid "Please input system message data"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:91
+msgid "Please input system message server url"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:83
+msgid "Please input system message title"
+msgstr ""
+
+#: files/luci/view/tools.htm:55
+msgid "Please install the extension module \'oasis-mod-tool\' to enable local tools."
+msgstr ""
+
+#: files/luci/view/icons.htm:56
+msgid "Please select an icon"
+msgstr ""
+
+#: files/luci/view/icons.htm:62
+msgid "Please select an image file."
+msgstr ""
+
+#: files/luci/view/chat.htm:251
+#: files/luci/view/chat.htm:329
+msgid "Raw(JSON)"
+msgstr ""
+
+#: files/luci/view/chat.htm:321
+msgid "Reboot"
+msgstr ""
+
+#: files/luci/view/chat.htm:303
+msgid "Rebooting..."
+msgstr ""
+
+#: files/luci/view/tools.htm:8
+#: files/luci/view/tools.htm:42
+msgid "Refresh"
+msgstr ""
+
+#: files/luci/view/chat.htm:232
+#: files/luci/view/chat.htm:242
+msgid "Rename"
+msgstr ""
+
+#: files/luci/view/chat.htm:239
+msgid "Rename chat name"
+msgstr ""
+
+#: files/luci/view/chat.htm:325
+msgid "Restart"
+msgstr ""
+
+#: files/luci/view/chat.htm:305
+msgid "Restarting service..."
+msgstr ""
+
+#: files/luci/view/chat.htm:274
+#: files/luci/view/chat.htm:328
+#: files/luci/view/rollback-list.htm:40
+msgid "Rollback"
+msgstr ""
+
+#: files/luci/view/rollback-list.htm:8
+msgid "Rollback has been executed. You can access the UI again once the system has fully restarted"
+msgstr ""
+
+#: files/luci/view/rollback-list.htm:44
+msgid "Rollback has been executed. You can access the UI again once the system has fully restarted."
+msgstr ""
+
+#: files/luci/view/tools.htm:40
+msgid "Running..."
+msgstr ""
+
+#: files/luci/view/chat.htm:184
+msgid "Scroll to latest"
+msgstr ""
+
+#: files/luci/view/icons.htm:12
+#: files/luci/view/icons.htm:54
+msgid "Select"
+msgstr ""
+
+#: files/luci/view/icons.htm:7
+msgid "Select AI Icon"
+msgstr ""
+
+#: files/luci/view/chat.htm:249
+msgid "Select Export Type"
+msgstr ""
+
+#: files/luci/view/icons.htm:57
+msgid "Select failed"
+msgstr ""
+
+#: files/luci/view/icons.htm:58
+msgid "Selected"
+msgstr ""
+
+#: files/luci/view/chat.htm:202
+msgid "Send"
+msgstr ""
+
+#: files/luci/view/chat.htm:324
+msgid "Service \"{name}\" needs restart. Restart now?"
+msgstr ""
+
+#: files/luci/view/chat.htm:323
+msgid "Service restart is required. Restart now?"
+msgstr ""
+
+#: files/luci/view/chat.htm:169
+#: files/luci/view/chat.htm:196
+msgid "System Message"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:38
+msgid "System Message List"
+msgstr ""
+
+#: files/luci/view/chat.htm:320
+msgid "System reboot is required. Reboot now?"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:12
+#: files/luci/view/sysmsg.htm:29
+msgid "TITLE:"
+msgstr ""
+
+#: files/luci/view/chat.htm:252
+#: files/luci/view/chat.htm:330
+msgid "Text"
+msgstr ""
+
+#: files/luci/view/chat.htm:319
+msgid "Thinking..."
+msgstr ""
+
+#: files/luci/view/chat.htm:309
+msgid "Tool used:"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:23
+msgid "URL:"
+msgstr ""
+
+#: files/luci/view/chat.htm:316
+msgid "Unexpected data format"
+msgstr ""
+
+#: files/luci/view/tools.htm:44
+msgid "Unknown"
+msgstr ""
+
+#: files/luci/view/tools.htm:56
+msgid "Unknown Server"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:80
+msgid "Update"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:90
+msgid "Update failed"
+msgstr ""
+
+#: files/luci/view/icons.htm:35
+msgid "Upload"
+msgstr ""
+
+#: files/luci/view/icons.htm:26
+msgid "Upload AI Icon"
+msgstr ""
+
+#: files/luci/view/icons.htm:63
+msgid "Upload failed"
+msgstr ""
+
+#: files/luci/view/icons.htm:32
+msgid "Upload this image?"
+msgstr ""
+
+#: files/luci/view/icons.htm:64
+msgid "Uploaded"
+msgstr ""
+
+#: files/luci/view/rollback-list.htm:22
+msgid "Would you like to execute the rollback?"
+msgstr ""
+
+#: files/luci/view/icons.htm:21
+#: files/luci/view/rollback-list.htm:24
+#: files/luci/view/sysmsg.htm:46
+msgid "Yes"
+msgstr ""
+
+#: files/luci/view/sysmsg.htm:7
+msgid "You can register and modify system messages for AI."
+msgstr ""
+
+#: files/luci/view/chat.htm:199
+#: files/luci/view/chat.htm:331
+msgid "Your Message (Enter to send, Shift+Enter for newline)"
+msgstr ""
+
+#: files/luci/view/tools.htm:47
+msgid "conflict"
+msgstr ""
