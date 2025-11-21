@@ -1471,11 +1471,14 @@
 
             //console.log("id = " + id);
 
-            const json_export = document.getElementById("json-export");
-            const text_export = document.getElementById("text-export");
+            // 重複リスナ防止のためボタンをクローンして差し替える
+            const jsonBtn = document.getElementById("json-export");
+            const textBtn = document.getElementById("text-export");
 
-            json_export.addEventListener('click', function() {
-                //console.log("Push JSON!!");
+            const jsonClone = jsonBtn.cloneNode(true);
+            jsonBtn.parentNode.replaceChild(jsonClone, jsonBtn);
+            jsonClone.addEventListener('click', function() {
+                jsonClone.disabled = true;
 
                 fetch(URL_LOAD_CHAT, {
                     method: 'POST',
@@ -1507,14 +1510,20 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                })
+                .finally(() => {
+                    jsonClone.disabled = false;
                 });
 
                 closeExportPopup();
             });
 
-            text_export.addEventListener('click', function() {
+            const textClone = textBtn.cloneNode(true);
+            textBtn.parentNode.replaceChild(textClone, textBtn);
+            textClone.addEventListener('click', function() {
 
                 let chat_data = "";
+                textClone.disabled = true;
 
                 fetch(URL_LOAD_CHAT, {
                     method: 'POST',
@@ -1558,6 +1567,9 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                })
+                .finally(() => {
+                    textClone.disabled = false;
                 });
 
                 closeExportPopup();
@@ -2644,6 +2656,9 @@
     document.getElementById('import-chat-data').addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
+            const importBtn = document.getElementById('import-button');
+            const prevText = importBtn ? importBtn.textContent : '';
+            if (importBtn) { importBtn.disabled = true; importBtn.textContent = t('downloading', 'Downloading...'); }
             const reader = new FileReader();
             reader.onload = function(e) {
 
@@ -2689,6 +2704,9 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                })
+                .finally(() => {
+                    if (importBtn) { importBtn.disabled = false; importBtn.textContent = prevText; }
                 });
             };
             reader.readAsDataURL(file);
@@ -2700,6 +2718,9 @@
     if (smpImportInput) smpImportInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
+            const importBtn = document.getElementById('smp-import-button');
+            const prevText = importBtn ? importBtn.textContent : '';
+            if (importBtn) { importBtn.disabled = true; importBtn.textContent = t('downloading', 'Downloading...'); }
             const reader = new FileReader();
             reader.onload = function(e) {
 
@@ -2745,6 +2766,9 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                })
+                .finally(() => {
+                    if (importBtn) { importBtn.disabled = false; importBtn.textContent = prevText; }
                 });
             };
             reader.readAsDataURL(file);
