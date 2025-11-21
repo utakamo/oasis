@@ -2253,11 +2253,13 @@
                                 }
                                 toolNoticeShown = true;
                                 toolNoticeMessageDiv = msgDiv;
+                                const cm = document.querySelector('.chat-messages');
+                                if (cm) cm.scrollTop = cm.scrollHeight;
                                 if (isKeyboardOpen) {
                                     keepLatestMessageVisible(true);
                                     setChatScrollLock(true);
                                 } else {
-                                    keepLatestMessageVisible(false);
+                                    keepLatestMessageVisible(true);
                                 }
                             }
 
@@ -2313,11 +2315,13 @@
                                                 chatRoot2.appendChild(msgDiv2);
                                             }
                                         }
+                                        const cm2 = document.querySelector('.chat-messages');
+                                        if (cm2) cm2.scrollTop = cm2.scrollHeight;
                                         if (isKeyboardOpen) {
                                             keepLatestMessageVisible(true);
                                             setChatScrollLock(true);
                                         } else {
-                                            keepLatestMessageVisible(false);
+                                            keepLatestMessageVisible(true);
                                         }
                                     } catch (_) {}
                                 });
@@ -2420,11 +2424,13 @@
                                 if (chatRoot) chatRoot.appendChild(msgDiv);
                                 toolNoticeShown = true;
                                 toolNoticeMessageDiv = msgDiv;
+                                const cm = document.querySelector('.chat-messages');
+                                if (cm) cm.scrollTop = cm.scrollHeight;
                                 if (isKeyboardOpen) {
                                     keepLatestMessageVisible(true);
                                     setChatScrollLock(true);
                                 } else {
-                                    keepLatestMessageVisible(false);
+                                    keepLatestMessageVisible(true);
                                 }
                             }
 
