@@ -114,7 +114,6 @@
             using_icon_key = selected_icon.value;
             select_button.textContent = t('done', 'Done');
             select_button.classList.add('done');
-            showToast(t('selected', 'Selected'), 'success');
             setLoading(select_button, false);
         })
         .catch(error => {
