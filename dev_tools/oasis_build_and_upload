@@ -150,6 +150,7 @@ make package/oasis-mod-retired/{clean,compile}
 make package/luci-app-oasis/{clean,compile}
 make package/oasis-tool-edge/{clean,compile}
 make package/oasis-mod-test/{clean,compile}
+make package/luci-i18n-oasis-ja/{clean,compile}
 
 # ====================================
 # Upload .ipk files
