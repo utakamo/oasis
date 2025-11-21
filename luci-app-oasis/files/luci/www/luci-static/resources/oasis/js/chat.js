@@ -1013,6 +1013,13 @@
 
             // No dynamic repositioning needed since FAB is inline in chat-buttons
 
+            const closeSheet = () => {
+                sheet.classList.remove('show');
+                sheet.setAttribute('aria-hidden', 'true');
+                setTimeout(() => sheet.style.display = 'none', 250);
+                sheet.style.transform = '';
+            };
+
             fab.addEventListener('click', () => {
                 // Ensure content is up-to-date every time before showing
                 updateMobileBottomSheetFromDesktop();
@@ -1028,15 +1035,60 @@
             // First population
             updateMobileBottomSheetFromDesktop();
 
+            // Drag-to-close (pull down) for mobile sheet
+            const handle = sheet.querySelector('.sheet-handle') || sheet;
+            let dragStartY = 0;
+            let dragCurrentY = 0;
+            let dragging = false;
+            const threshold = 80;
+            let rafId = null;
+
+            const onDragStart = (y) => {
+                dragging = true;
+                dragStartY = y;
+                dragCurrentY = y;
+                sheet.style.transition = 'none';
+            };
+            const onDragMove = (y) => {
+                if (!dragging) return;
+                dragCurrentY = y;
+                if (rafId) cancelAnimationFrame(rafId);
+                rafId = requestAnimationFrame(() => {
+                    const delta = Math.max(0, dragCurrentY - dragStartY);
+                    sheet.style.transform = `translateY(${delta}px)`;
+                });
+            };
+            const onDragEnd = () => {
+                if (!dragging) return;
+                const delta = dragCurrentY - dragStartY;
+                sheet.style.transition = 'transform 120ms ease-out';
+                if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+                if (delta > threshold) {
+                    closeSheet();
+                } else {
+                    sheet.style.transform = '';
+                }
+                dragging = false;
+            };
+
+            handle.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches[0]) onDragStart(e.touches[0].clientY);
+            }, { passive: true });
+            handle.addEventListener('touchmove', (e) => {
+                if (e.touches && e.touches[0]) onDragMove(e.touches[0].clientY);
+            }, { passive: true });
+            handle.addEventListener('touchend', onDragEnd);
+            handle.addEventListener('mousedown', (e) => onDragStart(e.clientY));
+            window.addEventListener('mousemove', (e) => onDragMove(e.clientY));
+            window.addEventListener('mouseup', onDragEnd);
+
             // No need to track scroll/resize for FAB inline placement
             // Hide bottom sheet and FAB on desktop viewport
             function updateBottomSheetVisibilityForViewport() {
                 const isSmall = window.innerWidth <= 768;
                 if (!isSmall) {
                     // Hide sheet if visible
-                    sheet.classList.remove('show');
-                    sheet.setAttribute('aria-hidden', 'true');
-                    sheet.style.display = 'none';
+                    closeSheet();
                     // Hide FAB
                     fab.style.display = 'none';
                 } else {
