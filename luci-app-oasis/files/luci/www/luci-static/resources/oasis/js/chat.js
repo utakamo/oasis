@@ -923,7 +923,6 @@
 
         // Helper: populate mobile bottom sheet controls from desktop controls
         function updateMobileBottomSheetFromDesktop() {
-            const mbSys = null; // removed from bottom sheet
             const inlineSys = document.getElementById('inline-sysmsg-select');
             const mbUci = document.getElementById('mb-uci-config-list');
             const mbList = document.getElementById('mb-chat-list');
@@ -931,66 +930,73 @@
             const desktopUci = document.getElementById('uci-config-list');
             const desktopList = document.getElementById('chat-list');
 
+            const syncSelect = (target, source, mirrorDisabled = false, onChange) => {
+                if (!target || !source) return;
+                const srcHtml = source.innerHTML;
+                if (target.dataset._lastOptions !== srcHtml) {
+                    target.innerHTML = srcHtml;
+                    target.dataset._lastOptions = srcHtml;
+                }
+                target.value = source.value;
+                if (mirrorDisabled) target.disabled = source.disabled;
+                if (!target.dataset.bound) {
+                    target.addEventListener('change', (e) => {
+                        if (typeof onChange === 'function') onChange(e);
+                    });
+                    target.dataset.bound = '1';
+                }
+            };
+
             // Populate inline System Message (above textarea)
-            if (inlineSys && desktopSys) {
-                inlineSys.innerHTML = desktopSys.innerHTML;
-                inlineSys.value = desktopSys.value;
-                inlineSys.disabled = desktopSys.disabled;
-                const inlineClone = inlineSys.cloneNode(true);
-                inlineSys.parentNode.replaceChild(inlineClone, inlineSys);
-                inlineClone.addEventListener('change', (e) => {
-                    desktopSys.value = e.target.value;
-                    desktopSys.dispatchEvent(new Event('change'));
-                });
-            }
+            syncSelect(inlineSys, desktopSys, true, (e) => {
+                desktopSys.value = e.target.value;
+                desktopSys.dispatchEvent(new Event('change'));
+            });
 
             // Populate mobile sheet System Message (kept for mobile flow)
             // mb-sysmsg-select was removed
 
-            if (mbUci && desktopUci) {
-                mbUci.innerHTML = desktopUci.innerHTML;
-                mbUci.value = desktopUci.value;
-                const mbUciClone = mbUci.cloneNode(true);
-                mbUci.parentNode.replaceChild(mbUciClone, mbUci);
-                mbUciClone.addEventListener('change', (e) => {
-                    desktopUci.value = e.target.value;
-                    desktopUci.dispatchEvent(new Event('change'));
-                });
-            }
+            syncSelect(mbUci, desktopUci, false, (e) => {
+                desktopUci.value = e.target.value;
+                desktopUci.dispatchEvent(new Event('change'));
+            });
 
             if (mbList && desktopList) {
-                mbList.innerHTML = desktopList.innerHTML;
-                mbList.querySelectorAll('li').forEach(li => {
-                    // Open chat when tapping the row (but not the kebab)
-                    li.addEventListener('click', (ev) => {
-                        if ((ev.target && (ev.target.closest && ev.target.closest('.oasis-hamburger-menu'))) ||
-                            (ev.target && (ev.target.closest && ev.target.closest('.oasis-menu-btn')))) {
-                            return; // handled by kebab
-                        }
-                        const id = ev.currentTarget.getAttribute('data-id');
-                        if (id) {
-                            handleChatItemClick(id);
-                            const sheet = document.getElementById('mobile-bottom-sheet');
-                            if (sheet) {
-                                sheet.classList.remove('show');
-                                setTimeout(() => sheet.style.display = 'none', 250);
+                const srcHtml = desktopList.innerHTML;
+                if (mbList.dataset._lastHtml !== srcHtml) {
+                    mbList.innerHTML = srcHtml;
+                    mbList.dataset._lastHtml = srcHtml;
+                    mbList.querySelectorAll('li').forEach(li => {
+                        // Open chat when tapping the row (but not the kebab)
+                        li.addEventListener('click', (ev) => {
+                            if ((ev.target && (ev.target.closest && ev.target.closest('.oasis-hamburger-menu'))) ||
+                                (ev.target && (ev.target.closest && ev.target.closest('.oasis-menu-btn')))) {
+                                return; // handled by kebab
                             }
+                            const id = ev.currentTarget.getAttribute('data-id');
+                            if (id) {
+                                handleChatItemClick(id);
+                                const sheet = document.getElementById('mobile-bottom-sheet');
+                                if (sheet) {
+                                    sheet.classList.remove('show');
+                                    setTimeout(() => sheet.style.display = 'none', 250);
+                                }
+                            }
+                        });
+                        // Kebab menu in bottom sheet: open oasis-dropdown
+                        const menuBtn = li.querySelector('.oasis-menu-btn');
+                        if (menuBtn) {
+                            menuBtn.addEventListener('click', function (event) {
+                                event.stopPropagation();
+                                const dropdown = document.getElementById('oasis-dropdown');
+                                targetChatItemId = this.closest('li').getAttribute('data-id');
+                                dropdown.style.display = 'block';
+                                dropdown.style.position = 'fixed';
+                                centerElementInChat(dropdown);
+                            });
                         }
                     });
-                    // Kebab menu in bottom sheet: open oasis-dropdown
-                    const menuBtn = li.querySelector('.oasis-menu-btn');
-                    if (menuBtn) {
-                        menuBtn.addEventListener('click', function (event) {
-                            event.stopPropagation();
-                            const dropdown = document.getElementById('oasis-dropdown');
-                            targetChatItemId = this.closest('li').getAttribute('data-id');
-                            // Show and center the dropdown as a foreground dialog
-                            dropdown.style.display = 'block';
-                            dropdown.style.position = 'fixed';
-                            centerElementInChat(dropdown);
-                        });
-                    }
-                });
+                }
             }
         }
         // Expose for global callers (e.g., import handlers defined outside this scope)
