@@ -261,6 +261,10 @@
     border-top: 1px solid #eee;
     background: #fff;
 }
+.chat-input.input-disabled {
+    pointer-events: none;
+    opacity: 0.65;
+}
 
 .chat-input-fields {
     flex: 1;
@@ -692,8 +696,16 @@ textarea:focus-visible {
     }
 
     .chat-input {
-        position: sticky;
+        position: fixed;
+        left: 0;
+        right: 0;
         bottom: 0;
+        z-index: 1200;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+    }
+
+    .chat-messages {
+        padding-bottom: 140px;
     }
 
     .oasis-hamburger-menu {
@@ -846,13 +858,14 @@ textarea:focus-visible {
     box-shadow: 0 -8px 20px rgba(0,0,0,.12);
     transition: bottom .25s ease;
     display: none;
-    z-index: 1099;
+    z-index: 1400; /* above chat-input (1200) */
     padding: 12px 16px;
     display: flex;
     flex-direction: column;
     overflow-y: auto;                 /* make entire sheet scrollable */
     -webkit-overflow-scrolling: touch;/* iOS smooth scrolling */
     overscroll-behavior: contain;     /* prevent body scroll chaining */
+    will-change: transform, opacity;
 }
 .mobile-bottom-sheet.show { bottom: 0; }
 /* show toggle only on small screens */
@@ -975,19 +988,6 @@ textarea:focus-visible {
 }
 
 /* Keyboard-open state (mobile): class-based, variables driven */
-.chat-input.keyboard-open {
-    position: fixed;
-    left: var(--vv-left, 0px);
-    width: var(--vv-width, 100vw);
-    bottom: var(--kb-bottom, 0px);
-    transform: none;
-    z-index: 1200;
-}
-.chat-messages.keyboard-open {
-    padding-bottom: calc(var(--input-height, 56px) + 16px + env(safe-area-inset-bottom));
-    padding-top: var(--ai-top-padding, 0px);
-}
-
 /* Message content enhancements */
 .message-text h1,
 .message-text h2,

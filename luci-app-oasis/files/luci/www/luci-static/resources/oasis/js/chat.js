@@ -51,8 +51,11 @@
     let ai_service_list = [];
     let scrollLockEnabled = false;
     let isKeyboardOpen = false;
-    let pendingBottomOnKeyboardOpen = false;
     let currentAssistantMessageDiv = null;
+    let cachedInputHeight = null;
+    let mobileLayoutTimer = null;
+    let mobileLayoutForce = false;
+    let mobileLayoutRemeasure = false;
 
     // Overlay helpers
     function showDownloadOverlay(text) {
@@ -745,144 +748,74 @@
             });
         }
 
-        // Mobile keyboard handling: keep latest messages visible when IME opens
-        // Smooth keyboard-follow: rAF-throttled class/variable updates
-        let __vvLast = { left: 0, width: 0, kb: 0, inputH: 0, topPad: 0, applied: false };
-        let __vvPending = null;
-        let __vvRaf = null;
-        let __kbDelayTimer = null;      // 600ms delayed apply timer
-        let __kbArmedState = null;      // last armed state to apply
-        function applyKeyboardLayout(state) {
-            const inputBar = document.querySelector('.chat-input');
+        // Mobile keyboard handling: fixed input bar with simple padding adjustment
+        function applyMobileLayout(forceBottom = false, remeasure = false) {
             const chatMessages = document.querySelector('.chat-messages');
-            if (!inputBar || !chatMessages) return;
-            const { isSmallViewport, kb, left, width, inputH, topPad } = state;
+            const chatInput = document.querySelector('.chat-input');
+            if (!chatMessages || !chatInput) return;
+            const isSmallViewport = window.innerWidth <= 768;
+
             if (!isSmallViewport) {
-                if (__vvLast.applied) {
-                    inputBar.classList.remove('keyboard-open');
-                    chatMessages.classList.remove('keyboard-open');
-                    __vvLast.applied = false;
-                }
+                cachedInputHeight = null;
+                chatInput.style.position = '';
+                chatInput.style.left = '';
+                chatInput.style.right = '';
+                chatInput.style.bottom = '';
+                chatInput.style.zIndex = '';
+                chatMessages.style.paddingBottom = '';
                 isKeyboardOpen = false;
                 return;
             }
-            if (kb > 0) {
-                const nLeft = Math.round(left);
-                const nWidth = Math.round(width);
-                const nKb = Math.round(kb);
-                const nInput = Math.round(inputH);
-                const nTop = Math.round(topPad);
-                const changed = (
-                    nLeft !== __vvLast.left ||
-                    nWidth !== __vvLast.width ||
-                    nKb !== __vvLast.kb ||
-                    nInput !== __vvLast.inputH ||
-                    nTop !== __vvLast.topPad ||
-                    !__vvLast.applied
-                );
-                if (changed) {
-                    document.documentElement.style.setProperty('--vv-left', nLeft + 'px');
-                    document.documentElement.style.setProperty('--vv-width', nWidth + 'px');
-                    document.documentElement.style.setProperty('--kb-bottom', nKb + 'px');
-                    document.documentElement.style.setProperty('--input-height', nInput + 'px');
-                    document.documentElement.style.setProperty('--ai-top-padding', nTop + 'px');
-                    inputBar.classList.add('keyboard-open');
-                    chatMessages.classList.add('keyboard-open');
-                    __vvLast = { left: nLeft, width: nWidth, kb: nKb, inputH: nInput, topPad: nTop, applied: true };
-                }
-                isKeyboardOpen = true;
-            } else {
-                if (__vvLast.applied) {
-                    inputBar.classList.remove('keyboard-open');
-                    chatMessages.classList.remove('keyboard-open');
-                    __vvLast.applied = false;
-                }
-                isKeyboardOpen = false;
+
+            let kb = 0;
+            if (window.visualViewport) {
+                const vv = window.visualViewport;
+                kb = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
             }
-        }
-        function scheduleKeyboardLayout(state) {
-            __vvPending = state;
-            if (__vvRaf) cancelAnimationFrame(__vvRaf);
-            __vvRaf = requestAnimationFrame(() => {
-                applyKeyboardLayout(__vvPending);
-                __vvRaf = null;
-            });
+            isKeyboardOpen = kb > 0;
+
+            chatInput.style.position = 'fixed';
+            chatInput.style.left = '0';
+            chatInput.style.right = '0';
+            chatInput.style.bottom = kb + 'px';
+            chatInput.style.zIndex = '1200';
+
+            if (cachedInputHeight === null || remeasure) {
+                cachedInputHeight = chatInput.offsetHeight || 0;
+            }
+            const paddingBottom = cachedInputHeight + kb + 16;
+            chatMessages.style.paddingBottom = paddingBottom + 'px';
+
+            if (forceBottom && window.__oasisStickToBottom) {
+                keepLatestMessageVisible(true);
+            }
         }
 
-        function releaseKeyboardLayout() {
-            const inputBar = document.querySelector('.chat-input');
-            const chatMessages = document.querySelector('.chat-messages');
-            if (!inputBar || !chatMessages) return;
-            inputBar.classList.remove('keyboard-open');
-            chatMessages.classList.remove('keyboard-open');
-            isKeyboardOpen = false;
-            __vvLast.applied = false;
+        function scheduleMobileLayout(forceBottom = false, remeasure = false) {
+            mobileLayoutForce = mobileLayoutForce || forceBottom;
+            mobileLayoutRemeasure = mobileLayoutRemeasure || remeasure;
+            if (mobileLayoutTimer) return;
+            mobileLayoutTimer = setTimeout(() => {
+                mobileLayoutTimer = null;
+                applyMobileLayout(mobileLayoutForce, mobileLayoutRemeasure);
+                mobileLayoutForce = false;
+                mobileLayoutRemeasure = false;
+            }, 50);
         }
-        function adjustForKeyboard() {
-            const chatMessages = document.querySelector('.chat-messages');
-            const inputBar = document.querySelector('.chat-input');
-            const aiSelect = document.getElementById('ai-service-list');
-            if (!chatMessages || !inputBar) return;
-            const isSmallViewport = window.innerWidth <= 768;
-            // On desktop (two-column), never fix input bar to viewport edges
-            if (!isSmallViewport) {
-                // reset any mobile keyboard styles just in case
-                inputBar.style.position = '';
-                inputBar.style.left = '';
-                inputBar.style.width = '';
-                inputBar.style.bottom = '';
-                inputBar.style.transform = '';
-                inputBar.style.zIndex = '';
-                chatMessages.style.paddingBottom = '';
-                chatMessages.style.paddingTop = '';
-                isKeyboardOpen = false;
-                return;
-            }
-            const vp = window.visualViewport;
-            const viewportHeight = vp ? (vp.height + vp.offsetTop) : window.innerHeight;
-            const kb = Math.max(0, window.innerHeight - viewportHeight);
-            const inputHeight = inputBar.offsetHeight || 0;
-            const topPadding = aiSelect ? (aiSelect.offsetHeight + 8) : 0;
-            const left = vp ? vp.offsetLeft : 0;
-            const width = vp ? vp.width : window.innerWidth;
-            if (kb > 0) {
-                // Arm state and delay apply by 600ms to avoid jitter while viewport animates
-                __kbArmedState = { isSmallViewport, kb, left, width, inputH: inputHeight, topPad: topPadding };
-                if (__kbDelayTimer) clearTimeout(__kbDelayTimer);
-                __kbDelayTimer = setTimeout(() => {
-                    // Apply only if still armed (keyboard likely still open)
-                    if (__kbArmedState) {
-                        scheduleKeyboardLayout(__kbArmedState);
-                        if (pendingBottomOnKeyboardOpen) {
-                            keepLatestMessageVisible(true);
-                            pendingBottomOnKeyboardOpen = false;
-                        } else if (activeConversation) {
-                            keepLatestMessageVisible(true);
-                        } else if (!targetChatId) {
-                            // First conversation on new chat: ensure first pair is under AI select
-                            alignFirstConversationUnderAI();
-                        }
-                    }
-                }, 600);
-            } else {
-                // Keyboard hidden: cancel pending and restore
-                if (__kbDelayTimer) { clearTimeout(__kbDelayTimer); __kbDelayTimer = null; }
-                __kbArmedState = null;
-                releaseKeyboardLayout();
-                anchorChatToTop();
-            }
+
+        function setChatInputDisabled(disabled) {
+            const ci = document.querySelector('.chat-input');
+            if (!ci) return;
+            if (disabled) ci.classList.add('input-disabled');
+            else ci.classList.remove('input-disabled');
         }
-        // Bind visual viewport events (supported in modern mobile browsers)
+
         // Track whether user intends to stick to bottom
         function updateStickToBottomFlag() {
             const cm = document.querySelector('.chat-messages');
             if (!cm) return;
             const threshold = 40; // px
             window.__oasisStickToBottom = (cm.scrollHeight - cm.scrollTop - cm.clientHeight) < threshold;
-            // If user moved away from bottom while IME is open, restore original layout
-            if (isKeyboardOpen && !window.__oasisStickToBottom) {
-                releaseKeyboardLayout();
-            }
             // Show/hide scroll-to-bottom button
             const btn = document.getElementById('scroll-bottom-btn');
             if (btn) {
@@ -897,27 +830,16 @@
         const cmInit = document.querySelector('.chat-messages');
         if (cmInit) {
             cmInit.addEventListener('scroll', updateStickToBottomFlag, { passive: true });
-            cmInit.addEventListener('wheel', () => { if (isKeyboardOpen) releaseKeyboardLayout(); }, { passive: true });
-            cmInit.addEventListener('touchstart', () => { if (isKeyboardOpen) releaseKeyboardLayout(); }, { passive: true });
             // initial flag
             updateStickToBottomFlag();
         }
-        // Debounced scheduling to avoid thrashing during IME animations
-        let __vvDebounceTimer = null;
-        function scheduleAdjust(forceBottom = false) {
-            if (__vvDebounceTimer) clearTimeout(__vvDebounceTimer);
-            __vvDebounceTimer = setTimeout(() => {
-                adjustForKeyboard();
-                if (forceBottom || activeConversation) keepLatestMessageVisible(true);
-                updateScrollLockState();
-            }, 60);
-        }
         if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => scheduleAdjust(false));
-            window.visualViewport.addEventListener('scroll', () => scheduleAdjust(false));
+            window.visualViewport.addEventListener('resize', () => scheduleMobileLayout(true, false));
+            window.visualViewport.addEventListener('scroll', () => scheduleMobileLayout(true, false));
         }
-        window.addEventListener('resize', () => scheduleAdjust(false));
-        window.addEventListener('orientationchange', () => scheduleAdjust(false));
+        window.addEventListener('resize', () => scheduleMobileLayout(false, false));
+        window.addEventListener('orientationchange', () => scheduleMobileLayout(true, true));
+        scheduleMobileLayout(false, true);
 
         check_temporary_setting();
 
@@ -980,6 +902,7 @@
                                 if (sheet) {
                                     sheet.classList.remove('show');
                                     setTimeout(() => sheet.style.display = 'none', 250);
+                                    setChatInputDisabled(false);
                                 }
                             }
                         });
@@ -1018,6 +941,7 @@
                 sheet.setAttribute('aria-hidden', 'true');
                 setTimeout(() => sheet.style.display = 'none', 250);
                 sheet.style.transform = '';
+                setChatInputDisabled(false);
             };
 
             fab.addEventListener('click', () => {
@@ -1030,6 +954,7 @@
                     const focusTarget = sheet;
                     if (focusTarget && focusTarget.focus) focusTarget.focus();
                 });
+                setChatInputDisabled(true);
             });
             // close button removed
             // First population
@@ -1091,6 +1016,7 @@
                     closeSheet();
                     // Hide FAB
                     fab.style.display = 'none';
+                    setChatInputDisabled(false);
                 } else {
                     // Show FAB on small viewport
                     fab.style.display = '';
@@ -1129,6 +1055,7 @@
             sheet.classList.remove('show');
             sheet.setAttribute('aria-hidden', 'true');
             setTimeout(() => sheet.style.display = 'none', 250);
+            setChatInputDisabled(false);
         });
 
         // Input: Enter to send / Shift+Enter for newline + auto-resize up to 5 lines + disable SEND when empty
@@ -1151,6 +1078,7 @@
                 const newHeight = Math.min(contentHeight, maxHeight);
                 messageInputEl.style.height = newHeight + 'px';
                 messageInputEl.style.overflowY = (contentHeight > maxHeight) ? 'auto' : 'hidden';
+                applyMobileLayout(false);
             }
 
             function toggleSendDisabled() {
@@ -1159,11 +1087,12 @@
             }
 
             messageInputEl.placeholder = t('inputPlaceholder', 'Your Message (Enter to send, Shift+Enter for newline)');
-            messageInputEl.addEventListener('input', function() {
-                autoResizeTextarea();
-                toggleSendDisabled();
-                if (isKeyboardOpen) keepLatestMessageVisible();
-            });
+        messageInputEl.addEventListener('input', function() {
+            autoResizeTextarea();
+            toggleSendDisabled();
+            scheduleMobileLayout(false, true);
+            if (isKeyboardOpen && window.__oasisStickToBottom) keepLatestMessageVisible();
+        });
             messageInputEl.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
@@ -1174,12 +1103,11 @@
             autoResizeTextarea();
             toggleSendDisabled();
             // Initial adjust for mobile keyboard when focusing the input
-            messageInputEl.addEventListener('focus', () => {
-                // Flag to scroll to bottom next time the IME opens
-                pendingBottomOnKeyboardOpen = true;
-                setTimeout(() => { if (isKeyboardOpen) keepLatestMessageVisible(true); }, 50);
-                setTimeout(() => { if (isKeyboardOpen) keepLatestMessageVisible(true); }, 200);
-            });
+        messageInputEl.addEventListener('focus', () => {
+                scheduleMobileLayout(true, true);
+                setTimeout(() => { if (window.__oasisStickToBottom) keepLatestMessageVisible(true); }, 50);
+                setTimeout(() => { if (window.__oasisStickToBottom) keepLatestMessageVisible(true); }, 200);
+        });
         }
 
         // Run initialization (safe after DOMContentLoaded)
