@@ -358,6 +358,13 @@
         let currentLanguage = '';
         const lines = input.split('\n');
 
+        const paragraph = [];
+        const flushParagraph = () => {
+            if (!paragraph.length) return;
+            html += '<p>' + paragraph.join(' ') + '</p>';
+            paragraph.length = 0;
+        };
+
         // Markdown table utilities
         const splitCells = (line) => {
             const body = line.trim().replace(/^\|/, '').replace(/\|$/, '');
@@ -389,7 +396,6 @@
             return { heads, aligns };
         };
         const formatInline = (s) => {
-            // mimic non-table inline formatting
             s = s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
             s = s.replace(/\*(.+?)\*/g, '<i>$1</i>');
             s = s.replace(/`([^`]+)`/g, '<code class="inline-code">$1<\/code>');
@@ -399,11 +405,12 @@
         };
 
         for (let i = 0; i < lines.length; i++) {
-            let line = lines[i];
-            const trimmedLine = line.trim();
+            const rawLine = lines[i];
+            const trimmedLine = rawLine.trim();
 
             // fenced code block
             if (trimmedLine.startsWith('```')) {
+                flushParagraph();
                 if (!isCodeBlock) {
                     currentLanguage = trimmedLine.slice(3).trim();
                     const languageClass = currentLanguage ? ` language-${escapeHTML(currentLanguage)}` : '';
@@ -417,13 +424,14 @@
             }
 
             if (isCodeBlock) {
-                html += escapeHTML(line) + '\n';
+                html += escapeHTML(rawLine) + '\n';
                 continue;
             }
 
             // table detection
             const tbl = isTableHeaderStart(i);
             if (tbl) {
+                flushParagraph();
                 const { heads, aligns } = tbl;
                 const colCount = Math.max(heads.length, aligns.length);
                 html += '<div class="md-table-wrap"><table class="md-table"><thead><tr>';
@@ -457,34 +465,32 @@
                 continue;
             }
 
-            const isHeadingLine = /^#{1,6}\s+/.test(trimmedLine);
-            const isBlockquoteLine = /^>\s+/.test(trimmedLine);
-
-            // existing inline/line-level markdown
-            line = line.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
-            line = line.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
-            line = line.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
-            line = line.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-            line = line.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-            line = line.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-            line = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-            line = line.replace(/\*(.+?)\*/g, '<i>$1</i>');
-            // Blockquote
-            line = line.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
-            // Inline code
-            line = line.replace(/`([^`]+)`/g, '<code class="inline-code">$1<\/code>');
-            // Markdown links [text](url)
-            line = line.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1<\/a>');
-            // Autolink bare URLs
-            line = line.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1<\/a>');
-
-            html += line;
-            // 見出しや引用はマージンに任せ、不要な改行を抑制する
-            if (!(isHeadingLine || isBlockquoteLine)) {
-                html += '<br>';
+            const headingMatch = trimmedLine.match(/^(#{1,6})\s+(.*)$/);
+            if (headingMatch) {
+                flushParagraph();
+                const level = headingMatch[1].length;
+                const content = formatInline(headingMatch[2]);
+                html += `<h${level}>${content}</h${level}>`;
+                continue;
             }
+
+            const blockquoteMatch = trimmedLine.match(/^>\s+(.*)$/);
+            if (blockquoteMatch) {
+                flushParagraph();
+                const content = formatInline(blockquoteMatch[1]);
+                html += `<blockquote>${content}</blockquote>`;
+                continue;
+            }
+
+            if (trimmedLine === '') {
+                flushParagraph();
+                continue;
+            }
+
+            paragraph.push(formatInline(trimmedLine));
         }
 
+        flushParagraph();
         if (isCodeBlock) {
             html += '</pre>';
         }
