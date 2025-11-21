@@ -216,7 +216,7 @@
     padding: 12px 14px;
     border-radius: 14px;
     word-wrap: break-word;
-    line-height: 1.6;
+    line-height: 1.5;
     box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 }
 
@@ -996,12 +996,13 @@ textarea:focus-visible {
 .message-text h5,
 .message-text h6 {
     color: #6495ED;
-    margin: 8px 0 6px;
-    line-height: 1.3;
+    margin: 4px 0 2px;
+    line-height: 1.25;
 }
 
 .message-text p {
-    margin: 6px 0;
+    margin: 4px 0;
+    line-height: 1.5;
 }
 
 .message-text a {

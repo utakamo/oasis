@@ -457,6 +457,9 @@
                 continue;
             }
 
+            const isHeadingLine = /^#{1,6}\s+/.test(trimmedLine);
+            const isBlockquoteLine = /^>\s+/.test(trimmedLine);
+
             // existing inline/line-level markdown
             line = line.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
             line = line.replace(/^##### (.+)$/gm, '<h5>$1</h5>');
@@ -475,7 +478,11 @@
             // Autolink bare URLs
             line = line.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1<\/a>');
 
-            html += line + '<br>';
+            html += line;
+            // 見出しや引用はマージンに任せ、不要な改行を抑制する
+            if (!(isHeadingLine || isBlockquoteLine)) {
+                html += '<br>';
+            }
         }
 
         if (isCodeBlock) {
