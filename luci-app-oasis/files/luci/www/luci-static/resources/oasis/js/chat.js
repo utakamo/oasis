@@ -274,6 +274,48 @@
         }
     }
 
+    // Position dropdown near the pressed kebab button (works for desktop and mobile sheet)
+    function openDropdownAtButton(buttonEl) {
+        const dropdown = document.getElementById('oasis-dropdown');
+        if (!dropdown || !buttonEl) return;
+        // Ensure dropdown is top-level to avoid stacking context issues under the mobile sheet
+        if (dropdown.parentNode !== document.body) {
+            document.body.appendChild(dropdown);
+        }
+        const rect = buttonEl.getBoundingClientRect();
+        dropdown.style.display = 'block';
+        dropdown.style.position = 'fixed';
+        dropdown.style.transform = 'none';
+        dropdown.style.zIndex = '2000';
+        const defaultW = 180;
+        const defaultH = 160;
+        const ddWidth = dropdown.offsetWidth || defaultW;
+        const ddHeight = dropdown.offsetHeight || defaultH;
+        const margin = 12; // keep away from viewport edges
+        let left = rect.right;
+        let top = rect.bottom + margin;
+        const viewportW = window.innerWidth;
+        const viewportH = window.innerHeight;
+        // Right overflow -> align to the right within viewport
+        if (left + ddWidth > viewportW - margin) {
+            left = Math.max(margin, viewportW - ddWidth - margin);
+        }
+        // Left fallback: ensure at least margin
+        if (left < margin) {
+            left = margin;
+        }
+        // Bottom overflow -> show above the button
+        if (top + ddHeight > viewportH - margin) {
+            top = rect.top - ddHeight - margin;
+        }
+        // Top fallback: ensure at least margin
+        if (top < margin) {
+            top = margin;
+        }
+        dropdown.style.left = `${left}px`;
+        dropdown.style.top = `${top}px`;
+    }
+
     // Ensure an element is fully visible inside a scroll container
     function ensureElementFullyVisible(container, target, extraPadding = 24) {
         if (!container || !target) return;
@@ -581,13 +623,8 @@
                 menuButton.addEventListener("click", function (event) {
                     targetChatItemId = event.target.closest("li").getAttribute("data-id");
                     event.stopPropagation();
-                    const rect = this.getBoundingClientRect();
-                    // Two-column (desktop) layout: place dialog's top-left at the right side of kebab
-                    dropdown.style.position = 'absolute';
-                    dropdown.style.transform = 'none';
-                    dropdown.style.top = `${rect.top + window.scrollY}px`;
-                    dropdown.style.left = `${rect.right + window.scrollX}px`;
-                    dropdown.style.display = "block";
+                    event.preventDefault();
+                    openDropdownAtButton(this);
                 });
         menuContainer.appendChild(menuButton);
         li.appendChild(menuContainer);
@@ -801,11 +838,9 @@
                         if (menuBtn) {
                             menuBtn.addEventListener('click', function (event) {
                                 event.stopPropagation();
-                                const dropdown = document.getElementById('oasis-dropdown');
+                                event.preventDefault();
                                 targetChatItemId = this.closest('li').getAttribute('data-id');
-                                dropdown.style.display = 'block';
-                                dropdown.style.position = 'fixed';
-                                centerElementInChat(dropdown);
+                                openDropdownAtButton(this);
                             });
                         }
                     });
@@ -1182,7 +1217,12 @@
         }
 
         document.addEventListener("click", function (e) {
+            if (!dropdown) return;
+            if (dropdown.style.display !== 'block') return;
+            if (dropdown.contains(e.target)) return;
+            if (e.target && e.target.closest && e.target.closest('.oasis-menu-btn')) return;
             dropdown.style.display = 'none';
+            //console.log('[oasis-dropdown] closed by document click');
         });
 
         document.addEventListener("click", function (event) {
@@ -1197,7 +1237,13 @@
                     handleRenameAction(target, targetChatItemId);
                 } else if (action === "export") {
                     handleExportAction(target, targetChatItemId);
+                } else if (action === "cancel") {
+                    const dropdownEl = document.getElementById('oasis-dropdown');
+                    if (dropdownEl) dropdownEl.style.display = 'none';
                 }
+                // Hide dropdown after any menu action to avoid lingering menu
+                const dropdownEl = document.getElementById('oasis-dropdown');
+                if (dropdownEl) dropdownEl.style.display = 'none';
             }
         });
 
