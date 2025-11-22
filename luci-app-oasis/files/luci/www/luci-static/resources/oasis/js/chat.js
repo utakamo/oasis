@@ -56,6 +56,23 @@
     let mobileLayoutTimer = null;
     let mobileLayoutForce = false;
     let mobileLayoutRemeasure = false;
+    const MAX_CHAT_IMPORT_BYTES = 512 * 1024; // 512KB cap to avoid huge uploads on routers
+
+    function isValidChatImportFile(file) {
+        if (!file) return false;
+        const name = (file.name || '').toLowerCase();
+        const extOk = name.endsWith('.json');
+        const typeOk = !file.type || file.type === 'application/json' || file.type === 'text/json';
+        if (!extOk || !typeOk) {
+            alert(t('unexpectedFormat', 'Unexpected data format'));
+            return false;
+        }
+        if (file.size > MAX_CHAT_IMPORT_BYTES) {
+            alert('Chat data file is too large (max 512KB).');
+            return false;
+        }
+        return true;
+    }
 
     // Overlay helpers
     function showDownloadOverlay(text) {
@@ -509,27 +526,53 @@
                 .replace(/'/g, "&#039;");
     }
 
-    // Basic sanitizer to drop style/script/iframe and inline event/style attrs
+    // Basic sanitizer with strict allowlist for tags/attributes and safe URLs only
     function sanitizeHTML(dirtyHtml) {
         const tmp = document.createElement('div');
         tmp.innerHTML = dirtyHtml || '';
 
-        const disallowed = new Set(['style','script','iframe','object','embed','link','meta','svg','math','form','template','audio','video','source','picture']);
+        const allowedTags = new Set([
+            'b','strong','i','em','code','pre','p','br','ul','ol','li','table','thead','tbody','tr','th','td',
+            'div','span','h1','h2','h3','h4','h5','h6','blockquote','a'
+        ]);
+        const allowedAttrs = {
+            a: new Set(['href','target','rel']),
+            code: new Set(['class']),
+            pre: new Set(['class']),
+            div: new Set(['class']),
+            span: new Set(['class']),
+            th: new Set(['align']),
+            td: new Set(['align'])
+        };
+
         const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_ELEMENT, null, false);
         const toRemove = [];
         while (walker.nextNode()) {
             const el = walker.currentNode;
             const tag = el.tagName ? el.tagName.toLowerCase() : '';
-            if (disallowed.has(tag)) { toRemove.push(el); continue; }
+            if (!allowedTags.has(tag)) { toRemove.push(el); continue; }
+
             const attrs = Array.from(el.attributes || []);
             for (const attr of attrs) {
-                const n = attr.name.toLowerCase();
-                if (n === 'style' || n.startsWith('on') || n === 'srcset' || n === 'xlink:href') {
+                const name = attr.name.toLowerCase();
+                const value = attr.value || '';
+                const allowForTag = allowedAttrs[tag];
+                const isAllowedAttr = allowForTag && allowForTag.has(name);
+                if (!isAllowedAttr) { el.removeAttribute(attr.name); continue; }
+
+                if ((name === 'href' || name === 'src') && !/^https?:\/\//i.test(value)) {
                     el.removeAttribute(attr.name);
+                    continue;
+                }
+                if (name === 'target') {
+                    if (value !== '_blank' && value !== '_self') {
+                        el.setAttribute('target', '_blank');
+                    }
+                    el.setAttribute('rel', 'noopener');
                 }
             }
         }
-        toRemove.forEach(n => n.remove());
+        toRemove.forEach(n => { if (n && n.parentNode) n.parentNode.removeChild(n); });
         return tmp.innerHTML;
     }
 
@@ -2328,7 +2371,7 @@
 
                         // Progressive rendering on desktop: keep typing until content arrives
                         if (!isSmallViewport && fullMessage.length > 0) {
-                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(fullMessage);
+                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(fullMessage));
                             if (receivedMessageTextContainer._typingTimer) {
                                 clearInterval(receivedMessageTextContainer._typingTimer);
                                 delete receivedMessageTextContainer._typingTimer;
@@ -2348,7 +2391,7 @@
                         await hideDownloadOverlayAndWait();
                         fullMessage += evt.message.content;
                         if (!isSmallViewport) {
-                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + convertMarkdownToHTML(fullMessage);
+                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(fullMessage));
                             if (receivedMessageTextContainer._typingTimer) {
                                 clearInterval(receivedMessageTextContainer._typingTimer);
                                 delete receivedMessageTextContainer._typingTimer;
@@ -2654,6 +2697,10 @@
     document.getElementById('import-chat-data').addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
+            if (!isValidChatImportFile(file)) {
+                event.target.value = '';
+                return;
+            }
             const importBtn = document.getElementById('import-button');
             const prevText = importBtn ? importBtn.textContent : '';
             if (importBtn) { importBtn.disabled = true; importBtn.textContent = t('downloading', 'Downloading...'); }
@@ -2716,6 +2763,10 @@
     if (smpImportInput) smpImportInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
+            if (!isValidChatImportFile(file)) {
+                event.target.value = '';
+                return;
+            }
             const importBtn = document.getElementById('smp-import-button');
             const prevText = importBtn ? importBtn.textContent : '';
             if (importBtn) { importBtn.disabled = true; importBtn.textContent = t('downloading', 'Downloading...'); }

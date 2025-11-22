@@ -19,6 +19,7 @@
     const URL_DELETE_ICON = getUrl('deleteIcon');
     const URL_UPLOAD_ICON = getUrl('uploadIcon');
     const URL_LOAD_ICON_INFO = getUrl('loadIconInfo');
+    const MAX_ICON_UPLOAD_BYTES = 512 * 1024; // 512KB limit to avoid oversized icons on routers
 
     let is_select = false;
     let using_icon_key = "";
@@ -191,6 +192,23 @@
     const fileInput = document.getElementById('imageInput');
     let selectedFile = null;
 
+    function isValidIconFile(file) {
+        if (!file) return false;
+        const name = (file.name || '').toLowerCase();
+        const allowedExt = ['.png', '.jpg', '.jpeg', '.webp'];
+        const extOk = allowedExt.some(ext => name.endsWith(ext));
+        const mimeOk = !file.type || file.type.startsWith('image/');
+        if (!mimeOk || !extOk) {
+            showToast(t('pleaseSelectImage', 'Please select an image file.'), 'error');
+            return false;
+        }
+        if (file.size > MAX_ICON_UPLOAD_BYTES) {
+            showToast('Image is too large (max 512KB).', 'error');
+            return false;
+        }
+        return true;
+    }
+
     dropArea.addEventListener('click', () => fileInput.click());
 
     dropArea.addEventListener('dragover', (event) => {
@@ -220,9 +238,8 @@
     });
 
     function handleFile(file) {
-
-        if (!file.type.startsWith('image/')) {
-            showToast(t('pleaseSelectImage', 'Please select an image file.'), 'error');
+        if (!isValidIconFile(file)) {
+            if (fileInput) fileInput.value = '';
             return;
         }
 
@@ -231,6 +248,8 @@
         reader.onload = function(e) {
             const container = document.getElementById('upload-image-container');
             const preview_container = document.getElementById('oasis-preview-container');
+            const prevLabel = document.getElementById('icon-label');
+            if (prevLabel) prevLabel.remove();
             const label = document.createElement('label');
             label.id = "icon-label";
             label.classList.add('icon-label');
