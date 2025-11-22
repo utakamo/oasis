@@ -702,6 +702,8 @@ textarea:focus-visible {
         bottom: 0;
         z-index: 1200;
         box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        transition: transform .18s ease, bottom .18s ease;
+        will-change: transform, bottom;
     }
 
     .chat-messages {
@@ -829,7 +831,7 @@ textarea:focus-visible {
         display: inline;
         color: #007bff;
     }
-
+    
     .oasis-menu-btn {
         background: none;
         color: #ffffff;
@@ -838,6 +840,10 @@ textarea:focus-visible {
         cursor: pointer;
         padding: 5px;
         transition: color 0.2s ease;
+    }
+
+    .mobile-bottom-sheet {
+        transition: bottom .25s ease, transform .25s ease;
     }
 }
 

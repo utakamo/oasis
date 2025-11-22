@@ -317,16 +317,21 @@
     }
 
     // Ensure an element is fully visible inside a scroll container
-    function ensureElementFullyVisible(container, target, extraPadding = 24) {
+    function ensureElementFullyVisible(container, target, extraPadding = 24, smooth = false) {
         if (!container || !target) return;
         const cRect = container.getBoundingClientRect();
         const tRect = target.getBoundingClientRect();
         const overshootBottom = tRect.bottom - (cRect.bottom - extraPadding);
         const overshootTop = (cRect.top + extraPadding) - tRect.top;
-        if (overshootBottom > 0) {
-            container.scrollTop += overshootBottom;
-        } else if (overshootTop > 0) {
-            container.scrollTop -= overshootTop;
+        let delta = 0;
+        if (overshootBottom > 0) delta = overshootBottom;
+        else if (overshootTop > 0) delta = -overshootTop;
+        if (delta !== 0) {
+            if (smooth) {
+                container.scrollTo({ top: container.scrollTop + delta, behavior: 'smooth' });
+            } else {
+                container.scrollTop += delta;
+            }
         }
     }
 
@@ -338,12 +343,13 @@
         if (!force && !window.__oasisStickToBottom) return;
         const lastReceived = chatMessages.querySelector('.message.received:last-of-type');
         const target = lastReceived || chatMessages.querySelector('.message:last-child');
-        const doScroll = () => ensureElementFullyVisible(chatMessages, target, 24);
-        doScroll();
+        const doScroll = (smooth = false) => ensureElementFullyVisible(chatMessages, target, 24, smooth);
+        // prefer smooth scroll for user-triggered updates
+        doScroll(true);
         if (force) {
             // Retry to absorb viewport/IME animation timing
-            setTimeout(doScroll, 100);
-            setTimeout(doScroll, 250);
+            setTimeout(() => doScroll(true), 100);
+            setTimeout(() => doScroll(true), 250);
         }
     }
 
@@ -710,25 +716,25 @@
             if (cachedInputHeight === null || remeasure) {
                 cachedInputHeight = chatInput.offsetHeight || 0;
             }
-            const paddingBottom = cachedInputHeight + kb + 16;
-            chatMessages.style.paddingBottom = paddingBottom + 'px';
+                const paddingBottom = cachedInputHeight + kb + 16;
+                chatMessages.style.paddingBottom = paddingBottom + 'px';
 
-            if (forceBottom && window.__oasisStickToBottom) {
-                keepLatestMessageVisible(true);
+                if (forceBottom && window.__oasisStickToBottom) {
+                    keepLatestMessageVisible(true);
+                }
             }
-        }
 
-        function scheduleMobileLayout(forceBottom = false, remeasure = false) {
-            mobileLayoutForce = mobileLayoutForce || forceBottom;
-            mobileLayoutRemeasure = mobileLayoutRemeasure || remeasure;
-            if (mobileLayoutTimer) return;
-            mobileLayoutTimer = setTimeout(() => {
-                mobileLayoutTimer = null;
-                applyMobileLayout(mobileLayoutForce, mobileLayoutRemeasure);
-                mobileLayoutForce = false;
-                mobileLayoutRemeasure = false;
-            }, 50);
-        }
+            function scheduleMobileLayout(forceBottom = false, remeasure = false) {
+                mobileLayoutForce = mobileLayoutForce || forceBottom;
+                mobileLayoutRemeasure = mobileLayoutRemeasure || remeasure;
+                if (mobileLayoutTimer) cancelAnimationFrame(mobileLayoutTimer);
+                mobileLayoutTimer = requestAnimationFrame(() => {
+                    mobileLayoutTimer = null;
+                    applyMobileLayout(mobileLayoutForce, mobileLayoutRemeasure);
+                    mobileLayoutForce = false;
+                    mobileLayoutRemeasure = false;
+                });
+            }
 
         function setChatInputDisabled(disabled) {
             const ci = document.querySelector('.chat-input');
