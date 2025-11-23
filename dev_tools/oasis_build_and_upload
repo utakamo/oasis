@@ -53,6 +53,7 @@ fi
 OASIS_VER="3.2.6-r1"
 LUCIOASIS_VER="3.2.6-r1"
 TOOL_VER="1.1.1-r1"
+AGENT_VER="1.0.0-r1"
 RETIRED_VER="1.0.0-r1"
 EDGE_VER="1.0.0-r1"
 TEST_VER="1.0.0-r1"
@@ -146,6 +147,7 @@ cd "$OPENWRT_DIR"
 # ====================================
 make package/oasis/{clean,compile}
 make package/oasis-mod-tool/{clean,compile}
+make package/oasis-mod-agent/{clean,compile}
 make package/oasis-mod-retired/{clean,compile}
 make package/luci-app-oasis/{clean,compile}
 make package/oasis-tool-edge/{clean,compile}
@@ -159,6 +161,7 @@ FILES=(
   "oasis_${OASIS_VER}_all.ipk"
   "luci-app-oasis_${LUCIOASIS_VER}_all.ipk"
   "oasis-mod-tool_${TOOL_VER}_all.ipk"
+  "oasis-mod-agent_${AGENT_VER}_all.ipk"
   "oasis-mod-retired_${RETIRED_VER}_all.ipk"
   "oasis-tool-edge_${EDGE_VER}_all.ipk"
   "oasis-mod-test_${TEST_VER}_all.ipk"

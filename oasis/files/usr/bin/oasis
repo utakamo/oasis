@@ -67,6 +67,7 @@ Commands:
  delete no=<service-number>
  chat [no=<chat-number>]
  prompt <message>
+ agent [-t <turns>] <goal>
  sysmsg [chat|prompt <option> <value>]
  delchat no=<chat-number>
  rename no=<chat-number> <title>
@@ -180,6 +181,16 @@ commands.prompt = function(args)
     else
         help()
     end
+end
+
+commands.agent = function(args)
+    local ok, agent = pcall(require, "oasis.agent.main")
+    if not ok or (type(agent) ~= "table") or (not agent.run) then
+        print("This command requires oasis-mod-agent. Please install oasis-mod-agent first.")
+        return
+    end
+
+    agent.run(args)
 end
 
 commands.sysmsg = function(args)
