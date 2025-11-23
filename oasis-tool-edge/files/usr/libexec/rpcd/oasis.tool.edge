@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local jsonc = require("luci.jsonc")
+local jsonc  = require("luci.jsonc")
 
 local methods = {
     function_calling = {
@@ -8,7 +8,33 @@ local methods = {
 
         call = function(args)
             local uci = require("luci.model.uci").cursor()
-            local jsonc = require("luci.jsonc")
+            local client = require("oasis.local.tool.client")
+            local common = require("oasis.common")
+
+            -- Parse param string ("name:type:value" separated by comma/semicolon) or JSON into a Lua table.
+            local function parse_param_str(p)
+                if not p or #p == 0 then return {} end
+
+                local as_json = jsonc.parse(p)
+                if type(as_json) == "table" then
+                    return as_json
+                end
+
+                local args = {}
+                for entry in tostring(p):gmatch("[^,;]+") do
+                    local name, typ, val = entry:match("^([^:]+):([^:]+):(.+)$")
+                    if name then
+                        if typ == "number" or typ == "integer" then
+                            args[name] = tonumber(val)
+                        elseif typ == "boolean" then
+                            args[name] = (val == "true" or val == "1")
+                        else
+                            args[name] = val
+                        end
+                    end
+                end
+                return args
+            end
 
             local info = uci:get_all("oasis") or {}
 
@@ -29,60 +55,14 @@ local methods = {
                 return r
             end
 
-            if target_def.enable then
+            if tostring(target_def.enable) ~= "1" then
                 r.result = jsonc.stringify({error = "Execution of the specified tool is prohibited."})
-            end
-
-            -- 1) Try requiring the server as a Lua module and invoke it
-            if target_def.server then
-                local ok, mod = pcall(require, target_def.server)
-                if ok then
-                    -- If the module is a function itself
-                    if type(mod) == "function" then
-                        local succ, res = pcall(mod, { tool = args.tool, param = args.param })
-                        if succ then
-                            r.result = jsonc.stringify(res or { status = "OK" })
-                            return r
-                        else
-                            r.result = jsonc.stringify({ status = "module call failed", error = tostring(res) })
-                            return r
-                        end
-                    end
-
-                    -- If it's a table, try common callable fields (call/run/main)
-                    if type(mod) == "table" then
-                        local fn = mod.call or mod.run or mod.main
-                        if type(fn) == "function" then
-                            local succ, res = pcall(fn, { tool = args.tool, param = args.param })
-                            if succ then
-                                r.result = jsonc.stringify(res or { status = "OK" })
-                                return r
-                            else
-                                r.result = jsonc.stringify({ status = "module call failed", error = tostring(res) })
-                                return r
-                            end
-                        end
-                    end
-                end
-            end
-
-            -- 2) Try calling via ubus using luci.util.ubus
-            local util = require("luci.util")
-            local success, ret = pcall(function()
-                -- Many ubus services use different method names; try 'call' and adjust if needed
-                return util.ubus(target_def.server, "call", { tool = args.tool, param = args.param }) or {}
-            end)
-
-            if success then
-                r.result = jsonc.stringify(ret)
-                return r
-            else
-                r.result = jsonc.stringify({ status = "ubus call failed", error = tostring(ret) })
                 return r
             end
 
-            -- If no executable server was found
-            r.result = jsonc.stringify({ status = "No executable server for tool", server = tostring(target_def.server) })
+            local param_tbl = parse_param_str(args.param)
+            local res = client.exec_server_tool(common.ai.format.rpc_output, args.tool, param_tbl)
+            r.result = jsonc.stringify(res or { error = "No response" })
             return r
         end
     },
