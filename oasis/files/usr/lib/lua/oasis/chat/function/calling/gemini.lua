@@ -65,6 +65,7 @@ function M.process(self, message)
     local first_output_str = ""
     local speaker = { role = "assistant", tool_calls = {} }
     local reboot = false
+    local shutdown = false
 
 	local function handle_one_call(name, args, id)
 		local call_id = id or ""
@@ -82,6 +83,10 @@ function M.process(self, message)
 			debug:log("oasis.log", "process", "result.reboot = true")
 			reboot = result.reboot
 		end
+        if result.shutdown then
+            debug:log("oasis.log", "process", "result.shutdown = true")
+            shutdown = result.shutdown
+        end
 
 		local output = jsonc.stringify(result, false)
 		table.insert(function_call.tool_outputs, {
@@ -138,6 +143,7 @@ function M.process(self, message)
 
     local plain_text_for_console = first_output_str
     function_call.reboot = reboot
+    function_call.shutdown = shutdown
     local response_ai_json = jsonc.stringify(function_call, false)
 	debug:log("oasis.log", "recv_ai_msg", "response_ai_json [gemini] = " .. response_ai_json)
 	debug:log("oasis.log", "recv_ai_msg",

@@ -22,6 +22,7 @@ error_msg.load_service2 = "\tPlease add the service configuration with the add c
 -- from being triggered in the current chat.
 local clear_flg = function()
     os.remove(common.file.console.reboot_required)
+    os.remove(common.file.console.shutdown_required)
     os.remove(common.file.service.restart_required)
 end
 
@@ -728,6 +729,30 @@ local function judge_system_reboot()
     os.exit(0)
 end
 
+local function judge_system_shutdown()
+
+    if not misc.check_file_exist(common.file.console.shutdown_required) then
+        return
+    end
+
+    console.write("\nSystem Shutdown [Y/N]: ")
+    console.flush()
+
+    local reply = console.read()
+    if reply == "Y" then
+        local cmd = require("oasis.local.tool.system.command")
+        cmd.system_shutdown_after_5sec()
+    else
+        os.remove(common.file.console.shutdown_required)
+        return
+    end
+
+    console.write("\n")
+
+    os.remove(common.file.console.shutdown_required)
+    os.exit(0)
+end
+
 local function judge_service_restart()
 
 	local path = common.file.service.restart_required
@@ -768,6 +793,7 @@ end
 local function get_user_input(chat)
     local your_message
     repeat
+        judge_system_shutdown()
         judge_system_reboot()
         judge_service_restart()
         console.write("\27[32m\nYou :\27[0m")
@@ -980,6 +1006,7 @@ local prompt = function(arg)
         end
     end
 
+    judge_system_shutdown()
     judge_system_reboot()
     judge_service_restart()
 end
@@ -1203,6 +1230,7 @@ local rpc_output = function(arg)
     local new_chat_info, message = nil, nil
     local status_tbl = { status = common.status.ok }
     local tool_info = nil
+    local shutdown = false
 
     -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
     if ous.setup_msg(service, chat_ctx, { role = common.role.user, message = arg.message}) then
@@ -1241,12 +1269,17 @@ local rpc_output = function(arg)
     -- Attach tool_info for external device consumption (backward compatible)
     if tool_info then
         status_tbl.tool_info = tool_info
+        local parsed = jsonc.parse(tool_info)
+        if parsed and parsed.shutdown == true then
+            shutdown = true
+        end
     end
 
     local reboot = false
     if service.get_reboot_required then
         reboot = service:get_reboot_required() or false
     end
+    status_tbl.shutdown = shutdown
     return status_tbl, new_chat_info, message, reboot
 end
 

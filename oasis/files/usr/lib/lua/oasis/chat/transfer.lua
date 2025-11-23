@@ -113,6 +113,9 @@ local output_response_msg = function(format, text_for_console, response_ai_json,
             if tool_info.reboot then
                 misc.write_file(common.file.console.reboot_required, "reboot")
             end
+            if tool_info.shutdown then
+                misc.write_file(common.file.console.shutdown_required, "shutdown")
+            end
 
         elseif (text_for_console) and (#text_for_console) > 0 then
             console.write(text_for_console)

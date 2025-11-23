@@ -294,4 +294,16 @@ server.tool("system_reboot", {
     end
 })
 
+server.tool("system_shutdown", {
+    tool_desc = "Request a System Shutdown on the OpenWrt System.",
+    call = function()
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
+                shutdown = true
+            }
+        )
+    end
+})
+
 server.run(arg)

@@ -24,6 +24,7 @@
     const URL_LOAD_CHAT = getUrl('loadChat');
     const URL_APPLY_UCI_CMD = getUrl('applyUciCmd');
     const URL_SYSTEM_REBOOT = getUrl('systemReboot');
+    const URL_SYSTEM_SHUTDOWN = getUrl('systemShutdown');
     const URL_RESTART_SERVICE = getUrl('restartService');
     const URL_UCI_SHOW = getUrl('uciShow');
     const URL_IMPORT_CHAT = getUrl('importChat');
@@ -1883,6 +1884,88 @@
         }
     }
 
+    function show_shutdown_popup() {
+        const chatMessagesContainer = document.querySelector('.chat-messages');
+        if (!chatMessagesContainer) return;
+
+        if (document.getElementById("oasis-shutdown")) return;
+
+        const systemMessage = document.createElement("div");
+        systemMessage.classList.add("message", "oasis-system");
+        systemMessage.id = "oasis-shutdown";
+
+        const messageTextDiv = document.createElement("div");
+        messageTextDiv.className = "message-text";
+
+        const titleDiv = document.createElement("div");
+        titleDiv.textContent = t('shutdownPrompt', 'System shutdown is required. Shutdown now?');
+        messageTextDiv.appendChild(titleDiv);
+
+        const popupButtonsDiv = document.createElement("div");
+        popupButtonsDiv.className = "uci-popup-buttons";
+
+        const popupDiv = document.createElement("div");
+        popupDiv.className = "uci-popup";
+
+        let cancelButton;
+        const shutdownButton = document.createElement("button");
+        shutdownButton.id = "apply-shutdown";
+        shutdownButton.textContent = t('shutdownButton', 'Shutdown');
+        shutdownButton.addEventListener('click', async function () {
+            shutdownButton.disabled = true;
+            if (cancelButton) cancelButton.disabled = true;
+            try {
+                const res = await fetch(URL_SYSTEM_SHUTDOWN, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                let data = null;
+                try { data = await res.json(); } catch (_) {}
+                if (!data || data.status !== 'OK') {
+                    console.error('system-shutdown NG:', data);
+                } else {
+                    const el = document.getElementById("oasis-shutdown");
+                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                }
+            } catch (e) {
+                console.error('system-shutdown failed:', e);
+            } finally {
+                shutdownButton.disabled = false;
+                if (cancelButton) cancelButton.disabled = false;
+            }
+        });
+
+        cancelButton = document.createElement("button");
+        cancelButton.id = "cancel-shutdown";
+        cancelButton.textContent = t('cancelButton', 'Cancel');
+        cancelButton.addEventListener('click', async function () {
+            try {
+                await fetch(URL_SYSTEM_SHUTDOWN, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'cancel=1'
+                });
+            } catch (_) {}
+            const el = document.getElementById("oasis-shutdown");
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        });
+
+        popupDiv.appendChild(shutdownButton);
+        popupDiv.appendChild(cancelButton);
+
+        popupButtonsDiv.appendChild(popupDiv);
+        messageTextDiv.appendChild(popupButtonsDiv);
+        systemMessage.appendChild(messageTextDiv);
+        chatMessagesContainer.appendChild(systemMessage);
+
+        if (typeof keepLatestMessageVisible === 'function') {
+            keepLatestMessageVisible(true);
+        }
+    }
+
     function show_restart_service_popup(serviceName) {
         const chatMessagesContainer = document.querySelector('.chat-messages');
         if (!chatMessagesContainer) return;
@@ -2030,6 +2113,7 @@
         let toolNoticeShown = false;
         let toolNoticeMessageDiv = null;
         let rebootRequired = false;
+        let shutdownRequired = false;
         let pendingServiceRestart = '';
 
         try {
@@ -2076,6 +2160,8 @@
                     //console.log('[AI evt]', evt);
 
                     if (evt && evt.reboot === true) { rebootRequired = true }
+                    if (evt && evt.shutdown === true) { shutdownRequired = true }
+                    if (evt && evt.shutdown === true) { shutdownRequired = true }
 
                     // Custom stream events: execution/download
                     if (evt && typeof evt.type === 'string') {
@@ -2394,6 +2480,12 @@
             if (rebootRequired === true) {
                 setTimeout(async () => {
                     show_reboot_popup();
+                }, 0);
+            }
+            // Prompt shutdown if required by tool results
+            if (shutdownRequired === true) {
+                setTimeout(async () => {
+                    show_shutdown_popup();
                 }, 0);
             }
             // Show restart-service popup at the same timing as reboot popup (final phase)

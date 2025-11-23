@@ -81,6 +81,7 @@ file.pkg.install                = "/tmp/oasis/installing_pkg_info"
 file.pkg.reboot_required_path   = "/tmp/oasis/pkg_reboot_required/"
 file.console                    = {}
 file.console.reboot_required    = "/tmp/oasis/reboot_required"
+file.console.shutdown_required  = "/tmp/oasis/shutdown_required"
 file.service                    = {}
 file.service.restart_required   = "/tmp/oasis/restart_required"
 

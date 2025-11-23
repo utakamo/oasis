@@ -60,6 +60,7 @@ function M.process(self, message)
     local first_output_str = ""
     local speaker = { role = "assistant", tool_calls = {} }
     local reboot = false
+    local shutdown = false
 
     -- Case 1: OpenAI-like tool_calls (fallback)
     if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
@@ -82,6 +83,10 @@ function M.process(self, message)
                     if result.reboot then
                         debug:log("oasis.log", "process", "result.reboot = true")
                         reboot = result.reboot
+                    end
+                    if result.shutdown then
+                        debug:log("oasis.log", "process", "result.shutdown = true")
+                        shutdown = result.shutdown
                     end
 
                     local output = jsonc.stringify(result, false)
@@ -165,6 +170,7 @@ function M.process(self, message)
 
     local plain_text_for_console = first_output_str
     function_call.reboot = reboot
+    function_call.shutdown = shutdown
     local response_ai_json = jsonc.stringify(function_call, false)
     if self then self.chunk_all = "" end
     return plain_text_for_console, response_ai_json, speaker, true
@@ -246,5 +252,4 @@ function M.convert_tool_call(chat, speaker, msg)
 end
 
 return M
-
 

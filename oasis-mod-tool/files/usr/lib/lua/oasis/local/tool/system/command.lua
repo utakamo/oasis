@@ -11,6 +11,13 @@ local schedule_reboot = function(delay_seconds)
     util.exec("(sleep " .. tostring(delay_seconds) .. " && reboot) >/dev/null 2>&1 &")
 end
 
+local schedule_shutdown = function(delay_seconds)
+    delay_seconds = tonumber(delay_seconds) or 0
+    if delay_seconds < 0 then delay_seconds = 0 end
+
+    util.exec("(sleep " .. tostring(delay_seconds) .. " && poweroff) >/dev/null 2>&1 &")
+end
+
 local check_service = function(service)
 
 	if type(service) ~= "string" then
@@ -65,6 +72,13 @@ local system_reboot_after_10sec = function() schedule_reboot(10) end
 local system_reboot_after_15sec = function() schedule_reboot(15) end
 local system_reboot_after_20sec = function() schedule_reboot(20) end
 
+-- System Shutdown
+local system_shutdown = function() schedule_shutdown(0) end
+local system_shutdown_after_5sec  = function() schedule_shutdown(5)  end
+local system_shutdown_after_10sec = function() schedule_shutdown(10) end
+local system_shutdown_after_15sec = function() schedule_shutdown(15) end
+local system_shutdown_after_20sec = function() schedule_shutdown(20) end
+
 -- Restart Service
 local restart_service = function(service) schedule_restart(0, service) end
 local restart_service_after_3sec = function(service) schedule_restart(3, service) end
@@ -91,6 +105,11 @@ return {
     system_reboot_after_10sec = system_reboot_after_10sec,
     system_reboot_after_15sec = system_reboot_after_15sec,
     system_reboot_after_20sec = system_reboot_after_20sec,
+    system_shutdown = system_shutdown,
+    system_shutdown_after_5sec  = system_shutdown_after_5sec,
+    system_shutdown_after_10sec = system_shutdown_after_10sec,
+    system_shutdown_after_15sec = system_shutdown_after_15sec,
+    system_shutdown_after_20sec = system_shutdown_after_20sec,
 	restart_service = restart_service,
 	restart_service_after_3sec = restart_service_after_3sec,
 	system_command = system_command,
