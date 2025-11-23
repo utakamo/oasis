@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 
 -- Agent mode for Oasis.
--- Goal指示を1回受け取り、ツール呼び分けを自動で繰り返し、最終応答を返す簡易ループ。
+-- A simple loop that receives a Goal instruction once, automatically repeats tool dispatching, and returns the final response.
 
 local uci      = require("luci.model.uci").cursor()
 local common   = require("oasis.common")
@@ -13,7 +13,7 @@ local debug    = require("oasis.chat.debug")
 
 local DEFAULT_MAX_TURNS = 6
 
--- tool/tool_callsの残骸を消して、サービス切替時の不整合を避ける。
+-- Remove remnants of tool/tool_calls to avoid inconsistencies when switching services.
 local function sanitize_chat(chat)
     if not chat or not chat.messages then
         return
