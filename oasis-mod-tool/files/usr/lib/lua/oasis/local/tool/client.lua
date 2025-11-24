@@ -409,6 +409,25 @@ local exec_server_tool = function(format, tool, data)
     local found = false
     local result = {}
 
+    local function merge_parsed_result(tbl)
+        if type(tbl) ~= "table" then
+            return tbl
+        end
+
+        local raw = tbl.result
+        if type(raw) == "string" then
+            local parsed = jsonc.parse(raw)
+            if type(parsed) == "table" then
+                for k, v in pairs(parsed) do
+                    if tbl[k] == nil then
+                        tbl[k] = v
+                    end
+                end
+            end
+        end
+        return tbl
+    end
+
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
 
         debug:log("oasis.log", "exec_server_tool", "config: s.server = " .. s.server)
@@ -422,6 +441,7 @@ local exec_server_tool = function(format, tool, data)
             found = true
             debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
             result = ubus_call(s.server, s.name, data, s.timeout)
+            result = merge_parsed_result(result)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
 
             -- [Control install package]
