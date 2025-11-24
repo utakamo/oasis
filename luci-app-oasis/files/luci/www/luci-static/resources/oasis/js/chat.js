@@ -153,8 +153,8 @@
         });
     }
 
-    // Reboot progress (5s) and completion animation
-    function startRebootProgress(totalMs = 5000) {
+    // Reboot/Shutdown progress (5s) and completion animation
+    function startRebootProgress(totalMs = 5000, opts = {}) {
         const applyingPopup = document.getElementById('applying-popup');
         const title = document.getElementById('applying-popup-title');
         const progressBar = document.getElementById('progressBar');
@@ -162,11 +162,15 @@
         const announce = document.getElementById('reboot_announce');
         if (!applyingPopup || !title || !progressBar) return;
 
-        title.textContent = t('rebooting', 'Rebooting...');
+        const titleText = opts.titleText || t('rebooting', 'Rebooting...');
+        const countdownText = opts.countdownText || t('rebootCountdown', 'Rebooting in {seconds}s ({percent}%)');
+        const skipAnnounce = opts.skipAnnounce === true;
+
+        title.textContent = titleText;
         applyingPopup.style.display = 'block';
         centerElementInChat(applyingPopup);
         progressBar.style.width = '0%';
-        if (announce) { announce.style.display = 'none'; announce.classList.remove('reboot-animate'); }
+        if (announce && !skipAnnounce) { announce.style.display = 'none'; announce.classList.remove('reboot-animate'); }
 
         const startTs = Date.now();
         const tick = () => {
@@ -176,13 +180,13 @@
             if (info) {
                 const remainMs = Math.max(0, totalMs - elapsed);
                 const remainSec = Math.ceil(remainMs / 1000);
-                info.textContent = formatString(t('rebootCountdown', 'Rebooting in {seconds}s ({percent}%)'), {
+                info.textContent = formatString(countdownText, {
                     seconds: remainSec,
                     percent: pct
                 });
             }
             if (elapsed >= totalMs) {
-                if (announce) { announce.style.display = 'block'; announce.classList.add('reboot-animate'); }
+                if (announce && !skipAnnounce) { announce.style.display = 'block'; announce.classList.add('reboot-animate'); }
             } else {
                 requestAnimationFrame(tick);
             }
@@ -1928,6 +1932,11 @@
                 } else {
                     const el = document.getElementById("oasis-shutdown");
                     if (el && el.parentNode) el.parentNode.removeChild(el);
+                    startRebootProgress(7000, {
+                        titleText: t('shutdowning', 'Shutting down...'),
+                        countdownText: t('shutdownCountdown', 'Shutting down in {seconds}s ({percent}%)'),
+                        skipAnnounce: true
+                    });
                 }
             } catch (e) {
                 console.error('system-shutdown failed:', e);

@@ -1124,7 +1124,7 @@ pre {
     color: white;
 }
 
-#apply {
+#apply, #apply-shutdown {
     background-color: #ff1493;
     color: white; 
     margin: 10px;
@@ -1138,7 +1138,7 @@ pre {
     background-color: #0056b3;
 }
 
-#apply:hover {
+#apply:hover, #apply-shutdown:hover {
     background-color: #ff69b4;
 }
 
