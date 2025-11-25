@@ -92,6 +92,8 @@
             }
             return aligns;
         };
+        const unorderedListRe = /^\s*([*+-])\s+(.+)$/;
+        const orderedListRe = /^\s*(\d+)[.)]\s+(.+)$/;
         const isTableHeaderStart = (i) => {
             if (i + 1 >= lines.length) return null;
             const head = lines[i].trim();
@@ -170,6 +172,28 @@
                 }
                 html += '</tbody></table></div>';
                 i--; // compensate for for-loop increment
+                continue;
+            }
+
+            // unordered/ordered list
+            const listMatch = trimmedLine.match(unorderedListRe) || trimmedLine.match(orderedListRe);
+            if (listMatch) {
+                flushParagraph();
+                const isOrdered = !!trimmedLine.match(orderedListRe);
+                const items = [];
+                let j = i;
+                while (j < lines.length) {
+                    const line = lines[j].trim();
+                    if (line === '') break;
+                    const m = line.match(isOrdered ? orderedListRe : unorderedListRe);
+                    if (!m) break;
+                    items.push(formatInline(m[2]));
+                    j++;
+                }
+                html += isOrdered ? '<ol>' : '<ul>';
+                items.forEach(text => { html += `<li>${text}</li>`; });
+                html += isOrdered ? '</ol>' : '</ul>';
+                i = j - 1; // offset for loop increment
                 continue;
             }
 
