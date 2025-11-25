@@ -219,6 +219,26 @@
     line-height: 1.5;
     box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 }
+.message .message-text ul,
+.message .message-text ol {
+    margin: 8px 0;
+    padding-left: 1.2em;
+    color: #222;
+    list-style-position: outside;
+}
+.message .message-text ul { list-style: disc; }
+.message .message-text ol { list-style: decimal; }
+.message .message-text li {
+    margin: 4px 0;
+    color: inherit;
+}
+.message .message-text ul ul,
+.message .message-text ol ol,
+.message .message-text ul ol,
+.message .message-text ol ul {
+    margin: 6px 0;
+    padding-left: 1.2em;
+}
 
 .message .message-meta {
     display: block;
