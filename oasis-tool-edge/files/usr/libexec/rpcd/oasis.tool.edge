@@ -66,6 +66,59 @@ local methods = {
             return r
         end
     },
+
+    tool_list = {
+        call = function()
+            local uci = require("luci.model.uci").cursor()
+
+            local tools = uci:get_all(common.db.uci.cfg)
+
+            -- Delete unnecessary information
+            tools.debug     = nil
+            tools.rpc       = nil
+            tools.storage   = nil
+            tools.role      = nil
+            tools.support   = nil
+            tools.assist    = nil
+            tools.rollback  = nil
+            tools.console   = nil
+
+            for key, tbl in pairs(tools) do
+                if (tbl[".type"] == "service") or ( tbl[".type"] == "chat") then
+                    tools[key] = nil
+                end
+            end
+
+            local server_list = {}
+            local seen = {}
+
+            for _, tool in pairs(tools) do
+                if not seen[tool.server] then
+                    server_list[#server_list + 1] = tool.server
+                    seen[tool.server] = true
+                end
+            end
+
+            local server_info = {}
+            for _, name in pairs(server_list) do
+                    server_info[#server_info + 1] = {}
+                    server_info[#server_info].name = name
+                if common.check_server_loaded(name) then
+                    server_info[#server_info].status = "loaded"
+                else
+                    server_info[#server_info].status = "loding"
+                end
+            end
+
+            local info = {}
+            info.tools = tools
+            info.server_info = server_info
+            info.local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+
+            r.result = jsonc.stringify({ local_tool = local_tool })
+            return r
+        end
+    },
 }
 
 local function parseInput()
