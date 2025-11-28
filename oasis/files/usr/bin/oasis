@@ -45,9 +45,27 @@ local options_spec = {
     ["-s"] = "s"
 }
 
+local function banner()
+    local cyan = "\27[36m"
+    local reset = "\27[0m"
+
+    print(cyan ..
+    "┏━━┓  ┏━━┓  ┏━━┓  ┏━━┓  ┏━━┓\n" ..
+    "┃┏┓┃  ┃┏┓┃  ┃┏━┛  ┗┓┏┛  ┃┏━┛\n" ..
+    "┃┃┃┃  ┃┗┛┃  ┃┗━┓   ┃┃   ┃┗━┓\n" ..
+    "┃┗┛┃  ┃┏┓┃  ┏━┛┃  ┏┛┗┓  ┏━┛┃\n" ..
+    "┗━━┛  ┗┛┗┛  ┗━━┛  ┗━━┛  ┗━━┛\n" ..
+    reset ..
+    "-------------------------------------------\n" ..
+    "Oasis 3.2.6\n" ..
+    "-------------------------------------------"
+    )
+end
+
 -- Print CLI help text.
 -- @return nil
 local function help()
+    console.print(banner())
     console.print([=[
 Usage: oasis <command> [[<options>] arguments]...
 
