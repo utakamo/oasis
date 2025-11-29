@@ -25,7 +25,6 @@ function index()
     entry({"admin", "network", "oasis"}, firstchild(), "Oasis", 30).dependent=false
     entry({"admin", "network", "oasis", "icons"}, template("oasis/icons"), "Icon", 60).dependent=false
     entry({"admin", "network", "oasis", "tools"}, template("oasis/tools"), "Tools", 50).dependent=false
-    entry({"admin", "network", "oasis", "rollback-list"}, template("oasis/rollback-list"), "Rollback List", 40).dependent=false
     entry({"admin", "network", "oasis", "sysmsg"}, template("oasis/sysmsg"), "System Message", 30).dependent=false
     entry({"admin", "network", "oasis", "setting"}, cbi("oasis/setting"), "General Setting", 20).dependent=false
     entry({"admin", "network", "oasis", "chat"}, template("oasis/chat"), "Chat with AI", 10).dependent=false
@@ -48,8 +47,6 @@ function index()
     entry({"admin", "network", "oasis", "uci-show"}, call("uci_show"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-extra-sysmsg"}, call("load_extra_sysmsg"), nil).leaf = true
     entry({"admin", "network", "oasis", "select-ai-service"}, call("select_ai_service"), nil).leaf = true
-    entry({"admin", "network", "oasis", "load-rollback-list"}, call("load_rollback_list"), nil).leaf = true
-    entry({"admin", "network", "oasis", "rollback-target-data"}, call("rollback_target_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "base-info"}, call("base_info"), nil).leaf = true
     entry({"admin", "network", "oasis", "change-tool-enable"}, call("change_tool_enable"), nil).leaf = true
     entry({"admin", "network", "oasis", "enable-tool"}, call("enable_tool"), nil).leaf = true
@@ -61,7 +58,7 @@ function index()
 	entry({"admin", "network", "oasis", "system-reboot"}, call("system_reboot"), nil).leaf = true
 	entry({"admin", "network", "oasis", "system-shutdown"}, call("system_shutdown"), nil).leaf = true
 	entry({"admin", "network", "oasis", "restart-service"}, call("restart_service"), nil).leaf = true
-	end
+end
 
 function uci_show_config(target)
     local params = uci:get_all(target) or {}
@@ -687,49 +684,6 @@ function select_ai_service()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json({status = "OK"})
-end
-
-function load_rollback_list()
-
-    -- debug:log("oasis.log", "\n--- [modlue.lua][load_rollback_list] ---")
-    local rollback_list = oasis.get_rollback_data_list()
-
-    if not rollback_list then
-        -- debug:log("oasis.log", "Failed to load config")
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({error = "Failed to load config"})
-        return
-    end
-
-    -- debug:log("oasis.log", "Failed to load config")
-    luci_http.prepare_content("application/json")
-    luci_http.write_json(rollback_list)
-end
-
-function rollback_target_data()
-
-    debug:log("oasis.log", "\n--- [module.lua][rollback_target_data] ---")
-    local index = luci_http.formvalue("index")
-
-    if not index then
-        debug:log("oasis.log", "Missing params")
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Missing params" })
-        return
-    end
-
-    local result = oasis.rollback_target_data(index)
-
-    if not result then
-        debug:log("oasis.log", "Failed to rollback data")
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Failed to rollback data" })
-        return
-    end
-
-    luci_http.prepare_content("application/json")
-    luci_http.write_json({ status = "OK" })
-    os.execute("reboot")
 end
 
 function base_info()

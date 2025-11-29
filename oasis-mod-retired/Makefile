@@ -7,6 +7,7 @@ PKG_RELEASE:=1
 INIT_DIR = /etc/init.d
 APP_DIR = /usr/bin
 LUA_LIBRARY_DIR = /usr/lib/lua
+LUCI_MODULEDIR = /usr/lib/lua/luci/controller
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -25,9 +26,11 @@ define Package/oasis-mod-retired/install
 	$(INSTALL_DIR) $(1)$(INIT_DIR)
 	$(INSTALL_DIR) $(1)$(APP_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_DIR) $(1)$(LUCI_MODULEDIR)/oasis-retired
 	$(INSTALL_BIN) ./files/etc/init.d/oasis.init $(1)$(INIT_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/bin/oasisd $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/filter.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_DATA) ./files/luci/controller/module.lua $(1)$(LUCI_MODULEDIR)/oasis-retired
 endef
 
 $(eval $(call BuildPackage,oasis-mod-retired))
