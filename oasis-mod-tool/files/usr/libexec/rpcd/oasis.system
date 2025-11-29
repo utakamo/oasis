@@ -1,0 +1,97 @@
+#!/usr/bin/env lua
+
+--[[
+
+# Oasis Local Tool (OLT) Server (Lua Script Ver)
+ This server script is based on concepts inspired by the Model Context Protocol and Agents.json.
+ By leveraging UBUS, an integral part of the OpenWrt ecosystem, the client and server can cooperate
+ to allow the AI to access the tools it provides.
+ On OpenWrt systems with Oasis and oasis-mod-tool installed, third-party developers can easily expose
+ tools to the AI by simply downloading server scripts.
+
+# Rules for defining tools in the local tool server
+    - Rule 1. 
+        If a tool requires arguments, you must specify a type string for each argument.
+
+        Reference:
+        1. string type  ---> "a_string"
+        TODO: Investigate data type specifications other than "a_string" and add them here. 
+
+    - Rule 2. 
+        The table returned by server.response must be an associative array (key-value pairs).
+
+        Example: 
+        server.response({reply = "Hello Tool Client!"})
+
+# Note
+ This script is loaded by the `rpcd` module and registered with `ubusd` as a UBUS object.  
+
+# Important
+ Please avoid defining global functions in ubus server scripts.
+ For AI tool scripts used in Oasis (like this one), write your logic using server.tool.
+ If you need to create custom functions, put them inside the call field of the table that’s passed as the second argument to server.tool.
+ The same rule applies when using require to load external libraries—make sure to call require inside the call field too.
+
+ About rpcd lua plugin:
+ https://github.com/openwrt/luci/blob/37ea60da580490a4d8178134297152661f25151d/applications/luci-app-example/root/usr/libexec/rpcd/luci.example
+]]
+
+local server = require("oasis.local.tool.server")
+
+server.tool("system_reboot", {
+    tool_desc = "Request a System Reboot on the OpenWrt System.",
+    call = function()
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the reboot request. Inform the user that the reboot will proceed once they grant permission.",
+                reboot = true
+            }
+        )
+    end
+})
+
+server.tool("system_shutdown", {
+    tool_desc = "Request a System Shutdown on the OpenWrt System.",
+    call = function()
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
+                shutdown = true
+            }
+        )
+    end
+})
+
+
+server.tool("get_memory_info", {
+    tool_desc = "Get the system info load (uptime/meminfo) of this OpenWrt device.",
+    call = function()
+        local util = require("luci.util")
+        local uptime_info = util.exec("uptime")
+        local meminfo = util.exec("cat /proc/meminfo")
+        local mem_total = meminfo:match("MemTotal:%s+(%d+)")
+        local mem_free = meminfo:match("MemFree:%s+(%d+)")
+        return server.response({
+            uptime = util.trim(uptime_info),
+            mem_total_kb = tonumber(mem_total),
+            mem_free_kb = tonumber(mem_free)
+        })
+    end
+})
+
+server.tool("get_storage_info", {
+    tool_desc = "Get the storage usage of this OpenWrt device.",
+    call = function()
+        local util = require("luci.util")
+        local df = util.exec("df -h / 2>/dev/null | tail -n 1")
+        local size, used, avail, usep = df:match("%S+%s+(%S+)%s+(%S+)%s+(%S+)%s+(%S+)")
+        return server.response({
+            size = size,
+            used = used,
+            available = avail,
+            usage_percent = usep
+        })
+    end
+})
+
+server.run(arg)

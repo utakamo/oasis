@@ -1,0 +1,181 @@
+#!/usr/bin/env lua
+
+--[[
+
+# Oasis Local Tool (OLT) Server (Lua Script Ver)
+ This server script is based on concepts inspired by the Model Context Protocol and Agents.json.
+ By leveraging UBUS, an integral part of the OpenWrt ecosystem, the client and server can cooperate
+ to allow the AI to access the tools it provides.
+ On OpenWrt systems with Oasis and oasis-mod-tool installed, third-party developers can easily expose
+ tools to the AI by simply downloading server scripts.
+
+# Rules for defining tools in the local tool server
+    - Rule 1. 
+        If a tool requires arguments, you must specify a type string for each argument.
+
+        Reference:
+        1. string type  ---> "a_string"
+        TODO: Investigate data type specifications other than "a_string" and add them here. 
+
+    - Rule 2. 
+        The table returned by server.response must be an associative array (key-value pairs).
+
+        Example: 
+        server.response({reply = "Hello Tool Client!"})
+
+# Note
+ This script is loaded by the `rpcd` module and registered with `ubusd` as a UBUS object.  
+
+# Important
+ Please avoid defining global functions in ubus server scripts.
+ For AI tool scripts used in Oasis (like this one), write your logic using server.tool.
+ If you need to create custom functions, put them inside the call field of the table that’s passed as the second argument to server.tool.
+ The same rule applies when using require to load external libraries—make sure to call require inside the call field too.
+
+ About rpcd lua plugin:
+ https://github.com/openwrt/luci/blob/37ea60da580490a4d8178134297152661f25151d/applications/luci-app-example/root/usr/libexec/rpcd/luci.example
+]]
+
+local server = require("oasis.local.tool.server")
+
+
+server.tool("get_ifname_list", {
+    tool_desc = "Get the list of all network interface names on this OpenWrt device.",
+    call = function()
+        local res_tbl = {}
+        local index = 1
+
+        -- Get all network interface names from /sys/class/net.
+        local handle = io.popen("ls /sys/class/net")
+        if handle then
+            for line in handle:lines() do
+                local key = "ifname" .. index
+                res_tbl[key] = line
+                index = index + 1
+            end
+            handle:close()
+        end
+
+        return server.response(res_tbl)
+    end
+})
+
+server.tool("port_link_status", {
+    tool_desc = "Show WAN/LAN Port Link Status",
+    call = function()
+        local util = require("luci.util")
+        local port_link_status = util.exec("ip link show")
+        return server.response({result = port_link_status})
+    end
+})
+
+server.tool("get_lan_ipaddr", {
+    tool_desc = "Get the LAN IP Address of this OpenWrt device.",
+    call = function()
+        local util = require("luci.util")
+        local ip = util.trim(util.exec("uci get network.lan.ipaddr 2>/dev/null"))
+        return server.response({lan_ipaddr = ip ~= "" and ip or nil})
+    end
+})
+
+server.tool("get_wan_status", {
+    tool_desc = "Get the WAN Status of this OpenWrt device.",
+    call = function()
+        local util = require("luci.util")
+        local wan_status = util.ubus("network.interface.wan", "status", {})
+        return server.response({
+            up = wan_status and wan_status.up or false,
+            ipv4_address = wan_status and wan_status['ipv4-address'] and wan_status['ipv4-address'][1] and wan_status['ipv4-address'][1].address or nil
+        })
+    end
+})
+
+server.tool("get_connected_clients", {
+    tool_desc = "Get connected clients (STAs) on this OpenWrt device.",
+    call = function()
+        local util = require("luci.util")
+        local jsonc = require("luci.jsonc")
+        local leases = {}
+
+        local function add_lease(ip, mac, hostname)
+            if not ip or ip == "" then return end
+            for _, l in ipairs(leases) do
+                if l.ip == ip then
+                    -- update missing fields if available
+                    if (not l.mac or l.mac == "") and mac and mac ~= "" then l.mac = mac end
+                    if (not l.hostname or l.hostname == "") and hostname and hostname ~= "" then l.hostname = hostname end
+                    return
+                end
+            end
+            local e = { ip = ip }
+            if mac and mac ~= "" then e.mac = mac end
+            if hostname and hostname ~= "" then e.hostname = hostname end
+            table.insert(leases, e)
+        end
+
+        local function extract_from_record(rec)
+            if not rec then return nil, nil, nil end
+            local ip = rec.ip
+            -- IPv6 leases often carry addresses under 'ipv6-addr' array
+            if not ip and rec["ipv6-addr"] and type(rec["ipv6-addr"]) == "table" and rec["ipv6-addr"][1] then
+                ip = rec["ipv6-addr"][1].address
+            end
+            if not ip and rec["ipv6-address"] and type(rec["ipv6-address"]) == "table" and rec["ipv6-address"][1] then
+                ip = rec["ipv6-address"][1].address
+            end
+            local mac = rec.mac or rec.macaddr or rec.hwaddr or rec.duid
+            local hostname = rec.hostname
+            return ip, mac, hostname
+        end
+
+        local function parse_and_add(obj)
+            if not obj then return end
+            -- direct leases array
+            if obj.leases and type(obj.leases) == "table" then
+                for _, rec in ipairs(obj.leases) do
+                    local ip, mac, hostname = extract_from_record(rec)
+                    add_lease(ip, mac, hostname)
+                end
+            end
+            -- device -> iface -> leases
+            if obj.device and type(obj.device) == "table" then
+                for _, dev in pairs(obj.device) do
+                    if dev and dev.leases and type(dev.leases) == "table" then
+                        for _, rec in ipairs(dev.leases) do
+                            local ip, mac, hostname = extract_from_record(rec)
+                            add_lease(ip, mac, hostname)
+                        end
+                    end
+                end
+            end
+        end
+
+        -- IPv4 STAs info
+        do
+            local ipv4_stas = util.ubus("dhcp", "ipv4leases", {})
+            parse_and_add(ipv4_stas)
+        end
+
+        -- IPv6 STAs info
+        do
+            local ipv6_stas = util.ubus("dhcp", "ipv6leases", {})
+            parse_and_add(ipv6_stas)
+        end
+
+        -- ARP table fallback
+        local arp = util.exec("cat /proc/net/arp 2>/dev/null") or ""
+        for line in arp:gmatch("[^\r\n]+") do
+            if not line:match("IP address") then
+                -- typical /proc/net/arp: IP address HW type Flags HW address Mask Device
+                local ip, hwaddr = line:match("^(%S+)%s+%S+%s+%S+%s+(%S+)")
+                if ip and hwaddr and hwaddr ~= "00:00:00:00:00:00" then
+                    add_lease(ip, hwaddr, nil)
+                end
+            end
+        end
+
+        return server.response({clients = leases})
+    end
+})
+
+server.run(arg)

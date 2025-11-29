@@ -17,7 +17,7 @@
 let ubus = require('ubus').connect();
 let server = require('oasis.local.tool.server');
 
-server.tool("oasis.ucode.tool.server1", "get_board_info", {
+server.tool("oasis.hw.status", "get_board_info", {
     tool_desc: "Get this device board information.",
     call: function() {
         const fs = require('fs');
@@ -29,7 +29,7 @@ server.tool("oasis.ucode.tool.server1", "get_board_info", {
     }
 });
 
-server.tool("oasis.ucode.tool.server2", "get_os_info", {
+server.tool("oasis.os.status", "get_os_info", {
     tool_desc: "Get this OpenWrt OS Information.",
     call: function() {
         const fs = require('fs');
@@ -44,6 +44,24 @@ server.tool("oasis.ucode.tool.server2", "get_os_info", {
         file.close();
 
         return { result : os_info_tbl };
+    }
+});
+
+server.tool("oasis.os.status", "get_kernel_info", {
+    tool_desc: "Get this OpenWrt OS Information.",
+    call: function() {
+        const fs = require('fs');
+        const file = fs.open('/proc/version', 'r');
+
+        let cnt = 0;
+        let kernel_info_tbl = {};
+
+        for (let line = file.read("line"); length(line); line = file.read("line"))
+                kernel_info_tbl[cnt++] = line;
+
+        file.close();
+
+        return { result : kernel_info_tbl };
     }
 });
 

@@ -306,4 +306,87 @@ server.tool("system_shutdown", {
     end
 })
 
+server.tool("show_service_list", {
+    tool_desc = "Show service list",
+    call = function()
+        local util = require("luci.util")
+        local list = util.exec("service")
+        return server.response(
+            {
+                result = list
+            }
+        )
+    end
+})
+
+server.tool("set_service_enabled", {
+    tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
+    args_desc = { "Target Service Name [ex: network]" },
+    args = { service = "a_string"},
+    call = function(args)
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
+                prepare_service_restart = args.service
+            }
+        )
+    end
+})
+
+server.tool("set_service_disabled", {
+    tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
+    args_desc = { "Target Service Name [ex: network]" },
+    args = { service = "a_string"},
+    call = function(args)
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
+                prepare_service_restart = args.service
+            }
+        )
+    end
+})
+
+server.tool("service_stopped", {
+    tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
+    args_desc = { "Target Service Name [ex: network]" },
+    args = { service = "a_string"},
+    call = function(args)
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
+                prepare_service_restart = args.service
+            }
+        )
+    end
+})
+
+server.tool("service_run", {
+    tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
+    args_desc = { "Target Service Name [ex: network]" },
+    args = { service = "a_string"},
+    call = function(args)
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
+                prepare_service_restart = args.service
+            }
+        )
+    end
+})
+
+server.tool("service_restart", {
+    tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
+    args_desc = { "Target Service Name [ex: network]" },
+    args = { service = "a_string"},
+    call = function(args)
+        return server.response(
+            {
+                result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
+                prepare_service_restart = args.service
+            }
+        )
+    end
+})
+
 server.run(arg)

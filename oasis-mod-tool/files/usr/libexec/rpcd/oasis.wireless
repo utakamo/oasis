@@ -1,0 +1,133 @@
+#!/usr/bin/env lua
+
+--[[
+
+# Oasis Local Tool (OLT) Server (Lua Script Ver)
+ This server script is based on concepts inspired by the Model Context Protocol and Agents.json.
+ By leveraging UBUS, an integral part of the OpenWrt ecosystem, the client and server can cooperate
+ to allow the AI to access the tools it provides.
+ On OpenWrt systems with Oasis and oasis-mod-tool installed, third-party developers can easily expose
+ tools to the AI by simply downloading server scripts.
+
+# Rules for defining tools in the local tool server
+    - Rule 1. 
+        If a tool requires arguments, you must specify a type string for each argument.
+
+        Reference:
+        1. string type  ---> "a_string"
+        TODO: Investigate data type specifications other than "a_string" and add them here. 
+
+    - Rule 2. 
+        The table returned by server.response must be an associative array (key-value pairs).
+
+        Example: 
+        server.response({reply = "Hello Tool Client!"})
+
+# Note
+ This script is loaded by the `rpcd` module and registered with `ubusd` as a UBUS object.  
+
+# Important
+ Please avoid defining global functions in ubus server scripts.
+ For AI tool scripts used in Oasis (like this one), write your logic using server.tool.
+ If you need to create custom functions, put them inside the call field of the table that’s passed as the second argument to server.tool.
+ The same rule applies when using require to load external libraries—make sure to call require inside the call field too.
+
+ About rpcd lua plugin:
+ https://github.com/openwrt/luci/blob/37ea60da580490a4d8178134297152661f25151d/applications/luci-app-example/root/usr/libexec/rpcd/luci.example
+]]
+
+local server = require("oasis.local.tool.server")
+
+server.tool("get_active_wlan_if_list", {
+    tool_desc = "Get the Active Wireless Interface List of this OpenWrt device.",
+    call = function()
+        local util = require("luci.util")
+        local iwinfo = util.exec("iwinfo")
+        return server.response({result = iwinfo})
+    end
+})
+
+server.tool("wifi_scan", {
+    tool_desc = "Scan for nearby Wireless networks",
+    args_desc = { "Wireless interface name [ex: wlan0]" },
+    args = { ifname = "a_string"},
+
+    call = function(args)
+        local util  = require("luci.util")
+        local jsonc = require("luci.jsonc")
+        local mkd   = require("oasis.chat.markdown")
+        local debug = require("oasis.chat.debug")
+
+        local ifname = args and args.ifname or nil
+
+        local wlan_vif = util.ubus("iwinfo", "devices", {})
+
+        if not wlan_vif or not wlan_vif.devices or #wlan_vif.devices == 0 then
+            return server.response(
+                {
+                    error = "No valid wireless interface found.",
+                    request = "Instruct the user to enable Wi-Fi. If they are unsure how to do so, encourage them to ask the AI (you) for guidance.",
+                }
+            )
+        end
+
+        local is_wlan_vif = false
+        local wlan_vif_list = ""
+        for _, vif in ipairs(wlan_vif.devices or {}) do
+            wlan_vif_list = wlan_vif_list .. vif
+            if vif == ifname then
+                is_wlan_vif = true
+                break
+            end
+            wlan_vif_list = wlan_vif_list .. ", "
+        end
+
+        if not is_wlan_vif then
+            return server.response(
+                {
+                    error = "The specified interface is not intended for wireless use.",
+                    wlan_vif_list = wlan_vif_list
+                }
+            )
+        end
+
+        local out = util.ubus("iwinfo", "scan", { device = ifname })
+
+        local entry = {}
+        entry[#entry + 1] = { "ssid", "bssid", "mode", "band", "channel", "signal" }
+
+        if out and out.results and type(out.results) == "table" then
+            for _, r in ipairs(out.results) do
+                local idx = #entry + 1
+                entry[idx] = {}
+                entry[idx][1] = r.ssid
+                entry[idx][2] = r.bssid
+                entry[idx][3] = r.mode
+                entry[idx][4] = r.band
+                entry[idx][5] = r.channel or r.primary_channel
+                entry[idx][6] = r.signal
+            end
+        end
+
+        if #entry <= 1 then
+                return server.response(
+                    {
+                        result = "not found",
+                        announce = "Wi-Fi may not be enabled. Please check with the user."
+                    }
+                )
+        end
+
+        local markdown_scan_tbl = mkd.table(entry)
+
+        return server.response(
+            {
+                result = "success",
+                user_only = markdown_scan_tbl,
+                request = "The user has been notified of the WiFi scan results. Please prompt the user to review the scan results.",
+            }
+        )
+    end
+})
+
+server.run(arg)
