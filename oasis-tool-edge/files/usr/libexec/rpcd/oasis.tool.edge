@@ -1,6 +1,7 @@
 #!/usr/bin/env lua
 
 local jsonc  = require("luci.jsonc")
+local common = require("oasis.common")
 
 local methods = {
     function_calling = {
@@ -9,7 +10,6 @@ local methods = {
         call = function(args)
             local uci = require("luci.model.uci").cursor()
             local client = require("oasis.local.tool.client")
-            local common = require("oasis.common")
 
             -- Parse param string ("name:type:value" separated by comma/semicolon) or JSON into a Lua table.
             local function parse_param_str(p)
@@ -71,52 +71,41 @@ local methods = {
         call = function()
             local uci = require("luci.model.uci").cursor()
 
-            local tools = uci:get_all(common.db.uci.cfg)
+            local all = uci:get_all(common.db.uci.cfg) or {}
 
-            -- Delete unnecessary information
-            tools.debug     = nil
-            tools.rpc       = nil
-            tools.storage   = nil
-            tools.role      = nil
-            tools.support   = nil
-            tools.assist    = nil
-            tools.rollback  = nil
-            tools.console   = nil
-
-            for key, tbl in pairs(tools) do
-                if (tbl[".type"] == "service") or ( tbl[".type"] == "chat") then
-                    tools[key] = nil
+            local tools = {}
+            for section, cfg in pairs(all) do
+                if cfg[".type"] == "tool" then
+                    local entry = {}
+                    for key, value in pairs(cfg) do
+                        if type(key) == "string" and key:sub(1, 1) ~= "." then
+                            entry[key] = value
+                        end
+                    end
+                    tools[section] = entry
                 end
             end
 
-            local server_list = {}
-            local seen = {}
-
-            for _, tool in pairs(tools) do
-                if not seen[tool.server] then
-                    server_list[#server_list + 1] = tool.server
-                    seen[tool.server] = true
-                end
-            end
-
+            local server_seen = {}
             local server_info = {}
-            for _, name in pairs(server_list) do
-                    server_info[#server_info + 1] = {}
-                    server_info[#server_info].name = name
-                if common.check_server_loaded(name) then
-                    server_info[#server_info].status = "loaded"
-                else
-                    server_info[#server_info].status = "loding"
+            for _, tool in pairs(tools) do
+                local server = tool.server
+                if server and not server_seen[server] then
+                    server_seen[server] = true
+                    local status = common.check_server_loaded(server) and "loaded" or "loading"
+                    server_info[#server_info + 1] = { name = server, status = status }
                 end
             end
 
-            local info = {}
-            info.tools = tools
-            info.server_info = server_info
-            info.local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+            local info = {
+                tools = tools,
+                server_info = server_info,
+                local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool") or false,
+            }
 
-            r.result = jsonc.stringify({ local_tool = local_tool })
-            return r
+            return {
+                result = jsonc.stringify(info)
+            }
         end
     },
 }
