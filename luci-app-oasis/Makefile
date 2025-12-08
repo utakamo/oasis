@@ -53,7 +53,9 @@ endef
 define Package/luci-app-oasis/postinst
 	#!/bin/sh
 	uci set oasis.support.webui=1
-	uci commit oasis
+	if [ $? -eq 0 ]; then
+		uci commit oasis
+	fi
 endef
 
 $(eval $(call BuildPackage,luci-app-oasis))

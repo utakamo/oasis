@@ -60,7 +60,9 @@ endef
 define Package/oasis-mod-spring/postinst
 	#!/bin/sh
 	uci set oasis.support.spring=1
-	uci commit oasis
+	if [ $? -eq 0 ]; then
+		uci commit oasis
+	fi
 	#TODO: Check below
 	#mkdir -p /tmp/oasis
 	#touch /tmp/oasis/reboot_required
