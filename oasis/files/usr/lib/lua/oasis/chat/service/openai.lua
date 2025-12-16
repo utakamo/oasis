@@ -163,7 +163,7 @@ openai.new = function()
             -- When role:tool is present, it indicates that results are sent to AI
             -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
             local last = user_msg.messages and user_msg.messages[#user_msg.messages]
-            if last and last.role == "tool" then
+            if last and last.role == "tool" and (not self._agent_mode) then
                 user_msg.tool_choice = nil
                 user_msg.tools = nil
                 local user_msg_json = jsonc.stringify(user_msg, false)
