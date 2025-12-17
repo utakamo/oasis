@@ -4,7 +4,7 @@
 
                 "read": {
                         "ubus": {
-                            "oasis.tool.edge": [ "function_calling" ]
+                            "oasis.tool.edge": [ "function_calling", "tool_list" ]
                         }
                 }
         }
