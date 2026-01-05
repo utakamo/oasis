@@ -9,6 +9,15 @@ local methods = {
 
         call = function(args)
             local uci = require("luci.model.uci").cursor()
+            local common = require("oasis.common")
+            local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")
+
+            if not enable then
+                local r = {}
+                r.result = jsonc.stringify({ status = common.status.error, desc = "Oasis's RPC function is not enabled." })
+                return r
+            end
+
             local client = require("oasis.local.tool.client")
 
             -- Parse param string ("name:type:value" separated by comma/semicolon) or JSON into a Lua table.
