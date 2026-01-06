@@ -6,16 +6,18 @@ local uci       = require("luci.model.uci").cursor()
 local common    = require("oasis.common")
 -- local debug     = require("oasis.chat.debug")
 
+local M = {}
+
 ------------------------------
 -- [Used from oasis object] --
 ------------------------------
-local retrieve_config = function()
+function M.retrieve_config()
     local storage_tbl = uci:get_all(common.db.uci.cfg, common.db.uci.sect.storage)
     local storage_json = jsonc.stringify(storage_tbl)
     return storage_json
 end
 
-local retrieve_icon_info = function(path, format)
+function M.retrieve_icon_info(path, format)
         local data = common.load_conf_file(path)
 
         if (not data) or (not data.icons.path) or (not data.icons.using) then
@@ -48,7 +50,7 @@ local retrieve_icon_info = function(path, format)
         return icon_tbl
 end
 
-local retrieve_sysmsg = function(path, format)
+function M.retrieve_sysmsg(path, format)
 
     -- debug:log("oasis.log", "\n--- [util.lua][retrieve_sysmsg] ---")
 
@@ -72,7 +74,7 @@ local retrieve_sysmsg = function(path, format)
 
     return sysmsg_tbl
 end
-local retrieve_sysmsg_info = function(path, format)
+function M.retrieve_sysmsg_info(path, format)
     local data_tbl = common.load_conf_file(path)
 
     if not data_tbl then
@@ -111,7 +113,7 @@ local retrieve_sysmsg_info = function(path, format)
     return result_tbl.sysmsg
 end
 
-local retrieve_chat_info = function(format)
+function M.retrieve_chat_info(format)
     local chat_list_tbl = {}
     chat_list_tbl.item = {}
 
@@ -130,7 +132,7 @@ local retrieve_chat_info = function(format)
     return chat_list_tbl
 end
 
-local retrieve_service_info = function(format)
+function M.retrieve_service_info(format)
 
     local data = uci:get_all(common.db.uci.cfg)
 
@@ -174,7 +176,7 @@ local retrieve_service_info = function(format)
     return service_list_tbl
 end
 
-local retrieve_uci_config = function(format)
+function M.retrieve_uci_config(format)
 
     -- Currently, the only removal target in the uci config list is oasis and rpcd.
     -- Add the names of uci configs that you don't want to teach AI here.
@@ -211,7 +213,7 @@ local retrieve_uci_config = function(format)
     return list_tbl.configs
 end
 
-local parse_uci_cmd_sequence = function(message, format)
+function M.parse_uci_cmd_sequence(message, format)
     local misc = require("oasis.chat.misc")
 
     local is_exist = misc.check_file_exist("/usr/lib/lua/oasis/chat/filter.lua")
@@ -242,13 +244,4 @@ local parse_uci_cmd_sequence = function(message, format)
     return notification
 end
 
-return {
-    retrieve_config         = retrieve_config,
-    retrieve_icon_info      = retrieve_icon_info,
-    retrieve_sysmsg         = retrieve_sysmsg,
-    retrieve_sysmsg_info    = retrieve_sysmsg_info,
-    retrieve_chat_info      = retrieve_chat_info,
-    retrieve_service_info   = retrieve_service_info,
-    retrieve_uci_config     = retrieve_uci_config,
-    parse_uci_cmd_sequence  = parse_uci_cmd_sequence,
-}
+return M
