@@ -59,7 +59,7 @@ server.tool("set_service_enabled", {
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
-                prepare_service_restart = args.service
+                prepare_service_enable = args.service
             }
         )
     end
@@ -73,7 +73,7 @@ server.tool("set_service_disabled", {
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
-                prepare_service_restart = args.service
+                prepare_service_disable = args.service
             }
         )
     end
@@ -87,7 +87,7 @@ server.tool("service_stopped", {
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
-                prepare_service_restart = args.service
+                prepare_service_stop = args.service
             }
         )
     end
@@ -101,7 +101,7 @@ server.tool("service_run", {
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
-                prepare_service_restart = args.service
+                prepare_service_run = args.service
             }
         )
     end
