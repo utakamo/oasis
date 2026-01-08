@@ -51,7 +51,7 @@ server.tool("show_service_list", {
     end
 })
 
-server.tool("set_service_enabled", {
+server.tool("set_service_enable", {
     tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
@@ -79,7 +79,7 @@ server.tool("set_service_disabled", {
     end
 })
 
-server.tool("service_stopped", {
+server.tool("service_stop", {
     tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
@@ -93,7 +93,7 @@ server.tool("service_stopped", {
     end
 })
 
-server.tool("service_run", {
+server.tool("service_start", {
     tool_desc = "Request a Restart of the Specified Service on the OpenWrt System.",
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
@@ -101,7 +101,7 @@ server.tool("service_run", {
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
-                prepare_service_run = args.service
+                prepare_service_start = args.service
             }
         )
     end
@@ -123,7 +123,7 @@ server.tool("service_restart", {
 
 server.tool("operate", {
     tool_desc = "Operations on the target service",
-    args_desc = { "Target Service Name [ex: network]", "Operation Command [\"enable\" or \"disable\" or \"stop\" or \"run\" or \"restart\"]" },
+    args_desc = { "Target Service Name [ex: network]", "Operation Command [\"enable\" or \"disable\" or \"stop\" or \"start\" or \"restart\"]" },
     args = { service = "a_string", cmd = "a_string" },
     call = function(args)
         local util = require("luci.util")
@@ -179,7 +179,7 @@ server.tool("operate", {
                 status = ok and "OK" or "NG",
             })
 
-        elseif cmd == "run" then
+        elseif cmd == "start" then
             local out = util.exec("/etc/init.d/" .. svc .. " start 2>&1; echo $?")
             out = out and out:gsub("%s+$", "") or ""
             local rc = tonumber(out:match("(%d+)%s*$")) or -1
