@@ -56,8 +56,8 @@ server.tool("set_service_enable", {
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
     call = function(args)
-        // TODO: check whether the target service exists
-        // TODO: Check the service status (is it already in the desired state?)
+        -- TODO: check whether the target service exists
+        -- TODO: Check the service status (is it already in the desired state?)
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
@@ -72,8 +72,8 @@ server.tool("set_service_disabled", {
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
     call = function(args)
-        // TODO: check whether the target service exists
-        // TODO: Check the service status (is it already in the desired state?)
+        -- TODO: check whether the target service exists
+        -- TODO: Check the service status (is it already in the desired state?)
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
@@ -88,8 +88,8 @@ server.tool("service_stop", {
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
     call = function(args)
-        // TODO: check whether the target service exists
-        // TODO: Check the service status (is it already in the desired state?)
+        -- TODO: check whether the target service exists
+        -- TODO: Check the service status (is it already in the desired state?)
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
@@ -104,8 +104,8 @@ server.tool("service_start", {
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
     call = function(args)
-        // TODO: check whether the target service exists
-        // TODO: Check the service status (is it already in the desired state?)
+        -- TODO: check whether the target service exists
+        -- TODO: Check the service status (is it already in the desired state?)
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
@@ -120,8 +120,8 @@ server.tool("service_restart", {
     args_desc = { "Target Service Name [ex: network]" },
     args = { service = "a_string"},
     call = function(args)
-        // TODO: check whether the target service exists
-        // TODO: Check the service status (is it already in the desired state?)
+        -- TODO: check whether the target service exists
+        -- TODO: Check the service status (is it already in the desired state?)
         return server.response(
             {
                 result = "The OpenWrt system has accepted the shutdown request. Inform the user that the shutdown will proceed once they grant permission.",
