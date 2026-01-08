@@ -121,4 +121,90 @@ server.tool("service_restart", {
     end
 })
 
+server.tool("operate", {
+    tool_desc = "Operations on the target service",
+    args_desc = { "Target Service Name [ex: network]", "Operation Command [\"enable\" or \"disable\" or \"stop\" or \"run\" or \"restart\"]" },
+    args = { service = "a_string", cmd = "a_string" },
+    call = function(args)
+        local util = require("luci.util")
+        local guard = require("oasis.security.guard")
+        local misc  = require("oasis.chat.misc")
+
+        local list = util.exec("service")
+
+        local cmd = args.cmd
+        local service = args.service
+
+        local service_exists = false
+        for line in string.gmatch(list, "[^\n]+") do
+            if string.match(line, "^/etc/init.d/" .. service .. "%s") then
+                service_exists = true
+                break
+            end
+        end
+
+        if not service_exists then
+            return server.response({result = "The specified service does not exist.", status = "NG"})
+        end
+
+        local svc = guard.sanitize(service)
+
+        if cmd == "enable" then
+            local out = util.exec("/etc/init.d/" .. svc .. " enable 2>&1; echo $?")
+            out = out and out:gsub("%s+$", "") or ""
+            local rc = tonumber(out:match("(%d+)%s*$")) or -1
+            local ok = (rc == 0)
+            return server.response({
+                result = ok and "The OpenWrt system has enabled the service." or ("Failed to enable service: " .. out),
+                status = ok and "OK" or "NG",
+            })
+
+        elseif cmd == "disable" then
+            local out = util.exec("/etc/init.d/" .. svc .. " disable 2>&1; echo $?")
+            out = out and out:gsub("%s+$", "") or ""
+            local rc = tonumber(out:match("(%d+)%s*$")) or -1
+            local ok = (rc == 0)
+            return server.response({
+                result = ok and "The OpenWrt system has disabled the service." or ("Failed to disable service: " .. out),
+                status = ok and "OK" or "NG",
+            })
+
+        elseif cmd == "stop" then
+            local out = util.exec("/etc/init.d/" .. svc .. " stop 2>&1; echo $?")
+            out = out and out:gsub("%s+$", "") or ""
+            local rc = tonumber(out:match("(%d+)%s*$")) or -1
+            local ok = (rc == 0)
+            return server.response({
+                result = ok and "The OpenWrt system has accepted the stop request. The service will be stopped." or ("Failed to stop service: " .. out),
+                status = ok and "OK" or "NG",
+            })
+
+        elseif cmd == "run" then
+            local out = util.exec("/etc/init.d/" .. svc .. " start 2>&1; echo $?")
+            out = out and out:gsub("%s+$", "") or ""
+            local rc = tonumber(out:match("(%d+)%s*$")) or -1
+            local ok = (rc == 0)
+            return server.response({
+                result = ok and "The OpenWrt system has accepted the run request. The service will be started." or ("Failed to start service: " .. out),
+                status = ok and "OK" or "NG",
+                output = out,
+                rc = rc
+            })
+
+        elseif cmd == "restart" then
+            return server.response({
+                result = "The system requests confirmation to restart the specified service.",
+                status = "OK"
+            })
+        end
+
+        return server.response(
+            {
+                result = "Invalid command specified. Supported commands are: enable, disable, stop, run, restart.",
+                status = "NG"
+            }
+        )
+    end
+})
+
 server.run(arg)
