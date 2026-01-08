@@ -62,6 +62,38 @@ server.tool("system_shutdown", {
     end
 })
 
+server.tool("confirm", {
+    tool_desc = "Confirm the system shutdown or reboot request.",
+    args_desc = "Confirm Option [\"shutdown\" or \"reboot\"]",
+    args = { option = "a_string" },
+    call = function(args)
+        local cmd = require("oasis.local.tool.system.command")
+        if args.option == "shutdown" then
+            cmd.system_shutdown_after_5sec()
+            return server.response(
+                {
+                    status = "OK"
+                }
+            )
+        end
+
+        if args.option == "reboot" then
+            cmd.system_reboot_after_5sec()
+            return server.response(
+                {
+                    status = "OK"
+                }
+            )
+        end
+
+        return server.response(
+            {
+                result = "Invalid command specified. Supported commands are: enable, disable, stop, run, restart.",
+                status = "NG"
+            }
+        )
+    end
+})
 
 server.tool("get_memory_info", {
     tool_desc = "Get the system info load (uptime/meminfo) of this OpenWrt device.",
