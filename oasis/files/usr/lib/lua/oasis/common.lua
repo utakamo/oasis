@@ -5,6 +5,8 @@ local sys   = require("luci.sys")
 local misc  = require("oasis.chat.misc")
 -- local debug = require("oasis.chat.debug")
 
+local M = {}
+
 local db                     = {}
 db.uci                       = {}
 db.uci.cfg                   = "oasis"
@@ -148,7 +150,7 @@ local function generate_random_id(method)
     return id
 end
 
-local select_service_obj = function()
+function M.select_service_obj()
 
     local target = nil
     local service = uci:get_first(db.uci.cfg, db.uci.sect.service, "name", "")
@@ -180,7 +182,7 @@ local select_service_obj = function()
     return target
 end
 
-local get_target_id_section = function(id)
+function M.get_target_id_section(id)
 
     local unnamed_section = ""
 
@@ -193,7 +195,7 @@ local get_target_id_section = function(id)
     return unnamed_section
 end
 
-local search_chat_id = function(id)
+function M.search_chat_id(id)
 
     local is_search = false
 
@@ -206,7 +208,7 @@ local search_chat_id = function(id)
     return is_search
 end
 
-local load_conf_file = function(filename)
+function M.load_conf_file(filename)
     local iniFile = io.open(filename, "r")
     if not iniFile then return nil, "Cannot open file: " .. filename end
 
@@ -254,7 +256,7 @@ local load_conf_file = function(filename)
     return data
 end
 
-local update_conf_file = function(filename, data)
+function M.update_conf_file(filename, data)
     local iniFile = io.open(filename, "w")
     if not iniFile then return nil, "Cannot open file: " .. filename end
 
@@ -270,7 +272,7 @@ local update_conf_file = function(filename, data)
     return true
 end
 
-local generate_chat_id = function()
+function M.generate_chat_id()
 
     local id
     local retry = GENERATE_ID_MAX_RETRY
@@ -287,7 +289,7 @@ local generate_chat_id = function()
 
         -- debug:log("oasis.log", "id = " .. id)
 
-        is_exist = search_chat_id(id)
+        is_exist = M.search_chat_id(id)
 
     until (not is_exist) or (retry <= 0)
 
@@ -298,7 +300,7 @@ local generate_chat_id = function()
     return id
 end
 
-local generate_service_id = function(method)
+function M.generate_service_id(method)
 
     local oasis_cfg_tbl = uci:get_all(db.uci.cfg)
 
@@ -343,7 +345,7 @@ local generate_service_id = function(method)
     return id
 end
 
-local check_chat_format = function(chat)
+function M.check_chat_format(chat)
 
     if type(chat) ~= "table" then
         return false
@@ -366,7 +368,7 @@ local check_chat_format = function(chat)
     return true
 end
 
-local function check_server_loaded(server_name)
+function M.check_server_loaded(server_name)
 
     -- timeout: 1000ms
     local conn = ubus.connect(nil, 1000)
@@ -386,7 +388,7 @@ local function check_server_loaded(server_name)
     return false
 end
 
-local check_unloaded_plugin = function(target)
+function M.check_unloaded_plugin(target)
     local result = false
 
     if target == "oasis" then
@@ -400,24 +402,24 @@ local check_unloaded_plugin = function(target)
     return result
 end
 
-local check_prepare_oasis = function()
+function M.check_prepare_oasis()
 
     -- Check standard ubus server
-    if  (not check_server_loaded("oasis"))
-            or (not check_server_loaded("oasis.chat"))
-            or (not check_server_loaded("oasis.title")) then
+    if  (not M.check_server_loaded("oasis"))
+            or (not M.check_server_loaded("oasis.chat"))
+            or (not M.check_server_loaded("oasis.title")) then
         return false
     end
 
     -- TODO: Check below code
-    if check_unloaded_plugin() then
+    if M.check_unloaded_plugin() then
         return true
     end
 
     -- Check plugin ubus server
     local is_loaded_plugin_server = true
     uci:foreach(db.uci.cfg, db.uci.sect.tool, function(tbl)
-        if (tbl.server) and (not check_server_loaded(tbl.server)) then
+        if (tbl.server) and (not M.check_server_loaded(tbl.server)) then
             is_loaded_plugin_server = false
         end
     end)
@@ -429,25 +431,14 @@ local check_prepare_oasis = function()
     return true
 end
 
-return {
-    db = db,
-    ai = ai,
-    file = file,
-    endpoint = endpoint,
-    flag = flag,
-    role = role,
-    select_service_obj = select_service_obj,
-    status = status,
-    console = console,
-    rollback = rollback,
-    get_target_id_section = get_target_id_section,
-    search_chat_id = search_chat_id,
-    load_conf_file = load_conf_file,
-    update_conf_file = update_conf_file,
-    generate_chat_id = generate_chat_id,
-    generate_service_id = generate_service_id,
-    check_chat_format = check_chat_format,
-    check_server_loaded = check_server_loaded,
-    check_prepare_oasis = check_prepare_oasis,
-    check_unloaded_plugin = check_unloaded_plugin,
-}
+M.db = db
+M.ai = ai
+M.file = file
+M.endpoint = endpoint
+M.flag = flag
+M.role = role
+M.status = status
+M.console = console
+M.rollback = rollback
+
+return M
