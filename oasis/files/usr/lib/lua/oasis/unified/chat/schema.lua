@@ -6,6 +6,8 @@ local common    = require("oasis.common")
 local jsonc     = require("luci.jsonc")
 local debug     = require("oasis.chat.debug")
 
+local M = {}
+
 -- Helpers -----------------------------------------------------------------
 local function normalize_newlines(s)
     if not s then return "" end
@@ -60,7 +62,7 @@ local function insert_sysmsg(chat, sysmsg, target_key, default_key)
 end
 
 -- Normalize function arguments ------------------------------------------
-local normalize_arguments = function(args)
+function M.normalize_arguments(args)
     if type(args) == "string" then
         if args == "{}" then
             return {}
@@ -84,7 +86,7 @@ local normalize_arguments = function(args)
 end
 
 -- Main: prepare system/user messages based on format and chat state --------
-local setup_system_msg = function(service, chat)
+function M.setup_system_msg(service, chat)
     -- If a tool was involved in previous interaction, clean tool-specific fields and stop.
     if has_tool_message(chat) then
         chat.tool_choice = nil -- Remove tool_choices field assigned in previous interaction
@@ -151,7 +153,7 @@ local handle_normal_msg = function(chat, speaker, msg)
     return true
 end
 
-local setup_msg = function(service, chat, speaker)
+function M.setup_msg(service, chat, speaker)
 
     debug:log("oasis.log", "setup_msg", string.format("\n--- [ollama.lua][setup_msg] ---"))
     debug:log("oasis.log", "setup_msg", string.format("setup_msg called"))
@@ -193,7 +195,7 @@ local setup_msg = function(service, chat, speaker)
     return handle_normal_msg(chat, speaker, msg)
 end
 
-local append_chat_data = function(service, chat)
+function M.append_chat_data(service, chat)
 
     local cfg = service:get_config()
     local msgs = chat.messages or {}
@@ -243,9 +245,4 @@ local append_chat_data = function(service, chat)
     util.ubus("oasis.chat", "append", message)
 end
 
-return {
-    setup_system_msg = setup_system_msg,
-    setup_msg = setup_msg,
-    append_chat_data = append_chat_data,
-    normalize_arguments = normalize_arguments,
-}
+return M
