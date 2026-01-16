@@ -1,3 +1,4 @@
+local M = {}
 
 -- Validate UTF-8 and detect suspicious code points (BOM, BIDI, zero-width, combining marks, etc.)
 local detect_encoding_spoof = function(s)
@@ -84,7 +85,7 @@ local detect_encoding_spoof = function(s)
     return false, nil
 end
 
-local sanitize = function(str)
+function M.sanitize(str)
   return str:gsub("[;&|><`]", "")
 end
 
@@ -93,7 +94,7 @@ local is_safe_input = function(str)
 end
 
 -- String safety check (includes encoding spoof detection)
-local check_safe_string = function(str)
+function M.check_safe_string(str)
 
     if type(str) ~= "string" then
         return false
@@ -119,7 +120,4 @@ local check_safe_string = function(str)
     return false
 end
 
-return {
-    sanitize = sanitize,
-    check_safe_string = check_safe_string,
-}
+return M
