@@ -7,6 +7,8 @@ local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
 
+local M = {}
+
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
 
@@ -38,7 +40,7 @@ local ubus_call = function(path, method, param, timeout)
     return result
 end
 
-local setup_lua_server_config = function(server_name)
+function M.setup_lua_server_config(server_name)
     local server_path = lua_ubus_server_app_dir .. server_name
     local meta = sys.exec(server_path .. " meta")
 
@@ -101,7 +103,7 @@ local setup_lua_server_config = function(server_name)
     uci:commit(common.db.uci.cfg)
 end
 
-local setup_ucode_server_config = function(server_name)
+function M.setup_ucode_server_config(server_name)
 
     -- Check ucode binary
     if not misc.check_file_exist("/usr/bin/ucode") then
@@ -214,7 +216,7 @@ local check_tool_name_conflict = function()
     end
 end
 
-local update_server_info = function()
+function M.update_server_info()
 
     -- 1) Create a snapshot of the old UCI (only 'enable' will be restored; comparisons require an exact match)
     local function to_list(v)
@@ -286,14 +288,14 @@ local update_server_info = function()
     local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
     if lua_servers then
         for _, server_name in ipairs(lua_servers) do
-            setup_lua_server_config(server_name)
+            M.setup_lua_server_config(server_name)
         end
     end
 
     local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
     if ucode_servers then
         for _, server_name in ipairs(ucode_servers) do
-            setup_ucode_server_config(server_name)
+            M.setup_ucode_server_config(server_name)
         end
     end
 
@@ -343,7 +345,7 @@ local update_server_info = function()
 end
 
 -- This function is called when sending a message to the LLM.
-local get_function_call_schema = function()
+function M.get_function_call_schema()
     local tools = {}
 
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
@@ -403,7 +405,7 @@ local function handle_option_message(msg, msg_type, format)
     end
 end
 
-local exec_server_tool = function(format, tool, data)
+function M.exec_server_tool(format, tool, data)
 
     local nixio = require("nixio")
     local found = false
@@ -546,10 +548,4 @@ local exec_server_tool = function(format, tool, data)
     return result
 end
 
-return {
-    setup_lua_server_config = setup_lua_server_config,
-    setup_ucode_server_config = setup_ucode_server_config,
-    update_server_info = update_server_info,
-    get_function_call_schema = get_function_call_schema,
-    exec_server_tool = exec_server_tool,
-}
+return M

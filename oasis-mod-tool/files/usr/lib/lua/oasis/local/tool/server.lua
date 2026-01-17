@@ -2,19 +2,21 @@
 
 local jsonc = require("luci.jsonc")
 
+local M = {}
+
 local methods = {}
 
-local tool = function(func_name, def)
+function M.tool(func_name, def)
     methods[func_name] = def
 end
 
-local response = function(tbl)
+function M.response(tbl)
     local r = {}
     r.result = jsonc.stringify(tbl)
     return r
 end
 
-local parseInput = function()
+function M.parseInput()
     local parse = jsonc.new()
     local done, err
 
@@ -37,7 +39,7 @@ local parseInput = function()
     return parse:get()
 end
 
-local validateArgs = function(func, uargs)
+function M.validateArgs(func, uargs)
     local tool = methods[func]
     if not tool then
         print(jsonc.stringify({error = "Tool not found in methods table"}))
@@ -66,7 +68,7 @@ local validateArgs = function(func, uargs)
     return tool
 end
 
-local run = function(arg)
+function M.run(arg)
     -- Export call_<tool> functions for ubus/rpcd compatibility
     for name, def in pairs(methods) do
         _G["call_" .. name] = function(session, args)
@@ -98,18 +100,12 @@ local run = function(arg)
         end
         print((jsonc.stringify(rv):gsub(":%[%]", ":{}")))
     elseif arg[1] == "call" then
-        local args = parseInput()
-        local tgt_tool = validateArgs(arg[2], args)
+        local args = M.parseInput()
+        local tgt_tool = M.validateArgs(arg[2], args)
         local run = tgt_tool.call(args)
         print(run.result)
         os.exit(run.code or 0)
     end
 end
 
-return {
-    tool = tool,
-    response = response,
-    parseInput = parseInput,
-    validateArgs = validateArgs,
-    run = run,
-}
+return M

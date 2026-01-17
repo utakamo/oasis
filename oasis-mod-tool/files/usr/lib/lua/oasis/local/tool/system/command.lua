@@ -4,6 +4,8 @@ local util  = require("luci.util")
 local guard = require("oasis.security.guard")
 local misc  = require("oasis.chat.misc")
 
+local M = {}
+
 local schedule_reboot = function(delay_seconds)
     delay_seconds = tonumber(delay_seconds) or 0
     if delay_seconds < 0 then delay_seconds = 0 end
@@ -66,24 +68,24 @@ local schedule_restart = function(delay_seconds, service)
 end
 
 -- System Reboot
-local system_reboot = function() schedule_reboot(0) end
-local system_reboot_after_5sec  = function() schedule_reboot(5)  end
-local system_reboot_after_10sec = function() schedule_reboot(10) end
-local system_reboot_after_15sec = function() schedule_reboot(15) end
-local system_reboot_after_20sec = function() schedule_reboot(20) end
+function M.system_reboot() schedule_reboot(0) end
+function M.system_reboot_after_5sec() schedule_reboot(5) end
+function M.system_reboot_after_10sec() schedule_reboot(10) end
+function M.system_reboot_after_15sec() schedule_reboot(15) end
+function M.system_reboot_after_20sec() schedule_reboot(20) end
 
 -- System Shutdown
-local system_shutdown = function() schedule_shutdown(0) end
-local system_shutdown_after_5sec  = function() schedule_shutdown(5)  end
-local system_shutdown_after_10sec = function() schedule_shutdown(10) end
-local system_shutdown_after_15sec = function() schedule_shutdown(15) end
-local system_shutdown_after_20sec = function() schedule_shutdown(20) end
+function M.system_shutdown() schedule_shutdown(0) end
+function M.system_shutdown_after_5sec() schedule_shutdown(5) end
+function M.system_shutdown_after_10sec() schedule_shutdown(10) end
+function M.system_shutdown_after_15sec() schedule_shutdown(15) end
+function M.system_shutdown_after_20sec() schedule_shutdown(20) end
 
 -- Restart Service
-local restart_service = function(service) schedule_restart(0, service) end
-local restart_service_after_3sec = function(service) schedule_restart(3, service) end
+function M.restart_service(service) schedule_restart(0, service) end
+function M.restart_service_after_3sec(service) schedule_restart(3, service) end
 
-local system_command = function(cmd)
+function M.system_command(cmd)
 
     if not guard.check_safe_string(cmd) then
         return false
@@ -99,18 +101,4 @@ local system_command = function(cmd)
     return (rc == 0)
 end
 
-return {
-    system_reboot = system_reboot,
-    system_reboot_after_5sec  = system_reboot_after_5sec,
-    system_reboot_after_10sec = system_reboot_after_10sec,
-    system_reboot_after_15sec = system_reboot_after_15sec,
-    system_reboot_after_20sec = system_reboot_after_20sec,
-    system_shutdown = system_shutdown,
-    system_shutdown_after_5sec  = system_shutdown_after_5sec,
-    system_shutdown_after_10sec = system_shutdown_after_10sec,
-    system_shutdown_after_15sec = system_shutdown_after_15sec,
-    system_shutdown_after_20sec = system_shutdown_after_20sec,
-	restart_service = restart_service,
-	restart_service_after_3sec = restart_service_after_3sec,
-	system_command = system_command,
-}
+return M

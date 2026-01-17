@@ -5,9 +5,11 @@ local misc  = require("oasis.chat.misc")
 local common = require("oasis.common")
 local debug = require("oasis.chat.debug")
 
+local M = {}
+
 local target_pkg_manager = "ipk"
 
-local check_installed_pkg = function(pkg)
+function M.check_installed_pkg(pkg)
 
     local guard = require("oasis.security.guard")
 
@@ -33,7 +35,7 @@ local check_installed_pkg = function(pkg)
     return false
 end
 
-local update_pkg_info = function(pkg_manager)
+function M.update_pkg_info(pkg_manager)
 
     target_pkg_manager = pkg_manager
     local result = false
@@ -53,7 +55,7 @@ local update_pkg_info = function(pkg_manager)
     return result
 end
 
-local function check_process_alive(pid)
+function M.check_process_alive(pid)
     local ok = os.execute("kill -0 " .. tonumber(pid) .. " >/dev/null 2>&1")
     return ok == true or ok == 0
 end
@@ -86,7 +88,7 @@ local start_install_pkg = function(pkg)
     return pid
 end
 
-local install_pkg = function(pkg)
+function M.install_pkg(pkg)
     local pid = start_install_pkg(pkg)
 
     if type(pid) ~= "number" then
@@ -102,14 +104,8 @@ local install_pkg = function(pkg)
     return true
 end
 
-local check_pkg_reboot_required = function(pkg)
+function M.check_pkg_reboot_required(pkg)
     return misc.check_file_exist(common.file.pkg.reboot_required_path  .. pkg)
 end
 
-return {
-    check_installed_pkg = check_installed_pkg,
-    update_pkg_info = update_pkg_info,
-    install_pkg = install_pkg,
-    check_process_alive = check_process_alive,
-    check_pkg_reboot_required = check_pkg_reboot_required,
-}
+return M
