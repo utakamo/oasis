@@ -11,6 +11,8 @@ local ous       = require("oasis.unified.chat.schema")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 
+local M = {}
+
 -- Create a shallow copy of chat and drop transient messages before persisting
 -- - Exclude role=="tool"
 -- - Exclude role=="assistant" that contains tool_calls
@@ -38,7 +40,7 @@ end
 -- @param service table Service object (must implement prepare_post_to_server)
 -- @param user_msg_json string JSON string of request body
 -- @param callback function Chunk handler for response body
-local post_to_server = function(service, user_msg_json, callback)
+function M.post_to_server(service, user_msg_json, callback)
 
     local easy = curl.easy()
 
@@ -58,7 +60,7 @@ end
 --- Issue a GET request to url and stream response to callback.
 -- @param url string
 -- @param callback function
-local get_to_server = function(url, callback)
+function M.get_to_server(url, callback)
     local easy = curl.easy()
     easy:setopt_url(url)
     easy:setopt_writefunction(callback)
@@ -139,7 +141,7 @@ end
 -- @param service table
 -- @param chat table
 -- @return string response_ai_json, table recv_raw_msg, boolean tool_used
-local send_user_msg = function(service, chat)
+function M.send_user_msg(service, chat)
 
     local recv_raw_msg = ""
     local tool_used = false
@@ -157,7 +159,7 @@ local send_user_msg = function(service, chat)
     local text_for_console -- text for console output
     local response_ai_json -- raw json data (Data primarily for use in the Web UI)
 
-    post_to_server(service, usr_msg_json, function(chunk)
+    M.post_to_server(service, usr_msg_json, function(chunk)
 
         text_for_console, response_ai_json, recv_raw_msg, tool_used = service:recv_ai_msg(chunk)
 
@@ -173,7 +175,7 @@ end
 --  - otherwise: new_chat_info(string|nil), assistant_text(string), false
 -- @param service table
 -- @param chat table
-local chat_with_ai = function(service, chat)
+function M.chat_with_ai(service, chat)
 
     debug:log("oasis.log", "chat_with_ai", "\n--- [transfer.lua][chat_with_ai] ---")
 
@@ -195,7 +197,7 @@ local chat_with_ai = function(service, chat)
     -- debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
-    local tool_info, ai_response_tbl, tool_used = send_user_msg(service, chat)
+    local tool_info, ai_response_tbl, tool_used = M.send_user_msg(service, chat)
 
     debug:dump("oasis.log", ai_response_tbl)
 
@@ -277,9 +279,4 @@ local chat_with_ai = function(service, chat)
     return new_chat_info, ai_response_tbl.message, false
 end
 
-return {
-    post_to_server = post_to_server,
-    get_to_server = get_to_server,
-    send_user_msg = send_user_msg,
-    chat_with_ai = chat_with_ai,
-}
+return M

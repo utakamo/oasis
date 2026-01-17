@@ -3,6 +3,8 @@
 local util  = require("luci.util")
 -- local debug = require("oasis.chat.debug")
 
+local M = {}
+
 local function apply_markdown_tokens(msg, counters)
 
     counters.code_block = counters.code_block or 0
@@ -29,7 +31,7 @@ local function apply_markdown_tokens(msg, counters)
     return msg
 end
 
-local markdown = function(mark, message)
+function M.markdown(mark, message)
 
     if not mark then
         local local_counters = { code_block = 0, bold_text = 0 }
@@ -40,19 +42,19 @@ local markdown = function(mark, message)
     return apply_markdown_tokens(message, mark.cnt)
 end
 
-local get_uptime = function()
+function M.get_uptime()
     local system_info = util.ubus("system", "info", {})
     return system_info.uptime
 end
 
-local normalize_path = function(path)
+function M.normalize_path(path)
     if string.sub(path, -1) ~= "/" then
         path = path .. "/"
     end
     return path
 end
 
-local check_file_exist = function(filename)
+function M.check_file_exist(filename)
     local f = io.open(filename, "r")
 
     if f then
@@ -66,9 +68,9 @@ end
 --- Create an empty file if it does not exist.
 -- @param filename string: path to create
 -- @return boolean ok, string|nil err
-local touch = function(filename)
+function M.touch(filename)
 
-    if not check_file_exist(filename) then
+    if not M.check_file_exist(filename) then
         local file, err = io.open(filename, "w")
         if not file then
             return false, err or "failed to open file"
@@ -84,7 +86,7 @@ end
 -- @param filename string
 -- @param data string
 -- @return boolean ok, string|nil err
-local write_file = function(filename, data)
+function M.write_file(filename, data)
     local file, err = io.open(filename, "w")
     if not file then
         return false, err or "failed to open file"
@@ -97,7 +99,7 @@ local write_file = function(filename, data)
     return true, nil
 end
 
-local read_file = function(filename)
+function M.read_file(filename)
     local file = io.open(filename, "r")  -- open in read mode
     if not file then
         return nil, "Failed to open file"
@@ -108,7 +110,7 @@ local read_file = function(filename)
     return content
 end
 
-local function copy_file(src, dst)
+function M.copy_file(src, dst)
     local rf, err1 = io.open(src, "rb")
     if not rf then return false, "Failed to open source: " .. (err1 or "") end
 
@@ -131,7 +133,7 @@ local function copy_file(src, dst)
 end
 
 -- Check whether /etc/init.d/<service> exists (with safe validation)
-local check_init_script_exists = function(service)
+function M.check_init_script_exists(service)
 
 	if type(service) ~= "string" then
 		return false
@@ -152,17 +154,7 @@ local check_init_script_exists = function(service)
 
 	local init_script = "/etc/init.d/" .. service
     -- debug:log("oasis.log", "check_init_script_exists", "service = " .. service)
-	return check_file_exist(init_script)
+	return M.check_file_exist(init_script)
 end
 
-return {
-    markdown = markdown,
-    get_uptime = get_uptime,
-    normalize_path = normalize_path,
-    check_file_exist = check_file_exist,
-    touch = touch,
-    write_file = write_file,
-    read_file = read_file,
-    copy_file = copy_file,
-    check_init_script_exists = check_init_script_exists,
-}
+return M

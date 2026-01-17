@@ -7,11 +7,13 @@ local misc      = require("oasis.chat.misc")
 local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
 
+local M = {}
+
 local sysmsg_info = {}
 sysmsg_info.fix_key = {}
 sysmsg_info.fix_key.casual = "casual"
 
-local get_ai_service_cfg = function(arg, opts)
+function M.get_ai_service_cfg(arg, opts)
 
     debug:log("oasis.log", "get_ai_service_cfg", "\n--- [datactrl.lua][get_ai_service_cfg] ---")
 
@@ -96,7 +98,7 @@ local get_ai_service_cfg = function(arg, opts)
     return cfg
 end
 
-local load_chat_data = function(service)
+function M.load_chat_data(service)
 
     debug:log("oasis.log", "load_chat_data", "\n--- [datactrl.lua][load_chat_data] ---")
 
@@ -119,7 +121,7 @@ local load_chat_data = function(service)
     return chat
 end
 
-local create_chat_file = function(service, chat)
+function M.create_chat_file(service, chat)
     -- Robust creation even if tool calls caused system/user/assistant counts to vary
     local count = (chat.messages and #chat.messages) or 0
     local get = function(idx)
@@ -154,7 +156,7 @@ local create_chat_file = function(service, chat)
     return result.id
 end
 
-local set_chat_title = function(service, chat_id)
+function M.set_chat_title(service, chat_id)
     local request = util.ubus("oasis.title", "auto_set", {id = chat_id})
 
     if request.status == common.status.error then
@@ -173,7 +175,7 @@ local set_chat_title = function(service, chat_id)
     io.flush()
 end
 
-local record_chat_data = function(service, chat)
+function M.record_chat_data(service, chat)
 
     -- print("#chat.messages = " .. #chat.messages)
 
@@ -194,8 +196,8 @@ local record_chat_data = function(service, chat)
 
     -- First Conversation
     if #chat.messages == 3 then
-        local chat_id = create_chat_file(service, chat)
-        set_chat_title(service, chat_id)
+        local chat_id = M.create_chat_file(service, chat)
+        M.set_chat_title(service, chat_id)
     -- Conversation after the second
     elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
         -- debug:dump("oasis.log", chat)
@@ -203,10 +205,4 @@ local record_chat_data = function(service, chat)
     end
 end
 
-return {
-    get_ai_service_cfg = get_ai_service_cfg,
-    load_chat_data = load_chat_data,
-    create_chat_file = create_chat_file,
-    set_chat_title = set_chat_title,
-    record_chat_data = record_chat_data,
-}
+return M

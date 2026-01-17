@@ -8,6 +8,8 @@ local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 
+local M = {}
+
 local enqueue_rollback_data_with_enviction = function(data)
 
     debug:log("oasis.log", "enqueue_rollback_data_with_enviction", "\n--- [apply.lua][enqueue_rollback_data_with_enviction] ---")
@@ -109,7 +111,7 @@ local enqueue_rollback_data_with_enviction = function(data)
     end
 end
 
-local rollback_target_data = function(index)
+function M.rollback_target_data(index)
 
     debug:log("oasis.log", "\n--- [apply.lua][rollback_target_data] ---")
     debug:log("oasis.log", "rollback_target_data", "index: " .. index)
@@ -180,7 +182,7 @@ local rollback_target_data = function(index)
     return true
 end
 
-local get_rollback_data_list = function()
+function M.get_rollback_data_list()
 
     debug:log("oasis.log", "\n--- [apply.lua][get_rollback_data_list] ---")
 
@@ -260,7 +262,7 @@ local get_rollback_data_list = function()
     return rollback_data_list
 end
 
-local create_new_backup_data = function(uci_list, id, backup_type)
+function M.create_new_backup_data(uci_list, id, backup_type)
 
     local list = {}
 
@@ -329,12 +331,12 @@ local create_new_backup_data = function(uci_list, id, backup_type)
     return false
 end
 
-local complete = function()
+function M.complete()
     uci:set(common.db.uci.cfg, common.db.uci.sect.rollback, "confirm", "0")
     uci:commit(common.db.uci.cfg)
 end
 
-local rollback = function()
+function M.rollback()
 
     debug:log("oasis.log", "\n--- [apply.lua][rollback] ---")
 
@@ -403,7 +405,7 @@ local rollback = function()
     sys.exec("reboot")
 end
 
-local finalize = function()
+function M.finalize()
 
     local result = sys.exec("touch /tmp/oasis/apply/complete;echo $?")
 
@@ -414,7 +416,7 @@ local finalize = function()
     return false
 end
 
-local apply = function(uci_list, commit)
+function M.apply(uci_list, commit)
 
     debug:log("oasis.log", "\n--- [apply.lua][apply] ---")
 
@@ -643,12 +645,4 @@ local apply = function(uci_list, commit)
     end
 end
 
-return {
-    create_new_backup_data = create_new_backup_data,
-    apply = apply,
-    complete = complete,
-    rollback = rollback,
-    finalize = finalize,
-    rollback_target_data = rollback_target_data,
-    get_rollback_data_list = get_rollback_data_list,
-}
+return M

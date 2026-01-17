@@ -12,6 +12,8 @@ local console           = require("oasis.console")
 local ous               = require("oasis.unified.chat.schema")
 local debug             = require("oasis.chat.debug")
 
+local M = {}
+
 local error_msg = {}
 error_msg.load_service1 = "Error!\n\tThere is no AI service configuration."
 error_msg.load_service2 = "\tPlease add the service configuration with the add command."
@@ -37,7 +39,7 @@ end
 
 -- Interactive storage configuration (path/chat_max). Reads from args or stdin.
 -- @param args table { path?: string, chat_max?: string }
-local storage = function(args)
+function M.storage(args)
 
     local storage = {}
     local current_storage_path = uci:get(common.db.uci.cfg, common.db.uci.sect.storage, "path") or ""
@@ -387,7 +389,7 @@ end
 -- Main add function (refactored)
 -- Add a new AI service configuration interactively or from args.
 -- @param args table
-local add = function(args)
+function M.add(args)
     local output = get_output_formats()
 
     -- Show supported services first
@@ -515,7 +517,7 @@ end
 -- Change an existing AI service by numeric index with options.
 -- @param arg table { no: string }
 -- @param opt table { u?: string, k?: string, m?: string, s?: string }
-local function change(arg, opt)
+function M.change(arg, opt)
 
     local output = {
         service = {
@@ -536,7 +538,7 @@ local function change(arg, opt)
 end
 
 -- Show configured AI services.
-local show_service_list = function()
+function M.show_service_list()
 
     local output = {}
     output.service = {}
@@ -612,7 +614,7 @@ end
 
 -- Delete service by numeric index (asks for confirmation).
 -- @param arg table { no: string }
-local delete = function(arg)
+function M.delete(arg)
 
     if not arg then
         return
@@ -665,7 +667,7 @@ end
 
 -- Select service by numeric index (reorder to first).
 -- @param arg table { no: string }
-local select_cmd = function(arg)
+function M.select(arg)
 
     if not arg.no then
         return
@@ -915,7 +917,7 @@ end
 -- Main chat function
 -- Start interactive chat for selected chat number.
 -- @param arg table { no?: string }
-local chat = function(arg)
+function M.chat(arg)
 
     arg.id = get_chat_data_by_number(arg)
 
@@ -932,7 +934,7 @@ end
 
 -- Delete chat data by chat number.
 -- @param arg table { no: string }
-local delchat = function(arg)
+function M.delchat(arg)
 
     arg.id = get_chat_data_by_number(arg)
 
@@ -969,7 +971,7 @@ end
 
 -- One-shot prompt command: prints assistant reply to console.
 -- @param arg table { message: string }
-local prompt = function(arg)
+function M.prompt(arg)
 
     local service = common.select_service_obj()
 
@@ -1013,7 +1015,7 @@ end
 
 -- Manage system messages: list/select/create.
 -- @param arg table
-local sysmsg = function(arg)
+function M.sysmsg(arg)
 
     local sysmsg = common.load_conf_file("/etc/oasis/oasis.conf")
 
@@ -1161,7 +1163,7 @@ end
 -- Output mode: returns (new_chat_info, message).
 -- @param arg table { message: string }
 -- @return string|nil, string|nil
-local output = function(arg)
+function M.output(arg)
     debug:log("oasis.log", "output", "\n--- [main.lua][output] ---")
 
     local service = initialize_output_service(arg)
@@ -1196,7 +1198,7 @@ end
 -- RPC output mode for ubus: returns (status_tbl, new_chat_info, message, reboot).
 -- @param arg table { message: string }
 -- @return table, string|nil, string|nil, boolean
-local rpc_output = function(arg)
+function M.rpc_output(arg)
 
     debug:log("oasis.log", "rpc_output", "\n--- [main.lua][rpc_output] ---")
 
@@ -1285,7 +1287,7 @@ end
 
 -- Rename chat title by chat number.
 -- @param arg table { no: string, title: string }
-local rename = function(arg)
+function M.rename(arg)
 
     arg.id = get_chat_data_by_number(arg)
 
@@ -1302,7 +1304,7 @@ local rename = function(arg)
 end
 
 -- List chat titles with indices.
-local list = function()
+function M.list()
 
     local list = util.ubus("oasis.chat", "list", {})
 
@@ -1321,7 +1323,7 @@ local list = function()
 end
 
 -- Manage local tools (enable/disable) when oasis-mod-tool is available.
-local tools = function()
+function M.tools()
 
 	local is_local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 	if not is_local_tool then
@@ -1412,20 +1414,4 @@ local tools = function()
 	end
 end
 
-return {
-    storage = storage,
-    add = add,
-    change = change,
-    delete = delete,
-    select = select_cmd,
-    show_service_list = show_service_list,
-    chat = chat,
-    delchat = delchat,
-    prompt = prompt,
-    sysmsg = sysmsg,
-    output = output,
-    rpc_output = rpc_output,
-    rename = rename,
-    list = list,
-    tools = tools,
-}
+return M
