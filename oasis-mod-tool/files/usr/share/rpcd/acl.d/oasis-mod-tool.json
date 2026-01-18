@@ -3,7 +3,8 @@
                 "description": "Access Oasis Local Tool",
                 "write": {
                         "ubus": {
-                                "oasis.tool.manager": [ "set_tool_enabled", "set_tool_disabled" ]
+                                "oasis.tool.manager": [ "set_tool_enabled", "set_tool_disabled" ],
+                                "oasis.system": ["confirm"]
                         }
                 },
 
