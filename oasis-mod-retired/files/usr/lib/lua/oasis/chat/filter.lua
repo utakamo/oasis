@@ -12,6 +12,8 @@ patterns.del_list = "^uci del_list (.+)"
 patterns.delete = "^uci delete (.+)"
 patterns.reorder = "^uci reorder (.+)"
 
+local M = {}
+
 local classify_param = function(cmd, classified_param_tbl, param_chunk)
 
     if type(param_chunk) ~= "string" then
@@ -177,7 +179,7 @@ local trim_line = function(line)
 	return trimmed
 end
 
-local uci_cmd_filter = function(message)
+function M.uci_cmd_filter(message)
 
 	local code_blocks = extract_code_blocks(message)
 	local all_lines = {}
@@ -214,7 +216,7 @@ local uci_cmd_filter = function(message)
 	return uci_list
 end
 
-local function check_uci_list_exist(uci_list)
+function M.check_uci_list_exist(uci_list)
 
 	if not uci_list then
 		return false
@@ -237,7 +239,4 @@ local function check_uci_list_exist(uci_list)
 	return false -- empty
   end
 
-return {
-    uci_cmd_filter = uci_cmd_filter,
-	check_uci_list_exist = check_uci_list_exist,
-}
+return M
