@@ -1,0 +1,54 @@
+<%+header%>
+
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tool-maker.css">
+
+<div id="tool-maker-toast" class="tm-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<h2><%:Tool Maker%></h2>
+
+<div class="tm-wrap">
+  <div class="tm-card">
+    <div class="tm-row">
+      <label for="tm-template"><%:Tool type%></label>
+      <select id="tm-template">
+        <option value="lua">Lua</option>
+        <option value="ucode">uCode</option>
+      </select>
+    </div>
+    <div class="tm-row">
+      <label for="tm-name"><%:Tool name%></label>
+      <input id="tm-name" type="text" placeholder="oasis.tool.example" />
+    </div>
+    <div class="tm-row">
+      <label for="tm-body"><%:Tool body (editable)%></label>
+      <textarea id="tm-body" rows="14" spellcheck="false"></textarea>
+    </div>
+    <div class="tm-actions">
+      <button type="button" id="tm-generate" class="tm-btn primary"><%:Generate%></button>
+      <button type="button" id="tm-validate" class="tm-btn"><%:Validate%></button>
+      <button type="button" id="tm-save" class="tm-btn"><%:Save%></button>
+    </div>
+  </div>
+
+  <div class="tm-card">
+    <div class="tm-row">
+      <label for="tm-output"><%:Generated output%></label>
+      <textarea id="tm-output" rows="16" spellcheck="false" readonly></textarea>
+    </div>
+    <div id="tm-result" class="tm-result"></div>
+  </div>
+</div>
+
+<script>
+window.OasisToolMakerConfig = {
+  urls: {
+    render: '<%=build_url("admin", "network", "oasis", "tool-maker-render")%>',
+    save: '<%=build_url("admin", "network", "oasis", "tool-maker-save")%>',
+    validate: '<%=build_url("admin", "network", "oasis", "tool-maker-validate")%>',
+    refreshTools: '<%=build_url("admin", "network", "oasis", "refresh-tools")%>'
+  }
+};
+</script>
+<script src="<%= resource %>/oasis/js/tool-maker.js"></script>
+
+<%+footer%>

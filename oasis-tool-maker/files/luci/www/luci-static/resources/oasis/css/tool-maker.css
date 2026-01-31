@@ -1,0 +1,104 @@
+.tm-wrap {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  max-width: 900px;
+}
+
+@media (min-width: 900px) {
+  .tm-wrap {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.tm-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+}
+
+.tm-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.tm-row label {
+  font-weight: 600;
+  color: #333;
+}
+
+.tm-row input,
+.tm-row select,
+.tm-row textarea {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+}
+
+.tm-row textarea {
+  min-height: 260px;
+  font-family: monospace;
+}
+
+.tm-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tm-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #e9ecef;
+  color: #222;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tm-btn.primary {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.tm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tm-result {
+  font-size: 0.92rem;
+  color: #555;
+}
+
+.tm-toast {
+  position: sticky;
+  top: 8px;
+  background: #212529;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: none;
+  z-index: 10;
+}
+
+.tm-toast.show {
+  display: block;
+}
+
+.tm-toast.success {
+  background: #198754;
+}
+
+.tm-toast.error {
+  background: #dc3545;
+}
+
+.tm-toast.info {
+  background: #0d6efd;
+}

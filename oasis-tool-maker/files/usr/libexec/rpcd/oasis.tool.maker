@@ -1,0 +1,149 @@
+#!/usr/bin/env lua
+
+local jsonc = require("luci.jsonc")
+local tmpl = require("oasis.tool.maker.template")
+
+local methods = {
+    list_templates = {
+        call = function()
+            local r = {}
+            r.result = jsonc.stringify({ templates = tmpl.list_templates() })
+            return r
+        end
+    },
+
+    get_template = {
+        args = { type = "a_string" },
+        call = function(args)
+            local content, body, err = tmpl.get_template(args.type)
+            local r = {}
+            if err then
+                r.result = jsonc.stringify({ status = "NG", error = err })
+                return r
+            end
+            r.result = jsonc.stringify({ status = "OK", type = args.type, content = content, body = body })
+            return r
+        end
+    },
+
+    render_template = {
+        args = { type = "a_string", body = "a_string" },
+        call = function(args)
+            local r = {}
+            local content, err = tmpl.render(args.type, args.body)
+            if not content then
+                r.result = jsonc.stringify({ status = "NG", error = err or "failed to render" })
+                return r
+            end
+            r.result = jsonc.stringify({ status = "OK", content = content })
+            return r
+        end
+    },
+
+    save_tool = {
+        args = { type = "a_string", name = "a_string", body = "a_string" },
+        call = function(args)
+            local r = {}
+            local valid, errors = tmpl.validate(args.type, args.body)
+            if not valid then
+                r.result = jsonc.stringify({ status = "NG", error = errors and errors[1] or "invalid body" })
+                return r
+            end
+
+            local content, err = tmpl.render(args.type, args.body)
+            if not content then
+                r.result = jsonc.stringify({ status = "NG", error = err or "failed to render" })
+                return r
+            end
+
+            local ok, info_or_err = tmpl.save(args.type, args.name, content)
+            if not ok then
+                r.result = jsonc.stringify({ status = "NG", error = info_or_err })
+                return r
+            end
+            r.result = jsonc.stringify({ status = "OK", path = info_or_err.path, bytes = info_or_err.bytes })
+            return r
+        end
+    },
+
+    validate_tool = {
+        args = { type = "a_string", body = "a_string" },
+        call = function(args)
+            local r = {}
+            local ok, errors = tmpl.validate(args.type, args.body)
+            if not ok then
+                r.result = jsonc.stringify({ status = "NG", errors = errors })
+                return r
+            end
+            r.result = jsonc.stringify({ status = "OK", errors = {} })
+            return r
+        end
+    }
+}
+
+local function parseInput()
+    local parse = jsonc.new()
+    local done, err
+
+    while true do
+        local chunk = io.read(4096)
+        if not chunk then
+            break
+        elseif not done and not err then
+            done, err = parse:parse(chunk)
+        end
+    end
+
+    if not done then
+        print(jsonc.stringify({ error = err or "Incomplete input for argument parsing" }))
+        os.exit(1)
+    end
+
+    return parse:get()
+end
+
+local function validateArgs(func, uargs)
+    local method = methods[func]
+    if not method then
+        print(jsonc.stringify({ error = "Method not found in methods table" }))
+        os.exit(1)
+    end
+
+    local n = 0
+    for _, _ in pairs(uargs) do n = n + 1 end
+
+    if method.args and n == 0 then
+        print(jsonc.stringify({
+            error = "Received empty arguments for " .. func ..
+                " but it requires " .. jsonc.stringify(method.args)
+        }))
+        os.exit(1)
+    end
+
+    uargs.ubus_rpc_session = nil
+
+    local margs = method.args or {}
+    for k, v in pairs(uargs) do
+        if margs[k] == nil or (v ~= nil and type(v) ~= type(margs[k])) then
+            print(jsonc.stringify({
+                error = "Invalid argument '" .. k .. "' for " .. func ..
+                    " it requires " .. jsonc.stringify(method.args)
+            }))
+            os.exit(1)
+        end
+    end
+
+    return method
+end
+
+if arg[1] == "list" then
+    local _, rv = nil, {}
+    for _, method in pairs(methods) do rv[_] = method.args or {} end
+    print((jsonc.stringify(rv):gsub(":%[%]", ":{}")))
+elseif arg[1] == "call" then
+    local args = parseInput()
+    local method = validateArgs(arg[2], args)
+    local run = method.call(args)
+    print(run.result)
+    os.exit(run.code or 0)
+end
