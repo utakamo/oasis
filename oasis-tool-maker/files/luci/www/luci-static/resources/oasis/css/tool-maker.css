@@ -37,6 +37,12 @@
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 0.95rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.tm-row select {
+  min-height: 2.5rem;
 }
 
 .tm-row textarea {
