@@ -9,8 +9,8 @@ local TEMPLATE_PATHS = {
 }
 
 local function locate_body_bounds(template)
-    local start_marker = "OASIS_TOOL_BODY_BEGIN"
-    local end_marker = "OASIS_TOOL_BODY_END"
+    local start_marker = "OASIS_TOOL_INSERT_BEGIN"
+    local end_marker = "OASIS_TOOL_INSERT_END"
 
     local start_pos = template:find(start_marker, 1, true)
     if not start_pos then
@@ -66,14 +66,109 @@ local function read_template(tool_type)
     return content
 end
 
-local function extract_body(template)
-    local start_line_end, end_line_start = locate_body_bounds(template)
-    if not start_line_end then
-        return nil, end_line_start
+local function build_tool_calls(tool_type, tools, group)
+    if type(tools) ~= "table" then
+        return nil, "invalid tools"
     end
 
-    local body = template:sub(start_line_end + 1, end_line_start)
-    return body
+    local function quote(s)
+        s = tostring(s or "")
+        s = s:gsub("\\", "\\\\"):gsub("\"", "\\\"")
+        return "\"" .. s .. "\""
+    end
+
+    local function indent_lines(text, pad)
+        local prefix = string.rep(" ", pad or 0)
+        local out = {}
+        local lines = tostring(text or "")
+        if lines == "" then
+            return prefix
+        end
+        for line in lines:gmatch("([^\n]*)\n?") do
+            out[#out + 1] = prefix .. line
+        end
+        -- Remove possible trailing empty line from gmatch
+        if #out > 0 and out[#out] == prefix then
+            out[#out] = nil
+        end
+        return table.concat(out, "\n")
+    end
+
+    local buf = {}
+    for _, tool in ipairs(tools) do
+        local name = tool.name or ""
+        local tool_desc = tool.tool_desc or ""
+        local args = tool.args or {}
+        local args_desc = tool.args_desc or {}
+        local call_body = tool.call_body or ""
+
+        if name == "" then
+            return nil, "missing tool name"
+        end
+        if tool_desc == "" then
+            return nil, "missing tool description"
+        end
+        if call_body == "" then
+            return nil, "missing call body"
+        end
+        if type(args) ~= "table" or type(args_desc) ~= "table" then
+            return nil, "invalid args"
+        end
+        if #args ~= #args_desc then
+            return nil, "args and args_desc mismatch"
+        end
+
+        name = guard.sanitize(name)
+
+        local args_desc_lines = {}
+        for _, desc in ipairs(args_desc) do
+            args_desc_lines[#args_desc_lines + 1] = quote(desc)
+        end
+
+        local args_lines = {}
+        for _, arg in ipairs(args) do
+            local aname = guard.sanitize(arg.name or "")
+            local atype = arg.type or ""
+            if aname == "" or atype == "" then
+                return nil, "invalid arg"
+            end
+            if tool_type == "lua" then
+                args_lines[#args_lines + 1] = string.format("%s = %s", aname, quote(atype))
+            else
+                args_lines[#args_lines + 1] = string.format("%s: %s", aname, quote(atype))
+            end
+        end
+
+        if tool_type == "lua" then
+            local def = {
+                "server.tool(" .. quote(name) .. ", {",
+                "    tool_desc = " .. quote(tool_desc) .. ",",
+                "    args_desc = { " .. table.concat(args_desc_lines, ", ") .. " },",
+                "    args = { " .. table.concat(args_lines, ", ") .. " },",
+                "    call = function(args)",
+                indent_lines(call_body, 8),
+                "    end",
+                "})"
+            }
+            buf[#buf + 1] = table.concat(def, "\n")
+        else
+            local grp = group or "oasis.ucode.tool"
+            grp = guard.sanitize(grp)
+            local def = {
+                "server.tool(" .. quote(grp) .. ", " .. quote(name) .. ", {",
+                "    tool_desc: " .. quote(tool_desc) .. ",",
+                "    args_desc: [ " .. table.concat(args_desc_lines, ", ") .. " ],",
+                "    args: { " .. table.concat(args_lines, ", ") .. " },",
+                "    call: function(request) {",
+                indent_lines(call_body, 8),
+                "    }",
+                "});"
+            }
+            buf[#buf + 1] = table.concat(def, "\n")
+        end
+    end
+
+    return table.concat(buf, "\n\n")
 end
 
 function M.list_templates()
@@ -89,18 +184,18 @@ function M.get_template(tool_type)
         return nil, nil, err
     end
 
-    local body, body_err = extract_body(template)
-    if body_err then
-        return template, nil, body_err
-    end
-
-    return template, body, nil
+    return template, nil, nil
 end
 
-function M.render(tool_type, body)
+function M.render(tool_type, tools, group)
     local template, err = read_template(tool_type)
     if not template then
         return nil, err
+    end
+
+    local body, build_err = build_tool_calls(tool_type, tools, group)
+    if not body then
+        return nil, build_err
     end
 
     local content, render_err = inject_body(template, body)
@@ -111,7 +206,7 @@ function M.render(tool_type, body)
     return content, nil
 end
 
-function M.validate(tool_type, body)
+function M.validate(tool_type, tools, group)
     local template, err = read_template(tool_type)
     if not template then
         return false, { err or "template not found" }
@@ -123,8 +218,19 @@ function M.validate(tool_type, body)
         return false, { marker_err }
     end
 
-    if not body or #body == 0 then
-        return false, { "empty body" }
+    if type(tools) ~= "table" or #tools == 0 then
+        return false, { "empty tools" }
+    end
+
+    for _, tool in ipairs(tools) do
+        if not tool.tool_desc or tool.tool_desc == "" then
+            return false, { "missing tool description" }
+        end
+    end
+
+    local body, build_err = build_tool_calls(tool_type, tools, group)
+    if not body then
+        return false, { build_err or "failed to build tools" }
     end
 
     local content, render_err = inject_body(template, body)

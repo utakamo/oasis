@@ -27,10 +27,15 @@ local methods = {
     },
 
     render_template = {
-        args = { type = "a_string", body = "a_string" },
+        args = { type = "a_string", name = "a_string", tools = "a_string" },
         call = function(args)
             local r = {}
-            local content, err = tmpl.render(args.type, args.body)
+            local tools = jsonc.parse(args.tools or "[]")
+            if type(tools) ~= "table" then
+                r.result = jsonc.stringify({ status = "NG", error = "invalid tools" })
+                return r
+            end
+            local content, err = tmpl.render(args.type, tools, args.name)
             if not content then
                 r.result = jsonc.stringify({ status = "NG", error = err or "failed to render" })
                 return r
@@ -41,16 +46,21 @@ local methods = {
     },
 
     save_tool = {
-        args = { type = "a_string", name = "a_string", body = "a_string" },
+        args = { type = "a_string", name = "a_string", tools = "a_string" },
         call = function(args)
             local r = {}
-            local valid, errors = tmpl.validate(args.type, args.body)
+            local tools = jsonc.parse(args.tools or "[]")
+            if type(tools) ~= "table" then
+                r.result = jsonc.stringify({ status = "NG", error = "invalid tools" })
+                return r
+            end
+            local valid, errors = tmpl.validate(args.type, tools, args.name)
             if not valid then
                 r.result = jsonc.stringify({ status = "NG", error = errors and errors[1] or "invalid body" })
                 return r
             end
 
-            local content, err = tmpl.render(args.type, args.body)
+            local content, err = tmpl.render(args.type, tools, args.name)
             if not content then
                 r.result = jsonc.stringify({ status = "NG", error = err or "failed to render" })
                 return r
@@ -67,10 +77,15 @@ local methods = {
     },
 
     validate_tool = {
-        args = { type = "a_string", body = "a_string" },
+        args = { type = "a_string", name = "a_string", tools = "a_string" },
         call = function(args)
             local r = {}
-            local ok, errors = tmpl.validate(args.type, args.body)
+            local tools = jsonc.parse(args.tools or "[]")
+            if type(tools) ~= "table" then
+                r.result = jsonc.stringify({ status = "NG", errors = { "invalid tools" } })
+                return r
+            end
+            local ok, errors = tmpl.validate(args.type, tools, args.name)
             if not ok then
                 r.result = jsonc.stringify({ status = "NG", errors = errors })
                 return r

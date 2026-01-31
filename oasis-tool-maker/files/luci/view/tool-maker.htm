@@ -16,12 +16,39 @@
       </select>
     </div>
     <div class="tm-row">
-      <label for="tm-name"><%:Tool name%></label>
+      <label for="tm-name"><%:Server script name%></label>
       <input id="tm-name" type="text" placeholder="oasis.tool.example" />
     </div>
     <div class="tm-row">
-      <label for="tm-body"><%:Tool body (editable)%></label>
-      <textarea id="tm-body" rows="14" spellcheck="false"></textarea>
+      <label><%:Tools%></label>
+      <div class="tm-tool-list">
+        <div id="tm-tool-list"></div>
+        <button type="button" id="tm-add-tool" class="tm-btn"><%:Add tool%></button>
+      </div>
+    </div>
+    <div class="tm-row">
+      <label for="tm-tool-name"><%:Tool name%></label>
+      <input id="tm-tool-name" type="text" placeholder="get_weather" />
+    </div>
+    <div class="tm-row">
+      <label for="tm-tool-desc"><%:Tool description%> *</label>
+      <input id="tm-tool-desc" type="text" placeholder="Get current temperature for a given location." />
+    </div>
+    <div class="tm-row">
+      <label><%:Tool arguments%></label>
+      <div class="tm-arg-list">
+        <div class="tm-arg-head">
+          <span><%:Arg name%></span>
+          <span><%:Type%></span>
+          <span><%:Arg description%></span>
+        </div>
+        <div id="tm-arg-rows"></div>
+        <button type="button" id="tm-add-arg" class="tm-btn"><%:Add arg%></button>
+      </div>
+    </div>
+    <div class="tm-row">
+      <label for="tm-body"><%:Call body (editable)%></label>
+      <textarea id="tm-body" rows="12" spellcheck="false"></textarea>
     </div>
     <div class="tm-actions">
       <button type="button" id="tm-generate" class="tm-btn primary"><%:Generate%></button>

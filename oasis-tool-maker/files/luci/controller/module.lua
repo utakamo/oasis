@@ -1,6 +1,7 @@
 local uci = require("luci.model.uci").cursor()
 local luci_http = require("luci.http")
 local common = require("oasis.common")
+local jsonc = require("luci.jsonc")
 local tmpl = require("oasis.tool.maker.template")
 
 module("luci.controller.oasis-tool-maker.module", package.seeall)
@@ -24,9 +25,15 @@ end
 
 function tool_maker_render()
     local tool_type = luci_http.formvalue("type") or "lua"
-    local body = luci_http.formvalue("body") or ""
+    local name = luci_http.formvalue("name") or ""
+    local tools_json = luci_http.formvalue("tools") or "[]"
+    local tools = jsonc.parse(tools_json)
+    if type(tools) ~= "table" then
+        write_json({ status = "NG", error = "invalid tools" })
+        return
+    end
 
-    local content, err = tmpl.render(tool_type, body)
+    local content, err = tmpl.render(tool_type, tools, name)
     if not content then
         write_json({ status = "NG", error = err or "failed to render" })
         return
@@ -37,9 +44,15 @@ end
 
 function tool_maker_validate()
     local tool_type = luci_http.formvalue("type") or "lua"
-    local body = luci_http.formvalue("body") or ""
+    local name = luci_http.formvalue("name") or ""
+    local tools_json = luci_http.formvalue("tools") or "[]"
+    local tools = jsonc.parse(tools_json)
+    if type(tools) ~= "table" then
+        write_json({ status = "NG", errors = { "invalid tools" } })
+        return
+    end
 
-    local ok, errors = tmpl.validate(tool_type, body)
+    local ok, errors = tmpl.validate(tool_type, tools, name)
     if not ok then
         write_json({ status = "NG", errors = errors })
         return
@@ -51,15 +64,20 @@ end
 function tool_maker_save()
     local tool_type = luci_http.formvalue("type") or "lua"
     local name = luci_http.formvalue("name") or ""
-    local body = luci_http.formvalue("body") or ""
+    local tools_json = luci_http.formvalue("tools") or "[]"
+    local tools = jsonc.parse(tools_json)
+    if type(tools) ~= "table" then
+        write_json({ status = "NG", error = "invalid tools" })
+        return
+    end
 
-    local valid, errors = tmpl.validate(tool_type, body)
+    local valid, errors = tmpl.validate(tool_type, tools, name)
     if not valid then
         write_json({ status = "NG", error = errors and errors[1] or "invalid body" })
         return
     end
 
-    local content, render_err = tmpl.render(tool_type, body)
+    local content, render_err = tmpl.render(tool_type, tools, name)
     if not content then
         write_json({ status = "NG", error = render_err or "failed to render" })
         return

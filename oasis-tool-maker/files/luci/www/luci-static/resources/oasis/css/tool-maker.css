@@ -75,6 +75,74 @@
   color: #555;
 }
 
+.tm-tool-list {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fafafa;
+}
+
+.tm-arg-list {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fafafa;
+}
+
+.tm-arg-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.tm-arg-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr auto;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tm-arg-row input {
+  width: 100%;
+}
+
+.tm-tool-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.tm-tool-row.active .tm-tool-name {
+  color: #0d6efd;
+  font-weight: 700;
+}
+
+.tm-tool-name {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: #333;
+}
+
+.tm-tool-del {
+  background: #f1f3f5;
+  border: none;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  cursor: pointer;
+  color: #444;
+}
+
 .tm-toast {
   position: sticky;
   top: 8px;
