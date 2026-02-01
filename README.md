@@ -1,3 +1,4 @@
+![OS](https://img.shields.io/badge/OpenWrt-blueviolet) ![License](https://img.shields.io/badge/License-MIT-green)
 # OpenWrt AI Assistant Application - Oasis (v3.2.6)
 
 > [!CAUTION]
