@@ -1,4 +1,10 @@
 # OpenWrt AI Assistant Application - Oasis (v3.2.6)
+
+> [!CAUTION]
+> This project is an experimental and exploratory software that enables AI‑driven control of network devices.
+> Due to its experimental nature, it is not intended for end‑user use at this stage.
+
+
 > [!IMPORTANT]
 > >
 > **Support AI Service**
