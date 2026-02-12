@@ -57,6 +57,7 @@ AGENT_VER="1.0.0-r1"
 RETIRED_VER="1.0.0-r1"
 EDGE_VER="1.0.0-r1"
 TEST_VER="1.0.0-r1"
+MAKER_VER="1.0.0-r1"
 
 # ====================================
 # Config File (User Home)
@@ -152,6 +153,7 @@ make package/oasis-mod-retired/{clean,compile}
 make package/luci-app-oasis/{clean,compile}
 make package/oasis-tool-edge/{clean,compile}
 make package/oasis-mod-test/{clean,compile}
+make package/oasis-tool-maker/{clean,compile}
 make package/luci-i18n-oasis-ja/{clean,compile}
 
 # ====================================
@@ -165,6 +167,7 @@ FILES=(
   "oasis-mod-retired_${RETIRED_VER}_all.ipk"
   "oasis-tool-edge_${EDGE_VER}_all.ipk"
   "oasis-mod-test_${TEST_VER}_all.ipk"
+  "oasis-tool-maker_${MAKER_VER}_all.ipk"
 )
 
 for f in "${FILES[@]}"; do
