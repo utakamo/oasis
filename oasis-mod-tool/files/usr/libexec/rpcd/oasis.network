@@ -64,8 +64,26 @@ server.tool("port_link_status", {
     tool_desc = "Show WAN/LAN Port Link Status",
     call = function()
         local util = require("luci.util")
-        local port_link_status = util.exec("ip link show")
-        return server.response({result = port_link_status})
+        local link_info = util.exec("ip -o link show 2>/dev/null") or ""
+        local interfaces = {}
+
+        for line in link_info:gmatch("[^\r\n]+") do
+            local ifname_raw, flags, state = line:match("^%d+:%s+([^:]+):%s+<([^>]*)>.-%sstate%s+(%S+)")
+            if ifname_raw then
+                -- Strip peer suffix from names like "lan4@eth0".
+                local ifname = ifname_raw:match("^([^@]+)") or ifname_raw
+                local is_lower_up = flags and flags:find("LOWER_UP", 1, true)
+                local is_state_up = (state == "UP")
+                local status = (is_lower_up or is_state_up) and "UP" or "DOWN"
+
+                interfaces[#interfaces + 1] = {
+                    ifname = ifname,
+                    status = status
+                }
+            end
+        end
+
+        return server.response({interfaces = interfaces})
     end
 })
 
