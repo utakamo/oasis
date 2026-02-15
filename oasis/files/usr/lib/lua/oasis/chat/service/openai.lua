@@ -174,21 +174,49 @@ openai.new = function()
             user_msg = calling.inject_schema(self, user_msg)
 
             -- TODO: Move the following logic later or extract into a dedicated function
-            -- Inject max_tokens only when generating a title
+            -- Inject title-related generation parameters
             if self:get_format() == common.ai.format.title then
                 local spath = uci:get(common.db.uci.cfg, common.db.uci.sect.role, "path")
                 local conf = common.load_conf_file(spath)
                 local v1 = conf and conf.title and conf.title.openai_temperature
-                local v2 = conf and conf.title and conf.title.openai_max_tokens
+                -- Backward compatibility:
+                -- prefer openai_max_completion_tokens, fallback to openai_max_tokens.
+                local v2 = conf and conf.title and
+                    (conf.title.openai_max_completion_tokens or conf.title.openai_max_tokens)
+
+                local cfg_service = tostring((self.cfg and self.cfg.service) or "")
+                local model_name = tostring(user_msg.model or (self.cfg and self.cfg.model) or "")
+                local model_lc = model_name:lower()
+                local is_openai_service = (cfg_service == common.ai.service.openai.name)
+                local is_gpt5 = (model_lc:match("^gpt%-5") ~= nil)
 
                 local n1 = tonumber(v1)
-                if n1 then
-                    user_msg.temperature = n1
-                end
-
                 local n2 = tonumber(v2)
-                if n2 then
-                    user_msg.max_tokens = n2
+
+                if is_gpt5 then
+                    -- TODO: Revisit GPT-5 title controls after API behavior is validated.
+                    -- Current workaround: omit temperature/max* for GPT-5 because
+                    -- title generation has shown unstable behavior in this path.
+                    user_msg.temperature = nil
+                    user_msg.max_completion_tokens = nil
+                    user_msg.max_tokens = nil
+                else
+                    if n1 then
+                        user_msg.temperature = n1
+                    else
+                        user_msg.temperature = nil
+                    end
+
+                    if n2 then
+                        if is_openai_service then
+                            user_msg.max_completion_tokens = n2
+                            user_msg.max_tokens = nil
+                        else
+                            -- Keep legacy behavior for OpenRouter/LM Studio compatibility.
+                            user_msg.max_tokens = n2
+                            user_msg.max_completion_tokens = nil
+                        end
+                    end
                 end
             end
 
