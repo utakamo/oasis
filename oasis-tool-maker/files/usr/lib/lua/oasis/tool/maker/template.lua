@@ -1,4 +1,5 @@
 local fs = require("nixio.fs")
+local util = require("luci.util")
 local guard = require("oasis.security.guard")
 
 local M = {}
@@ -7,6 +8,17 @@ local TEMPLATE_PATHS = {
     lua = "/etc/oasis/tool-maker/lua/template",
     ucode = "/etc/oasis/tool-maker/ucode/template",
 }
+
+local function shell_quote(s)
+    s = tostring(s or "")
+    return "'" .. s:gsub("'", "'\\''") .. "'"
+end
+
+local function exec_rc(cmd)
+    local out = util.exec(cmd .. "; echo $?") or ""
+    out = out:gsub("%s+$", "")
+    return tonumber(out)
+end
 
 local function locate_body_bounds(template)
     local start_marker = "OASIS_TOOL_INSERT_BEGIN"
@@ -240,10 +252,26 @@ function M.validate(tool_type, tools, group)
 
     if tool_type == "lua" then
         local stripped = content:gsub("^#![^\n]*\n", "")
-        local loader = load or loadstring
-        local fn, syntax_err = loader(stripped, "oasis-tool")
+
+        local fn, syntax_err
+
+        -- Lua 5.1: load() expects a reader function, so prefer loadstring().
+        if type(loadstring) == "function" then
+            fn, syntax_err = loadstring(stripped, "oasis-tool")
+        elseif type(load) == "function" then
+            -- Lua 5.2+: load(string [, chunkname [, mode]])
+            local ok, compiled, err = pcall(load, stripped, "oasis-tool", "t")
+            if ok then
+                fn, syntax_err = compiled, err
+            else
+                fn, syntax_err = nil, compiled
+            end
+        else
+            return false, { "lua loader not available" }
+        end
+
         if not fn then
-            return false, { syntax_err or "lua syntax error" }
+            return false, { tostring(syntax_err or "lua syntax error") }
         end
     elseif tool_type == "ucode" then
         if fs.stat("/usr/bin/ucode") then
@@ -294,10 +322,17 @@ function M.save(tool_type, name, content)
     end
 
     if tool_type == "lua" then
-        local mode = tonumber("755", 8)
-        local chmod_ok = fs.chmod(target_path, mode)
-        if not chmod_ok then
+        local quoted_path = shell_quote(target_path)
+
+        local rc = exec_rc("chmod 755 " .. quoted_path .. " >/dev/null 2>&1")
+        if rc ~= 0 then
             return false, "failed to chmod"
+        end
+
+        -- Final guard: ensure file is executable for at least one class.
+        rc = exec_rc("test -x " .. quoted_path .. " >/dev/null 2>&1")
+        if rc ~= 0 then
+            return false, "failed to set executable permission"
         end
     end
 

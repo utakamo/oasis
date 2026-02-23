@@ -36,6 +36,12 @@
     if (resultEl) resultEl.textContent = text || '';
   }
 
+  function getErrorMessage(err, fallback) {
+    if (typeof err === 'string' && err) return err;
+    if (err && typeof err.message === 'string' && err.message) return err.message;
+    return fallback || 'unknown error';
+  }
+
   function postForm(url, data) {
     return fetch(url, {
       method: 'POST',
@@ -52,7 +58,23 @@
     return String(name || '').replace(/[^\w_]/g, '');
   }
 
-  function defaultToolDef() {
+  function defaultToolDef(toolType) {
+    if (toolType === 'ucode') {
+      return {
+        tool_desc: 'Get current temperature for a given location.',
+        args: [
+          { name: 'location', type: 'a_string', desc: 'City and country e.g. Bogotá, Colombia' }
+        ],
+        call_body: [
+          'return {',
+          '  location: request.args.location,',
+          '  temperature: "25°C",',
+          '  condition: "Sunny"',
+          '};'
+        ].join('\n')
+      };
+    }
+
     return {
       tool_desc: 'Get current temperature for a given location.',
       args: [
@@ -153,7 +175,7 @@
   function addTool(name) {
     const toolName = escapeToolName(name || 'get_weather');
     const id = 'tool_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-    const def = defaultToolDef();
+    const def = defaultToolDef(currentType);
     const tool = {
       id,
       name: toolName,
@@ -211,7 +233,10 @@
     return true;
   }
 
-  function generateOutput() {
+  function generateOutput(opts) {
+    const options = opts || {};
+    const rethrowOnError = !!options.rethrowOnError;
+
     updateActiveTool();
     setResult('');
     btnGenerate.disabled = true;
@@ -226,8 +251,15 @@
         return data.content || '';
       })
       .catch(err => {
+        const msg = getErrorMessage(err, 'Render failed');
         console.error('Render failed', err);
-        showToast('Render failed', 'error', 3000);
+
+        if (rethrowOnError) {
+          throw err;
+        }
+
+        setResult('Render failed: ' + msg);
+        showToast('Render failed: ' + msg, 'error', 4000);
         return '';
       })
       .finally(() => { btnGenerate.disabled = false; });
@@ -281,7 +313,7 @@
     btnSave.disabled = true;
     setResult('');
 
-    generateOutput()
+    generateOutput({ rethrowOnError: true })
       .then(content => {
         if (!content) throw new Error('No content');
         return postForm(urls.save, { type: currentType, name, tools: toolsPayload() });
@@ -307,8 +339,10 @@
         }
       })
       .catch(err => {
+        const msg = getErrorMessage(err, 'Save failed');
         console.error('Save failed', err);
-        showToast('Save failed', 'error', 3000);
+        setResult('Save failed: ' + msg);
+        showToast('Save failed: ' + msg, 'error', 4000);
       })
       .finally(() => { btnSave.disabled = false; });
   }
