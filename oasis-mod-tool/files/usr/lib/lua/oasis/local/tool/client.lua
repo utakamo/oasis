@@ -12,6 +12,26 @@ local M = {}
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
 
+-- Quote dynamic paths before passing them to shell commands.
+local function shell_quote(s)
+    s = tostring(s or "")
+    return "'" .. s:gsub("'", "'\\''") .. "'"
+end
+
+local function is_regular_file(path)
+    local st = fs.stat(path)
+    return st and st.type == "reg"
+end
+
+local function is_oasis_tool_server(path)
+    local content = fs.readfile(path)
+    if not content then
+        return false
+    end
+    -- Only scripts that use the Oasis local tool server are scan targets.
+    return content:find("oasis.local.tool.server", 1, true) ~= nil
+end
+
 local ubus_call = function(path, method, param, timeout)
 
     local ubus = require("ubus")
@@ -42,7 +62,25 @@ end
 
 function M.setup_lua_server_config(server_name)
     local server_path = lua_ubus_server_app_dir .. server_name
-    local meta = sys.exec(server_path .. " meta")
+
+    -- Guard against executing arbitrary files under /usr/libexec/rpcd.
+    if not is_regular_file(server_path) then
+        debug:log("oasis.log", "setup_lua_server_config", "skip non-regular file: " .. server_name)
+        return
+    end
+
+    if not fs.access(server_path, "x") then
+        debug:log("oasis.log", "setup_lua_server_config", "skip non-executable file: " .. server_name)
+        return
+    end
+
+    if not is_oasis_tool_server(server_path) then
+        debug:log("oasis.log", "setup_lua_server_config", "skip non-oasis server file: " .. server_name)
+        return
+    end
+
+    -- Keep install/reload logs clean even if an external script prints to stderr.
+    local meta = sys.exec(shell_quote(server_path) .. " meta 2>/dev/null")
 
     -- Todo:
     -- Check meta command success
@@ -112,12 +150,18 @@ function M.setup_ucode_server_config(server_name)
     end
 
     local server_path = ucode_ubus_server_app_dir .. server_name
-    -- Check target ucode script
-    if not misc.check_file_exist(server_path) then
+    if not is_regular_file(server_path) then
         debug:log("oasis.log", "setup_ucode_server_config", "script not found: " .. server_path)
         return
     end
-    local meta = sys.exec("ucode " .. server_path)
+
+    if not is_oasis_tool_server(server_path) then
+        debug:log("oasis.log", "setup_ucode_server_config", "skip non-oasis server file: " .. server_name)
+        return
+    end
+
+    -- Keep install/reload logs clean even if an external script prints to stderr.
+    local meta = sys.exec("ucode " .. shell_quote(server_path) .. " 2>/dev/null")
     debug:log("oasis.log", "setup_ucode_server_config", meta)
 
     local data = jsonc.parse(meta)
@@ -192,8 +236,13 @@ local listup_server_candidate = function(dir)
 
   local result = {}
   for file in files do
-    table.insert(result, file)
+    local path = dir .. file
+    -- Ignore directories and special files; only regular files are candidates.
+    if is_regular_file(path) then
+        table.insert(result, file)
+    end
   end
+  table.sort(result)
   return result
 end
 
