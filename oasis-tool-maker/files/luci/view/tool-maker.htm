@@ -32,7 +32,7 @@
     </div>
     <div class="tm-row">
       <label for="tm-tool-desc"><%:Tool description%> *</label>
-      <input id="tm-tool-desc" type="text" placeholder="Get current temperature for a given location." />
+      <input id="tm-tool-desc" type="text" placeholder="<%:Get current temperature for a given location.%>" />
     </div>
     <div class="tm-row">
       <label><%:Tool arguments%></label>
@@ -73,6 +73,56 @@ window.OasisToolMakerConfig = {
     save: '<%=build_url("admin", "network", "oasis", "tool-maker-save")%>',
     validate: '<%=build_url("admin", "network", "oasis", "tool-maker-validate")%>',
     refreshTools: '<%=build_url("admin", "network", "oasis", "refresh-tools")%>'
+  },
+  strings: {
+    defaultToolDescription: '<%:Get current temperature for a given location.%>',
+    defaultArgDescription: '<%:City and country e.g. Bogotá, Colombia%>',
+    unnamedLabel: '<%:unnamed%>',
+    unknownError: '<%:unknown error%>',
+    generated: '<%:Generated%>',
+    renderFailed: '<%:Render failed%>',
+    renderFailedWithReason: '<%:Render failed: {error}%>',
+    missingToolDescription: '<%:Missing tool description%>',
+    validationOk: '<%:Validation OK%>',
+    validationNg: '<%:Validation NG%>',
+    validationNgWithReason: '<%:Validation NG: {error}%>',
+    validateFailed: '<%:Validate failed%>',
+    noResponse: '<%:No response%>',
+    missingToolName: '<%:Missing tool name%>',
+    missingToolDefinition: '<%:Missing tool definition%>',
+    noContent: '<%:No content%>',
+    saved: '<%:Saved%>',
+    savedSummary: '<%:Saved: {path} ({bytes} bytes)%>',
+    saveFailed: '<%:Save failed%>',
+    saveFailedWithReason: '<%:Save failed: {error}%>',
+    refreshFailed: '<%:Refresh failed%>',
+    backendInvalidTools: '<%:invalid tools%>',
+    backendFailedToRender: '<%:failed to render%>',
+    backendInvalidBody: '<%:invalid body%>',
+    backendEmptyTools: '<%:empty tools%>',
+    backendMissingToolDescription: '<%:missing tool description%>',
+    backendMissingToolName: '<%:missing tool name%>',
+    backendMissingCallBody: '<%:missing call body%>',
+    backendInvalidArgs: '<%:invalid args%>',
+    backendArgsDescMismatch: '<%:args and args_desc mismatch%>',
+    backendInvalidArg: '<%:invalid arg%>',
+    backendInvalidTemplateType: '<%:invalid template type%>',
+    backendTemplateNotFound: '<%:template not found%>',
+    backendLuaLoaderNotAvailable: '<%:lua loader not available%>',
+    backendUcodeSyntaxError: '<%:ucode syntax error%>',
+    backendFailedToWriteTempFile: '<%:failed to write temp file%>',
+    backendInvalidToolType: '<%:invalid tool type%>',
+    backendMissingName: '<%:missing name%>',
+    backendInvalidName: '<%:invalid name%>',
+    backendEmptyContent: '<%:empty content%>',
+    backendAlreadyExists: '<%:already exists%>',
+    backendFailedToWriteFile: '<%:failed to write file%>',
+    backendFailedToChmod: '<%:failed to chmod%>',
+    backendFailedToSetExecutablePermission: '<%:failed to set executable permission%>',
+    backendMarkerBeginNotFound: '<%:marker begin not found%>',
+    backendMarkerBeginLineNotFound: '<%:marker begin line not found%>',
+    backendMarkerEndNotFound: '<%:marker end not found%>',
+    backendMarkerEndLineNotFound: '<%:marker end line not found%>'
   }
 };
 </script>

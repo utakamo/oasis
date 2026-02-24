@@ -562,3 +562,319 @@ msgstr "メッセージ（Enterで送信、Shift+Enterで改行）"
 #: files/luci/view/tools.htm:47
 msgid "conflict"
 msgstr "競合"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:7
+msgid "Tool Maker"
+msgstr "ツールメーカー"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:12
+msgid "Tool type"
+msgstr "ツール種別"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:19
+msgid "Server script name"
+msgstr "サーバースクリプト名"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:23
+msgid "Tools"
+msgstr "ツール"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:26
+msgid "Add tool"
+msgstr "ツールを追加"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:30
+msgid "Tool name"
+msgstr "ツール名"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:34
+msgid "Tool description"
+msgstr "ツールの説明"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:38
+msgid "Tool arguments"
+msgstr "ツール引数"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:41
+msgid "Arg name"
+msgstr "引数名"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:42
+msgid "Type"
+msgstr "型"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:43
+msgid "Arg description"
+msgstr "引数の説明"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:46
+msgid "Add arg"
+msgstr "引数を追加"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:50
+msgid "Call body (editable)"
+msgstr "実行処理 (編集可)"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:54
+msgid "Generate"
+msgstr "生成"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:55
+msgid "Validate"
+msgstr "検証"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:62
+msgid "Generated output"
+msgstr "生成結果"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:35
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:78
+msgid "Get current temperature for a given location."
+msgstr "指定した場所の現在の気温を取得します。"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:79
+msgid "City and country e.g. Bogotá, Colombia"
+msgstr "都市名と国名 例: Bogotá, Colombia"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:80
+msgid "unnamed"
+msgstr "名称未設定"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:81
+msgid "unknown error"
+msgstr "不明なエラー"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:82
+msgid "Generated"
+msgstr "生成しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:83
+msgid "Render failed"
+msgstr "生成に失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:84
+msgid "Render failed: {error}"
+msgstr "生成に失敗しました: {error}"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:85
+msgid "Missing tool description"
+msgstr "ツールの説明がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:86
+msgid "Validation OK"
+msgstr "検証OK"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:87
+msgid "Validation NG"
+msgstr "検証NG"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:88
+msgid "Validation NG: {error}"
+msgstr "検証NG: {error}"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:89
+msgid "Validate failed"
+msgstr "検証に失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:90
+msgid "No response"
+msgstr "応答がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:92
+msgid "Missing tool definition"
+msgstr "ツール定義がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:93
+msgid "No content"
+msgstr "内容がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:94
+msgid "Saved"
+msgstr "保存しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:95
+msgid "Saved: {path} ({bytes} bytes)"
+msgstr "保存しました: {path} ({bytes} bytes)"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:96
+msgid "Save failed"
+msgstr "保存に失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:97
+msgid "Save failed: {error}"
+msgstr "保存に失敗しました: {error}"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:98
+msgid "Refresh failed"
+msgstr "更新に失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:99
+msgid "invalid tools"
+msgstr "不正なツール定義です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:100
+msgid "failed to render"
+msgstr "生成に失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:101
+msgid "invalid body"
+msgstr "実行処理が不正です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:102
+msgid "empty tools"
+msgstr "ツールが空です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:103
+msgid "missing tool description"
+msgstr "ツールの説明がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:104
+msgid "missing tool name"
+msgstr "ツール名がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:105
+msgid "missing call body"
+msgstr "実行処理がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:106
+msgid "invalid args"
+msgstr "引数が不正です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:107
+msgid "args and args_desc mismatch"
+msgstr "引数と引数説明の数が一致しません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:108
+msgid "invalid arg"
+msgstr "不正な引数です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:109
+msgid "invalid template type"
+msgstr "テンプレート種別が不正です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:110
+msgid "template not found"
+msgstr "テンプレートが見つかりません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:111
+msgid "lua loader not available"
+msgstr "Luaローダーが利用できません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:112
+msgid "ucode syntax error"
+msgstr "ucodeの構文エラーです"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:113
+msgid "failed to write temp file"
+msgstr "一時ファイルの書き込みに失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:114
+msgid "invalid tool type"
+msgstr "ツール種別が不正です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:115
+msgid "missing name"
+msgstr "名前がありません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:116
+msgid "invalid name"
+msgstr "名前が不正です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:117
+msgid "empty content"
+msgstr "内容が空です"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:118
+msgid "already exists"
+msgstr "既に存在します"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:119
+msgid "failed to write file"
+msgstr "ファイルの書き込みに失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:120
+msgid "failed to chmod"
+msgstr "実行権限の設定に失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:121
+msgid "failed to set executable permission"
+msgstr "実行権限の確認に失敗しました"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:122
+msgid "marker begin not found"
+msgstr "開始マーカーが見つかりません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:123
+msgid "marker begin line not found"
+msgstr "開始マーカー行が見つかりません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:124
+msgid "marker end not found"
+msgstr "終了マーカーが見つかりません"
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:125
+msgid "marker end line not found"
+msgstr "終了マーカー行が見つかりません"

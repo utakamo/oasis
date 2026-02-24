@@ -3,6 +3,27 @@
 
   const config = window.OasisToolMakerConfig || {};
   const urls = config.urls || {};
+  const strings = config.strings || {};
+
+  function t(key, fallback) {
+    const value = strings[key];
+    if (typeof value === 'string' && value.length > 0) {
+      return value;
+    }
+    return fallback;
+  }
+
+  function formatText(template, params) {
+    let out = String(template || '');
+    const table = params || {};
+
+    Object.keys(table).forEach(key => {
+      const value = (table[key] === null || table[key] === undefined) ? '' : String(table[key]);
+      out = out.split('{' + key + '}').join(value);
+    });
+
+    return out;
+  }
 
   const typeSelect = document.getElementById('tm-template');
   const nameInput = document.getElementById('tm-name');
@@ -24,6 +45,42 @@
   let currentType = (typeSelect && typeSelect.value) ? typeSelect.value : 'lua';
   let activeToolId = null;
   const tools = [];
+  const backendErrorMap = {
+    'invalid tools': t('backendInvalidTools', 'invalid tools'),
+    'failed to render': t('backendFailedToRender', 'failed to render'),
+    'invalid body': t('backendInvalidBody', 'invalid body'),
+    'empty tools': t('backendEmptyTools', 'empty tools'),
+    'missing tool description': t('backendMissingToolDescription', 'missing tool description'),
+    'missing tool name': t('backendMissingToolName', 'missing tool name'),
+    'missing call body': t('backendMissingCallBody', 'missing call body'),
+    'invalid args': t('backendInvalidArgs', 'invalid args'),
+    'args and args_desc mismatch': t('backendArgsDescMismatch', 'args and args_desc mismatch'),
+    'invalid arg': t('backendInvalidArg', 'invalid arg'),
+    'invalid template type': t('backendInvalidTemplateType', 'invalid template type'),
+    'template not found': t('backendTemplateNotFound', 'template not found'),
+    'lua loader not available': t('backendLuaLoaderNotAvailable', 'lua loader not available'),
+    'ucode syntax error': t('backendUcodeSyntaxError', 'ucode syntax error'),
+    'failed to write temp file': t('backendFailedToWriteTempFile', 'failed to write temp file'),
+    'invalid tool type': t('backendInvalidToolType', 'invalid tool type'),
+    'missing name': t('backendMissingName', 'missing name'),
+    'invalid name': t('backendInvalidName', 'invalid name'),
+    'empty content': t('backendEmptyContent', 'empty content'),
+    'already exists': t('backendAlreadyExists', 'already exists'),
+    'failed to write file': t('backendFailedToWriteFile', 'failed to write file'),
+    'failed to chmod': t('backendFailedToChmod', 'failed to chmod'),
+    'failed to set executable permission': t('backendFailedToSetExecutablePermission', 'failed to set executable permission'),
+    'marker begin not found': t('backendMarkerBeginNotFound', 'marker begin not found'),
+    'marker begin line not found': t('backendMarkerBeginLineNotFound', 'marker begin line not found'),
+    'marker end not found': t('backendMarkerEndNotFound', 'marker end not found'),
+    'marker end line not found': t('backendMarkerEndLineNotFound', 'marker end line not found')
+  };
+
+  function localizeBackendError(message) {
+    if (typeof message !== 'string' || !message) {
+      return message;
+    }
+    return backendErrorMap[message] || message;
+  }
 
   function showToast(message, type, timeout) {
     if (!toastEl) return;
@@ -37,9 +94,9 @@
   }
 
   function getErrorMessage(err, fallback) {
-    if (typeof err === 'string' && err) return err;
-    if (err && typeof err.message === 'string' && err.message) return err.message;
-    return fallback || 'unknown error';
+    if (typeof err === 'string' && err) return localizeBackendError(err);
+    if (err && typeof err.message === 'string' && err.message) return localizeBackendError(err.message);
+    return localizeBackendError(fallback || t('unknownError', 'unknown error'));
   }
 
   function postForm(url, data) {
@@ -59,11 +116,14 @@
   }
 
   function defaultToolDef(toolType) {
+    const toolDesc = t('defaultToolDescription', 'Get current temperature for a given location.');
+    const argDesc = t('defaultArgDescription', 'City and country e.g. Bogotá, Colombia');
+
     if (toolType === 'ucode') {
       return {
-        tool_desc: 'Get current temperature for a given location.',
+        tool_desc: toolDesc,
         args: [
-          { name: 'location', type: 'a_string', desc: 'City and country e.g. Bogotá, Colombia' }
+          { name: 'location', type: 'a_string', desc: argDesc }
         ],
         call_body: [
           'return {',
@@ -76,9 +136,9 @@
     }
 
     return {
-      tool_desc: 'Get current temperature for a given location.',
+      tool_desc: toolDesc,
       args: [
-        { name: 'location', type: 'a_string', desc: 'City and country e.g. Bogotá, Colombia' }
+        { name: 'location', type: 'a_string', desc: argDesc }
       ],
       call_body: [
         'local res = server.response({ location = args.location, temperature = "25°C", condition = "Sunny" })',
@@ -97,7 +157,7 @@
       const nameBtn = document.createElement('button');
       nameBtn.type = 'button';
       nameBtn.className = 'tm-tool-name';
-      nameBtn.textContent = tool.name || 'unnamed';
+      nameBtn.textContent = tool.name || t('unnamedLabel', 'unnamed');
       nameBtn.addEventListener('click', () => {
         switchTool(tool.id);
       });
@@ -244,22 +304,23 @@
     return postForm(urls.render, { type: currentType, name: nameInput.value || '', tools: toolsPayload() })
       .then(data => {
         if (!data || data.status !== 'OK') {
-          throw new Error((data && data.error) || 'Render failed');
+          throw new Error((data && data.error) || t('renderFailed', 'Render failed'));
         }
         outputEl.value = data.content || '';
-        showToast('Generated', 'success');
+        showToast(t('generated', 'Generated'), 'success');
         return data.content || '';
       })
       .catch(err => {
-        const msg = getErrorMessage(err, 'Render failed');
-        console.error('Render failed', err);
+        const msg = getErrorMessage(err, t('renderFailed', 'Render failed'));
+        const failMsg = formatText(t('renderFailedWithReason', 'Render failed: {error}'), { error: msg });
+        console.error(t('renderFailed', 'Render failed'), err);
 
         if (rethrowOnError) {
-          throw err;
+          throw new Error(msg);
         }
 
-        setResult('Render failed: ' + msg);
-        showToast('Render failed: ' + msg, 'error', 4000);
+        setResult(failMsg);
+        showToast(failMsg, 'error', 4000);
         return '';
       })
       .finally(() => { btnGenerate.disabled = false; });
@@ -268,7 +329,7 @@
   function onValidate() {
     updateActiveTool();
     if (!requireToolDescriptions()) {
-      showToast('Missing tool description', 'error', 3000);
+      showToast(t('missingToolDescription', 'Missing tool description'), 'error', 3000);
       return;
     }
     btnValidate.disabled = true;
@@ -276,19 +337,24 @@
 
     postForm(urls.validate, { type: currentType, name: nameInput.value || '', tools: toolsPayload() })
       .then(data => {
-        if (!data) throw new Error('No response');
+        if (!data) throw new Error(t('noResponse', 'No response'));
         if (data.status === 'OK') {
-          setResult('Validation OK');
-          showToast('Validation OK', 'success');
+          const okText = t('validationOk', 'Validation OK');
+          setResult(okText);
+          showToast(okText, 'success');
         } else {
-          const errors = (data.errors || []).join(', ');
-          setResult('Validation NG: ' + (errors || 'unknown error'));
-          showToast('Validation NG', 'error', 3000);
+          const errors = (data.errors || []).map(localizeBackendError).join(', ');
+          const text = formatText(
+            t('validationNgWithReason', 'Validation NG: {error}'),
+            { error: errors || t('unknownError', 'unknown error') }
+          );
+          setResult(text);
+          showToast(t('validationNg', 'Validation NG'), 'error', 3000);
         }
       })
       .catch(err => {
-        console.error('Validate failed', err);
-        showToast('Validate failed', 'error', 3000);
+        console.error(t('validateFailed', 'Validate failed'), err);
+        showToast(t('validateFailed', 'Validate failed'), 'error', 3000);
       })
       .finally(() => { btnValidate.disabled = false; });
   }
@@ -296,17 +362,17 @@
   function onSave() {
     const name = (nameInput && nameInput.value) ? nameInput.value : '';
     if (!name) {
-      showToast('Missing tool name', 'error', 3000);
+      showToast(t('missingToolName', 'Missing tool name'), 'error', 3000);
       return;
     }
 
     updateActiveTool();
     if (!tools.length) {
-      showToast('Missing tool definition', 'error', 3000);
+      showToast(t('missingToolDefinition', 'Missing tool definition'), 'error', 3000);
       return;
     }
     if (!requireToolDescriptions()) {
-      showToast('Missing tool description', 'error', 3000);
+      showToast(t('missingToolDescription', 'Missing tool description'), 'error', 3000);
       return;
     }
 
@@ -315,34 +381,39 @@
 
     generateOutput({ rethrowOnError: true })
       .then(content => {
-        if (!content) throw new Error('No content');
+        if (!content) throw new Error(t('noContent', 'No content'));
         return postForm(urls.save, { type: currentType, name, tools: toolsPayload() });
       })
       .then(data => {
         if (!data || data.status !== 'OK') {
-          throw new Error((data && data.error) || 'Save failed');
+          throw new Error((data && data.error) || t('saveFailed', 'Save failed'));
         }
-        setResult('Saved: ' + data.path + ' (' + data.bytes + ' bytes)');
-        showToast('Saved', 'success');
+        const savedText = formatText(
+          t('savedSummary', 'Saved: {path} ({bytes} bytes)'),
+          { path: data.path || '', bytes: data.bytes || 0 }
+        );
+        setResult(savedText);
+        showToast(t('saved', 'Saved'), 'success');
         if (urls.refreshTools) {
           fetch(urls.refreshTools, { method: 'POST' })
             .then(r => r.json())
             .then(res => {
               if (!res || res.status !== 'OK') {
-                throw new Error('Refresh failed');
+                throw new Error(t('refreshFailed', 'Refresh failed'));
               }
             })
             .catch(err => {
-              console.error('Refresh failed', err);
-              showToast('Refresh failed', 'error', 3000);
+              console.error(t('refreshFailed', 'Refresh failed'), err);
+              showToast(t('refreshFailed', 'Refresh failed'), 'error', 3000);
             });
         }
       })
       .catch(err => {
-        const msg = getErrorMessage(err, 'Save failed');
-        console.error('Save failed', err);
-        setResult('Save failed: ' + msg);
-        showToast('Save failed: ' + msg, 'error', 4000);
+        const msg = getErrorMessage(err, t('saveFailed', 'Save failed'));
+        const failText = formatText(t('saveFailedWithReason', 'Save failed: {error}'), { error: msg });
+        console.error(t('saveFailed', 'Save failed'), err);
+        setResult(failText);
+        showToast(failText, 'error', 4000);
       })
       .finally(() => { btnSave.disabled = false; });
   }

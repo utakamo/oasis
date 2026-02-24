@@ -461,3 +461,319 @@ msgstr ""
 #: files/luci/view/tools.htm:47
 msgid "conflict"
 msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:7
+msgid "Tool Maker"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:12
+msgid "Tool type"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:19
+msgid "Server script name"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:23
+msgid "Tools"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:26
+msgid "Add tool"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:30
+msgid "Tool name"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:34
+msgid "Tool description"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:38
+msgid "Tool arguments"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:41
+msgid "Arg name"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:42
+msgid "Type"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:43
+msgid "Arg description"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:46
+msgid "Add arg"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:50
+msgid "Call body (editable)"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:54
+msgid "Generate"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:55
+msgid "Validate"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:62
+msgid "Generated output"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:35
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:78
+msgid "Get current temperature for a given location."
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:79
+msgid "City and country e.g. Bogotá, Colombia"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:80
+msgid "unnamed"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:81
+msgid "unknown error"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:82
+msgid "Generated"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:83
+msgid "Render failed"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:84
+msgid "Render failed: {error}"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:85
+msgid "Missing tool description"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:86
+msgid "Validation OK"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:87
+msgid "Validation NG"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:88
+msgid "Validation NG: {error}"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:89
+msgid "Validate failed"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:90
+msgid "No response"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:92
+msgid "Missing tool definition"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:93
+msgid "No content"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:94
+msgid "Saved"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:95
+msgid "Saved: {path} ({bytes} bytes)"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:96
+msgid "Save failed"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:97
+msgid "Save failed: {error}"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:98
+msgid "Refresh failed"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:99
+msgid "invalid tools"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:100
+msgid "failed to render"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:101
+msgid "invalid body"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:102
+msgid "empty tools"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:103
+msgid "missing tool description"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:104
+msgid "missing tool name"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:105
+msgid "missing call body"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:106
+msgid "invalid args"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:107
+msgid "args and args_desc mismatch"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:108
+msgid "invalid arg"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:109
+msgid "invalid template type"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:110
+msgid "template not found"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:111
+msgid "lua loader not available"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:112
+msgid "ucode syntax error"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:113
+msgid "failed to write temp file"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:114
+msgid "invalid tool type"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:115
+msgid "missing name"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:116
+msgid "invalid name"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:117
+msgid "empty content"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:118
+msgid "already exists"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:119
+msgid "failed to write file"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:120
+msgid "failed to chmod"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:121
+msgid "failed to set executable permission"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:122
+msgid "marker begin not found"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:123
+msgid "marker begin line not found"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:124
+msgid "marker end not found"
+msgstr ""
+
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:125
+msgid "marker end line not found"
+msgstr ""
