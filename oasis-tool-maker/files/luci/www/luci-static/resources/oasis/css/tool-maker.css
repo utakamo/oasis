@@ -150,15 +150,19 @@
 }
 
 .tm-toast {
-  position: sticky;
-  top: 8px;
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(92vw, 720px);
   background: #212529;
   color: #fff;
   padding: 8px 10px;
   border-radius: 8px;
-  margin-bottom: 8px;
+  margin: 0;
   display: none;
-  z-index: 10;
+  z-index: 9999;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
 .tm-toast.show {
