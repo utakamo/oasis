@@ -1,22 +1,19 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-oasis\n"
-"Report-Msgid-Bugs-To: 
-"
+"Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-19 23:03+0000\n"
 "PO-Revision-Date: 2025-11-19 23:03+0000\n"
 "Last-Translator: Codex\n"
-"Language-Team: Japanese
-"
-"Language: ja
-"
+"Language-Team: Japanese\n"
+"Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: custom script\n"
 #: files/luci/view/chat.htm:333
-msgid "### [User\'s {config} config]"
+msgid "### [User's {config} config]"
 msgstr "### [ユーザーの{config}設定]"
 
 #: files/luci/view/chat.htm:314
@@ -318,8 +315,8 @@ msgstr "システムメッセージのタイトルを入力してください"
 
 
 #: files/luci/view/tools.htm:55
-msgid "Please install the extension module \'oasis-mod-tool\' to enable local tools."
-msgstr "Please install the extension module \'oasis-mod-tool\' to enable local tools."
+msgid "Please install the extension module 'oasis-mod-tool' to enable local tools."
+msgstr "Please install the extension module 'oasis-mod-tool' to enable local tools."
 
 
 #: files/luci/view/icons.htm:56
