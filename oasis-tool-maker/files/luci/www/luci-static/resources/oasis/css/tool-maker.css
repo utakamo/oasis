@@ -72,7 +72,10 @@
 }
 
 .tm-btn:disabled {
-  opacity: 0.6;
+  opacity: 1;
+  background: #d1d5db;
+  color: #6b7280;
+  border: 1px solid #c1c7d0;
   cursor: not-allowed;
 }
 

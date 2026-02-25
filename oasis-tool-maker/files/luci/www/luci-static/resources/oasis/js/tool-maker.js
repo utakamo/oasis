@@ -45,6 +45,8 @@
   let currentType = (typeSelect && typeSelect.value) ? typeSelect.value : 'lua';
   let activeToolId = null;
   const tools = [];
+  let hasFreshOutput = false;
+  let isValidateBusy = false;
   const backendErrorMap = {
     'invalid tools': t('backendInvalidTools', 'invalid tools'),
     'failed to render': t('backendFailedToRender', 'failed to render'),
@@ -74,6 +76,26 @@
     'marker end not found': t('backendMarkerEndNotFound', 'marker end not found'),
     'marker end line not found': t('backendMarkerEndLineNotFound', 'marker end line not found')
   };
+
+  function syncValidateButtonState() {
+    if (!btnValidate) return;
+    btnValidate.disabled = !hasFreshOutput || isValidateBusy;
+  }
+
+  function markOutputStale() {
+    hasFreshOutput = false;
+    syncValidateButtonState();
+  }
+
+  function markOutputFresh() {
+    hasFreshOutput = true;
+    syncValidateButtonState();
+  }
+
+  function setValidateBusy(busy) {
+    isValidateBusy = !!busy;
+    syncValidateButtonState();
+  }
 
   function localizeBackendError(message) {
     if (typeof message !== 'string' || !message) {
@@ -188,6 +210,7 @@
       nameInput.value = arg.name || '';
       nameInput.addEventListener('input', () => {
         arg.name = escapeArgName(nameInput.value);
+        markOutputStale();
       });
 
       const typeInput = document.createElement('input');
@@ -195,6 +218,7 @@
       typeInput.value = arg.type || '';
       typeInput.addEventListener('input', () => {
         arg.type = typeInput.value.trim();
+        markOutputStale();
       });
 
       const descInput = document.createElement('input');
@@ -202,6 +226,7 @@
       descInput.value = arg.desc || '';
       descInput.addEventListener('input', () => {
         arg.desc = descInput.value;
+        markOutputStale();
       });
 
       const delBtn = document.createElement('button');
@@ -210,6 +235,7 @@
       delBtn.textContent = '×';
       delBtn.addEventListener('click', () => {
         tool.args.splice(idx, 1);
+        markOutputStale();
         renderArgRows(tool);
       });
 
@@ -244,6 +270,7 @@
       call_body: def.call_body
     };
     tools.push(tool);
+    markOutputStale();
     switchTool(id);
   }
 
@@ -251,6 +278,7 @@
     const idx = tools.findIndex(t => t.id === id);
     if (idx === -1) return;
     tools.splice(idx, 1);
+    markOutputStale();
     if (activeToolId === id) {
       activeToolId = tools.length ? tools[0].id : null;
       if (activeToolId) {
@@ -299,6 +327,7 @@
 
     updateActiveTool();
     setResult('');
+    markOutputStale();
     btnGenerate.disabled = true;
 
     return postForm(urls.render, { type: currentType, name: nameInput.value || '', tools: toolsPayload() })
@@ -307,6 +336,7 @@
           throw new Error((data && data.error) || t('renderFailed', 'Render failed'));
         }
         outputEl.value = data.content || '';
+        markOutputFresh();
         showToast(t('generated', 'Generated'), 'success');
         return data.content || '';
       })
@@ -332,7 +362,7 @@
       showToast(t('missingToolDescription', 'Missing tool description'), 'error', 3000);
       return;
     }
-    btnValidate.disabled = true;
+    setValidateBusy(true);
     setResult('');
 
     postForm(urls.validate, { type: currentType, name: nameInput.value || '', tools: toolsPayload() })
@@ -356,7 +386,7 @@
         console.error(t('validateFailed', 'Validate failed'), err);
         showToast(t('validateFailed', 'Validate failed'), 'error', 3000);
       })
-      .finally(() => { btnValidate.disabled = false; });
+      .finally(() => { setValidateBusy(false); });
   }
 
   function onSave() {
@@ -421,6 +451,12 @@
   if (typeSelect) {
     typeSelect.addEventListener('change', () => {
       currentType = typeSelect.value || currentType;
+      markOutputStale();
+    });
+  }
+  if (nameInput) {
+    nameInput.addEventListener('input', () => {
+      markOutputStale();
     });
   }
   if (addToolBtn) {
@@ -431,17 +467,27 @@
       const tool = tools.find(t => t.id === activeToolId);
       if (!tool) return;
       tool.args.push({ name: '', type: 'a_string', desc: '' });
+      markOutputStale();
       renderArgRows(tool);
     });
   }
   if (toolNameInput) {
-    toolNameInput.addEventListener('input', updateActiveTool);
+    toolNameInput.addEventListener('input', () => {
+      markOutputStale();
+      updateActiveTool();
+    });
   }
   if (toolDescInput) {
-    toolDescInput.addEventListener('input', updateActiveTool);
+    toolDescInput.addEventListener('input', () => {
+      markOutputStale();
+      updateActiveTool();
+    });
   }
   if (bodyEl) {
-    bodyEl.addEventListener('input', updateActiveTool);
+    bodyEl.addEventListener('input', () => {
+      markOutputStale();
+      updateActiveTool();
+    });
   }
   if (btnGenerate) btnGenerate.addEventListener('click', generateOutput);
   if (btnValidate) btnValidate.addEventListener('click', onValidate);
@@ -450,5 +496,6 @@
   if (typeSelect && typeSelect.value) {
     currentType = typeSelect.value;
   }
+  markOutputStale();
   addTool('get_weather');
 })();
