@@ -73,21 +73,38 @@ function tool_maker_save()
 
     local valid, errors = tmpl.validate(tool_type, tools, name)
     if not valid then
-        write_json({ status = "NG", error = errors and errors[1] or "invalid body" })
+        write_json({
+            status = "NG",
+            error = errors and errors[1] or "invalid body",
+            errors = errors or {}
+        })
         return
     end
 
     local content, render_err = tmpl.render(tool_type, tools, name)
     if not content then
-        write_json({ status = "NG", error = render_err or "failed to render" })
+        write_json({
+            status = "NG",
+            error = render_err or "failed to render",
+            errors = render_err and { render_err } or {}
+        })
         return
     end
 
     local ok, info_or_err = tmpl.save(tool_type, name, content)
     if not ok then
-        write_json({ status = "NG", error = info_or_err })
+        write_json({
+            status = "NG",
+            error = info_or_err,
+            errors = info_or_err and { info_or_err } or {}
+        })
         return
     end
 
-    write_json({ status = "OK", path = info_or_err.path, bytes = info_or_err.bytes })
+    write_json({
+        status = "OK",
+        path = info_or_err.path,
+        bytes = info_or_err.bytes,
+        content = content
+    })
 end

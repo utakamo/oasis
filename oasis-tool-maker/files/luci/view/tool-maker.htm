@@ -52,7 +52,6 @@
     </div>
     <div class="tm-actions">
       <button type="button" id="tm-generate" class="tm-btn primary"><%:Generate%></button>
-      <button type="button" id="tm-validate" class="tm-btn"><%:Validate%></button>
       <button type="button" id="tm-save" class="tm-btn"><%:Upload%></button>
     </div>
   </div>
@@ -71,7 +70,6 @@ window.OasisToolMakerConfig = {
   urls: {
     render: '<%=build_url("admin", "network", "oasis", "tool-maker-render")%>',
     save: '<%=build_url("admin", "network", "oasis", "tool-maker-save")%>',
-    validate: '<%=build_url("admin", "network", "oasis", "tool-maker-validate")%>',
     refreshTools: '<%=build_url("admin", "network", "oasis", "refresh-tools")%>'
   },
   strings: {
@@ -83,18 +81,13 @@ window.OasisToolMakerConfig = {
     renderFailed: '<%:Render failed%>',
     renderFailedWithReason: '<%:Render failed: {error}%>',
     missingToolDescription: '<%:Missing tool description%>',
-    validationOk: '<%:Validation OK%>',
-    validationNg: '<%:Validation NG%>',
-    validationNgWithReason: '<%:Validation NG: {error}%>',
-    validateFailed: '<%:Validate failed%>',
     noResponse: '<%:No response%>',
     missingToolName: '<%:Missing tool name%>',
     missingToolDefinition: '<%:Missing tool definition%>',
-    noContent: '<%:No content%>',
-    saved: '<%:Saved%>',
-    savedSummary: '<%:Saved: {path} ({bytes} bytes)%>',
-    saveFailed: '<%:Save failed%>',
-    saveFailedWithReason: '<%:Save failed: {error}%>',
+    uploaded: '<%:Uploaded%>',
+    uploadedSummary: '<%:Uploaded: {path} ({bytes} bytes)%>',
+    uploadFailed: '<%:Upload failed%>',
+    uploadFailedWithReason: '<%:Upload failed: {error}%>',
     refreshFailed: '<%:Refresh failed%>',
     backendInvalidTools: '<%:invalid tools%>',
     backendFailedToRender: '<%:failed to render%>',

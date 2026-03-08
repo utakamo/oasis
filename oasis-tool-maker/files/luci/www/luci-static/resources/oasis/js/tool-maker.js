@@ -39,14 +39,11 @@
   const toastEl = document.getElementById('tool-maker-toast');
 
   const btnGenerate = document.getElementById('tm-generate');
-  const btnValidate = document.getElementById('tm-validate');
   const btnSave = document.getElementById('tm-save');
 
   let currentType = (typeSelect && typeSelect.value) ? typeSelect.value : 'lua';
   let activeToolId = null;
   const tools = [];
-  let hasFreshOutput = false;
-  let isValidateBusy = false;
   const backendErrorMap = {
     'invalid tools': t('backendInvalidTools', 'invalid tools'),
     'failed to render': t('backendFailedToRender', 'failed to render'),
@@ -77,24 +74,8 @@
     'marker end line not found': t('backendMarkerEndLineNotFound', 'marker end line not found')
   };
 
-  function syncValidateButtonState() {
-    if (!btnValidate) return;
-    btnValidate.disabled = !hasFreshOutput || isValidateBusy;
-  }
-
   function markOutputStale() {
-    hasFreshOutput = false;
-    syncValidateButtonState();
-  }
-
-  function markOutputFresh() {
-    hasFreshOutput = true;
-    syncValidateButtonState();
-  }
-
-  function setValidateBusy(busy) {
-    isValidateBusy = !!busy;
-    syncValidateButtonState();
+    setResult('');
   }
 
   function localizeBackendError(message) {
@@ -118,6 +99,16 @@
   function getErrorMessage(err, fallback) {
     if (typeof err === 'string' && err) return localizeBackendError(err);
     if (err && typeof err.message === 'string' && err.message) return localizeBackendError(err.message);
+    return localizeBackendError(fallback || t('unknownError', 'unknown error'));
+  }
+
+  function getBackendErrorMessage(data, fallback) {
+    if (data && Array.isArray(data.errors) && data.errors.length) {
+      return data.errors.map(localizeBackendError).join(', ');
+    }
+    if (data && typeof data.error === 'string' && data.error) {
+      return localizeBackendError(data.error);
+    }
     return localizeBackendError(fallback || t('unknownError', 'unknown error'));
   }
 
@@ -336,7 +327,6 @@
           throw new Error((data && data.error) || t('renderFailed', 'Render failed'));
         }
         outputEl.value = data.content || '';
-        markOutputFresh();
         showToast(t('generated', 'Generated'), 'success');
         return data.content || '';
       })
@@ -354,39 +344,6 @@
         return '';
       })
       .finally(() => { btnGenerate.disabled = false; });
-  }
-
-  function onValidate() {
-    updateActiveTool();
-    if (!requireToolDescriptions()) {
-      showToast(t('missingToolDescription', 'Missing tool description'), 'error', 3000);
-      return;
-    }
-    setValidateBusy(true);
-    setResult('');
-
-    postForm(urls.validate, { type: currentType, name: nameInput.value || '', tools: toolsPayload() })
-      .then(data => {
-        if (!data) throw new Error(t('noResponse', 'No response'));
-        if (data.status === 'OK') {
-          const okText = t('validationOk', 'Validation OK');
-          setResult(okText);
-          showToast(okText, 'success');
-        } else {
-          const errors = (data.errors || []).map(localizeBackendError).join(', ');
-          const text = formatText(
-            t('validationNgWithReason', 'Validation NG: {error}'),
-            { error: errors || t('unknownError', 'unknown error') }
-          );
-          setResult(text);
-          showToast(t('validationNg', 'Validation NG'), 'error', 3000);
-        }
-      })
-      .catch(err => {
-        console.error(t('validateFailed', 'Validate failed'), err);
-        showToast(t('validateFailed', 'Validate failed'), 'error', 3000);
-      })
-      .finally(() => { setValidateBusy(false); });
   }
 
   function onSave() {
@@ -409,21 +366,21 @@
     btnSave.disabled = true;
     setResult('');
 
-    generateOutput({ rethrowOnError: true })
-      .then(content => {
-        if (!content) throw new Error(t('noContent', 'No content'));
-        return postForm(urls.save, { type: currentType, name, tools: toolsPayload() });
-      })
+    postForm(urls.save, { type: currentType, name, tools: toolsPayload() })
       .then(data => {
+        if (!data) throw new Error(t('noResponse', 'No response'));
         if (!data || data.status !== 'OK') {
-          throw new Error((data && data.error) || t('saveFailed', 'Save failed'));
+          throw new Error(getBackendErrorMessage(data, t('uploadFailed', 'Upload failed')));
         }
-        const savedText = formatText(
-          t('savedSummary', 'Saved: {path} ({bytes} bytes)'),
+        if (outputEl && typeof data.content === 'string') {
+          outputEl.value = data.content;
+        }
+        const uploadedText = formatText(
+          t('uploadedSummary', 'Uploaded: {path} ({bytes} bytes)'),
           { path: data.path || '', bytes: data.bytes || 0 }
         );
-        setResult(savedText);
-        showToast(t('saved', 'Saved'), 'success');
+        setResult(uploadedText);
+        showToast(t('uploaded', 'Uploaded'), 'success');
         if (urls.refreshTools) {
           fetch(urls.refreshTools, { method: 'POST' })
             .then(r => r.json())
@@ -439,9 +396,9 @@
         }
       })
       .catch(err => {
-        const msg = getErrorMessage(err, t('saveFailed', 'Save failed'));
-        const failText = formatText(t('saveFailedWithReason', 'Save failed: {error}'), { error: msg });
-        console.error(t('saveFailed', 'Save failed'), err);
+        const msg = getErrorMessage(err, t('uploadFailed', 'Upload failed'));
+        const failText = formatText(t('uploadFailedWithReason', 'Upload failed: {error}'), { error: msg });
+        console.error(t('uploadFailed', 'Upload failed'), err);
         setResult(failText);
         showToast(failText, 'error', 4000);
       })
@@ -490,7 +447,6 @@
     });
   }
   if (btnGenerate) btnGenerate.addEventListener('click', generateOutput);
-  if (btnValidate) btnValidate.addEventListener('click', onValidate);
   if (btnSave) btnSave.addEventListener('click', onSave);
 
   if (typeSelect && typeSelect.value) {
