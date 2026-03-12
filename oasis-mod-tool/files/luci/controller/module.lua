@@ -142,7 +142,7 @@ function enable_tool()
 
     local found = false
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if s["name"] == tool_name then
+        if  (server_name == s["server"]) and (tool_name == s["name"]) then
             -- Do not enable when conflict flag is set
             if s["conflict"] ~= "1" then
                 uci:set(common.db.uci.cfg, s[".name"], "enable", "1")
@@ -174,12 +174,12 @@ function disable_tool()
     local found = false
     uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         -- Do not enable when conflict flag is set
-        if s["name"] == tool_name then
+        if  (server_name == s["server"]) and (tool_name == s["name"]) then
             if s["conflict"] ~= "1" then
                 uci:set(common.db.uci.cfg, s[".name"], "enable", "0")
                 uci:commit(common.db.uci.cfg)
-                found = true
             end
+            found = true
         end
     end)
 
