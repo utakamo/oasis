@@ -65,6 +65,70 @@ function change_tool_enable()
     luci_http.write_json({ status = "OK" })
 end
 
+local function update_tool_enable(desired)
+    local tool_name = luci_http.formvalue("name")
+    local server_name = luci_http.formvalue("server")
+
+    if (not tool_name) or tool_name == "" or (not server_name) or server_name == "" then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ status = "NG", error = "Missing params" })
+        return
+    end
+
+    local match_count = 0
+    local target_section = nil
+    local current_enable = nil
+    local conflicted = false
+    local changed = false
+
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        if (server_name == s["server"]) and (tool_name == s["name"]) then
+            match_count = match_count + 1
+            target_section = s[".name"]
+            current_enable = s["enable"] or "0"
+            conflicted = (s["conflict"] == "1")
+        end
+    end)
+
+    if match_count == 0 then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ status = "NG", error = "Tool not found" })
+        return
+    end
+
+    if match_count > 1 then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ status = "NG", error = "Duplicate tool sections found" })
+        return
+    end
+
+    if conflicted then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ status = "NG", error = "Tool is conflicted" })
+        return
+    end
+
+    if current_enable ~= desired then
+        uci:set(common.db.uci.cfg, target_section, "enable", desired)
+        uci:commit(common.db.uci.cfg)
+        changed = true
+    end
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({
+        status = "OK",
+        changed = changed and "1" or "0"
+    })
+end
+
+function enable_tool()
+    update_tool_enable("1")
+end
+
+function disable_tool()
+    update_tool_enable("0")
+end
+
 function add_remote_mcp_server()
     local meta_info = {}
     meta_info.name = luci_http.formvalue("name")
@@ -127,68 +191,6 @@ function remove_remote_mcp_server()
     end
 
     uci:commit("oasis")
-    luci_http.prepare_content("application/json")
-    luci_http.write_json({ status = "OK" })
-end
-
-function enable_tool()
-    local tool_name = luci_http.formvalue("name")
-    local server_name = luci_http.formvalue("server")
-    if (not tool_name) or (not server_name) then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Missing params" })
-        return
-    end
-
-    local found = false
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if  (server_name == s["server"]) and (tool_name == s["name"]) then
-            -- Do not enable when conflict flag is set
-            if s["conflict"] ~= "1" then
-                uci:set(common.db.uci.cfg, s[".name"], "enable", "1")
-                uci:commit(common.db.uci.cfg)
-            end
-            found = true
-        end
-    end)
-
-    if not found then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Tool not found" })
-        return
-    end
-
-    luci_http.prepare_content("application/json")
-    luci_http.write_json({ status = "OK" })
-end
-
-function disable_tool()
-    local tool_name = luci_http.formvalue("name")
-    local server_name = luci_http.formvalue("server")
-    if (not tool_name) or (not server_name) then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Missing params" })
-        return
-    end
-
-    local found = false
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        -- Do not enable when conflict flag is set
-        if  (server_name == s["server"]) and (tool_name == s["name"]) then
-            if s["conflict"] ~= "1" then
-                uci:set(common.db.uci.cfg, s[".name"], "enable", "0")
-                uci:commit(common.db.uci.cfg)
-            end
-            found = true
-        end
-    end)
-
-    if not found then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Tool not found" })
-        return
-    end
-
     luci_http.prepare_content("application/json")
     luci_http.write_json({ status = "OK" })
 end
