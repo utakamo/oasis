@@ -21,6 +21,16 @@
 
 MODE="$1"
 
+is_installed() {
+    opkg status "$1" 2>/dev/null | grep -q "^Status: .* installed"
+}
+
+remove_if_installed() {
+    if is_installed "$1"; then
+        opkg remove "$1"
+    fi
+}
+
 # Backup configuration if migrate mode is enabled
 if [ "$MODE" = "migrate" ]; then
     mkdir -p /tmp/oasis
@@ -32,23 +42,23 @@ fi
 opkg update
 
 # Remove tool plugins
-opkg remove oasis-tool-test
-opkg remove oasis-tool-wireguard
+remove_if_installed oasis-tool-test
+remove_if_installed oasis-tool-wireguard
 
 # Remove old versions
-opkg remove luci-i18n-oasis-ja
-opkg remove oasis-tool-analysis
-opkg remove oasis-tool-template
-opkg remove oasis-tool-wireguard
-opkg remove oasis-tool-test
-opkg remove oasis-tool-edge
-opkg remove oasis-tool-maker
-opkg remove luci-app-oasis
-opkg remove oasis-mod-test
-opkg remove oasis-mod-agent
-opkg remove oasis-mod-tool
-opkg remove oasis-mod-retired
-opkg remove oasis
+remove_if_installed luci-i18n-oasis-ja
+remove_if_installed oasis-tool-analysis
+remove_if_installed oasis-tool-template
+remove_if_installed oasis-tool-wireguard
+remove_if_installed oasis-tool-test
+remove_if_installed oasis-tool-edge
+remove_if_installed oasis-tool-maker
+remove_if_installed luci-app-oasis
+remove_if_installed oasis-mod-test
+remove_if_installed oasis-mod-agent
+remove_if_installed oasis-mod-tool
+remove_if_installed oasis-mod-retired
+remove_if_installed oasis
 
 # Install new versions
 opkg install oasis_3.2.6-r1_all.ipk
