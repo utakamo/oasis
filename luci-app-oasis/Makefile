@@ -53,7 +53,7 @@ endef
 define Package/luci-app-oasis/postinst
 	#!/bin/sh
 	uci set oasis.support.webui=1
-	if [ $? -eq 0 ]; then
+	if [ $$? -eq 0 ]; then
 		uci commit oasis
 	fi
 endef
