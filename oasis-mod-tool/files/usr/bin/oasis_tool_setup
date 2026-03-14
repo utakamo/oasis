@@ -43,7 +43,11 @@ if arg[1] == "init" then
         end
     end
 
-    olt_client.update_server_info()
+    local ok, err = olt_client.update_server_info()
+    if not ok then
+        io.stderr:write((err or "Failed to refresh local tool registry") .. "\n")
+        os.exit(1)
+    end
 elseif arg[1] == "delete" then
     uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "0")
     uci:set(common.db.uci.cfg, common.db.uci.sect.support, "remote_mcp_server", "0")

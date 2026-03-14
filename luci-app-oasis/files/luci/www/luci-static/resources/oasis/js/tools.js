@@ -56,12 +56,14 @@
       fetch(URL_REFRESH_TOOLS, { method: 'POST' })
         .then(r => r.json())
         .then(res => {
-          if (!res || res.status !== 'OK') throw new Error(t('refreshFailed', 'Failed to refresh services'));
+          if (!res || res.status !== 'OK') {
+            throw new Error((res && res.error) || t('refreshFailed', 'Failed to refresh services'));
+          }
           location.reload();
         })
         .catch(err => {
           console.error('refresh-tools failed:', err);
-          showToast(t('refreshFailed', 'Failed to refresh services'), 'error', 3000);
+          showToast((err && err.message) || t('refreshFailed', 'Failed to refresh services'), 'error', 3000);
           refreshBtn.disabled = false;
           refreshBtn.textContent = t('refreshLabel', 'Refresh');
         });

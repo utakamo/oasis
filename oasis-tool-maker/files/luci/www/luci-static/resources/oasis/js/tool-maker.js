@@ -386,12 +386,13 @@
             .then(r => r.json())
             .then(res => {
               if (!res || res.status !== 'OK') {
-                throw new Error(t('refreshFailed', 'Refresh failed'));
+                throw new Error((res && res.error) || t('refreshFailed', 'Refresh failed'));
               }
             })
             .catch(err => {
+              const msg = getErrorMessage(err, t('refreshFailed', 'Refresh failed'));
               console.error(t('refreshFailed', 'Refresh failed'), err);
-              showToast(t('refreshFailed', 'Refresh failed'), 'error', 3000);
+              showToast(msg, 'error', 3000);
             });
         }
       })

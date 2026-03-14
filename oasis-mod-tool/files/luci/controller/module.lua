@@ -268,9 +268,33 @@ function local_tool_info()
     luci_http.write_json(info)
 end
 
+local function exec_service_rc(command)
+    local out = sys.exec(command .. " >/dev/null 2>&1; printf '%s' $?")
+    return tonumber(util.trim(out) or "") or 1
+end
+
 function refresh_tools()
-    sys.exec("service olt_tool restart >/dev/null 2>&1")
-    sys.exec("service rpcd restart >/dev/null 2>&1")
+    local rc = exec_service_rc("service olt_tool restart")
+    if rc ~= 0 then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({
+            status = "NG",
+            phase = "olt_tool_restart",
+            error = "Failed to restart olt_tool service"
+        })
+        return
+    end
+
+    rc = exec_service_rc("service rpcd restart")
+    if rc ~= 0 then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({
+            status = "NG",
+            phase = "rpcd_restart",
+            error = "Failed to restart rpcd service"
+        })
+        return
+    end
 
     luci_http.prepare_content("application/json")
     luci_http.write_json({ status = "OK" })

@@ -11,6 +11,8 @@ local M = {}
 
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
+local listup_server_candidate
+local check_tool_name_conflict
 
 -- Quote dynamic paths before passing them to shell commands.
 local function shell_quote(s)
@@ -60,120 +62,122 @@ local ubus_call = function(path, method, param, timeout)
     return result
 end
 
-function M.setup_lua_server_config(server_name)
+local function build_param_lists(args, args_desc, type_resolver)
+    local params = {}
+    local required_list = {}
+    local property_list = {}
+
+    if type(args) ~= "table" then
+        return required_list, property_list
+    end
+
+    for param, _ in pairs(args) do
+        params[#params + 1] = param
+    end
+    table.sort(params)
+
+    for i, param in ipairs(params) do
+        required_list[#required_list + 1] = param
+
+        local desc = ""
+        if type(args_desc) == "table" then
+            desc = args_desc[i] or ""
+        end
+
+        local typ = type_resolver(args[param])
+        property_list[#property_list + 1] = string.format("%s:%s:%s", param, typ, desc)
+    end
+
+    return required_list, property_list
+end
+
+local function build_tool_def(script, server, name, desc, exec_msg, download_msg, timeout, required, property)
+    return {
+        name = name,
+        script = script,
+        server = server,
+        type = "function",
+        description = desc or "",
+        execution_message = exec_msg or "",
+        download_message = download_msg or "",
+        timeout = timeout or "",
+        conflict = "0",
+        required = required or {},
+        property = property or {},
+        additionalProperties = "0",
+    }
+end
+
+local function scan_lua_server_defs(server_name)
     local server_path = lua_ubus_server_app_dir .. server_name
 
-    -- Guard against executing arbitrary files under /usr/libexec/rpcd.
     if not is_regular_file(server_path) then
-        debug:log("oasis.log", "setup_lua_server_config", "skip non-regular file: " .. server_name)
-        return
+        debug:log("oasis.log", "scan_lua_server_defs", "skip non-regular file: " .. server_name)
+        return {}, nil
     end
 
     if not fs.access(server_path, "x") then
-        debug:log("oasis.log", "setup_lua_server_config", "skip non-executable file: " .. server_name)
-        return
+        debug:log("oasis.log", "scan_lua_server_defs", "skip non-executable file: " .. server_name)
+        return {}, nil
     end
 
     if not is_oasis_tool_server(server_path) then
-        debug:log("oasis.log", "setup_lua_server_config", "skip non-oasis server file: " .. server_name)
-        return
+        debug:log("oasis.log", "scan_lua_server_defs", "skip non-oasis server file: " .. server_name)
+        return {}, nil
     end
 
-    -- Keep install/reload logs clean even if an external script prints to stderr.
     local meta = sys.exec(shell_quote(server_path) .. " meta 2>/dev/null")
-
-    -- Todo:
-    -- Check meta command success
-
     local data = jsonc.parse(meta)
-
     if not data then
-        debug:log("oasis.log", "setup_lua_server_config", server_name .. " is not olt server...")
-        return
+        return nil, "invalid lua tool metadata: " .. server_name
     end
-    debug:log("oasis.log", "setup_lua_server_config", server_name .. " is olt server!!")
-    uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
 
-    local created_sections = {}
+    local type_map = { a_string = "string", integer = "number", boolean = "boolean", number = "number", string = "string" }
+    local defs = {}
 
     for tool_name, tool in pairs(data) do
-        local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
-        uci:set(common.db.uci.cfg, s, "name", tool_name)
-        uci:set(common.db.uci.cfg, s, "script", "lua")
-        uci:set(common.db.uci.cfg, s, "server", server_name)
-        uci:set(common.db.uci.cfg, s, "enable", "0")
-        uci:set(common.db.uci.cfg, s, "type", "function")
-        uci:set(common.db.uci.cfg, s, "description", tool.tool_desc or "")
-        uci:set(common.db.uci.cfg, s, "execution_message", tool.exec_msg or "")
-        uci:set(common.db.uci.cfg, s, "download_message", tool.download_msg or "")
-        uci:set(common.db.uci.cfg, s, "timeout", tool.timeout or "")
-        uci:set(common.db.uci.cfg, s, "conflict", "0")
+        local required, property = build_param_lists(tool.args, tool.args_desc, function(v)
+            return type_map[v] or "string"
+        end)
 
-        -- required / properties: set_list with arrays for all params
-        local params = {}
-        if tool.args and type(tool.args) == "table" then
-            for param, _ in pairs(tool.args) do
-                params[#params + 1] = param
-            end
-            table.sort(params)
-
-            local required_list = {}
-            local property_list = {}
-
-            local type_map = { a_string = "string", integer = "number", boolean = "boolean", number = "number", string = "string" }
-            for i, param in ipairs(params) do
-                required_list[#required_list + 1] = param
-                local typ  = tool.args[param]
-                local desc = ""
-                if tool.args_desc and type(tool.args_desc) == "table" then
-                    desc = tool.args_desc[i] or ""
-                end
-                local uci_type = type_map[typ] or "string"
-                property_list[#property_list + 1] = string.format("%s:%s:%s", param, uci_type, desc)
-            end
-
-            uci:set_list(common.db.uci.cfg, s, "required", required_list)
-            uci:set_list(common.db.uci.cfg, s, "property", property_list)
-        end
-        uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
-        table.insert(created_sections, {section = s, name = tool_name})
+        defs[#defs + 1] = build_tool_def(
+            "lua",
+            server_name,
+            tool_name,
+            tool.tool_desc,
+            tool.exec_msg,
+            tool.download_msg,
+            tool.timeout,
+            required,
+            property
+        )
     end
-    uci:commit(common.db.uci.cfg)
+
+    return defs, nil
 end
 
-function M.setup_ucode_server_config(server_name)
-
-    -- Check ucode binary
-    if not misc.check_file_exist("/usr/bin/ucode") then
-        debug:log("oasis.log", "setup_ucode_server_config", "ucode not installed; skip")
-        return
-    end
-
+local function scan_ucode_server_defs(server_name)
     local server_path = ucode_ubus_server_app_dir .. server_name
+
     if not is_regular_file(server_path) then
-        debug:log("oasis.log", "setup_ucode_server_config", "script not found: " .. server_path)
-        return
+        debug:log("oasis.log", "scan_ucode_server_defs", "skip non-regular file: " .. server_name)
+        return {}, nil
     end
 
     if not is_oasis_tool_server(server_path) then
-        debug:log("oasis.log", "setup_ucode_server_config", "skip non-oasis server file: " .. server_name)
-        return
+        debug:log("oasis.log", "scan_ucode_server_defs", "skip non-oasis server file: " .. server_name)
+        return {}, nil
     end
 
-    -- Keep install/reload logs clean even if an external script prints to stderr.
+    if not misc.check_file_exist("/usr/bin/ucode") then
+        return nil, "ucode not installed"
+    end
+
     local meta = sys.exec("ucode " .. shell_quote(server_path) .. " 2>/dev/null")
-    debug:log("oasis.log", "setup_ucode_server_config", meta)
-
     local data = jsonc.parse(meta)
-
     if not data then
-        debug:log("oasis.log", "setup_ucode_server_config", "Script: " .. server_name .. " is not olt server...")
-        return
+        return nil, "invalid ucode tool metadata: " .. server_name
     end
-    debug:log("oasis.log", "setup_ucode_server_config", server_name .. " is olt server!!")
-    uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
-
-    local created_sections = {}
 
     local function detect_type(v)
         local t = type(v)
@@ -183,52 +187,224 @@ function M.setup_ucode_server_config(server_name)
         else return "string" end
     end
 
+    local defs = {}
+
     for server, tbl in pairs(data) do
         for tool, def in pairs(tbl) do
-            local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
-            uci:set(common.db.uci.cfg, s, "name", tool)
-            uci:set(common.db.uci.cfg, s, "script", "ucode")
-            uci:set(common.db.uci.cfg, s, "server", server)
-            uci:set(common.db.uci.cfg, s, "enable", "0")
-            uci:set(common.db.uci.cfg, s, "type", "function")
-            uci:set(common.db.uci.cfg, s, "description", def.tool_desc or "")
-            uci:set(common.db.uci.cfg, s, "execution_message", def.exec_msg or "")
-            uci:set(common.db.uci.cfg, s, "download_message", def.download_msg or "")
-            uci:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
-            uci:set(common.db.uci.cfg, s, "conflict", "0")
-
-            -- required / properties: set_list with arrays for all params
-            local params = {}
-            if def.args and type(def.args) == "table" then
-                for param, _ in pairs(def.args) do
-                    params[#params + 1] = param
-                end
-                table.sort(params)
-
-                local required_list = {}
-                local property_list = {}
-
-                for i, param in ipairs(params) do
-                    required_list[#required_list + 1] = param
-                    local typ  = detect_type(def.args[param])
-                    local desc = ""
-                    if def.args_desc and type(def.args_desc) == "table" then
-                        desc = def.args_desc[i] or ""
-                    end
-                    property_list[#property_list + 1] = string.format("%s:%s:%s", param, typ, desc)
-                end
-
-                uci:set_list(common.db.uci.cfg, s, "required", required_list)
-                uci:set_list(common.db.uci.cfg, s, "property", property_list)
-            end
-            uci:set(common.db.uci.cfg, s, "additionalProperties", "0")
-            table.insert(created_sections, {section = s, name = tool})
+            local required, property = build_param_lists(def.args, def.args_desc, detect_type)
+            defs[#defs + 1] = build_tool_def(
+                "ucode",
+                server,
+                tool,
+                def.tool_desc,
+                def.exec_msg,
+                def.download_msg,
+                def.timeout,
+                required,
+                property
+            )
         end
     end
-    uci:commit(common.db.uci.cfg)
+
+    return defs, nil
 end
 
-local listup_server_candidate = function(dir)
+local function to_list(v)
+    if v == nil then return {} end
+    if type(v) == "table" then return v end
+    return { v }
+end
+
+local function normalize_tool_def(def)
+    local required = to_list(def.required)
+    local property = to_list(def.property)
+    table.sort(required)
+    table.sort(property)
+    return {
+        name = def.name or "",
+        script = def.script or "",
+        server = def.server or "",
+        type = def.type or "function",
+        description = def.description or "",
+        additionalProperties = def.additionalProperties or "0",
+        required = required,
+        property = property,
+    }
+end
+
+local function make_tool_key(def)
+    return string.format("%s|%s|%s", def.script or "", def.server or "", def.name or "")
+end
+
+local function defs_equal(a, b)
+    if not a or not b then return false end
+    if a.name ~= b.name then return false end
+    if a.script ~= b.script then return false end
+    if a.server ~= b.server then return false end
+    if a.type ~= b.type then return false end
+    if a.description ~= b.description then return false end
+    if a.additionalProperties ~= b.additionalProperties then return false end
+    if #a.required ~= #b.required then return false end
+    for i = 1, #a.required do
+        if a.required[i] ~= b.required[i] then return false end
+    end
+    if #a.property ~= #b.property then return false end
+    for i = 1, #a.property do
+        if a.property[i] ~= b.property[i] then return false end
+    end
+    return true
+end
+
+local function load_current_tool_map(uci_cursor)
+    local old_map = {}
+    uci_cursor:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        if s.name and s.server and s.script then
+            local def = normalize_tool_def(s)
+            local key = make_tool_key(def)
+            old_map[key] = { def = def, enable = s.enable or "0" }
+        end
+    end)
+    return old_map
+end
+
+local function sort_tool_defs(defs)
+    table.sort(defs, function(a, b)
+        local ka = make_tool_key(a)
+        local kb = make_tool_key(b)
+        return ka < kb
+    end)
+end
+
+local function scan_all_tool_defs()
+    local defs = {}
+    local seen = {}
+
+    local function append_defs(server_defs)
+        for _, def in ipairs(server_defs or {}) do
+            local normalized = normalize_tool_def(def)
+            local key = make_tool_key(normalized)
+            if seen[key] then
+                return nil, "duplicate tool definition: " .. key
+            end
+            seen[key] = true
+            defs[#defs + 1] = def
+        end
+        return true, nil
+    end
+
+    local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
+    if lua_servers then
+        for _, server_name in ipairs(lua_servers) do
+            local server_defs, err = scan_lua_server_defs(server_name)
+            if not server_defs then
+                return nil, err
+            end
+            local ok, append_err = append_defs(server_defs)
+            if not ok then
+                return nil, append_err
+            end
+        end
+    end
+
+    local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
+    if ucode_servers then
+        for _, server_name in ipairs(ucode_servers) do
+            local server_defs, err = scan_ucode_server_defs(server_name)
+            if not server_defs then
+                return nil, err
+            end
+            local ok, append_err = append_defs(server_defs)
+            if not ok then
+                return nil, append_err
+            end
+        end
+    end
+
+    sort_tool_defs(defs)
+    return defs, nil
+end
+
+local function add_tool_section(uci_cursor, def, enable)
+    local s = uci_cursor:section(common.db.uci.cfg, common.db.uci.sect.tool)
+    uci_cursor:set(common.db.uci.cfg, s, "name", def.name)
+    uci_cursor:set(common.db.uci.cfg, s, "script", def.script)
+    uci_cursor:set(common.db.uci.cfg, s, "server", def.server)
+    uci_cursor:set(common.db.uci.cfg, s, "enable", enable or "0")
+    uci_cursor:set(common.db.uci.cfg, s, "type", def.type or "function")
+    uci_cursor:set(common.db.uci.cfg, s, "description", def.description or "")
+    uci_cursor:set(common.db.uci.cfg, s, "execution_message", def.execution_message or "")
+    uci_cursor:set(common.db.uci.cfg, s, "download_message", def.download_message or "")
+    uci_cursor:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
+    uci_cursor:set(common.db.uci.cfg, s, "conflict", def.conflict or "0")
+    if def.required and #def.required > 0 then
+        uci_cursor:set_list(common.db.uci.cfg, s, "required", def.required)
+    end
+    if def.property and #def.property > 0 then
+        uci_cursor:set_list(common.db.uci.cfg, s, "property", def.property)
+    end
+    uci_cursor:set(common.db.uci.cfg, s, "additionalProperties", def.additionalProperties or "0")
+end
+
+local function apply_tool_defs(defs)
+    local apply_uci = require("luci.model.uci").cursor()
+    local old_map = load_current_tool_map(apply_uci)
+
+    apply_uci:delete_all(common.db.uci.cfg, common.db.uci.sect.tool)
+
+    for _, def in ipairs(defs or {}) do
+        local normalized = normalize_tool_def(def)
+        local key = make_tool_key(normalized)
+        local old = old_map[key]
+        local enable = "0"
+        if old and defs_equal(old.def, normalized) then
+            enable = old.enable or "0"
+        end
+        add_tool_section(apply_uci, def, enable)
+    end
+
+    apply_uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", (#(defs or {}) > 0) and "1" or "0")
+    check_tool_name_conflict(apply_uci)
+
+    local ok = apply_uci:commit(common.db.uci.cfg)
+    if ok == false then
+        return false, "failed to commit tool registry"
+    end
+    return true, { count = #(defs or {}) }
+end
+
+function M.setup_lua_server_config(server_name)
+    local defs, err = scan_lua_server_defs(server_name)
+    if not defs then
+        debug:log("oasis.log", "setup_lua_server_config", err or "failed to scan lua server")
+        return false, err
+    end
+    for _, def in ipairs(defs) do
+        add_tool_section(uci, def, "0")
+    end
+    if #defs > 0 then
+        uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
+        uci:commit(common.db.uci.cfg)
+    end
+    return true, { count = #defs }
+end
+
+function M.setup_ucode_server_config(server_name)
+    local defs, err = scan_ucode_server_defs(server_name)
+    if not defs then
+        debug:log("oasis.log", "setup_ucode_server_config", err or "failed to scan ucode server")
+        return false, err
+    end
+    for _, def in ipairs(defs) do
+        add_tool_section(uci, def, "0")
+    end
+    if #defs > 0 then
+        uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
+        uci:commit(common.db.uci.cfg)
+    end
+    return true, { count = #defs }
+end
+
+listup_server_candidate = function(dir)
   local files = fs.dir(dir)
   if not files then
     return nil
@@ -246,11 +422,12 @@ local listup_server_candidate = function(dir)
   return result
 end
 
-local check_tool_name_conflict = function()
+check_tool_name_conflict = function(uci_cursor)
+    uci_cursor = uci_cursor or uci
     -- Check Conflict Tool Name
     -- If the value of the conflict option is set to 1, usage will be prohibited.
     local name_to_sections = {}
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+    uci_cursor:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         if s.name then
             name_to_sections[s.name] = name_to_sections[s.name] or {}
             table.insert(name_to_sections[s.name], s[".name"])
@@ -259,138 +436,26 @@ local check_tool_name_conflict = function()
     for _, sections in pairs(name_to_sections) do
         if #sections > 1 then
             for _, sec in ipairs(sections) do
-                uci:set(common.db.uci.cfg, sec, "conflict", "1")
+                uci_cursor:set(common.db.uci.cfg, sec, "conflict", "1")
             end
         end
     end
 end
 
 function M.update_server_info()
-
-    -- 1) Create a snapshot of the old UCI (only 'enable' will be restored; comparisons require an exact match)
-    local function to_list(v)
-        if v == nil then return {} end
-        if type(v) == "table" then return v end
-        return { v }
+    local defs, err = scan_all_tool_defs()
+    if not defs then
+        debug:log("oasis.log", "update_server_info", err or "failed to scan tool definitions")
+        return false, err or "failed to scan tool definitions"
     end
 
-    local function normalize_from_uci_section(s)
-        local required = to_list(s.required)
-        local props    = to_list(s.property)
-        table.sort(required)
-        table.sort(props)
-        return {
-            name = s.name or "",
-            script = s.script or "",
-            server = s.server or "",
-            type = s.type or "function",
-            description = s.description or "",
-            additionalProperties = s.additionalProperties or "0",
-            required = required,
-            properties = props,
-        }
+    local ok, info_or_err = apply_tool_defs(defs)
+    if not ok then
+        debug:log("oasis.log", "update_server_info", info_or_err or "failed to apply tool definitions")
+        return false, info_or_err or "failed to apply tool definitions"
     end
 
-    local function make_key(def)
-        return string.format("%s|%s|%s", def.script or "", def.server or "", def.name or "")
-    end
-
-    local function defs_equal(a, b)
-        if not a or not b then return false end
-        if a.name ~= b.name then return false end
-        if a.script ~= b.script then return false end
-        if a.server ~= b.server then return false end
-        if a.type ~= b.type then return false end
-        if a.description ~= b.description then return false end
-        if a.additionalProperties ~= b.additionalProperties then return false end
-        if #a.required ~= #b.required then return false end
-        for i = 1, #a.required do
-            if a.required[i] ~= b.required[i] then return false end
-        end
-        if #a.properties ~= #b.properties then return false end
-        for i = 1, #a.properties do
-            if a.properties[i] ~= b.properties[i] then return false end
-        end
-        return true
-    end
-
-    local old_map = {}
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if s.name and s.server and s.script then
-            local def = normalize_from_uci_section(s)
-            local key = make_key(def)
-            old_map[key] = { def = def, enable = s.enable or "0" }
-        end
-    end)
-
-    do
-        local cnt = 0
-        for _ in pairs(old_map) do cnt = cnt + 1 end
-        debug:log("oasis.log", "update_server_info", "snapshot_count=" .. tostring(cnt))
-    end
-
-    -- 2) Remove all 'tool' sections temporarily
-    uci:delete_all(common.db.uci.cfg, common.db.uci.sect.tool)
-    uci:commit(common.db.uci.cfg)
-
-    -- 3) Rebuild UCI by re-scanning Lua/ucode servers
-    local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
-    if lua_servers then
-        for _, server_name in ipairs(lua_servers) do
-            M.setup_lua_server_config(server_name)
-        end
-    end
-
-    local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
-    if ucode_servers then
-        for _, server_name in ipairs(ucode_servers) do
-            M.setup_ucode_server_config(server_name)
-        end
-    end
-
-    -- 4) Restore 'enable' to its previous value only for entries that exactly match (do not restore other settings)
-    -- Helper function to output the reason for differences
-    local function diff_reason(a, b)
-        if a.name ~= b.name then return "name" end
-        if a.script ~= b.script then return "script" end
-        if a.server ~= b.server then return "server" end
-        if a.type ~= b.type then return "type" end
-        if a.description ~= b.description then return "description" end
-        if a.additionalProperties ~= b.additionalProperties then return "additionalProperties" end
-        if #a.required ~= #b.required then return "required.length" end
-        for i = 1, math.min(#a.required, #b.required) do
-            if a.required[i] ~= b.required[i] then return "required["..i.."]" end
-        end
-        if #a.properties ~= #b.properties then return "properties.length" end
-        for i = 1, math.min(#a.properties, #b.properties) do
-            if a.properties[i] ~= b.properties[i] then return "properties["..i.."]" end
-        end
-        return "unknown"
-    end
-
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if s.name and s.server and s.script then
-            local new_def = normalize_from_uci_section(s)
-            local key = make_key(new_def)
-            local old = old_map[key]
-            if not old then
-                debug:log("oasis.log", "update_server_info", "no_snapshot key=" .. key)
-            else
-                if defs_equal(old.def, new_def) then
-                    uci:set(common.db.uci.cfg, s[".name"], "enable", old.enable or "0")
-                    debug:log("oasis.log", "update_server_info", "restored_enable key=" .. key .. " -> " .. (old.enable or "0"))
-                else
-                    debug:log("oasis.log", "update_server_info", "mismatch key=" .. key .. " reason=" .. diff_reason(old.def, new_def))
-                end
-            end
-        end
-    end)
-
-    -- 5) Check for tool name conflicts
-    check_tool_name_conflict()
-
-    -- 6) Final commit
-    uci:commit(common.db.uci.cfg)
+    return true, info_or_err
 end
 
 -- This function is called when sending a message to the LLM.
