@@ -11,5 +11,5 @@ stop() {
 }
 
 restart() {
-    lua /usr/bin/oasis_tool_setup init
+    lua /usr/bin/oasis_tool_setup refresh
 }
