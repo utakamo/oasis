@@ -11,8 +11,10 @@ local M = {}
 
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
+local manifest_dir = "/etc/oasis/tool-manifest.d/"
 local listup_server_candidate
 local check_tool_name_conflict
+local sort_tool_defs
 
 -- Quote dynamic paths before passing them to shell commands.
 local function shell_quote(s)
@@ -255,6 +257,258 @@ local function defs_equal(a, b)
     return true
 end
 
+local function append_unique_tool_defs(defs, seen, incoming_defs)
+    for _, def in ipairs(incoming_defs or {}) do
+        local normalized = normalize_tool_def(def)
+        local key = make_tool_key(normalized)
+        if seen[key] then
+            return nil, "duplicate tool definition: " .. key
+        end
+        seen[key] = true
+        defs[#defs + 1] = def
+    end
+    return true, nil
+end
+
+local function basename(path)
+    return tostring(path or ""):match("([^/]+)$") or ""
+end
+
+local function property_list_to_manifest_properties(property_list)
+    local properties = {}
+    for _, prop in ipairs(to_list(property_list)) do
+        local name, typ, desc = tostring(prop):match("^([^:]+):([^:]+):(.*)$")
+        if name and typ then
+            properties[#properties + 1] = {
+                name = name,
+                type = typ,
+                description = desc or "",
+            }
+        end
+    end
+    table.sort(properties, function(a, b)
+        if a.name == b.name then
+            return a.type < b.type
+        end
+        return a.name < b.name
+    end)
+    return properties
+end
+
+local function manifest_properties_to_property_list(properties)
+    local property_list = {}
+    if type(properties) ~= "table" then
+        return property_list, nil
+    end
+
+    for _, prop in ipairs(properties) do
+        if type(prop) ~= "table" then
+            return nil, "invalid property entry"
+        end
+
+        local name = prop.name or ""
+        local typ = prop.type or ""
+        local desc = prop.description or ""
+        if type(name) ~= "string" or name == "" then
+            return nil, "invalid property name"
+        end
+        if type(typ) ~= "string" or typ == "" then
+            return nil, "invalid property type"
+        end
+        if type(desc) ~= "string" then
+            return nil, "invalid property description"
+        end
+
+        property_list[#property_list + 1] = string.format("%s:%s:%s", name, typ, desc)
+    end
+
+    table.sort(property_list)
+    return property_list, nil
+end
+
+local function build_manifest(script_type, script_path, defs)
+    local manifest = {
+        version = 1,
+        script_type = script_type,
+        script_path = script_path,
+        tools = {},
+    }
+
+    for _, def in ipairs(defs or {}) do
+        local normalized = normalize_tool_def(def)
+        manifest.tools[#manifest.tools + 1] = {
+            server = normalized.server,
+            name = normalized.name,
+            type = normalized.type,
+            description = normalized.description,
+            execution_message = def.execution_message or "",
+            download_message = def.download_message or "",
+            timeout = def.timeout or "",
+            required = normalized.required,
+            properties = property_list_to_manifest_properties(normalized.property),
+            additional_properties = (normalized.additionalProperties == "1"),
+        }
+    end
+
+    table.sort(manifest.tools, function(a, b)
+        local ka = string.format("%s|%s", a.server or "", a.name or "")
+        local kb = string.format("%s|%s", b.server or "", b.name or "")
+        return ka < kb
+    end)
+
+    return manifest
+end
+
+local function manifest_filename(script_type, script_path)
+    local base = basename(script_path)
+    if base == "" then
+        base = "unknown"
+    end
+    return string.format("%s.%s.json", script_type or "unknown", base)
+end
+
+local function write_manifest_file(manifest)
+    if not fs.stat(manifest_dir) and not fs.mkdirr(manifest_dir) then
+        return false, "failed to create manifest dir"
+    end
+
+    local path = manifest_dir .. manifest_filename(manifest.script_type, manifest.script_path)
+    local content = jsonc.stringify(manifest, true)
+    if not content then
+        return false, "failed to stringify manifest"
+    end
+
+    if not fs.writefile(path, content .. "\n") then
+        return false, "failed to write manifest: " .. path
+    end
+
+    return true, path
+end
+
+local function manifest_tool_to_def(script_type, tool)
+    if type(tool) ~= "table" then
+        return nil, "tool entry must be an object"
+    end
+
+    local server = tool.server or ""
+    local name = tool.name or ""
+    local type_name = tool.type or "function"
+    local description = tool.description or ""
+    local execution_message = tool.execution_message or ""
+    local download_message = tool.download_message or ""
+    local timeout = tool.timeout or ""
+    local additional_properties = tool.additional_properties
+    local required = {}
+
+    if type(server) ~= "string" or server == "" then
+        return nil, "missing tool server"
+    end
+    if type(name) ~= "string" or name == "" then
+        return nil, "missing tool name"
+    end
+    if type(type_name) ~= "string" or type_name == "" then
+        return nil, "missing tool type"
+    end
+    if type(description) ~= "string" or description == "" then
+        return nil, "missing tool description"
+    end
+    if type(execution_message) ~= "string" then
+        return nil, "invalid execution_message"
+    end
+    if type(download_message) ~= "string" then
+        return nil, "invalid download_message"
+    end
+    if type(timeout) ~= "string" and type(timeout) ~= "number" then
+        return nil, "invalid timeout"
+    end
+    if additional_properties ~= nil and type(additional_properties) ~= "boolean" then
+        return nil, "invalid additional_properties"
+    end
+
+    if tool.required ~= nil then
+        if type(tool.required) ~= "table" then
+            return nil, "invalid required list"
+        end
+        for _, item in ipairs(tool.required) do
+            if type(item) ~= "string" or item == "" then
+                return nil, "invalid required entry"
+            end
+            required[#required + 1] = item
+        end
+    end
+    table.sort(required)
+
+    local property_list, property_err = manifest_properties_to_property_list(tool.properties)
+    if not property_list then
+        return nil, property_err or "invalid properties"
+    end
+    local def = build_tool_def(
+        script_type,
+        server,
+        name,
+        description,
+        execution_message,
+        download_message,
+        tostring(timeout or ""),
+        required,
+        property_list
+    )
+    def.type = type_name
+    def.additionalProperties = (additional_properties == true) and "1" or "0"
+
+    return def, nil
+end
+
+local function load_manifest_file(path)
+    local raw = fs.readfile(path)
+    if not raw then
+        return nil, nil, "failed to read manifest: " .. path
+    end
+
+    local manifest = jsonc.parse(raw)
+    if type(manifest) ~= "table" then
+        return nil, nil, "invalid manifest json: " .. path
+    end
+
+    if manifest.version ~= 1 then
+        return nil, nil, "unsupported manifest version: " .. path
+    end
+    if manifest.script_type ~= "lua" and manifest.script_type ~= "ucode" then
+        return nil, nil, "invalid manifest script_type: " .. path
+    end
+    if type(manifest.script_path) ~= "string" or manifest.script_path == "" then
+        return nil, nil, "invalid manifest script_path: " .. path
+    end
+    if type(manifest.tools) ~= "table" then
+        return nil, nil, "invalid manifest tools: " .. path
+    end
+
+    if not is_regular_file(manifest.script_path) then
+        debug:log("oasis.log", "load_manifest_file", "skip stale manifest: " .. path)
+        return {}, nil, nil
+    end
+    if manifest.script_type == "lua" and not fs.access(manifest.script_path, "x") then
+        debug:log("oasis.log", "load_manifest_file", "skip non-executable lua manifest target: " .. path)
+        return {}, nil, nil
+    end
+
+    local defs = {}
+    local seen = {}
+    for i, tool in ipairs(manifest.tools) do
+        local def, err = manifest_tool_to_def(manifest.script_type, tool)
+        if not def then
+            return nil, nil, string.format("invalid manifest tool (%s #%d): %s", path, i, err)
+        end
+        local ok, append_err = append_unique_tool_defs(defs, seen, { def })
+        if not ok then
+            return nil, nil, append_err
+        end
+    end
+
+    sort_tool_defs(defs)
+    return defs, manifest.script_path, nil
+end
+
 local function load_current_tool_map(uci_cursor)
     local old_map = {}
     uci_cursor:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
@@ -267,7 +521,7 @@ local function load_current_tool_map(uci_cursor)
     return old_map
 end
 
-local function sort_tool_defs(defs)
+sort_tool_defs = function(defs)
     table.sort(defs, function(a, b)
         local ka = make_tool_key(a)
         local kb = make_tool_key(b)
@@ -279,19 +533,6 @@ local function scan_all_tool_defs()
     local defs = {}
     local seen = {}
 
-    local function append_defs(server_defs)
-        for _, def in ipairs(server_defs or {}) do
-            local normalized = normalize_tool_def(def)
-            local key = make_tool_key(normalized)
-            if seen[key] then
-                return nil, "duplicate tool definition: " .. key
-            end
-            seen[key] = true
-            defs[#defs + 1] = def
-        end
-        return true, nil
-    end
-
     local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
     if lua_servers then
         for _, server_name in ipairs(lua_servers) do
@@ -299,7 +540,7 @@ local function scan_all_tool_defs()
             if not server_defs then
                 return nil, err
             end
-            local ok, append_err = append_defs(server_defs)
+            local ok, append_err = append_unique_tool_defs(defs, seen, server_defs)
             if not ok then
                 return nil, append_err
             end
@@ -313,7 +554,7 @@ local function scan_all_tool_defs()
             if not server_defs then
                 return nil, err
             end
-            local ok, append_err = append_defs(server_defs)
+            local ok, append_err = append_unique_tool_defs(defs, seen, server_defs)
             if not ok then
                 return nil, append_err
             end
@@ -422,6 +663,153 @@ listup_server_candidate = function(dir)
   return result
 end
 
+local function listup_manifest_candidate(dir)
+    local files = fs.dir(dir)
+    if not files then
+        return {}
+    end
+
+    local result = {}
+    for file in files do
+        local path = dir .. file
+        if is_regular_file(path) and file:sub(-5) == ".json" then
+            table.insert(result, file)
+        end
+    end
+
+    table.sort(result)
+    return result
+end
+
+local function load_all_manifest_defs()
+    local defs = {}
+    local seen = {}
+    local covered_paths = {}
+
+    for _, file in ipairs(listup_manifest_candidate(manifest_dir)) do
+        local manifest_defs, script_path, err = load_manifest_file(manifest_dir .. file)
+        if not manifest_defs then
+            return nil, nil, err
+        end
+        if script_path then
+            covered_paths[script_path] = true
+        end
+        local ok, append_err = append_unique_tool_defs(defs, seen, manifest_defs)
+        if not ok then
+            return nil, nil, append_err
+        end
+    end
+
+    sort_tool_defs(defs)
+    return defs, covered_paths, nil
+end
+
+local function scan_unmanifested_tool_defs(covered_paths)
+    local defs = {}
+    local seen = {}
+
+    local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
+    if lua_servers then
+        for _, server_name in ipairs(lua_servers) do
+            local script_path = lua_ubus_server_app_dir .. server_name
+            if not covered_paths[script_path] then
+                local server_defs, err = scan_lua_server_defs(server_name)
+                if not server_defs then
+                    return nil, err
+                end
+                local ok, append_err = append_unique_tool_defs(defs, seen, server_defs)
+                if not ok then
+                    return nil, append_err
+                end
+            end
+        end
+    end
+
+    local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
+    if ucode_servers then
+        for _, server_name in ipairs(ucode_servers) do
+            local script_path = ucode_ubus_server_app_dir .. server_name
+            if not covered_paths[script_path] then
+                local server_defs, err = scan_ucode_server_defs(server_name)
+                if not server_defs then
+                    return nil, err
+                end
+                local ok, append_err = append_unique_tool_defs(defs, seen, server_defs)
+                if not ok then
+                    return nil, append_err
+                end
+            end
+        end
+    end
+
+    sort_tool_defs(defs)
+    return defs, nil
+end
+
+local function collect_all_manifests()
+    local manifests = {}
+
+    local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
+    if lua_servers then
+        for _, server_name in ipairs(lua_servers) do
+            local defs, err = scan_lua_server_defs(server_name)
+            if not defs then
+                return nil, err
+            end
+            if #defs > 0 then
+                manifests[#manifests + 1] = build_manifest("lua", lua_ubus_server_app_dir .. server_name, defs)
+            end
+        end
+    end
+
+    local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
+    if ucode_servers then
+        for _, server_name in ipairs(ucode_servers) do
+            local defs, err = scan_ucode_server_defs(server_name)
+            if not defs then
+                return nil, err
+            end
+            if #defs > 0 then
+                manifests[#manifests + 1] = build_manifest("ucode", ucode_ubus_server_app_dir .. server_name, defs)
+            end
+        end
+    end
+
+    table.sort(manifests, function(a, b)
+        return manifest_filename(a.script_type, a.script_path) < manifest_filename(b.script_type, b.script_path)
+    end)
+
+    return manifests, nil
+end
+
+function M.rebuild_manifest_store()
+    local manifests, err = collect_all_manifests()
+    if not manifests then
+        debug:log("oasis.log", "rebuild_manifest_store", err or "failed to collect manifests")
+        return false, err or "failed to collect manifests"
+    end
+
+    if not fs.stat(manifest_dir) and not fs.mkdirr(manifest_dir) then
+        return false, "failed to create manifest dir"
+    end
+
+    for _, file in ipairs(listup_manifest_candidate(manifest_dir)) do
+        if not fs.remove(manifest_dir .. file) then
+            return false, "failed to remove old manifest: " .. file
+        end
+    end
+
+    for _, manifest in ipairs(manifests) do
+        local ok, path_or_err = write_manifest_file(manifest)
+        if not ok then
+            debug:log("oasis.log", "rebuild_manifest_store", path_or_err or "failed to write manifest")
+            return false, path_or_err or "failed to write manifest"
+        end
+    end
+
+    return true, { count = #manifests }
+end
+
 check_tool_name_conflict = function(uci_cursor)
     uci_cursor = uci_cursor or uci
     -- Check Conflict Tool Name
@@ -443,14 +831,35 @@ check_tool_name_conflict = function(uci_cursor)
 end
 
 function M.update_server_info()
-    local defs, err = scan_all_tool_defs()
-    if not defs then
-        debug:log("oasis.log", "update_server_info", err or "failed to scan tool definitions")
-        return false, err or "failed to scan tool definitions"
+    local defs = {}
+    local seen = {}
+
+    local manifest_defs, covered_paths, err = load_all_manifest_defs()
+    if not manifest_defs then
+        debug:log("oasis.log", "update_server_info", err or "failed to load manifest definitions")
+        return false, err or "failed to load manifest definitions"
+    end
+    local ok, append_err = append_unique_tool_defs(defs, seen, manifest_defs)
+    if not ok then
+        debug:log("oasis.log", "update_server_info", append_err or "failed to merge manifest definitions")
+        return false, append_err or "failed to merge manifest definitions"
     end
 
-    local ok, info_or_err = apply_tool_defs(defs)
+    local fallback_defs, fallback_err = scan_unmanifested_tool_defs(covered_paths or {})
+    if not fallback_defs then
+        debug:log("oasis.log", "update_server_info", fallback_err or "failed to scan fallback tool definitions")
+        return false, fallback_err or "failed to scan fallback tool definitions"
+    end
+    ok, append_err = append_unique_tool_defs(defs, seen, fallback_defs)
     if not ok then
+        debug:log("oasis.log", "update_server_info", append_err or "failed to merge fallback tool definitions")
+        return false, append_err or "failed to merge fallback tool definitions"
+    end
+
+    sort_tool_defs(defs)
+
+    local apply_ok, info_or_err = apply_tool_defs(defs)
+    if not apply_ok then
         debug:log("oasis.log", "update_server_info", info_or_err or "failed to apply tool definitions")
         return false, info_or_err or "failed to apply tool definitions"
     end

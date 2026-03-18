@@ -12,6 +12,7 @@ UCODE_LIBRARY_DIR = /usr/share/ucode
 LUA_UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
 UCODE_UBUS_SERVER_APP_DIR = /usr/share/rpcd/ucode
 LUCI_MODULEDIR = /usr/lib/lua/luci/controller
+OASIS_MANIFEST_DIR = /etc/oasis/tool-manifest.d
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,6 +39,7 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/system
 	$(INSTALL_DIR) $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool
 	$(INSTALL_DIR) $(1)$(LUCI_MODULEDIR)/oasis-tool
+	$(INSTALL_DIR) $(1)$(OASIS_MANIFEST_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis_tool_setup $(1)$(USR_BIN_DIR)
 	$(INSTALL_BIN) ./files/etc/init.d/olt_tool.init $(1)$(INIT_DIR)/olt_tool
 	$(INSTALL_DATA) ./files/usr/share/rpcd/acl.d/oasis-mod-tool.json $(1)$(RPCD_ACL_DIR)
@@ -66,6 +68,10 @@ define Package/oasis-mod-tool/postinst
 	if [ $$? -eq 0 ]; then
 		uci commit oasis
 		mkdir -p /tmp/oasis
+		if [ -z "$$IPKG_INSTROOT" ]; then
+			lua /usr/bin/oasis_tool_setup rebuild-manifest >/dev/null 2>&1 || true
+			lua /usr/bin/oasis_tool_setup refresh >/dev/null 2>&1 || true
+		fi
 		touch /tmp/oasis/reboot_required_for_oasis-mod-tool
 	fi
 endef

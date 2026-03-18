@@ -57,6 +57,15 @@ local function refresh_local_tool_registry()
     return true
 end
 
+local function rebuild_manifest_store()
+    local ok, err = olt_client.rebuild_manifest_store()
+    if not ok then
+        return false, err or "Failed to rebuild manifest store"
+    end
+
+    return true
+end
+
 local function run_setup()
     ensure_runtime_prerequisites(MIN_TIMEOUT)
 
@@ -71,6 +80,12 @@ if arg[1] == "init" then
     run_setup()
 elseif arg[1] == "refresh" then
     run_setup()
+elseif arg[1] == "rebuild-manifest" then
+    local ok, err = rebuild_manifest_store()
+    if not ok then
+        io.stderr:write(err .. "\n")
+        os.exit(1)
+    end
 elseif arg[1] == "delete" then
     uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "0")
     uci:set(common.db.uci.cfg, common.db.uci.sect.support, "remote_mcp_server", "0")
