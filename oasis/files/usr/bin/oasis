@@ -3,20 +3,13 @@
 local common = require("oasis.common")
 local console = require("oasis.console")
 
-if common.check_unloaded_plugin("oasis") then
-    print("\27[31mOasis has been installed. A reboot of OpenWrt is required to use it.\27[0m")
-    print()
-    return
-end
+local unload_targets = {
+    { name = "oasis", path = common.flag.unload.oasis },
+    { name = "oasis-mod-tool", path = common.flag.unload.oasis_mod_tool },
+    { name = "oasis-mod-spring", path = common.flag.unload.oasis_mod_spring },
+}
 
-if common.check_unloaded_plugin("oasis-mod-tool") or common.check_unloaded_plugin("oasis-mod-spring") then
-    print("\27[31mInstalled plugin modules have been detected.\27[0m")
-    print("\27[31mThe OpenWrt system must be rebooted to use them.\27[0m")
-    print()
-end
-
-if not common.check_prepare_oasis() then
-
+local function print_restart_guide()
     print([=[
 ============================================================
                     REBOOT REQUIRED
@@ -31,7 +24,73 @@ please choose one of the following options:
 
 ============================================================
     ]=])
+end
 
+local function collect_unloaded_targets()
+    local targets = {}
+    for _, target in ipairs(unload_targets) do
+        if common.check_unloaded_plugin(target.name) then
+            table.insert(targets, target)
+        end
+    end
+    return targets
+end
+
+local function clear_unloaded_targets(targets)
+    for _, target in ipairs(targets) do
+        os.remove(target.path)
+    end
+end
+
+local function handle_unloaded_targets()
+    local targets = collect_unloaded_targets()
+    if #targets == 0 then
+        return false
+    end
+
+    if common.check_unloaded_plugin("oasis") then
+        print("\27[31mOasis has been installed. A reboot or rpcd restart is required to use it.\27[0m")
+    end
+
+    if common.check_unloaded_plugin("oasis-mod-tool") or common.check_unloaded_plugin("oasis-mod-spring") then
+        print("\27[31mInstalled plugin modules have been detected.\27[0m")
+        print("\27[31mA reboot or rpcd restart is required to use them.\27[0m")
+    end
+
+    print()
+
+    console.write("Reboot OpenWrt now [Y/N]: ")
+    console.flush()
+
+    local reply = (console.read() or ""):upper()
+    if reply == "Y" then
+        clear_unloaded_targets(targets)
+        console.print("\nSystem reboot will start in 3 seconds.\n")
+        os.execute("(sleep 3 && reboot) >/dev/null 2>&1 &")
+        return true
+    end
+
+    console.write("Restart rpcd service now [Y/N]: ")
+    console.flush()
+
+    reply = (console.read() or ""):upper()
+    if reply == "Y" then
+        clear_unloaded_targets(targets)
+        console.print("\nrpcd restart will start in 3 seconds.\n")
+        os.execute("(sleep 3 && /etc/init.d/rpcd restart) >/dev/null 2>&1 &")
+        return true
+    end
+
+    print_restart_guide()
+    return true
+end
+
+if handle_unloaded_targets() then
+    return
+end
+
+if not common.check_prepare_oasis() then
+    print_restart_guide()
     return
 end
 

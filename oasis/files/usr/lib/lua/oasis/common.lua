@@ -411,9 +411,9 @@ function M.check_prepare_oasis()
         return false
     end
 
-    -- TODO: Check below code
+    -- Install-time reboot flags mean rpcd has not reloaded the package payload yet.
     if M.check_unloaded_plugin() then
-        return true
+        return false
     end
 
     -- Check plugin ubus server
