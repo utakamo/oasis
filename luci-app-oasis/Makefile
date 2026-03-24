@@ -10,6 +10,7 @@ LUA_LIBRARYDIR = /usr/lib/lua
 LUCI_LIBRARYDIR = $(LUA_LIBRARYDIR)/luci
 LUCI_VIEWDIR = $(LUCI_LIBRARYDIR)/view
 LUCI_RESOURCES_DIR = /www/luci-static/resources
+UCI_DEFAULTS_DIR = /etc/uci-defaults
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -29,6 +30,7 @@ define Package/luci-app-oasis/install
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DIR) $(1)$(UCI_DEFAULTS_DIR)
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/icons.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/sysmsg.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/chat.htm $(1)$(LUCI_VIEWDIR)/oasis
@@ -48,14 +50,7 @@ define Package/luci-app-oasis/install
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/operator.png $(1)$(LUCI_RESOURCES_DIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/openwrt.png $(1)$(LUCI_RESOURCES_DIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/fonts/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2 $(1)$(LUCI_RESOURCES_DIR)/oasis/fonts
-endef
-
-define Package/luci-app-oasis/postinst
-	#!/bin/sh
-	uci set oasis.support.webui=1
-	if [ $$? -eq 0 ]; then
-		uci commit oasis
-	fi
+	$(INSTALL_BIN) ./files/etc/uci-defaults/80_luci-app-oasis $(1)$(UCI_DEFAULTS_DIR)/80_luci-app-oasis
 endef
 
 $(eval $(call BuildPackage,luci-app-oasis))

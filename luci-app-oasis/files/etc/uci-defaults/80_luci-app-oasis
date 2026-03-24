@@ -1,0 +1,14 @@
+#!/bin/sh
+
+changed=0
+
+if [ "$(uci -q get oasis.support.webui)" != "1" ]; then
+    uci set oasis.support.webui='1'
+    changed=1
+fi
+
+if [ "$changed" -eq 1 ]; then
+    uci commit oasis
+fi
+
+exit 0
