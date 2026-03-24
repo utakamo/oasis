@@ -97,9 +97,9 @@ flag.apply = {}
 flag.apply.complete = "/tmp/oasis/apply/complete"
 flag.apply.rollback = "/tmp/oasis/apply/rollback"
 flag.unload = {}
-flag.unload.oasis               = "/tmp/oasis/reboot_required_oasis"
-flag.unload.oasis_mod_tool      = "/tmp/oasis/reboot_required_oasis_mod_tool"
-flag.unload.oasis_mod_spring    = "/tmp/oasis/reboot_required_oasis_mod_spring"
+flag.unload.oasis               = "/tmp/oasis/reboot_required_for_oasis"
+flag.unload.oasis_mod_tool      = "/tmp/oasis/reboot_required_for_oasis-mod-tool"
+flag.unload.oasis_mod_spring    = "/tmp/oasis/reboot_required_for_oasis-mod-spring"
 
 local role = {}
 role.system      = "system"
@@ -389,17 +389,17 @@ function M.check_server_loaded(server_name)
 end
 
 function M.check_unloaded_plugin(target)
-    local result = false
-
     if target == "oasis" then
-        result = misc.check_file_exist(flag.unload.oasis)
+        return misc.check_file_exist(flag.unload.oasis)
     elseif target == "oasis-mod-tool" then
-        result = misc.check_file_exist(flag.unload.oasis_mod_tool)
+        return misc.check_file_exist(flag.unload.oasis_mod_tool)
     elseif target == "oasis-mod-spring" then
-        result = misc.check_file_exist(flag.unload.oasis_mod_spring)
+        return misc.check_file_exist(flag.unload.oasis_mod_spring)
     end
 
-    return result
+    return misc.check_file_exist(flag.unload.oasis)
+        or misc.check_file_exist(flag.unload.oasis_mod_tool)
+        or misc.check_file_exist(flag.unload.oasis_mod_spring)
 end
 
 function M.check_prepare_oasis()
