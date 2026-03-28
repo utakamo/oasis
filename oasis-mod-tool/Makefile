@@ -13,6 +13,7 @@ LUA_UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
 UCODE_UBUS_SERVER_APP_DIR = /usr/share/rpcd/ucode
 LUCI_MODULEDIR = /usr/lib/lua/luci/controller
 OASIS_MANIFEST_DIR = /etc/oasis/tool-manifest.d
+UCI_DEFAULTS_DIR = /etc/uci-defaults
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -30,6 +31,7 @@ endef
 define Package/oasis-mod-tool/install
 	$(INSTALL_DIR) $(1)$(USR_BIN_DIR)
 	$(INSTALL_DIR) $(1)$(INIT_DIR)
+	$(INSTALL_DIR) $(1)$(UCI_DEFAULTS_DIR)
 	$(INSTALL_DIR) $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(UCODE_UBUS_SERVER_APP_DIR)
@@ -59,21 +61,12 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/ollama.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/ollama.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/openai.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/openai.lua
 	$(INSTALL_DATA) ./files/luci/controller/module.lua  $(1)$(LUCI_MODULEDIR)/oasis-tool/module.lua
+	$(INSTALL_BIN) ./files/etc/uci-defaults/81_oasis-mod-tool $(1)$(UCI_DEFAULTS_DIR)/81_oasis-mod-tool
 endef
 
 define Package/oasis-mod-tool/postinst
 	#!/bin/sh
-	uci set oasis.support.local_tool=1
-	uci set oasis.support.remote_mcp_server=1
-	if [ $$? -eq 0 ]; then
-		uci commit oasis
-		mkdir -p /tmp/oasis
-		if [ -z "$$IPKG_INSTROOT" ]; then
-			lua /usr/bin/oasis_tool_setup rebuild-manifest >/dev/null 2>&1 || true
-			lua /usr/bin/oasis_tool_setup refresh >/dev/null 2>&1 || true
-		fi
-		touch /tmp/oasis/reboot_required_for_oasis-mod-tool
-	fi
+	touch /tmp/oasis/reboot_required_for_oasis-mod-tool
 endef
 
 $(eval $(call BuildPackage,oasis-mod-tool))

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+changed=0
+
+if [ "$(uci -q get oasis.support.local_tool)" != "1" ]; then
+    uci set oasis.support.local_tool='1'
+    changed=1
+fi
+
+if [ "$(uci -q get oasis.support.remote_mcp_server)" != "1" ]; then
+    uci set oasis.support.remote_mcp_server='1'
+    changed=1
+fi
+
+if [ "$changed" -eq 1 ]; then
+    uci commit oasis
+fi
+
+if [ -x /usr/bin/lua ] && [ -x /usr/bin/oasis_tool_setup ]; then
+    lua /usr/bin/oasis_tool_setup rebuild-manifest >/dev/null 2>&1 || true
+    lua /usr/bin/oasis_tool_setup refresh >/dev/null 2>&1 || true
+fi
+
+exit 0
