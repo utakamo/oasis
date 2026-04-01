@@ -18,6 +18,12 @@
   const API_DISABLE = getUrl('disableTool');
   const URL_REFRESH_TOOLS = getUrl('refreshTools');
   const URL_LOAD_TOOLS = getUrl('loadTools');
+  const TOOL_SEARCH_SERVER = 'oasis.tool.manager';
+  const TOOL_SEARCH_TOOL_ORDER = {
+    get_tool_list: 0,
+    set_tool_enabled: 1,
+    set_tool_disabled: 2
+  };
 
   const container = document.getElementById('oasis-tool-container');
   const toastEl = document.getElementById('tools-toast');
@@ -91,6 +97,36 @@
 
     block.appendChild(list);
     return block;
+  }
+
+  function compareText(a, b) {
+    return String(a || '').localeCompare(String(b || ''));
+  }
+
+  function isToolSearchTool(tool) {
+    return tool &&
+      tool.server === TOOL_SEARCH_SERVER &&
+      Object.prototype.hasOwnProperty.call(TOOL_SEARCH_TOOL_ORDER, tool.name || '');
+  }
+
+  function sortToolsForDisplay(tools, isSpecialGroup) {
+    const list = Array.isArray(tools) ? tools.slice() : [];
+    list.sort((a, b) => {
+      if (isSpecialGroup) {
+        const aOrder = TOOL_SEARCH_TOOL_ORDER[a.name] ?? Number.MAX_SAFE_INTEGER;
+        const bOrder = TOOL_SEARCH_TOOL_ORDER[b.name] ?? Number.MAX_SAFE_INTEGER;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+      }
+
+      const byName = compareText(a.name, b.name);
+      if (byName !== 0) return byName;
+
+      const byScript = compareText(a.script, b.script);
+      if (byScript !== 0) return byScript;
+
+      return compareText(a.server, b.server);
+    });
+    return list;
   }
 
   function createCard(tool) {
@@ -195,21 +231,40 @@
         // local_tool is enabled: show static Refresh button and bind handler
         if (headBar) headBar.style.display = '';
         bindRefreshButton();
+        if (container) {
+          container.innerHTML = '';
+        }
         const tools = data.tools || {};
         const serverMap = {};
+        const toolSearchTools = [];
 
         Object.values(tools).forEach(tool => {
           if (tool[".type"] === "tool" && tool.type === "function") {
+            if (isToolSearchTool(tool)) {
+              toolSearchTools.push(tool);
+              return;
+            }
             const server = tool.server || t('unknownServer', 'Unknown Server');
             if (!serverMap[server]) serverMap[server] = [];
             serverMap[server].push(tool);
           }
         });
 
-        Object.entries(serverMap).forEach(([server, serverTools]) => {
-          const block = createServerBlock(server, serverTools);
+        if (toolSearchTools.length > 0 && container) {
+          const block = createServerBlock(
+            t('toolSearchCategory', 'Tool Search'),
+            sortToolsForDisplay(toolSearchTools, true)
+          );
           container.appendChild(block);
-        });
+        }
+
+        Object.keys(serverMap)
+          .sort(compareText)
+          .forEach(server => {
+            if (!container) return;
+            const block = createServerBlock(server, sortToolsForDisplay(serverMap[server], false));
+            container.appendChild(block);
+          });
       })
       .catch(err => {
         console.error('Failed to load server info:', err);
