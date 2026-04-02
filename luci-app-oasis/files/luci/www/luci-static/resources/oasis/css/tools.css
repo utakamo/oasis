@@ -21,6 +21,14 @@ h3 {
     margin-top: 22px;
 }
 
+.server-block.tool-search-block {
+    background: linear-gradient(180deg, #f6faff 0%, #eef5ff 100%);
+    border: 1px solid #cfe0ff;
+    border-radius: 18px;
+    padding: 16px 18px 18px;
+    box-shadow: 0 10px 22px rgba(13, 110, 253, 0.08);
+}
+
 /* Head action container */
 .tools-head-block {
     width: 100%;
@@ -33,6 +41,34 @@ h3 {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 8px;
+}
+
+.server-header.tool-search-header {
+    position: relative;
+    padding-left: 14px;
+}
+
+.server-header.tool-search-header::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 2px;
+    bottom: 2px;
+    width: 5px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #2a84ff 0%, #0d6efd 100%);
+}
+
+.server-description {
+    margin: 0 0 8px;
+    font-size: 0.92rem;
+    color: #666;
+    line-height: 1.45;
+}
+
+.server-description.tool-search-description {
+    margin-bottom: 12px;
+    color: #35506f;
 }
 
 .list {
@@ -52,6 +88,12 @@ h3 {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.cell.tool-search-card {
+    border: 1px solid #d7e6ff;
+    border-left: 5px solid #2a84ff;
+    box-shadow: 0 8px 18px rgba(13, 110, 253, 0.08);
 }
 
 .cell-title {
@@ -211,4 +253,3 @@ h3 {
     gap: 10px;
     flex-wrap: wrap;
 }
-

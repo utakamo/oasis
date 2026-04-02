@@ -77,22 +77,51 @@
     refreshBtn.dataset.bound = '1';
   }
 
-  function createServerBlock(serverName, tools) {
+  function createServerBlock(serverName, tools, options) {
+    const opts = options || {};
     const block = document.createElement('div');
     block.className = 'server-block';
+    if (opts.blockClassName) {
+      block.classList.add(opts.blockClassName);
+    }
 
     const headerWrap = document.createElement('div');
     headerWrap.className = 'server-header';
+    if (opts.headerClassName) {
+      headerWrap.classList.add(opts.headerClassName);
+    }
     const header = document.createElement('h3');
     header.textContent = serverName;
     headerWrap.appendChild(header);
+    if (opts.badgeLabel) {
+      const badge = document.createElement('span');
+      badge.className = 'server-badge';
+      if (opts.badgeClassName) {
+        badge.classList.add(opts.badgeClassName);
+      }
+      badge.textContent = opts.badgeLabel;
+      headerWrap.appendChild(badge);
+    }
     block.appendChild(headerWrap);
+
+    if (opts.description) {
+      const description = document.createElement('p');
+      description.className = 'server-description';
+      if (opts.descriptionClassName) {
+        description.classList.add(opts.descriptionClassName);
+      }
+      description.textContent = opts.description;
+      block.appendChild(description);
+    }
 
     const list = document.createElement('div');
     list.className = 'list';
+    if (opts.listClassName) {
+      list.classList.add(opts.listClassName);
+    }
 
     tools.forEach(tool => {
-      list.appendChild(createCard(tool));
+      list.appendChild(createCard(tool, { cardClassName: opts.cardClassName }));
     });
 
     block.appendChild(list);
@@ -129,9 +158,13 @@
     return list;
   }
 
-  function createCard(tool) {
+  function createCard(tool, options) {
+    const opts = options || {};
     const cell = document.createElement('div');
     cell.className = 'cell';
+    if (opts.cardClassName) {
+      cell.classList.add(opts.cardClassName);
+    }
 
     const title = document.createElement('div');
     title.className = 'cell-title';
@@ -252,8 +285,19 @@
 
         if (toolSearchTools.length > 0 && container) {
           const block = createServerBlock(
-            t('toolSearchCategory', 'Tool Search'),
-            sortToolsForDisplay(toolSearchTools, true)
+            t('toolSearchCategory', 'Tool Search (oasis.tool.manager)'),
+            sortToolsForDisplay(toolSearchTools, true),
+            {
+              blockClassName: 'tool-search-block',
+              headerClassName: 'tool-search-header',
+              descriptionClassName: 'tool-search-description',
+              listClassName: 'tool-search-list',
+              cardClassName: 'tool-search-card',
+              description: t(
+                'toolSearchDescription',
+                'Browse available tools and enable or disable them.'
+              )
+            }
           );
           container.appendChild(block);
         }
