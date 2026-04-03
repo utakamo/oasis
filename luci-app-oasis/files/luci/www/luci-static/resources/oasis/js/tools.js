@@ -18,6 +18,7 @@
   const API_DISABLE = getUrl('disableTool');
   const URL_REFRESH_TOOLS = getUrl('refreshTools');
   const URL_LOAD_TOOLS = getUrl('loadTools');
+  const URL_LOAD_MANIFEST = getUrl('loadManifest');
   const TOOL_SEARCH_SERVER = 'oasis.tool.manager';
   const TOOL_SEARCH_TOOL_ORDER = {
     get_tool_list: 0,
@@ -79,6 +80,7 @@
 
   function createServerBlock(serverName, tools, options) {
     const opts = options || {};
+    const serverKey = opts.serverKey || serverName;
     const block = document.createElement('div');
     block.className = 'server-block';
     if (opts.blockClassName) {
@@ -114,6 +116,20 @@
       block.appendChild(description);
     }
 
+    const actions = document.createElement('div');
+    actions.className = 'server-actions';
+    const manifestButton = document.createElement('button');
+    manifestButton.type = 'button';
+    manifestButton.className = 'manifest-button';
+    manifestButton.textContent = t('manifestButton', 'Manifest');
+    actions.appendChild(manifestButton);
+    block.appendChild(actions);
+
+    const manifestPanel = document.createElement('div');
+    manifestPanel.className = 'manifest-panel';
+    manifestPanel.hidden = true;
+    block.appendChild(manifestPanel);
+
     const list = document.createElement('div');
     list.className = 'list';
     if (opts.listClassName) {
@@ -125,6 +141,91 @@
     });
 
     block.appendChild(list);
+
+    let manifestLoaded = false;
+    let manifestLoading = false;
+
+    function renderManifestMessage(message, className) {
+      manifestPanel.innerHTML = '';
+      const text = document.createElement('p');
+      text.className = className;
+      text.textContent = message;
+      manifestPanel.appendChild(text);
+    }
+
+    function renderManifestPanel(manifests) {
+      manifestPanel.innerHTML = '';
+
+      if (!Array.isArray(manifests) || manifests.length === 0) {
+        renderManifestMessage(t('manifestNotFound', 'Manifest not found.'), 'manifest-empty');
+        return;
+      }
+
+      manifests.forEach(manifest => {
+        const entry = document.createElement('div');
+        entry.className = 'manifest-entry';
+
+        const path = document.createElement('div');
+        path.className = 'manifest-path';
+        path.textContent = manifest.path || '';
+        entry.appendChild(path);
+
+        const meta = document.createElement('div');
+        meta.className = 'manifest-meta';
+        meta.textContent = [
+          `${t('manifestScriptType', 'Script Type')}: ${manifest.script_type || '-'}`,
+          `${t('manifestScriptPath', 'Script Path')}: ${manifest.script_path || '-'}`
+        ].join('  |  ');
+        entry.appendChild(meta);
+
+        const pre = document.createElement('pre');
+        pre.className = 'manifest-content';
+        pre.textContent = manifest.content || '';
+        entry.appendChild(pre);
+
+        manifestPanel.appendChild(entry);
+      });
+    }
+
+    manifestButton.addEventListener('click', () => {
+      if (!manifestPanel.hidden) {
+        manifestPanel.hidden = true;
+        manifestButton.textContent = t('manifestButton', 'Manifest');
+        return;
+      }
+
+      manifestPanel.hidden = false;
+      manifestButton.textContent = t('hideManifestButton', 'Hide Manifest');
+
+      if (manifestLoaded || manifestLoading) {
+        return;
+      }
+
+      manifestLoading = true;
+      renderManifestMessage(t('loadingManifest', 'Loading manifest...'), 'manifest-loading');
+
+      const query = new URLSearchParams({ server: serverKey });
+      fetch(`${URL_LOAD_MANIFEST}?${query.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+          if (!data || data.status !== 'OK') {
+            throw new Error((data && data.error) || t('manifestLoadFailed', 'Failed to load manifest.'));
+          }
+          renderManifestPanel(data.manifests);
+          manifestLoaded = true;
+        })
+        .catch(err => {
+          console.error('tool-manifest failed:', err);
+          renderManifestMessage(
+            err && err.message ? err.message : t('manifestLoadFailed', 'Failed to load manifest.'),
+            'manifest-error'
+          );
+        })
+        .finally(() => {
+          manifestLoading = false;
+        });
+    });
+
     return block;
   }
 
@@ -288,6 +389,7 @@
             t('toolSearchCategory', 'Tool Search (oasis.tool.manager)'),
             sortToolsForDisplay(toolSearchTools, true),
             {
+              serverKey: TOOL_SEARCH_SERVER,
               blockClassName: 'tool-search-block',
               headerClassName: 'tool-search-header',
               descriptionClassName: 'tool-search-description',
@@ -306,7 +408,9 @@
           .sort(compareText)
           .forEach(server => {
             if (!container) return;
-            const block = createServerBlock(server, sortToolsForDisplay(serverMap[server], false));
+            const block = createServerBlock(server, sortToolsForDisplay(serverMap[server], false), {
+              serverKey: server
+            });
             container.appendChild(block);
           });
       })

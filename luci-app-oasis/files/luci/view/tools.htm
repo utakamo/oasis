@@ -31,7 +31,8 @@ window.OasisToolsConfig = {
         enableTool: '<%=build_url("admin", "network", "oasis", "enable-tool")%>',
         disableTool: '<%=build_url("admin", "network", "oasis", "disable-tool")%>',
         refreshTools: '<%=build_url("admin", "network", "oasis", "refresh-tools")%>',
-        loadTools: '<%=build_url("admin", "network", "oasis", "local-tool-info")%>'
+        loadTools: '<%=build_url("admin", "network", "oasis", "local-tool-info")%>',
+        loadManifest: '<%=build_url("admin", "network", "oasis", "tool-manifest")%>'
     }
 };
 </script>
@@ -52,6 +53,13 @@ window.OasisToolsStrings = {
     missingName: '<%:Missing tool name%>',
     loading: '<%:Loading...%>',
     updateFailed: '<%:Failed to update tool state%>',
+    manifestButton: '<%:Manifest%>',
+    hideManifestButton: '<%:Hide Manifest%>',
+    loadingManifest: '<%:Loading manifest...%>',
+    manifestNotFound: '<%:Manifest not found.%>',
+    manifestLoadFailed: '<%:Failed to load manifest.%>',
+    manifestScriptType: '<%:Script Type%>',
+    manifestScriptPath: '<%:Script Path%>',
     installExtensionHint: '<%:Please install the extension module \'oasis-mod-tool\' to enable local tools.%>',
     unknownServer: '<%:Unknown Server%>',
     toolSearchCategory: '<%:Tool Search (oasis.tool.manager)%>',

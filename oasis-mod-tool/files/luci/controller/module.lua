@@ -3,6 +3,7 @@ local util          = require("luci.util")
 local uci           = require("luci.model.uci").cursor()
 local luci_http     = require("luci.http")
 local jsonc         = require("luci.jsonc")
+local fs            = require("nixio.fs")
 local oasis         = require("oasis.chat.apply")
 local common        = require("oasis.common")
 local transfer      = require("oasis.chat.transfer")
@@ -13,6 +14,8 @@ local oasis_ubus    = require("oasis.ubus.util")
 local debug         = require("oasis.chat.debug")
 
 module("luci.controller.oasis-tool.module", package.seeall)
+
+local manifest_dir = "/etc/oasis/tool-manifest.d/"
 
 function index()
 
@@ -29,6 +32,7 @@ function index()
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
 	entry({"admin", "network", "oasis", "local-tool-info"}, call("local_tool_info"), nil).leaf = true
+	entry({"admin", "network", "oasis", "tool-manifest"}, call("tool_manifest"), nil).leaf = true
 	entry({"admin", "network", "oasis", "refresh-tools"}, call("refresh_tools"), nil).leaf = true
 end
 
@@ -266,6 +270,54 @@ function local_tool_info()
 
     luci_http.prepare_content("application/json")
     luci_http.write_json(info)
+end
+
+function tool_manifest()
+    local server_name = luci_http.formvalue("server")
+
+    if (not server_name) or server_name == "" then
+        luci_http.prepare_content("application/json")
+        luci_http.write_json({ status = "NG", error = "Missing server name" })
+        return
+    end
+
+    local manifests = {}
+    local files = fs.dir(manifest_dir)
+
+    if files then
+        for file in files do
+            if type(file) == "string" and file:sub(-5) == ".json" then
+                local path = manifest_dir .. file
+                local raw = fs.readfile(path)
+                local manifest = raw and jsonc.parse(raw) or nil
+
+                if type(manifest) == "table" and type(manifest.tools) == "table" then
+                    for _, tool in ipairs(manifest.tools) do
+                        if type(tool) == "table" and tool.server == server_name then
+                            manifests[#manifests + 1] = {
+                                path = path,
+                                script_type = manifest.script_type or "",
+                                script_path = manifest.script_path or "",
+                                content = raw or ""
+                            }
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(manifests, function(a, b)
+        return (a.path or "") < (b.path or "")
+    end)
+
+    luci_http.prepare_content("application/json")
+    luci_http.write_json({
+        status = "OK",
+        server = server_name,
+        manifests = manifests
+    })
 end
 
 local function exec_service_rc(command)
