@@ -2,6 +2,8 @@
 
 local common = require("oasis.common")
 local console = require("oasis.console")
+local uci = require("luci.model.uci").cursor()
+local main_cmd = arg[1]
 
 local unload_targets = {
     { name = "oasis", path = common.flag.unload.oasis },
@@ -85,16 +87,21 @@ local function handle_unloaded_targets()
     return true
 end
 
-if handle_unloaded_targets() then
-    return
+if main_cmd ~= "manifest" then
+    if handle_unloaded_targets() then
+        return
+    end
+
+    if not common.check_prepare_oasis() then
+        print_restart_guide()
+        return
+    end
 end
 
-if not common.check_prepare_oasis() then
-    print_restart_guide()
-    return
+local oasis
+if main_cmd ~= "manifest" then
+    oasis = require("oasis.chat.main")
 end
-
-local oasis  = require("oasis.chat.main")
 
 local options_spec = {
     ["-n"] = "n",
@@ -121,39 +128,47 @@ local function banner()
     )
 end
 
+local function is_local_tool_supported()
+    return uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+end
+
 -- Print CLI help text.
 -- @return nil
 local function help()
+    local lines = {
+        "Usage: oasis <command> [[<options>] arguments]...",
+        "",
+        "Options:",
+        " -u <Endpoint>          Set the  AI Service Endpoint(URL)",
+        " -k <api-key>           Set the API key",
+        " -m <model>             Set the LLM model",
+        " -p <storage>           Set the storage path",
+        " -s <sysmsg key>        Select the system message key  (for sysmsg command)",
+        " -c <system message>    Create new system message data (for sysmsg command)",
+        "",
+        "Commands:",
+        " storage <path> [<chat-max>]",
+        " add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]",
+        " change [no=<service-number> [<options> <value>]...]",
+        " select [no=<service-number>]",
+        " delete no=<service-number>",
+        " chat [no=<chat-number>]",
+        " prompt <message>",
+        " agent [-t <turns>] <goal>",
+        " sysmsg [chat|prompt <option> <value>]",
+        " delchat no=<chat-number>",
+        " rename no=<chat-number> <title>",
+        " list",
+        " tools",
+        " manifest build [<script_path>]",
+    }
+
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "Docs:"
+    lines[#lines + 1] = " https://github.com/utakamo/oasis"
+
     console.print(banner())
-    console.print([=[
-Usage: oasis <command> [[<options>] arguments]...
-
-Options:
- -u <Endpoint>          Set the  AI Service Endpoint(URL)
- -k <api-key>           Set the API key
- -m <model>             Set the LLM model
- -p <storage>           Set the storage path
- -s <sysmsg key>        Select the system message key  (for sysmsg command)
- -c <system message>    Create new system message data (for sysmsg command)
-
-Commands:
- storage <path> [<chat-max>]
- add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]
- change [no=<service-number> [<options> <value>]...]
- select [no=<service-number>]
- delete no=<service-number>
- chat [no=<chat-number>]
- prompt <message>
- agent [-t <turns>] <goal>
- sysmsg [chat|prompt <option> <value>]
- delchat no=<chat-number>
- rename no=<chat-number> <title>
- list
- tools
-
-Docs:
- https://github.com/utakamo/oasis
-    ]=])
+    console.print(table.concat(lines, "\n"))
 end
 
 -- Parse key-value style options starting from index.
@@ -302,7 +317,47 @@ commands.tools = function()
     oasis.tools()
 end
 
-local main_cmd = arg[1]
+-- TODO: extend manifest subcommands to support:
+--   oasis manifest build <script-path> <output-path>
+--   oasis manifest build-all
+commands.manifest = function(args)
+    if not is_local_tool_supported() then
+        print("This command is exclusive to oasis-mod-tool.")
+        print("Please install oasis-mod-tool to use it.")
+        return
+    end
+
+    local script_path = args[2]
+    if script_path == "build" then
+        script_path = args[3]
+    end
+
+    local client = require("oasis.local.tool.client")
+
+    if not script_path then
+        local candidates = client.list_manifest_candidate_scripts()
+        if #candidates == 0 then
+            print("No manifest candidate scripts found.")
+            return
+        end
+
+        print("Manifest candidate scripts:")
+        for _, candidate in ipairs(candidates) do
+            print(" - " .. candidate)
+        end
+        return
+    end
+
+    local manifest_ok, manifest_or_err = client.build_manifest_for_script(script_path)
+    if not manifest_ok then
+        io.stderr:write((manifest_or_err or "Failed to build manifest") .. "\n")
+        os.exit(1)
+    end
+
+    local jsonc = require("luci.jsonc")
+    print(jsonc.stringify(manifest_or_err, true))
+end
+
 if not main_cmd or not commands[main_cmd] then
     help()
 else

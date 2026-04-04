@@ -36,6 +36,27 @@ local function is_oasis_tool_server(path)
     return content:find("oasis.local.tool.server", 1, true) ~= nil
 end
 
+local function resolve_manifest_script_path(script_path)
+    local runtime_path = tostring(script_path or "")
+    local mapped = runtime_path:match("/files(/usr/libexec/rpcd/.+)$")
+        or runtime_path:match("/files(/usr/share/rpcd/ucode/.+)$")
+
+    if mapped then
+        return mapped
+    end
+
+    return runtime_path
+end
+
+local function detect_script_type(script_path)
+    local path = tostring(script_path or "")
+    if path:sub(-3) == ".uc" or path:find("/usr/share/rpcd/ucode/", 1, true) then
+        return "ucode"
+    end
+
+    return "lua"
+end
+
 local ubus_call = function(path, method, param, timeout)
 
     local ubus = require("ubus")
@@ -110,28 +131,28 @@ local function build_tool_def(script, server, name, desc, exec_msg, download_msg
     }
 end
 
-local function scan_lua_server_defs(server_name)
-    local server_path = lua_ubus_server_app_dir .. server_name
-
-    if not is_regular_file(server_path) then
-        debug:log("oasis.log", "scan_lua_server_defs", "skip non-regular file: " .. server_name)
-        return {}, nil
+local function scan_lua_script_defs(script_path, server_name)
+    if not is_regular_file(script_path) then
+        return nil, "lua tool script not found: " .. script_path
     end
 
-    if not fs.access(server_path, "x") then
-        debug:log("oasis.log", "scan_lua_server_defs", "skip non-executable file: " .. server_name)
-        return {}, nil
+    if not is_oasis_tool_server(script_path) then
+        return nil, "not an oasis lua tool script: " .. script_path
     end
 
-    if not is_oasis_tool_server(server_path) then
-        debug:log("oasis.log", "scan_lua_server_defs", "skip non-oasis server file: " .. server_name)
-        return {}, nil
+    local meta_cmd
+    if fs.access(script_path, "x") then
+        meta_cmd = shell_quote(script_path) .. " meta 2>/dev/null"
+    elseif misc.check_file_exist("/usr/bin/lua") then
+        meta_cmd = "lua " .. shell_quote(script_path) .. " meta 2>/dev/null"
+    else
+        return nil, "lua not installed"
     end
 
-    local meta = sys.exec(shell_quote(server_path) .. " meta 2>/dev/null")
+    local meta = sys.exec(meta_cmd)
     local data = jsonc.parse(meta)
     if not data then
-        return nil, "invalid lua tool metadata: " .. server_name
+        return nil, "invalid lua tool metadata: " .. script_path
     end
 
     local type_map = { a_string = "string", integer = "number", boolean = "boolean", number = "number", string = "string" }
@@ -158,27 +179,23 @@ local function scan_lua_server_defs(server_name)
     return defs, nil
 end
 
-local function scan_ucode_server_defs(server_name)
-    local server_path = ucode_ubus_server_app_dir .. server_name
-
-    if not is_regular_file(server_path) then
-        debug:log("oasis.log", "scan_ucode_server_defs", "skip non-regular file: " .. server_name)
-        return {}, nil
+local function scan_ucode_script_defs(script_path)
+    if not is_regular_file(script_path) then
+        return nil, "ucode tool script not found: " .. script_path
     end
 
-    if not is_oasis_tool_server(server_path) then
-        debug:log("oasis.log", "scan_ucode_server_defs", "skip non-oasis server file: " .. server_name)
-        return {}, nil
+    if not is_oasis_tool_server(script_path) then
+        return nil, "not an oasis ucode tool script: " .. script_path
     end
 
     if not misc.check_file_exist("/usr/bin/ucode") then
         return nil, "ucode not installed"
     end
 
-    local meta = sys.exec("ucode " .. shell_quote(server_path) .. " 2>/dev/null")
+    local meta = sys.exec("ucode " .. shell_quote(script_path) .. " 2>/dev/null")
     local data = jsonc.parse(meta)
     if not data then
-        return nil, "invalid ucode tool metadata: " .. server_name
+        return nil, "invalid ucode tool metadata: " .. script_path
     end
 
     local function detect_type(v)
@@ -209,6 +226,38 @@ local function scan_ucode_server_defs(server_name)
     end
 
     return defs, nil
+end
+
+local function scan_lua_server_defs(server_name)
+    local server_path = lua_ubus_server_app_dir .. server_name
+
+    if not is_regular_file(server_path) then
+        debug:log("oasis.log", "scan_lua_server_defs", "skip non-regular file: " .. server_name)
+        return {}, nil
+    end
+
+    if not fs.access(server_path, "x") then
+        debug:log("oasis.log", "scan_lua_server_defs", "skip non-executable file: " .. server_name)
+        return {}, nil
+    end
+
+    return scan_lua_script_defs(server_path, server_name)
+end
+
+local function scan_ucode_server_defs(server_name)
+    local server_path = ucode_ubus_server_app_dir .. server_name
+
+    if not is_regular_file(server_path) then
+        debug:log("oasis.log", "scan_ucode_server_defs", "skip non-regular file: " .. server_name)
+        return {}, nil
+    end
+
+    if not is_oasis_tool_server(server_path) then
+        debug:log("oasis.log", "scan_ucode_server_defs", "skip non-oasis server file: " .. server_name)
+        return {}, nil
+    end
+
+    return scan_ucode_script_defs(server_path)
 end
 
 local function to_list(v)
@@ -808,6 +857,60 @@ function M.rebuild_manifest_store()
     end
 
     return true, { count = #manifests }
+end
+
+function M.build_manifest_for_script(script_path)
+    if type(script_path) ~= "string" or script_path == "" then
+        return false, "missing script path"
+    end
+
+    local manifest_script_path = resolve_manifest_script_path(script_path)
+    local script_type = detect_script_type(manifest_script_path)
+    local defs, err
+
+    if script_type == "ucode" then
+        defs, err = scan_ucode_script_defs(script_path)
+    else
+        defs, err = scan_lua_script_defs(script_path, basename(manifest_script_path))
+    end
+
+    if not defs then
+        debug:log("oasis.log", "build_manifest_for_script", err or ("failed to scan tool script: " .. script_path))
+        return false, err or ("failed to scan tool script: " .. script_path)
+    end
+
+    if #defs == 0 then
+        return false, "no tools found in script: " .. script_path
+    end
+
+    return true, build_manifest(script_type, manifest_script_path, defs)
+end
+
+function M.list_manifest_candidate_scripts()
+    local result = {}
+
+    local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
+    if lua_servers then
+        for _, server_name in ipairs(lua_servers) do
+            local script_path = lua_ubus_server_app_dir .. server_name
+            if is_oasis_tool_server(script_path) then
+                result[#result + 1] = script_path
+            end
+        end
+    end
+
+    local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
+    if ucode_servers then
+        for _, server_name in ipairs(ucode_servers) do
+            local script_path = ucode_ubus_server_app_dir .. server_name
+            if is_oasis_tool_server(script_path) then
+                result[#result + 1] = script_path
+            end
+        end
+    end
+
+    table.sort(result)
+    return result
 end
 
 check_tool_name_conflict = function(uci_cursor)
