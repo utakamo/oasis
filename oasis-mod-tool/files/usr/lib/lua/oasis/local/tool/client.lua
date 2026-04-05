@@ -780,13 +780,11 @@ function M.build_manifest_apply_plan(manifest_path)
     return true, plan
 end
 
-function M.apply_manifest_file(manifest_path)
-    local ok, plan_or_err = M.build_manifest_apply_plan(manifest_path)
-    if not ok then
-        return false, plan_or_err
+function M.apply_manifest_plan(plan)
+    if type(plan) ~= "table" then
+        return false, "invalid manifest apply plan"
     end
 
-    local plan = plan_or_err
     local apply_uci = require("luci.model.uci").cursor()
 
     for _, item in ipairs(plan.delete_sections or {}) do
@@ -808,8 +806,17 @@ function M.apply_manifest_file(manifest_path)
     return true, {
         added = #(plan.add_entries or {}),
         removed = #(plan.delete_sections or {}),
-        manifest_path = manifest_path,
+        manifest_path = plan.manifest_path,
     }
+end
+
+function M.apply_manifest_file(manifest_path)
+    local ok, plan_or_err = M.build_manifest_apply_plan(manifest_path)
+    if not ok then
+        return false, plan_or_err
+    end
+
+    return M.apply_manifest_plan(plan_or_err)
 end
 
 local function apply_tool_defs(defs)

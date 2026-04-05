@@ -161,7 +161,7 @@ local function help()
         " list",
         " tools",
         " manifest build [<script_path>]",
-        " manifest apply <manifest_path>",
+        " manifest apply [--yes|-y] [<manifest_path>]",
     }
 
     lines[#lines + 1] = ""
@@ -191,6 +191,38 @@ local function parse_options(args, start_index)
         end
     end
     return options
+end
+
+local function parse_manifest_args(args, start_index)
+    local result = {
+        action = nil,
+        target = nil,
+        assume_yes = false,
+    }
+
+    for i = start_index, #args do
+        local token = args[i]
+        if token == "--yes" or token == "-y" then
+            result.assume_yes = true
+        elseif token == "build" or token == "apply" then
+            if result.action and result.action ~= token then
+                return nil, "too many manifest subcommands"
+            end
+            result.action = token
+        elseif token and token:sub(1, 1) == "-" then
+            return nil, "unknown option: " .. token
+        elseif not result.target then
+            result.target = token
+        else
+            return nil, "too many arguments for manifest command"
+        end
+    end
+
+    if result.assume_yes and result.action ~= "apply" then
+        return nil, "--yes is only supported with manifest apply"
+    end
+
+    return result, nil
 end
 
 -- Extract numeric value from a token like "no=3".
@@ -328,15 +360,29 @@ commands.manifest = function(args)
         return
     end
 
-    local script_path = args[2]
-    if script_path == "build" then
-        script_path = args[3]
+    local client = require("oasis.local.tool.client")
+    local manifest_args, parse_err = parse_manifest_args(args, 2)
+    if not manifest_args then
+        io.stderr:write(parse_err .. "\n")
+        os.exit(1)
     end
 
-    local client = require("oasis.local.tool.client")
-    local action = args[2]
+    local action = manifest_args.action
+    local script_path = manifest_args.target
 
     if not action then
+        if script_path then
+            local manifest_ok, manifest_or_err = client.build_manifest_for_script(script_path)
+            if not manifest_ok then
+                io.stderr:write((manifest_or_err or "Failed to build manifest") .. "\n")
+                os.exit(1)
+            end
+
+            local jsonc = require("luci.jsonc")
+            print(jsonc.stringify(manifest_or_err, true))
+            return
+        end
+
         local targets = client.list_manifest_targets()
         if #targets == 0 then
             print("No manifest candidate scripts found.")
@@ -352,8 +398,12 @@ commands.manifest = function(args)
     end
 
     if action == "apply" then
-        local manifest_path = args[3]
+        local manifest_path = manifest_args.target
         if not manifest_path then
+            if manifest_args.assume_yes then
+                io.stderr:write("manifest path is required with --yes\n")
+                os.exit(1)
+            end
             local manifest_files = client.list_manifest_files()
             if #manifest_files == 0 then
                 print("No manifest files found.")
@@ -385,16 +435,20 @@ commands.manifest = function(args)
         end
         print()
 
-        console.write("Apply this manifest [Y/N]: ")
-        console.flush()
+        if not manifest_args.assume_yes then
+            console.write("Apply this manifest [Y/N]: ")
+            console.flush()
 
-        local reply = (console.read() or ""):upper()
-        if reply ~= "Y" then
-            print("Canceled.")
-            return
+            local reply = (console.read() or ""):upper()
+            if reply ~= "Y" then
+                print("Canceled.")
+                return
+            end
+        else
+            print("Auto-apply enabled; skipping confirmation.")
         end
 
-        local apply_ok, apply_info_or_err = client.apply_manifest_file(manifest_path)
+        local apply_ok, apply_info_or_err = client.apply_manifest_plan(plan_or_err)
         if not apply_ok then
             io.stderr:write((apply_info_or_err or "Failed to apply manifest") .. "\n")
             os.exit(1)
