@@ -16,9 +16,11 @@ if [ "$changed" -eq 1 ]; then
     uci commit oasis
 fi
 
-if [ -x /usr/bin/lua ] && [ -x /usr/bin/oasis_tool_setup ]; then
-    lua /usr/bin/oasis_tool_setup rebuild-manifest >/dev/null 2>&1 || true
-    lua /usr/bin/oasis_tool_setup refresh >/dev/null 2>&1 || true
+if [ -x /usr/bin/oasis ]; then
+    for manifest in /etc/oasis/tool-manifest.d/*.json; do
+        [ -f "$manifest" ] || continue
+        /usr/bin/oasis manifest apply --yes "$manifest" >/dev/null 2>&1 || true
+    done
 fi
 
 exit 0

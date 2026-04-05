@@ -61,6 +61,7 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/ollama.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/ollama.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/remote/mcp/service/openai.lua $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service/openai.lua
 	$(INSTALL_DATA) ./files/luci/controller/module.lua  $(1)$(LUCI_MODULEDIR)/oasis-tool/module.lua
+	$(INSTALL_DATA) ./files/etc/oasis/tool-manifest.d/*.json $(1)$(OASIS_MANIFEST_DIR)/
 	$(INSTALL_BIN) ./files/etc/uci-defaults/81_oasis-mod-tool $(1)$(UCI_DEFAULTS_DIR)/81_oasis-mod-tool
 endef
 
