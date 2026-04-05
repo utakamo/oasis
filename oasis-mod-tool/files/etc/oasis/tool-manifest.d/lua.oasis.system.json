@@ -1,0 +1,75 @@
+{
+  "script_path": "\/usr\/libexec\/rpcd\/oasis.system",
+  "tools": [
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Confirm the system shutdown or reboot request.",
+      "properties": [
+        {
+          "type": "string",
+          "name": "option",
+          "description": ""
+        }
+      ],
+      "download_message": "",
+      "name": "confirm",
+      "additional_properties": false,
+      "required": [
+        "option"
+      ],
+      "timeout": "",
+      "server": "oasis.system"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get the system info load (uptime\/meminfo) of this OpenWrt device.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_memory_info",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.system"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get the storage usage of this OpenWrt device.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_storage_info",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.system"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Request a System Reboot on the OpenWrt System.",
+      "properties": [],
+      "download_message": "",
+      "name": "system_reboot",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.system"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Request a System Shutdown on the OpenWrt System.",
+      "properties": [],
+      "download_message": "",
+      "name": "system_shutdown",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.system"
+    }
+  ],
+  "version": 1,
+  "script_type": "lua"
+}

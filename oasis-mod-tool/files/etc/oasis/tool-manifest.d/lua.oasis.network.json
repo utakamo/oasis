@@ -1,0 +1,67 @@
+{
+  "script_path": "\/usr\/libexec\/rpcd\/oasis.network",
+  "tools": [
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get connected clients (STAs) on this OpenWrt device.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_connected_clients",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.network"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get the list of all network interface names on this OpenWrt device.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_ifname_list",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.network"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get the LAN IP Address of this OpenWrt device.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_lan_ipaddr",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.network"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get the WAN Status of this OpenWrt device.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_wan_status",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.network"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Show WAN\/LAN Port Link Status",
+      "properties": [],
+      "download_message": "",
+      "name": "port_link_status",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.network"
+    }
+  ],
+  "version": 1,
+  "script_type": "lua"
+}

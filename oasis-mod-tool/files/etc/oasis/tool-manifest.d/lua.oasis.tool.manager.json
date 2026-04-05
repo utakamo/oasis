@@ -1,0 +1,59 @@
+{
+  "script_path": "\/usr\/libexec\/rpcd\/oasis.tool.manager",
+  "tools": [
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get tool list",
+      "properties": [],
+      "download_message": "",
+      "name": "get_tool_list",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.tool.manager"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Disable the tool",
+      "properties": [
+        {
+          "type": "string",
+          "name": "tool",
+          "description": "Tool Name"
+        }
+      ],
+      "download_message": "",
+      "name": "set_tool_disabled",
+      "additional_properties": false,
+      "required": [
+        "tool"
+      ],
+      "timeout": "",
+      "server": "oasis.tool.manager"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Enable the tool",
+      "properties": [
+        {
+          "type": "string",
+          "name": "tool",
+          "description": "Tool Name"
+        }
+      ],
+      "download_message": "",
+      "name": "set_tool_enabled",
+      "additional_properties": false,
+      "required": [
+        "tool"
+      ],
+      "timeout": "",
+      "server": "oasis.tool.manager"
+    }
+  ],
+  "version": 1,
+  "script_type": "lua"
+}

@@ -1,0 +1,145 @@
+{
+  "script_path": "\/usr\/libexec\/rpcd\/oasis.service",
+  "tools": [
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Operations on the target service",
+      "properties": [
+        {
+          "type": "string",
+          "name": "cmd",
+          "description": "Target Service Name [ex: network]"
+        },
+        {
+          "type": "string",
+          "name": "service",
+          "description": "Operation Command [\"enable\" or \"disable\" or \"stop\" or \"start\" or \"restart\"]"
+        }
+      ],
+      "download_message": "",
+      "name": "operate",
+      "additional_properties": false,
+      "required": [
+        "cmd",
+        "service"
+      ],
+      "timeout": "",
+      "server": "oasis.service"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Request a Restart of the Specified Service on the OpenWrt System.",
+      "properties": [
+        {
+          "type": "string",
+          "name": "service",
+          "description": "Target Service Name [ex: network]"
+        }
+      ],
+      "download_message": "",
+      "name": "service_restart",
+      "additional_properties": false,
+      "required": [
+        "service"
+      ],
+      "timeout": "",
+      "server": "oasis.service"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Request a Restart of the Specified Service on the OpenWrt System.",
+      "properties": [
+        {
+          "type": "string",
+          "name": "service",
+          "description": "Target Service Name [ex: network]"
+        }
+      ],
+      "download_message": "",
+      "name": "service_start",
+      "additional_properties": false,
+      "required": [
+        "service"
+      ],
+      "timeout": "",
+      "server": "oasis.service"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Request a Restart of the Specified Service on the OpenWrt System.",
+      "properties": [
+        {
+          "type": "string",
+          "name": "service",
+          "description": "Target Service Name [ex: network]"
+        }
+      ],
+      "download_message": "",
+      "name": "service_stop",
+      "additional_properties": false,
+      "required": [
+        "service"
+      ],
+      "timeout": "",
+      "server": "oasis.service"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Request a Restart of the Specified Service on the OpenWrt System.",
+      "properties": [
+        {
+          "type": "string",
+          "name": "service",
+          "description": "Target Service Name [ex: network]"
+        }
+      ],
+      "download_message": "",
+      "name": "set_service_disabled",
+      "additional_properties": false,
+      "required": [
+        "service"
+      ],
+      "timeout": "",
+      "server": "oasis.service"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Request a Restart of the Specified Service on the OpenWrt System.",
+      "properties": [
+        {
+          "type": "string",
+          "name": "service",
+          "description": "Target Service Name [ex: network]"
+        }
+      ],
+      "download_message": "",
+      "name": "set_service_enable",
+      "additional_properties": false,
+      "required": [
+        "service"
+      ],
+      "timeout": "",
+      "server": "oasis.service"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Show service list",
+      "properties": [],
+      "download_message": "",
+      "name": "show_service_list",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.service"
+    }
+  ],
+  "version": 1,
+  "script_type": "lua"
+}

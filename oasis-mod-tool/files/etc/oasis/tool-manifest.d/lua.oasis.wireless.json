@@ -1,0 +1,39 @@
+{
+  "script_path": "\/usr\/libexec\/rpcd\/oasis.wireless",
+  "tools": [
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get the Active Wireless Interface List of this OpenWrt device.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_active_wlan_if_list",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.wireless"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Scan for nearby Wireless networks",
+      "properties": [
+        {
+          "type": "string",
+          "name": "ifname",
+          "description": "Wireless interface name [ex: wlan0]"
+        }
+      ],
+      "download_message": "",
+      "name": "wifi_scan",
+      "additional_properties": false,
+      "required": [
+        "ifname"
+      ],
+      "timeout": "",
+      "server": "oasis.wireless"
+    }
+  ],
+  "version": 1,
+  "script_type": "lua"
+}

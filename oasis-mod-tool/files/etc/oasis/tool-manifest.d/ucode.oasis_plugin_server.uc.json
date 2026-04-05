@@ -1,0 +1,43 @@
+{
+  "script_path": "\/usr\/share\/rpcd\/ucode\/oasis_plugin_server.uc",
+  "tools": [
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get this device board information.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_board_info",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.hw.status"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get this OpenWrt OS Information.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_kernel_info",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.os.status"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Get this OpenWrt OS Information.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_os_info",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.os.status"
+    }
+  ],
+  "version": 1,
+  "script_type": "ucode"
+}
