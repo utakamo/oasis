@@ -508,7 +508,7 @@ local function manifest_tool_to_def(script_type, tool)
     return def, nil
 end
 
-local function load_manifest_file(path)
+local function load_manifest_file(path, opts)
     local raw = fs.readfile(path)
     if not raw then
         return nil, nil, "failed to read manifest: " .. path
@@ -533,10 +533,16 @@ local function load_manifest_file(path)
     end
 
     if not is_regular_file(manifest.script_path) then
+        if opts and opts.strict then
+            return nil, nil, "stale manifest target: " .. manifest.script_path
+        end
         debug:log("oasis.log", "load_manifest_file", "skip stale manifest: " .. path)
         return {}, nil, nil
     end
     if manifest.script_type == "lua" and not fs.access(manifest.script_path, "x") then
+        if opts and opts.strict then
+            return nil, nil, "non-executable lua manifest target: " .. manifest.script_path
+        end
         debug:log("oasis.log", "load_manifest_file", "skip non-executable lua manifest target: " .. path)
         return {}, nil, nil
     end
@@ -548,6 +554,7 @@ local function load_manifest_file(path)
         if not def then
             return nil, nil, string.format("invalid manifest tool (%s #%d): %s", path, i, err)
         end
+        def.manifest_path = path
         local ok, append_err = append_unique_tool_defs(defs, seen, { def })
         if not ok then
             return nil, nil, append_err
@@ -558,13 +565,18 @@ local function load_manifest_file(path)
     return defs, manifest.script_path, nil
 end
 
-local function load_current_tool_map(uci_cursor)
+local function load_current_tool_map(uci)
     local old_map = {}
-    uci_cursor:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         if s.name and s.server and s.script then
             local def = normalize_tool_def(s)
             local key = make_tool_key(def)
-            old_map[key] = { def = def, enable = s.enable or "0" }
+            old_map[key] = {
+                def = def,
+                enable = s.enable or "0",
+                section = s[".name"],
+                manifest_path = s.manifest_path or "",
+            }
         end
     end)
     return old_map
@@ -614,25 +626,190 @@ local function scan_all_tool_defs()
     return defs, nil
 end
 
-local function add_tool_section(uci_cursor, def, enable)
-    local s = uci_cursor:section(common.db.uci.cfg, common.db.uci.sect.tool)
-    uci_cursor:set(common.db.uci.cfg, s, "name", def.name)
-    uci_cursor:set(common.db.uci.cfg, s, "script", def.script)
-    uci_cursor:set(common.db.uci.cfg, s, "server", def.server)
-    uci_cursor:set(common.db.uci.cfg, s, "enable", enable or "0")
-    uci_cursor:set(common.db.uci.cfg, s, "type", def.type or "function")
-    uci_cursor:set(common.db.uci.cfg, s, "description", def.description or "")
-    uci_cursor:set(common.db.uci.cfg, s, "execution_message", def.execution_message or "")
-    uci_cursor:set(common.db.uci.cfg, s, "download_message", def.download_message or "")
-    uci_cursor:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
-    uci_cursor:set(common.db.uci.cfg, s, "conflict", def.conflict or "0")
+local function add_tool_section(uci, def, enable)
+    local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
+    uci:set(common.db.uci.cfg, s, "name", def.name)
+    uci:set(common.db.uci.cfg, s, "script", def.script)
+    uci:set(common.db.uci.cfg, s, "server", def.server)
+    uci:set(common.db.uci.cfg, s, "enable", enable or "0")
+    uci:set(common.db.uci.cfg, s, "type", def.type or "function")
+    uci:set(common.db.uci.cfg, s, "description", def.description or "")
+    uci:set(common.db.uci.cfg, s, "execution_message", def.execution_message or "")
+    uci:set(common.db.uci.cfg, s, "download_message", def.download_message or "")
+    uci:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
+    uci:set(common.db.uci.cfg, s, "conflict", def.conflict or "0")
     if def.required and #def.required > 0 then
-        uci_cursor:set_list(common.db.uci.cfg, s, "required", def.required)
+        uci:set_list(common.db.uci.cfg, s, "required", def.required)
     end
     if def.property and #def.property > 0 then
-        uci_cursor:set_list(common.db.uci.cfg, s, "property", def.property)
+        uci:set_list(common.db.uci.cfg, s, "property", def.property)
     end
-    uci_cursor:set(common.db.uci.cfg, s, "additionalProperties", def.additionalProperties or "0")
+    uci:set(common.db.uci.cfg, s, "additionalProperties", def.additionalProperties or "0")
+    if def.manifest_path and #tostring(def.manifest_path) > 0 then
+        uci:set(common.db.uci.cfg, s, "manifest_path", def.manifest_path)
+    end
+end
+
+local function count_tool_sections(uci)
+    local count = 0
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function()
+        count = count + 1
+    end)
+    return count
+end
+
+local function list_manifest_tool_sections(uci, manifest_path)
+    local sections = {}
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        if (s.manifest_path or "") == manifest_path then
+            sections[#sections + 1] = {
+                section = s[".name"],
+                name = s.name or "",
+                server = s.server or "",
+            }
+        end
+    end)
+    table.sort(sections, function(a, b)
+        return (a.section or "") < (b.section or "")
+    end)
+    return sections
+end
+
+local function render_manifest_apply_commands(plan)
+    local commands = {}
+    local target = common.db.uci.cfg .. ".@tool[-1]"
+
+    local function add_set(option, value)
+        commands[#commands + 1] = string.format("uci set %s.%s=%s", target, option, shell_quote(value))
+    end
+
+    local function add_list(option, values)
+        for _, value in ipairs(values or {}) do
+            commands[#commands + 1] = string.format("uci add_list %s.%s=%s", target, option, shell_quote(value))
+        end
+    end
+
+    for _, item in ipairs(plan.delete_sections or {}) do
+        commands[#commands + 1] = string.format("uci delete %s.%s", common.db.uci.cfg, item.section)
+    end
+
+    for _, item in ipairs(plan.add_entries or {}) do
+        local def = item.def
+        commands[#commands + 1] = string.format("uci add %s %s", common.db.uci.cfg, common.db.uci.sect.tool)
+        add_set("name", def.name or "")
+        add_set("script", def.script or "")
+        add_set("server", def.server or "")
+        add_set("enable", item.enable or "0")
+        add_set("type", def.type or "function")
+        add_set("description", def.description or "")
+        add_set("execution_message", def.execution_message or "")
+        add_set("download_message", def.download_message or "")
+        add_set("timeout", tostring(def.timeout or ""))
+        add_set("manifest_path", def.manifest_path or plan.manifest_path or "")
+        add_list("required", def.required or {})
+        add_list("property", def.property or {})
+        add_set("additionalProperties", def.additionalProperties or "0")
+    end
+
+    if plan.support_value ~= nil and plan.current_support_value ~= plan.support_value then
+        commands[#commands + 1] = string.format(
+            "uci set %s.%s.local_tool=%s",
+            common.db.uci.cfg,
+            common.db.uci.sect.support,
+            shell_quote(plan.support_value)
+        )
+    end
+
+    return commands
+end
+
+function M.build_manifest_apply_plan(manifest_path)
+    if type(manifest_path) ~= "string" or manifest_path == "" then
+        return false, "missing manifest path"
+    end
+
+    if not is_regular_file(manifest_path) then
+        return false, "manifest not found: " .. manifest_path
+    end
+
+    local defs, _, err = load_manifest_file(manifest_path, { strict = true })
+    if not defs then
+        return false, err or ("failed to load manifest: " .. manifest_path)
+    end
+    if #defs == 0 then
+        return false, "manifest contains no tools: " .. manifest_path
+    end
+
+    local plan_uci = require("luci.model.uci").cursor()
+    local old_map = load_current_tool_map(plan_uci)
+    local delete_sections = list_manifest_tool_sections(plan_uci, manifest_path)
+    local current_tool_count = count_tool_sections(plan_uci)
+    local current_support_value = plan_uci:get(common.db.uci.cfg, common.db.uci.sect.support, "local_tool") or "0"
+    local add_entries = {}
+
+    for _, def in ipairs(defs) do
+        def.manifest_path = manifest_path
+
+        local normalized = normalize_tool_def(def)
+        local key = make_tool_key(normalized)
+        local old = old_map[key]
+        local enable = "0"
+        if old and defs_equal(old.def, normalized) then
+            enable = old.enable or "0"
+        end
+
+        add_entries[#add_entries + 1] = {
+            def = def,
+            enable = enable,
+        }
+    end
+
+    local final_tool_count = current_tool_count - #delete_sections + #add_entries
+    local support_value = (final_tool_count > 0) and "1" or "0"
+    local plan = {
+        manifest_path = manifest_path,
+        delete_sections = delete_sections,
+        add_entries = add_entries,
+        current_tool_count = current_tool_count,
+        final_tool_count = final_tool_count,
+        current_support_value = current_support_value,
+        support_value = support_value,
+    }
+    plan.commands = render_manifest_apply_commands(plan)
+
+    return true, plan
+end
+
+function M.apply_manifest_file(manifest_path)
+    local ok, plan_or_err = M.build_manifest_apply_plan(manifest_path)
+    if not ok then
+        return false, plan_or_err
+    end
+
+    local plan = plan_or_err
+    local apply_uci = require("luci.model.uci").cursor()
+
+    for _, item in ipairs(plan.delete_sections or {}) do
+        apply_uci:delete(common.db.uci.cfg, item.section)
+    end
+
+    for _, item in ipairs(plan.add_entries or {}) do
+        add_tool_section(apply_uci, item.def, item.enable)
+    end
+
+    apply_uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", plan.support_value)
+    check_tool_name_conflict(apply_uci)
+
+    local commit_ok = apply_uci:commit(common.db.uci.cfg)
+    if commit_ok == false then
+        return false, "failed to commit manifest apply changes"
+    end
+
+    return true, {
+        added = #(plan.add_entries or {}),
+        removed = #(plan.delete_sections or {}),
+        manifest_path = manifest_path,
+    }
 end
 
 local function apply_tool_defs(defs)
@@ -913,12 +1090,36 @@ function M.list_manifest_candidate_scripts()
     return result
 end
 
-check_tool_name_conflict = function(uci_cursor)
-    uci_cursor = uci_cursor or uci
+function M.list_manifest_targets()
+    local result = {}
+
+    for _, script_path in ipairs(M.list_manifest_candidate_scripts()) do
+        local script_type = detect_script_type(script_path)
+        result[#result + 1] = {
+            script_path = script_path,
+            manifest_path = manifest_dir .. manifest_filename(script_type, script_path),
+        }
+    end
+
+    return result
+end
+
+function M.list_manifest_files()
+    local result = {}
+
+    for _, file in ipairs(listup_manifest_candidate(manifest_dir)) do
+        result[#result + 1] = manifest_dir .. file
+    end
+
+    return result
+end
+
+check_tool_name_conflict = function(uci)
     -- Check Conflict Tool Name
     -- If the value of the conflict option is set to 1, usage will be prohibited.
     local name_to_sections = {}
-    uci_cursor:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        uci:set(common.db.uci.cfg, s[".name"], "conflict", "0")
         if s.name then
             name_to_sections[s.name] = name_to_sections[s.name] or {}
             table.insert(name_to_sections[s.name], s[".name"])
@@ -927,7 +1128,7 @@ check_tool_name_conflict = function(uci_cursor)
     for _, sections in pairs(name_to_sections) do
         if #sections > 1 then
             for _, sec in ipairs(sections) do
-                uci_cursor:set(common.db.uci.cfg, sec, "conflict", "1")
+                uci:set(common.db.uci.cfg, sec, "conflict", "1")
             end
         end
     end

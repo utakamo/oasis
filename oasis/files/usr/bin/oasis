@@ -161,6 +161,7 @@ local function help()
         " list",
         " tools",
         " manifest build [<script_path>]",
+        " manifest apply <manifest_path>",
     }
 
     lines[#lines + 1] = ""
@@ -333,6 +334,75 @@ commands.manifest = function(args)
     end
 
     local client = require("oasis.local.tool.client")
+    local action = args[2]
+
+    if not action then
+        local targets = client.list_manifest_targets()
+        if #targets == 0 then
+            print("No manifest candidate scripts found.")
+            return
+        end
+
+        print("Targets:")
+        for _, item in ipairs(targets) do
+            print(" - Script:   " .. item.script_path)
+            print("   Manifest: " .. item.manifest_path)
+        end
+        return
+    end
+
+    if action == "apply" then
+        local manifest_path = args[3]
+        if not manifest_path then
+            local manifest_files = client.list_manifest_files()
+            if #manifest_files == 0 then
+                print("No manifest files found.")
+                return
+            end
+
+            print("Manifest files:")
+            for _, file in ipairs(manifest_files) do
+                print(" - " .. file)
+            end
+            return
+        end
+
+        local plan_ok, plan_or_err = client.build_manifest_apply_plan(manifest_path)
+        if not plan_ok then
+            io.stderr:write((plan_or_err or "Failed to build manifest apply plan") .. "\n")
+            os.exit(1)
+        end
+
+        local commands = plan_or_err.commands or {}
+        if #commands == 0 then
+            print("No UCI changes required.")
+            return
+        end
+
+        print("The following UCI changes will be applied:")
+        for _, line in ipairs(commands) do
+            print(line)
+        end
+        print()
+
+        console.write("Apply this manifest [Y/N]: ")
+        console.flush()
+
+        local reply = (console.read() or ""):upper()
+        if reply ~= "Y" then
+            print("Canceled.")
+            return
+        end
+
+        local apply_ok, apply_info_or_err = client.apply_manifest_file(manifest_path)
+        if not apply_ok then
+            io.stderr:write((apply_info_or_err or "Failed to apply manifest") .. "\n")
+            os.exit(1)
+        end
+
+        print("Manifest applied.")
+        return
+    end
 
     if not script_path then
         local candidates = client.list_manifest_candidate_scripts()
