@@ -917,61 +917,15 @@ end
 local function load_all_manifest_defs()
     local defs = {}
     local seen = {}
-    local covered_paths = {}
 
     for _, file in ipairs(listup_manifest_candidate(manifest_dir)) do
-        local manifest_defs, script_path, err = load_manifest_file(manifest_dir .. file)
+        local manifest_defs, _, err = load_manifest_file(manifest_dir .. file)
         if not manifest_defs then
             return nil, nil, err
-        end
-        if script_path then
-            covered_paths[script_path] = true
         end
         local ok, append_err = append_unique_tool_defs(defs, seen, manifest_defs)
         if not ok then
             return nil, nil, append_err
-        end
-    end
-
-    sort_tool_defs(defs)
-    return defs, covered_paths, nil
-end
-
-local function scan_unmanifested_tool_defs(covered_paths)
-    local defs = {}
-    local seen = {}
-
-    local lua_servers = listup_server_candidate(lua_ubus_server_app_dir)
-    if lua_servers then
-        for _, server_name in ipairs(lua_servers) do
-            local script_path = lua_ubus_server_app_dir .. server_name
-            if not covered_paths[script_path] then
-                local server_defs, err = scan_lua_server_defs(server_name)
-                if not server_defs then
-                    return nil, err
-                end
-                local ok, append_err = append_unique_tool_defs(defs, seen, server_defs)
-                if not ok then
-                    return nil, append_err
-                end
-            end
-        end
-    end
-
-    local ucode_servers = listup_server_candidate(ucode_ubus_server_app_dir)
-    if ucode_servers then
-        for _, server_name in ipairs(ucode_servers) do
-            local script_path = ucode_ubus_server_app_dir .. server_name
-            if not covered_paths[script_path] then
-                local server_defs, err = scan_ucode_server_defs(server_name)
-                if not server_defs then
-                    return nil, err
-                end
-                local ok, append_err = append_unique_tool_defs(defs, seen, server_defs)
-                if not ok then
-                    return nil, append_err
-                end
-            end
         end
     end
 
@@ -1145,7 +1099,7 @@ function M.update_server_info()
     local defs = {}
     local seen = {}
 
-    local manifest_defs, covered_paths, err = load_all_manifest_defs()
+    local manifest_defs, err = load_all_manifest_defs()
     if not manifest_defs then
         debug:log("oasis.log", "update_server_info", err or "failed to load manifest definitions")
         return false, err or "failed to load manifest definitions"
@@ -1154,17 +1108,6 @@ function M.update_server_info()
     if not ok then
         debug:log("oasis.log", "update_server_info", append_err or "failed to merge manifest definitions")
         return false, append_err or "failed to merge manifest definitions"
-    end
-
-    local fallback_defs, fallback_err = scan_unmanifested_tool_defs(covered_paths or {})
-    if not fallback_defs then
-        debug:log("oasis.log", "update_server_info", fallback_err or "failed to scan fallback tool definitions")
-        return false, fallback_err or "failed to scan fallback tool definitions"
-    end
-    ok, append_err = append_unique_tool_defs(defs, seen, fallback_defs)
-    if not ok then
-        debug:log("oasis.log", "update_server_info", append_err or "failed to merge fallback tool definitions")
-        return false, append_err or "failed to merge fallback tool definitions"
     end
 
     sort_tool_defs(defs)
