@@ -1,5 +1,5 @@
 {
-  "script_path": "\/usr\/libexec\/rpcd\/oasis.network",
+  "source_path": "\/usr\/libexec\/rpcd\/oasis.network",
   "tools": [
     {
       "execution_message": "",
@@ -63,5 +63,5 @@
     }
   ],
   "version": 1,
-  "script_type": "lua"
+  "source_type": "lua_script"
 }

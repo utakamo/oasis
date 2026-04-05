@@ -57,6 +57,30 @@ local function detect_script_type(script_path)
     return "lua"
 end
 
+local function source_type_from_script_kind(script_kind)
+    if script_kind == "lua" then
+        return "lua_script"
+    elseif script_kind == "ucode" then
+        return "ucode_script"
+    elseif script_kind == "manual" then
+        return "manual"
+    end
+
+    return nil
+end
+
+local function script_kind_from_source_type(source_type)
+    if source_type == "lua_script" then
+        return "lua"
+    elseif source_type == "ucode_script" then
+        return "ucode"
+    elseif source_type == "manual" then
+        return "manual"
+    end
+
+    return nil
+end
+
 local ubus_call = function(path, method, param, timeout)
 
     local ubus = require("ubus")
@@ -375,11 +399,12 @@ local function manifest_properties_to_property_list(properties)
     return property_list, nil
 end
 
-local function build_manifest(script_type, script_path, defs)
+local function build_manifest(script_kind, script_path, defs)
+    local source_type = source_type_from_script_kind(script_kind)
     local manifest = {
         version = 1,
-        script_type = script_type,
-        script_path = script_path,
+        source_type = source_type,
+        source_path = script_path,
         tools = {},
     }
 
@@ -409,6 +434,11 @@ local function build_manifest(script_type, script_path, defs)
 end
 
 local function manifest_filename(script_type, script_path)
+    if script_type == "lua_script" then
+        script_type = "lua"
+    elseif script_type == "ucode_script" then
+        script_type = "ucode"
+    end
     local base = basename(script_path)
     if base == "" then
         base = "unknown"
@@ -421,7 +451,7 @@ local function write_manifest_file(manifest)
         return false, "failed to create manifest dir"
     end
 
-    local path = manifest_dir .. manifest_filename(manifest.script_type, manifest.script_path)
+    local path = manifest_dir .. manifest_filename(manifest.source_type, manifest.source_path)
     local content = jsonc.stringify(manifest, true)
     if not content then
         return false, "failed to stringify manifest"
@@ -434,7 +464,7 @@ local function write_manifest_file(manifest)
     return true, path
 end
 
-local function manifest_tool_to_def(script_type, tool)
+local function manifest_tool_to_def(script_kind, tool)
     if type(tool) ~= "table" then
         return nil, "tool entry must be an object"
     end
@@ -492,7 +522,7 @@ local function manifest_tool_to_def(script_type, tool)
         return nil, property_err or "invalid properties"
     end
     local def = build_tool_def(
-        script_type,
+        script_kind,
         server,
         name,
         description,
@@ -522,38 +552,57 @@ local function load_manifest_file(path, opts)
     if manifest.version ~= 1 then
         return nil, nil, "unsupported manifest version: " .. path
     end
-    if manifest.script_type ~= "lua" and manifest.script_type ~= "ucode" then
-        return nil, nil, "invalid manifest script_type: " .. path
-    end
-    if type(manifest.script_path) ~= "string" or manifest.script_path == "" then
-        return nil, nil, "invalid manifest script_path: " .. path
+    if manifest.source_type ~= "lua_script" and manifest.source_type ~= "ucode_script" and manifest.source_type ~= "manual" then
+        return nil, nil, "invalid manifest source_type: " .. path
     end
     if type(manifest.tools) ~= "table" then
         return nil, nil, "invalid manifest tools: " .. path
     end
 
-    if not is_regular_file(manifest.script_path) then
+    local source_path = manifest.source_path
+    if source_path ~= nil then
+        if type(source_path) ~= "string" then
+            return nil, nil, "invalid manifest source_path: " .. path
+        end
+        if source_path == "" then
+            source_path = nil
+        end
+    end
+
+    if manifest.source_type ~= "manual" and not source_path then
+        return nil, nil, "invalid manifest source_path: " .. path
+    end
+
+    if manifest.source_type ~= "manual" and not is_regular_file(source_path) then
         if opts and opts.strict then
-            return nil, nil, "stale manifest target: " .. manifest.script_path
+            return nil, nil, "stale manifest target: " .. source_path
         end
         debug:log("oasis.log", "load_manifest_file", "skip stale manifest: " .. path)
         return {}, nil, nil
     end
-    if manifest.script_type == "lua" and not fs.access(manifest.script_path, "x") then
+
+    if manifest.source_type == "lua_script" and not fs.access(source_path, "x") then
         if opts and opts.strict then
-            return nil, nil, "non-executable lua manifest target: " .. manifest.script_path
+            return nil, nil, "non-executable lua manifest target: " .. source_path
         end
         debug:log("oasis.log", "load_manifest_file", "skip non-executable lua manifest target: " .. path)
         return {}, nil, nil
     end
 
+    local script_kind = script_kind_from_source_type(manifest.source_type)
+    if not script_kind then
+        return nil, nil, "invalid manifest source_type: " .. path
+    end
+
     local defs = {}
     local seen = {}
     for i, tool in ipairs(manifest.tools) do
-        local def, err = manifest_tool_to_def(manifest.script_type, tool)
+        local def, err = manifest_tool_to_def(script_kind, tool)
         if not def then
             return nil, nil, string.format("invalid manifest tool (%s #%d): %s", path, i, err)
         end
+        def.source_type = manifest.source_type
+        def.source_path = source_path
         def.manifest_path = path
         local ok, append_err = append_unique_tool_defs(defs, seen, { def })
         if not ok then
@@ -562,7 +611,7 @@ local function load_manifest_file(path, opts)
     end
 
     sort_tool_defs(defs)
-    return defs, manifest.script_path, nil
+    return defs, source_path, nil
 end
 
 local function load_current_tool_map(uci)
@@ -645,6 +694,12 @@ local function add_tool_section(uci, def, enable)
         uci:set_list(common.db.uci.cfg, s, "property", def.property)
     end
     uci:set(common.db.uci.cfg, s, "additionalProperties", def.additionalProperties or "0")
+    if def.source_type and #tostring(def.source_type) > 0 then
+        uci:set(common.db.uci.cfg, s, "source_type", def.source_type)
+    end
+    if def.source_path and #tostring(def.source_path) > 0 then
+        uci:set(common.db.uci.cfg, s, "source_path", def.source_path)
+    end
     if def.manifest_path and #tostring(def.manifest_path) > 0 then
         uci:set(common.db.uci.cfg, s, "manifest_path", def.manifest_path)
     end
@@ -705,6 +760,10 @@ local function render_manifest_apply_commands(plan)
         add_set("execution_message", def.execution_message or "")
         add_set("download_message", def.download_message or "")
         add_set("timeout", tostring(def.timeout or ""))
+        add_set("source_type", def.source_type or "")
+        if def.source_path and #tostring(def.source_path) > 0 then
+            add_set("source_path", def.source_path)
+        end
         add_set("manifest_path", def.manifest_path or plan.manifest_path or "")
         add_list("required", def.required or {})
         add_list("property", def.property or {})
@@ -921,11 +980,11 @@ local function load_all_manifest_defs()
     for _, file in ipairs(listup_manifest_candidate(manifest_dir)) do
         local manifest_defs, _, err = load_manifest_file(manifest_dir .. file)
         if not manifest_defs then
-            return nil, nil, err
+            return nil, err
         end
         local ok, append_err = append_unique_tool_defs(defs, seen, manifest_defs)
         if not ok then
-            return nil, nil, append_err
+            return nil, append_err
         end
     end
 
@@ -963,7 +1022,7 @@ local function collect_all_manifests()
     end
 
     table.sort(manifests, function(a, b)
-        return manifest_filename(a.script_type, a.script_path) < manifest_filename(b.script_type, b.script_path)
+        return manifest_filename(a.source_type, a.source_path) < manifest_filename(b.source_type, b.source_path)
     end)
 
     return manifests, nil

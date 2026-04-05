@@ -1,5 +1,5 @@
 {
-  "script_path": "\/usr\/libexec\/rpcd\/oasis.wireless",
+  "source_path": "\/usr\/libexec\/rpcd\/oasis.wireless",
   "tools": [
     {
       "execution_message": "",
@@ -35,5 +35,5 @@
     }
   ],
   "version": 1,
-  "script_type": "lua"
+  "source_type": "lua_script"
 }
