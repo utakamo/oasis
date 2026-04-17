@@ -1,0 +1,67 @@
+#!/bin/sh
+
+rpcd_changed=0
+
+list_rpcd_login_sections() {
+    uci -q show rpcd | sed -n "s/^rpcd\.\([^=]*\)=login$/\1/p"
+}
+
+rpcd_login_name_exists() {
+    target_name="$1"
+    for section in $(list_rpcd_login_sections); do
+        if [ "$(uci -q get rpcd.$section.username)" = "$target_name" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+rpcd_has_oasis_login() {
+    for section in $(list_rpcd_login_sections); do
+        username="$(uci -q get rpcd.$section.username)"
+        password="$(uci -q get rpcd.$section.password)"
+        read_acl="$(uci -q get rpcd.$section.read)"
+        write_acl="$(uci -q get rpcd.$section.write)"
+
+        case "$username" in
+            oasis-client|oasis-client[0-9]*)
+                if [ "$password" = '$p$root' ] && [ "$read_acl" = "*" ] && [ "$write_acl" = "*" ]; then
+                    return 0
+                fi
+            ;;
+        esac
+    done
+    return 1
+}
+
+ensure_oasis_rpcd_login() {
+    [ -f /etc/config/rpcd ] || return 0
+
+    if rpcd_has_oasis_login; then
+        return 0
+    fi
+
+    username="oasis-client"
+    suffix=0
+    while rpcd_login_name_exists "$username"; do
+        suffix=$((suffix + 1))
+        username="oasis-client$suffix"
+    done
+
+    section="$(uci add rpcd login)"
+    [ -n "$section" ] || return 1
+
+    uci set rpcd.$section.username="$username"
+    uci set rpcd.$section.password='$p$root'
+    uci add_list rpcd.$section.read='*'
+    uci add_list rpcd.$section.write='*'
+    rpcd_changed=1
+}
+
+ensure_oasis_rpcd_login
+
+if [ "$rpcd_changed" -eq 1 ]; then
+    uci commit rpcd
+fi
+
+exit 0
