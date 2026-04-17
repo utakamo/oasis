@@ -33,6 +33,12 @@
   const errorModal = document.getElementById('tools-error-modal');
   const errorMsgEl = document.getElementById('tools-error-message');
   const errorOkBtn = document.getElementById('tools-error-ok');
+  const confirmModal = document.getElementById('tools-confirm-modal');
+  const confirmMessageEl = document.getElementById('tools-confirm-message');
+  const confirmListEl = document.getElementById('tools-confirm-list');
+  const confirmApplyBtn = document.getElementById('tools-confirm-apply');
+  const confirmCancelBtn = document.getElementById('tools-confirm-cancel');
+  let pendingManualManifests = [];
 
   function showToast(message, type = 'info', timeout = 2000) {
     if (!toastEl) return;
@@ -55,14 +61,92 @@
     });
   }
 
+  function closeConfirmModal() {
+    if (!confirmModal) return;
+    confirmModal.classList.remove('show');
+    confirmModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderConfirmList(manifests) {
+    if (!confirmListEl) return;
+    confirmListEl.innerHTML = '';
+
+    (manifests || []).forEach(manifest => {
+      const item = document.createElement('div');
+      item.className = 'tools-confirm-item';
+
+      const path = document.createElement('div');
+      path.className = 'tools-confirm-path';
+      path.textContent = `${t('confirmPathLabel', 'Manifest Path')}: ${manifest.path || ''}`;
+      item.appendChild(path);
+
+      const meta = document.createElement('div');
+      meta.className = 'tools-confirm-meta';
+      meta.textContent = [
+        `${t('confirmSourceTypeLabel', 'Source Type')}: ${manifest.source_type || '-'}`,
+        `${t('confirmSourcePathLabel', 'Source Path')}: ${manifest.source_path || t('confirmNoSourcePath', 'None')}`,
+        `${t('confirmToolCountLabel', 'Tool Count')}: ${manifest.tool_count || 0}`
+      ].join('  |  ');
+      item.appendChild(meta);
+
+      const servers = document.createElement('div');
+      servers.className = 'tools-confirm-servers';
+      servers.textContent = `${t('confirmServersLabel', 'Servers')}: ${(manifest.servers || []).join(', ') || '-'}`;
+      item.appendChild(servers);
+
+      confirmListEl.appendChild(item);
+    });
+  }
+
+  function openConfirmModal(manifests) {
+    pendingManualManifests = Array.isArray(manifests) ? manifests : [];
+    if (confirmMessageEl) {
+      confirmMessageEl.textContent = t(
+        'confirmRequiredMessage',
+        'The following manual manifests are not yet applied. Applying them will register their tools in Oasis.'
+      );
+    }
+    renderConfirmList(pendingManualManifests);
+    if (confirmApplyBtn) {
+      confirmApplyBtn.disabled = false;
+      confirmApplyBtn.textContent = t('confirmApplyButton', 'Apply');
+    }
+    if (confirmCancelBtn) {
+      confirmCancelBtn.disabled = false;
+      confirmCancelBtn.textContent = t('confirmCancelButton', 'Cancel');
+    }
+    if (confirmModal) {
+      confirmModal.classList.add('show');
+      confirmModal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function postRefresh(confirm) {
+    const body = new URLSearchParams();
+    if (confirm) {
+      body.set('confirm', '1');
+    }
+
+    return fetch(URL_REFRESH_TOOLS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: body.toString()
+    }).then(r => r.json());
+  }
+
   function bindRefreshButton() {
     if (!refreshBtn || refreshBtn.dataset.bound === '1') return;
     refreshBtn.addEventListener('click', () => {
       refreshBtn.disabled = true;
       refreshBtn.textContent = t('running', 'Running...');
-      fetch(URL_REFRESH_TOOLS, { method: 'POST' })
-        .then(r => r.json())
+      postRefresh(false)
         .then(res => {
+          if (res && res.status === 'CONFIRM_REQUIRED') {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = t('refreshLabel', 'Refresh');
+            openConfirmModal(res.manifests || []);
+            return;
+          }
           if (!res || res.status !== 'OK') {
             throw new Error((res && res.error) || t('refreshFailed', 'Failed to refresh services'));
           }
@@ -76,6 +160,40 @@
         });
     });
     refreshBtn.dataset.bound = '1';
+  }
+
+  if (confirmCancelBtn) {
+    confirmCancelBtn.addEventListener('click', () => {
+      closeConfirmModal();
+      if (refreshBtn) {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = t('refreshLabel', 'Refresh');
+      }
+    });
+  }
+
+  if (confirmApplyBtn) {
+    confirmApplyBtn.addEventListener('click', () => {
+      confirmApplyBtn.disabled = true;
+      confirmCancelBtn.disabled = true;
+      confirmApplyBtn.textContent = t('running', 'Running...');
+
+      postRefresh(true)
+        .then(res => {
+          if (!res || res.status !== 'OK') {
+            throw new Error((res && res.error) || t('refreshFailed', 'Failed to refresh services'));
+          }
+          closeConfirmModal();
+          location.reload();
+        })
+        .catch(err => {
+          console.error('refresh-tools confirm failed:', err);
+          showToast((err && err.message) || t('refreshFailed', 'Failed to refresh services'), 'error', 3000);
+          confirmApplyBtn.disabled = false;
+          confirmCancelBtn.disabled = false;
+          confirmApplyBtn.textContent = t('confirmApplyButton', 'Apply');
+        });
+    });
   }
 
   function createServerBlock(serverName, tools, options) {
@@ -172,9 +290,11 @@
 
         const meta = document.createElement('div');
         meta.className = 'manifest-meta';
+        const sourceType = manifest.source_type || manifest.script_type || '-';
+        const sourcePath = manifest.source_path || manifest.script_path || '-';
         meta.textContent = [
-          `${t('manifestScriptType', 'Script Type')}: ${manifest.script_type || '-'}`,
-          `${t('manifestScriptPath', 'Script Path')}: ${manifest.script_path || '-'}`
+          `${t('manifestSourceType', 'Source Type')}: ${sourceType}`,
+          `${t('manifestSourcePath', 'Source Path')}: ${sourcePath}`
         ].join('  |  ');
         entry.appendChild(meta);
 

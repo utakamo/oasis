@@ -272,6 +272,72 @@ function local_tool_info()
     luci_http.write_json(info)
 end
 
+local function manifest_is_applied(path)
+    local found = false
+    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        if (s.manifest_path or "") == path then
+            found = true
+            return false
+        end
+    end)
+    return found
+end
+
+local function build_manifest_summary(path, manifest)
+    local servers = {}
+    local seen = {}
+
+    for _, tool in ipairs(manifest.tools or {}) do
+        if type(tool) == "table" then
+            local server = tool.server or ""
+            if server ~= "" and not seen[server] then
+                seen[server] = true
+                servers[#servers + 1] = server
+            end
+        end
+    end
+
+    table.sort(servers)
+
+    return {
+        path = path,
+        source_type = manifest.source_type or "",
+        source_path = manifest.source_path or "",
+        tool_count = #(manifest.tools or {}),
+        servers = servers
+    }
+end
+
+local function list_pending_manual_manifests()
+    local manifests = {}
+    local files = fs.dir(manifest_dir)
+
+    if not files then
+        return manifests
+    end
+
+    for file in files do
+        if type(file) == "string" and file:sub(-5) == ".json" then
+            local path = manifest_dir .. file
+            local raw = fs.readfile(path)
+            local manifest = raw and jsonc.parse(raw) or nil
+
+            if type(manifest) == "table"
+                and manifest.source_type == "manual"
+                and type(manifest.tools) == "table"
+                and not manifest_is_applied(path) then
+                manifests[#manifests + 1] = build_manifest_summary(path, manifest)
+            end
+        end
+    end
+
+    table.sort(manifests, function(a, b)
+        return (a.path or "") < (b.path or "")
+    end)
+
+    return manifests
+end
+
 function tool_manifest()
     local server_name = luci_http.formvalue("server")
 
@@ -296,8 +362,8 @@ function tool_manifest()
                         if type(tool) == "table" and tool.server == server_name then
                             manifests[#manifests + 1] = {
                                 path = path,
-                                script_type = manifest.script_type or "",
-                                script_path = manifest.script_path or "",
+                                source_type = manifest.source_type or "",
+                                source_path = manifest.source_path or "",
                                 content = raw or ""
                             }
                             break
@@ -326,6 +392,18 @@ local function exec_service_rc(command)
 end
 
 function refresh_tools()
+    if luci_http.formvalue("confirm") ~= "1" then
+        local pending = list_pending_manual_manifests()
+        if #pending > 0 then
+            luci_http.prepare_content("application/json")
+            luci_http.write_json({
+                status = "CONFIRM_REQUIRED",
+                manifests = pending
+            })
+            return
+        end
+    end
+
     local rc = exec_service_rc("service olt_tool restart")
     if rc ~= 0 then
         luci_http.prepare_content("application/json")

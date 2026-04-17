@@ -334,6 +334,47 @@ h3 {
     text-align: center;
 }
 
+.tools-confirm-card {
+    width: min(92vw, 680px);
+}
+
+.tools-confirm-message {
+    margin: 0 0 12px;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.tools-confirm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+
+.tools-confirm-item {
+    border: 1px solid #d7e3f4;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 12px 14px;
+}
+
+.tools-confirm-path {
+    font-weight: 700;
+    color: #2f4056;
+    word-break: break-all;
+}
+
+.tools-confirm-meta,
+.tools-confirm-servers {
+    margin-top: 6px;
+    color: #5e6f82;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
 .form-actions {
     margin: 10px 0;
     display: flex;

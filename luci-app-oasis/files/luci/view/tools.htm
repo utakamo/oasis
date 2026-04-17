@@ -20,6 +20,20 @@
   
 </div>
 
+<div id="tools-confirm-modal" class="tools-modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="tools-card tools-confirm-card">
+    <p id="tools-confirm-title"><%:Manual Manifest Confirmation%></p>
+    <div id="tools-confirm-message" class="tools-confirm-message">
+      <%:The following manual manifests are not yet applied. Applying them will register their tools in Oasis.%>
+    </div>
+    <div id="tools-confirm-list" class="tools-confirm-list"></div>
+    <div class="form-actions" style="justify-content:center;">
+      <button type="button" id="tools-confirm-cancel" class="delete-button"><%:Cancel%></button>
+      <button type="button" id="tools-confirm-apply" class="load-button"><%:Apply%></button>
+    </div>
+  </div>
+</div>
+
 <!--
 <h2>Remote MCP Server</h2>
 <div id="oasis-mcp-containe"></div>
@@ -58,12 +72,22 @@ window.OasisToolsStrings = {
     loadingManifest: '<%:Loading manifest...%>',
     manifestNotFound: '<%:Manifest not found.%>',
     manifestLoadFailed: '<%:Failed to load manifest.%>',
-    manifestScriptType: '<%:Script Type%>',
-    manifestScriptPath: '<%:Script Path%>',
+    manifestSourceType: '<%:Source Type%>',
+    manifestSourcePath: '<%:Source Path%>',
     installExtensionHint: '<%:Please install the extension module \'oasis-mod-tool\' to enable local tools.%>',
     unknownServer: '<%:Unknown Server%>',
     toolSearchCategory: '<%:Tool Search (oasis.tool.manager)%>',
-    toolSearchDescription: '<%:Browse available tools and enable or disable them.%>'
+    toolSearchDescription: '<%:Browse available tools and enable or disable them.%>',
+    confirmRequiredTitle: '<%:Manual Manifest Confirmation%>',
+    confirmRequiredMessage: '<%:The following manual manifests are not yet applied. Applying them will register their tools in Oasis.%>',
+    confirmApplyButton: '<%:Apply%>',
+    confirmCancelButton: '<%:Cancel%>',
+    confirmPathLabel: '<%:Manifest Path%>',
+    confirmSourceTypeLabel: '<%:Source Type%>',
+    confirmSourcePathLabel: '<%:Source Path%>',
+    confirmToolCountLabel: '<%:Tool Count%>',
+    confirmServersLabel: '<%:Servers%>',
+    confirmNoSourcePath: '<%:None%>'
 };
 </script>
 <script src="<%= resource %>/oasis/js/tools.js"></script>
