@@ -28,32 +28,6 @@ ollama.new = function()
             self.format = format
         end
 
-        local function is_model_tool_capable(model)
-            local name = tostring(model or ""):lower()
-            if #name == 0 then return false end
-            local markers = {
-                "llama3", "llama 3", -- llama3.x family
-                "qwen", "qwen2", "qwen3",
-                "mistral", "mixtral",
-                "deepseek",
-                "phi4", "phi-4",
-                "firefunction",
-                "gpt-oss",
-                "nemotron",
-                "granite",
-                "hermes",
-                "smollm",
-                "qwq",
-                "magistral",
-                "cogito",
-                "command-r"
-            }
-            for _, m in ipairs(markers) do
-                if name:find(m, 1, true) then return true end
-            end
-            return false
-        end
-
         obj.init_msg_buffer = function(self)
             self.recv_raw_msg.role = common.role.unknown
             self.recv_raw_msg.message = ""
@@ -85,7 +59,7 @@ ollama.new = function()
         -- [ADD] helper: execute tool calls when local_tool is enabled (return values and order preserved)
 		obj._process_tool_calls = function(self, message)
 			local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-			if not is_tool then
+			if not (is_tool and common.check_function_calling_enabled(self)) then
 				return nil
 			end
 
@@ -222,8 +196,6 @@ ollama.new = function()
 
         obj.convert_schema = function(self, user_msg)
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-            local model = (self.cfg and self.cfg.model) or ""
-            local supports_tool = is_model_tool_capable(model)
 
             -- When role:tool is present, it indicates that results are sent to AI
             -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
@@ -236,7 +208,7 @@ ollama.new = function()
             end
 
             -- Inject tools schema for function calling (Ollama)
-            if is_use_tool and supports_tool and (self:get_format() ~= common.ai.format.title) then
+            if is_use_tool and common.check_function_calling_enabled(self) and (self:get_format() ~= common.ai.format.title) then
                 local client = require("oasis.local.tool.client")
                 local schema = client.get_function_call_schema()
 

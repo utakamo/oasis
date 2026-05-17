@@ -431,6 +431,32 @@ function M.check_prepare_oasis()
     return true
 end
 
+function M.check_function_calling_enabled(service)
+
+    local value = nil
+
+    if type(service) == "table" then
+        if type(service.get_config) == "function" then
+            local ok, cfg = pcall(function()
+                return service:get_config()
+            end)
+            if ok and type(cfg) == "table" then
+                value = cfg.function_calling
+            end
+        end
+
+        if value == nil then
+            value = service.function_calling
+        end
+    end
+
+    if value == nil then
+        value = uci:get_first(db.uci.cfg, db.uci.sect.service, "function_calling", "0")
+    end
+
+    return tostring(value or "0") == "1"
+end
+
 M.db = db
 M.ai = ai
 M.file = file

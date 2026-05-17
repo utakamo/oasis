@@ -108,6 +108,7 @@ local options_spec = {
     ["-u"] = "u",
     ["-k"] = "k",
     ["-m"] = "m",
+    ["-f"] = "f",
     ["-s"] = "s"
 }
 
@@ -142,13 +143,14 @@ local function help()
         " -u <Endpoint>          Set the  AI Service Endpoint(URL)",
         " -k <api-key>           Set the API key",
         " -m <model>             Set the LLM model",
+        " -f <0|1>               Set Function Calling / Tool Use",
         " -p <storage>           Set the storage path",
         " -s <sysmsg key>        Select the system message key  (for sysmsg command)",
         " -c <system message>    Create new system message data (for sysmsg command)",
         "",
         "Commands:",
         " storage <path> [<chat-max>]",
-        " add [<service> [<endpoint> [<api-key> [<model> [<storage>]]]]]",
+        " add [<service> [<endpoint> [<api-key> [<model> [<function-calling>]]]]]",
         " change [no=<service-number> [<options> <value>]...]",
         " select [no=<service-number>]",
         " delete no=<service-number>",
@@ -248,6 +250,7 @@ commands.add = function(args)
         endpoint = args[3],
         api_key  = args[4],
         model    = args[5],
+        function_calling = args[6],
     })
 end
 

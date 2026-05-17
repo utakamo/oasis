@@ -348,6 +348,28 @@ local function collect_model(args, output)
     end
 end
 
+local function normalize_function_calling(value, default)
+    if value == nil or value == "" then
+        return default
+    end
+
+    value = tostring(value):lower()
+
+    if value == "1" or value == "true" or value == "enable" or value == "enabled" then
+        return "1"
+    end
+
+    if value == "0" or value == "false" or value == "disable" or value == "disabled" then
+        return "0"
+    end
+
+    return nil
+end
+
+local function format_function_calling_status(value)
+    return (tostring(value or "0") == "1") and "enable" or "disable"
+end
+
 -- Determine endpoint field name
 local function determine_endpoint_field_name(service_name)
     return SERVICE_CONFIG.ENDPOINT_FIELDS[service_name] or "unknown"
@@ -363,6 +385,7 @@ local function create_uci_service_section(setup, endpoint_field_name)
     uci:set(common.db.uci.cfg, unnamed_section, endpoint_field_name, setup.endpoint)
     uci:set(common.db.uci.cfg, unnamed_section, "api_key", setup.api_key)
     uci:set(common.db.uci.cfg, unnamed_section, "model", setup.model)
+    uci:set(common.db.uci.cfg, unnamed_section, "function_calling", normalize_function_calling(setup.function_calling, "0") or "0")
 
     -- Endpoint type configuration
     local endpoint_type_field = SERVICE_CONFIG.ENDPOINT_TYPES[setup.service]
@@ -402,7 +425,8 @@ function M.add(args)
         service = collect_service_name(args, output),
         endpoint = collect_endpoint(args, output),
         api_key = collect_api_key(args, output),
-        model = collect_model(args, output)
+        model = collect_model(args, output),
+        function_calling = normalize_function_calling(args.function_calling, "0") or "0"
     }
 
     -- Collect Anthropic-specific configuration
@@ -477,6 +501,14 @@ local function update_service_config(service_section, opt)
         updated = true
     end
 
+    if opt.f then
+        local function_calling = normalize_function_calling(opt.f)
+        if function_calling then
+            uci:set(common.db.uci.cfg, service_section, "function_calling", function_calling)
+            updated = true
+        end
+    end
+
     if opt.s then
         uci:set(common.db.uci.cfg, service_section, "storage", opt.s)
         updated = true
@@ -516,7 +548,7 @@ end
 -- Main change function
 -- Change an existing AI service by numeric index with options.
 -- @param arg table { no: string }
--- @param opt table { u?: string, k?: string, m?: string, s?: string }
+-- @param opt table { u?: string, k?: string, m?: string, f?: string, s?: string }
 function M.change(arg, opt)
 
     local output = {
@@ -555,12 +587,15 @@ function M.show_service_list()
         console.print("-----------------------------------------------")
     end
 
+    output.label_width = 18
+    output.format_item = "%-" .. output.label_width .. "s >> \27[33m%s\27[0m\n"
+
     output.item = function(name, value)
         local display_value = value or "(not set)"
         if (name == "API KEY") and value then
-            console.printf("%-8s >> \27[33m%s\27[0m\n", name, "******************************")
+            console.printf(output.format_item, name, "******************************")
         else
-            console.printf("%-8s >> \27[33m%s\27[0m\n", name, display_value)
+            console.printf(output.format_item, name, display_value)
         end
         console.flush()
     end
@@ -608,6 +643,7 @@ function M.show_service_list()
 
             output.item("API KEY", tbl.api_key)
             output.item("MODEL", tbl.model)
+            output.item("Function Calling", format_function_calling_status(tbl.function_calling))
         end
     end)
 end
@@ -680,6 +716,8 @@ function M.select(arg)
         return
     end
 
+    local function_calling = format_function_calling_status(uci:get(common.db.uci.cfg, target_section, "function_calling"))
+
     -- swap section data
     uci:reorder(common.db.uci.cfg, target_section, 1)
     uci:commit(common.db.uci.cfg)
@@ -687,6 +725,7 @@ function M.select(arg)
     local model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
     console.print("Service No: " .. arg.no .. " is selected.")
     console.print("Target model: \27[33m" .. model .. "\27[0m")
+    console.print("Function Calling: \27[33m" .. function_calling .. "\27[0m")
 end
 
 -- Initialize and display service information

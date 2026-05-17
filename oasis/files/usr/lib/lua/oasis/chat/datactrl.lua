@@ -26,6 +26,7 @@ function M.get_ai_service_cfg(arg, opts)
     cfg.service    = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "name", "") or ""
     cfg.model      = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "model", "") or ""
     cfg.ipaddr     = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "ipaddr", "") or ""
+    cfg.function_calling = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "function_calling", "0") or "0"
 
     if opts and opts.with_storage then
         cfg.path   = uci:get(uci_ref.cfg, uci_ref.sect.storage, "path")

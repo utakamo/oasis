@@ -29,7 +29,7 @@ function M.process(self, message)
 	end
 
 	local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-	if not (is_tool and message and message.tool_calls) then
+	if not (is_tool and common.check_function_calling_enabled(self) and message and message.tool_calls) then
 		return nil
 	end
 
@@ -102,7 +102,7 @@ end
 
 function M.inject_schema(self, user_msg)
 	local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-	if not is_use_tool then
+	if not (is_use_tool and common.check_function_calling_enabled(self)) then
 		return user_msg
 	end
 	if self.get_format and (self:get_format() == common.ai.format.title) then

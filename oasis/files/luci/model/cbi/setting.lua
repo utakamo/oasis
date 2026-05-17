@@ -118,6 +118,12 @@ openrouter_custom_endpoint:depends("openrouter_endpoint_type", common.endpoint.t
 api_key = service:option(Value, "api_key", "API Key")
 api_key.password = true
 
+function_calling = service:option(Flag, "function_calling", "Function Calling / Tool Use")
+function_calling.enabled = "1"
+function_calling.disabled = "0"
+function_calling.default = "0"
+function_calling.description = "Enable only when the selected AI service and model support tool use."
+
 -- max_tokens (ListValue), only for Anthropic and Custom Anthropic
 max_tokens = service:option(ListValue, "max_tokens", "Max Tokens")
 for i = 1000, 30000, 1000 do
