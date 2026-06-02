@@ -6,12 +6,12 @@ local common    = require("oasis.common")
 local console   = require("oasis.console")
 local jsonc     = require("luci.jsonc")
 local datactrl  = require("oasis.chat.datactrl")
-local util      = require("luci.util")
 local ous       = require("oasis.unified.chat.schema")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 
 local M = {}
+local TITLE_AUTO_SET_TIMEOUT_MS = 120000
 
 -- Create a shallow copy of chat and drop transient messages before persisting
 -- - Exclude role=="tool"
@@ -244,7 +244,15 @@ function M.chat_with_ai(service, chat)
                     local save_chat = clone_chat_without_tool_messages(chat)
                     local chat_info = {}
                     chat_info.id = datactrl.create_chat_file(service, save_chat)
-                    local result = util.ubus("oasis.title", "auto_set", {id = chat_info.id}) or {}
+                    -- Title generation calls the selected AI service through oasis.title and may
+                    -- exceed the default ubus timeout on slow local LLMs. Use common.ubus_call()
+                    -- so this long-running ubus request has an explicit timeout.
+                    local result = common.ubus_call(
+                        common.db.ubus.object.oasis_title,
+                        common.db.ubus.method.auto_set,
+                        {id = chat_info.id},
+                        TITLE_AUTO_SET_TIMEOUT_MS
+                    ) or {}
                     chat_info.title = result.title or "--"
                     new_chat_info = jsonc.stringify(chat_info, false)
                     debug:log("oasis.log", "chat_with_ai", "new_chat_info = " .. new_chat_info)

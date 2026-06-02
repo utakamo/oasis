@@ -83,24 +83,7 @@ end
 
 local ubus_call = function(path, method, param, timeout)
 
-    local ubus = require("ubus")
-    local conn
-
-    if timeout and type(timeout) == "string" and #timeout > 0 then
-        conn = ubus.connect(nil, tonumber(timeout))
-    elseif timeout and type(timeout) == "number" and timeout > 0 then
-        conn = ubus.connect(nil, timeout)
-    else
-        -- default: 60s
-        conn = ubus.connect(nil, 60000)
-    end
-
-    if not conn then
-        return { error = "Failed to connect to ubus" }
-    end
-
-    local result, err = conn:call(path, method, param)
-    conn:close()
+    local result, err = common.ubus_call(path, method, param, timeout)
 
     if not result then
         return { error = err or "Failed to execute ubus call" }

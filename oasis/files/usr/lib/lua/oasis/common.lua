@@ -368,6 +368,38 @@ function M.check_chat_format(chat)
     return true
 end
 
+function M.ubus_call(object, method, data, timeout)
+
+    local conn
+
+    if timeout and type(timeout) == "string" and #timeout > 0 then
+        local timeout_ms = tonumber(timeout)
+        if timeout_ms and timeout_ms > 0 then
+            conn = ubus.connect(nil, timeout_ms)
+        end
+    elseif timeout and type(timeout) == "number" and timeout > 0 then
+        conn = ubus.connect(nil, timeout)
+    end
+
+    if not conn then
+        -- default: 60s
+        conn = ubus.connect(nil, 60000)
+    end
+
+    if not conn then
+        return nil, "Failed to connect to ubus"
+    end
+
+    local result, err = conn:call(object, method, data or {})
+    conn:close()
+
+    if not result then
+        return nil, err or "Failed to execute ubus call"
+    end
+
+    return result, nil
+end
+
 function M.check_server_loaded(server_name)
 
     -- timeout: 1000ms
