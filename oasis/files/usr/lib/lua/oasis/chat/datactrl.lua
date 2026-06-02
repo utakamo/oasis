@@ -13,6 +13,8 @@ local sysmsg_info = {}
 sysmsg_info.fix_key = {}
 sysmsg_info.fix_key.casual = "casual"
 
+local TITLE_AUTO_SET_TIMEOUT_MS = 120000
+
 function M.get_ai_service_cfg(arg, opts)
 
     debug:log("oasis.log", "get_ai_service_cfg", "\n--- [datactrl.lua][get_ai_service_cfg] ---")
@@ -158,7 +160,15 @@ function M.create_chat_file(service, chat)
 end
 
 function M.set_chat_title(service, chat_id)
-    local request = util.ubus("oasis.title", "auto_set", {id = chat_id})
+    -- Title generation calls the selected AI service through oasis.title and may
+    -- exceed the default ubus timeout on slow local LLMs. Use common.ubus_call()
+    -- so this long-running ubus request has an explicit timeout.
+    local request = common.ubus_call(
+        common.db.ubus.object.oasis_title,
+        common.db.ubus.method.auto_set,
+        {id = chat_id},
+        TITLE_AUTO_SET_TIMEOUT_MS
+    )
 
     if request.status == common.status.error then
         io.write("\n\27[1;33;41m Title Creation: Error \27[0m\n")
