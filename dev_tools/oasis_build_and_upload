@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REFRESH_SCRIPT_DIR="$(pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 # --------------------------------------------------------------------
 # Oasis Build & Upload Automation Script
@@ -19,6 +19,104 @@ REFRESH_SCRIPT_DIR="$(pwd)"
 #
 # If sshpass is missing, this script will tell you how to install it.
 # --------------------------------------------------------------------
+
+usage() {
+  cat <<'EOF'
+Usage:
+  oasis_build_and_upload [options]
+
+Options:
+  --reset                         Delete stored settings and exit.
+  --pkg-ext <ipk|apk>             Override package artifact extension for this run.
+  --package-format <ipk|apk>      Alias for --pkg-ext.
+  -h, --help                      Show this help.
+EOF
+}
+
+normalize_pkg_ext() {
+  local ext="${1:-}"
+  ext="${ext#.}"
+  ext="${ext,,}"
+
+  case "$ext" in
+    ipk|apk)
+      printf '%s\n' "$ext"
+      ;;
+    *)
+      echo "ERROR: package extension must be 'ipk' or 'apk'." >&2
+      return 1
+      ;;
+  esac
+}
+
+resolve_package_file() {
+  local name="$1"
+  local version="$2"
+  local ext="$3"
+  local patterns=()
+  local match
+
+  case "$ext" in
+    ipk)
+      patterns=(
+        "$BASE/${name}_${version}_all.${ext}"
+        "$BASE/${name}_${version}_*.${ext}"
+        "$BASE/${name}_*.${ext}"
+      )
+      ;;
+    apk)
+      patterns=(
+        "$BASE/${name}-${version}.${ext}"
+        "$BASE/${name}-${version}*.${ext}"
+        "$BASE/${name}-[0-9]*.${ext}"
+      )
+      ;;
+  esac
+
+  for pattern in "${patterns[@]}"; do
+    while IFS= read -r match; do
+      if [[ -f "$match" ]]; then
+        printf '%s\n' "$match"
+        return 0
+      fi
+    done < <(compgen -G "$pattern")
+  done
+
+  return 1
+}
+
+RESET_CONFIG=0
+PKG_EXT_OVERRIDE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --reset)
+      RESET_CONFIG=1
+      shift
+      ;;
+    --pkg-ext|--package-format)
+      if [[ -z "${2:-}" ]]; then
+        echo "ERROR: $1 requires a value: ipk or apk." >&2
+        exit 1
+      fi
+      PKG_EXT_OVERRIDE="$(normalize_pkg_ext "$2")"
+      shift 2
+      ;;
+    --pkg-ext=*|--package-format=*)
+      PKG_EXT_OVERRIDE="$(normalize_pkg_ext "${1#*=}")"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
 
 # ====================================
 # Check Required Commands
@@ -71,7 +169,7 @@ chmod 700 "$CONFIG_DIR"
 # ====================================
 # --reset option
 # ====================================
-if [[ "${1:-}" == "--reset" ]]; then
+if [[ "$RESET_CONFIG" == "1" ]]; then
   echo "Resetting stored settings..."
   rm -f "$CONFIG_FILE"
   echo "Done. Re-run the script to set up again."
@@ -89,11 +187,22 @@ fi
 source "$CONFIG_FILE"
 
 # ====================================
+# Package extension setup
+# ====================================
+if [[ -n "$PKG_EXT_OVERRIDE" ]]; then
+  PKG_EXT="$PKG_EXT_OVERRIDE"
+else
+  unset PKG_EXT
+  read -rp "Enter package extension for upload phase [ipk/apk] (default: ipk): " PKG_EXT
+  PKG_EXT="$(normalize_pkg_ext "${PKG_EXT:-ipk}")"
+fi
+
+# ====================================
 # BASE setup
 # ====================================
 if [[ -z "${BASE:-}" ]]; then
-  echo "You need to set the .ipk directory path (BASE)."
-  read -rp "Enter the path to the .ipk directory (BASE): " BASE
+  echo "You need to set the package artifact directory path (BASE)."
+  read -rp "Enter the path to the package artifact directory (BASE): " BASE
   echo "BASE=\"$BASE\"" >> "$CONFIG_FILE"
   echo "Saved BASE in config."
 fi
@@ -127,6 +236,7 @@ echo "--------------------------------------"
 echo "Target Host : $TARGET_IP"
 echo "Password    : (hidden)"
 echo "BASE Path   : $BASE"
+echo "Package Ext : .$PKG_EXT"
 echo "Config File : $CONFIG_FILE"
 echo "--------------------------------------"
 echo
@@ -157,35 +267,86 @@ make package/oasis-tool-maker/{clean,compile}
 make package/luci-i18n-oasis-ja/{clean,compile}
 
 # ====================================
-# Upload .ipk files
+# Upload package files
 # ====================================
-FILES=(
-  "oasis_${OASIS_VER}_all.ipk"
-  "luci-app-oasis_${LUCIOASIS_VER}_all.ipk"
-  "oasis-mod-tool_${TOOL_VER}_all.ipk"
-  "oasis-mod-agent_${AGENT_VER}_all.ipk"
-  "oasis-mod-retired_${RETIRED_VER}_all.ipk"
-  "oasis-tool-edge_${EDGE_VER}_all.ipk"
-  "oasis-mod-test_${TEST_VER}_all.ipk"
-  "oasis-tool-maker_${MAKER_VER}_all.ipk"
+PACKAGE_SPECS=(
+  "oasis:$OASIS_VER"
+  "luci-app-oasis:$LUCIOASIS_VER"
+  "oasis-mod-tool:$TOOL_VER"
+  "oasis-mod-agent:$AGENT_VER"
+  "oasis-mod-retired:$RETIRED_VER"
+  "oasis-tool-edge:$EDGE_VER"
+  "oasis-mod-test:$TEST_VER"
+  "oasis-tool-maker:$MAKER_VER"
 )
 
-for f in "${FILES[@]}"; do
-  src="$BASE/$f"
-  [[ -f "$src" ]] && sshpass -p "$SSH_PASS" scp "$src" "root@$TARGET_IP:/root/" || echo "Skipping missing file: $f"
+UPLOAD_FILES=()
+MISSING_PACKAGES=()
+
+for spec in "${PACKAGE_SPECS[@]}"; do
+  pkg_name="${spec%%:*}"
+  pkg_version="${spec#*:}"
+
+  if pkg_file="$(resolve_package_file "$pkg_name" "$pkg_version" "$PKG_EXT")"; then
+    UPLOAD_FILES+=("$pkg_file")
+  else
+    MISSING_PACKAGES+=("$pkg_name")
+  fi
+done
+
+if [[ "${#UPLOAD_FILES[@]}" == "0" ]]; then
+  echo "ERROR: No matching .${PKG_EXT} package files were found for upload."
+  echo "BASE Path   : $BASE"
+  echo "Package Ext : .$PKG_EXT"
+  echo
+  echo "Please check the following:"
+  echo "  - The selected package extension is correct for this build output."
+  echo "  - The target packages are selected under 'utakamo' in make menuconfig."
+  echo
+  echo "Expected package names:"
+  for spec in "${PACKAGE_SPECS[@]}"; do
+    echo "  ${spec%%:*}"
+  done
+  echo
+  echo "Available .${PKG_EXT} files:"
+  while IFS= read -r f; do
+    echo "  $f"
+  done < <(compgen -G "$BASE/*.${PKG_EXT}" || true)
+  exit 1
+fi
+
+if [[ "${#MISSING_PACKAGES[@]}" -gt 0 ]]; then
+  echo "Skipping missing .${PKG_EXT} packages:"
+  for pkg_name in "${MISSING_PACKAGES[@]}"; do
+    echo "  $pkg_name"
+  done
+  echo
+fi
+
+for src in "${UPLOAD_FILES[@]}"; do
+  sshpass -p "$SSH_PASS" scp "$src" "root@$TARGET_IP:/root/"
 done
 
 # ====================================
-# Upload oasis_reflesh_install script
+# Upload oasis_local_upgrade script
 # ====================================
-REFRESH_SCRIPT="$REFRESH_SCRIPT_DIR/oasis_reflesh_install"
+case "$PKG_EXT" in
+  ipk)
+    REFRESH_SCRIPT="$SCRIPT_DIR/oasis_local_upgrade"
+    ;;
+  apk)
+    REFRESH_SCRIPT="$SCRIPT_DIR/oasis_local_upgrade_apk"
+    ;;
+esac
+
+REMOTE_REFRESH_SCRIPT="/root/oasis_local_upgrade"
 
 if [[ -f "$REFRESH_SCRIPT" ]]; then
-  echo "Uploading oasis_reflesh_install..."
-  sshpass -p "$SSH_PASS" scp "$REFRESH_SCRIPT" "root@$TARGET_IP:/root/"
-  echo "✅ oasis_reflesh_install uploaded."
+  echo "Uploading $(basename "$REFRESH_SCRIPT") as oasis_local_upgrade..."
+  sshpass -p "$SSH_PASS" scp "$REFRESH_SCRIPT" "root@$TARGET_IP:$REMOTE_REFRESH_SCRIPT"
+  echo "✅ oasis_local_upgrade uploaded."
 else
-  echo "⚠️ oasis_reflesh_install not found: $REFRESH_SCRIPT"
+  echo "⚠️ oasis_local_upgrade not found: $REFRESH_SCRIPT"
 fi
 
 echo
@@ -193,6 +354,6 @@ echo "✅ Upload complete."
 echo
 echo "To install on device:"
 echo "ssh root@$TARGET_IP"
-echo "root@OpenWrt:~# chmod +x oasis_reflesh_install"
-echo "root@OpenWrt:~# ./oasis_reflesh_install"
+echo "root@OpenWrt:~# chmod +x oasis_local_upgrade"
+echo "root@OpenWrt:~# ./oasis_local_upgrade"
 echo
