@@ -14,6 +14,10 @@ After installing oasis-mod-tool, you can create Lua or ucode scripts using the s
 ## Manifest-based Tool Management
 oasis-mod-tool uses Manifest files as the main source of local tool definitions.
 
+> [!NOTE]
+> Manifest-based tool management is not available in Oasis v3.2.6 or earlier.
+> It is the tool management model for releases after v3.2.6.
+
 A Manifest describes the AI-facing metadata for each tool:
 
 - which ubus server provides the tool
