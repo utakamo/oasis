@@ -328,25 +328,25 @@ for src in "${UPLOAD_FILES[@]}"; do
 done
 
 # ====================================
-# Upload oasis_reflesh_install script
+# Upload oasis_local_upgrade script
 # ====================================
 case "$PKG_EXT" in
   ipk)
-    REFRESH_SCRIPT="$SCRIPT_DIR/oasis_reflesh_install"
+    REFRESH_SCRIPT="$SCRIPT_DIR/oasis_local_upgrade"
     ;;
   apk)
-    REFRESH_SCRIPT="$SCRIPT_DIR/oasis_reflesh_install_apk"
+    REFRESH_SCRIPT="$SCRIPT_DIR/oasis_local_upgrade_apk"
     ;;
 esac
 
-REMOTE_REFRESH_SCRIPT="/root/oasis_reflesh_install"
+REMOTE_REFRESH_SCRIPT="/root/oasis_local_upgrade"
 
 if [[ -f "$REFRESH_SCRIPT" ]]; then
-  echo "Uploading $(basename "$REFRESH_SCRIPT") as oasis_reflesh_install..."
+  echo "Uploading $(basename "$REFRESH_SCRIPT") as oasis_local_upgrade..."
   sshpass -p "$SSH_PASS" scp "$REFRESH_SCRIPT" "root@$TARGET_IP:$REMOTE_REFRESH_SCRIPT"
-  echo "✅ oasis_reflesh_install uploaded."
+  echo "✅ oasis_local_upgrade uploaded."
 else
-  echo "⚠️ oasis_reflesh_install not found: $REFRESH_SCRIPT"
+  echo "⚠️ oasis_local_upgrade not found: $REFRESH_SCRIPT"
 fi
 
 echo
@@ -354,6 +354,6 @@ echo "✅ Upload complete."
 echo
 echo "To install on device:"
 echo "ssh root@$TARGET_IP"
-echo "root@OpenWrt:~# chmod +x oasis_reflesh_install"
-echo "root@OpenWrt:~# ./oasis_reflesh_install"
+echo "root@OpenWrt:~# chmod +x oasis_local_upgrade"
+echo "root@OpenWrt:~# ./oasis_local_upgrade"
 echo
