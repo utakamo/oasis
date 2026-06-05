@@ -7,16 +7,16 @@
 #   This script removes old versions of Oasis packages, installs new ones,
 #   and restarts related services.
 #
-#   If you pass the keyword "migrate" as an argument, the script will:
+#   If you pass the keyword "keep-config" as an argument, the script will:
 #     1. Backup the current Oasis UCI configuration before removing packages.
 #     2. Restore the configuration after the new installation.
 #
 # Examples:
 #   oasis_local_upgrade
-#       -> Normal update (no data migration).
+#       -> Normal update.
 #
-#   oasis_local_upgrade migrate
-#       -> Update with data migration (backup + restore).
+#   oasis_local_upgrade keep-config
+#       -> Update while preserving the current Oasis configuration.
 #
 
 MODE="$1"
@@ -31,8 +31,8 @@ remove_if_installed() {
     fi
 }
 
-# Backup configuration if migrate mode is enabled
-if [ "$MODE" = "migrate" ]; then
+# Backup configuration if keep-config mode is enabled
+if [ "$MODE" = "keep-config" ]; then
     mkdir -p /tmp/oasis
     touch /tmp/oasis/backup
     uci export oasis > /tmp/oasis/backup
@@ -70,8 +70,8 @@ opkg install oasis-tool-edge_1.0.0-r1_all.ipk
 opkg install oasis-mod-test_1.0.0-r1_all.ipk
 opkg install oasis-tool-maker_1.0.0-r1_all.ipk
 
-# Restore configuration if migrate mode is enabled
-if [ "$MODE" = "migrate" ]; then
+# Restore configuration if keep-config mode is enabled
+if [ "$MODE" = "keep-config" ]; then
     uci -f /tmp/oasis/backup import oasis
     cp -r /tmp/oasis/oasis.conf /etc/oasis/oasis.conf
 fi
