@@ -9,6 +9,7 @@ local misc      = require("oasis.chat.misc")
 local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
 local calling   = require("oasis.chat.function.calling.anthropic")
+local chat_error = require("oasis.chat.error")
 
 local anthropic = {}
 anthropic.new = function()
@@ -169,12 +170,9 @@ anthropic.new = function()
             -- API error handling
             if chunk_json.error and chunk_json.error.message then
                 local msg = tostring(chunk_json.error.message)
+                local detail = chunk_json.error.type or chunk_json.error.code
                 self.chunk_all = ""
-                self.recv_raw_msg.role = common.role.assistant
-                self.recv_raw_msg.message = msg
-                local plain_text_for_console = misc.markdown(self.mark, msg)
-                local response_ai_json = jsonc.stringify({ message = { role = common.role.assistant, content = msg } }, false)
-                return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
+                return nil, nil, self.recv_raw_msg, false, chat_error.api_error(self, msg, { detail = detail })
             end
 
             -- Tool call detection and processing (Anthropic tool_use)

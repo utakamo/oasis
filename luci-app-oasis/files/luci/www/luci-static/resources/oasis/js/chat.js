@@ -40,6 +40,34 @@
         return result;
     }
 
+    function formatChatError(error) {
+        if (!error) {
+            return t('noResponse', 'No response from AI service. Please check settings.');
+        }
+
+        if (typeof error === 'string') {
+            return error;
+        }
+
+        if (typeof error.display === 'string' && error.display.length > 0) {
+            return error.display;
+        }
+
+        const lines = [];
+        lines.push(error.message || 'Chat request failed.');
+        if (error.phase) lines.push(`Phase: ${error.phase}`);
+        if (error.service) lines.push(`AI Service: ${error.service}`);
+        if (error.model) lines.push(`Model: ${error.model}`);
+        if (error.kind) lines.push(`Type: ${error.kind}`);
+        if (error.provider_message) lines.push(`Provider: ${error.provider_message}`);
+        if (error.detail) lines.push(`Detail: ${error.detail}`);
+        if (Object.prototype.hasOwnProperty.call(error, 'can_continue')) {
+            lines.push(`Chat can continue: ${error.can_continue ? 'yes' : 'no'}`);
+        }
+
+        return lines.join('\n');
+    }
+
     const utils = window.OasisChatUtils || {};
     const convertMarkdownToHTML = utils.convertMarkdownToHTML || (v => String(v || ''));
     const sanitizeHTML = utils.sanitizeHTML || (v => String(v || ''));
@@ -2125,6 +2153,10 @@
         let shutdownRequired = false;
         let pendingServiceRestart = '';
 
+        function appendErrorNotice(error) {
+            errorNoticesHtml += `<div class="error-notice">${escapeHTML(formatChatError(error))}</div>`;
+        }
+
         try {
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
                 method: 'POST',
@@ -2171,6 +2203,16 @@
                     if (evt && evt.reboot === true) { rebootRequired = true }
                     if (evt && evt.shutdown === true) { shutdownRequired = true }
                     if (evt && evt.shutdown === true) { shutdownRequired = true }
+
+                    if (evt && evt.error) {
+                        await hideDownloadOverlayAndWait();
+                        appendErrorNotice(evt.error);
+                        continue;
+                    }
+
+                    if (evt && evt.warning) {
+                        appendErrorNotice(evt.warning);
+                    }
 
                     // Custom stream events: execution/download
                     if (evt && typeof evt.type === 'string') {
@@ -2370,6 +2412,15 @@
                     //console.log('[AI single evt]', evt);
 
                     if (evt && evt.reboot === true) { rebootRequired = true }
+
+                    if (evt && evt.error) {
+                        await hideDownloadOverlayAndWait();
+                        appendErrorNotice(evt.error);
+                    }
+
+                    if (evt && evt.warning) {
+                        appendErrorNotice(evt.warning);
+                    }
 
                     // Tool execution notice (single JSON)
                     if (evt && Array.isArray(evt.tool_outputs)) {

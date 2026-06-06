@@ -6,6 +6,7 @@ local common    = require("oasis.common")
 local misc      = require("oasis.chat.misc")
 local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
+local chat_error = require("oasis.chat.error")
 
 local M = {}
 
@@ -160,22 +161,32 @@ function M.create_chat_file(service, chat)
 end
 
 function M.set_chat_title(service, chat_id)
+    service:set_chat_id(chat_id)
+
     -- Title generation calls the selected AI service through oasis.title and may
     -- exceed the default ubus timeout on slow local LLMs. Use common.ubus_call()
     -- so this long-running ubus request has an explicit timeout.
-    local request = common.ubus_call(
+    local request, err = common.ubus_call(
         common.db.ubus.object.oasis_title,
         common.db.ubus.method.auto_set,
         {id = chat_id},
         TITLE_AUTO_SET_TIMEOUT_MS
     )
 
-    if request.status == common.status.error then
+    if (not request) or err or request.status == common.status.error then
+        local title_err = chat_error.build(service, {
+            phase = "title_generation",
+            kind = "title_error",
+            message = "Chat title generation failed.",
+            provider_message = err or request and request.desc,
+            can_continue = true,
+        })
+        debug:log("oasis.log", "set_chat_title", chat_error.format(title_err))
         io.write("\n\27[1;33;41m Title Creation: Error \27[0m\n")
+        io.write(chat_error.format(title_err) .. "\n")
+        io.flush()
         return
     end
-
-    service:set_chat_id(chat_id)
 
     local announce =  "\n" .. "\27[1;37;44m" .. "Title:"
     announce = announce  .. "\27[1;33;44m" .. request.title

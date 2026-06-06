@@ -22,6 +22,7 @@ local methods = {
             local common    = require("oasis.common")
             local transfer  = require("oasis.chat.transfer")
             local debug     = require("oasis.chat.debug")
+            local chat_error = require("oasis.chat.error")
 
             debug:log("oasis.log", "auto_set", "\n--- [oasis.title][auto_set] ---")
             local r = {}
@@ -72,11 +73,24 @@ local methods = {
             local chat = load_chat_data(file_path)
             chat.model = uci:get_first(common.db.uci.cfg, common.db.uci.sect.service, "model")
 
-            local _, title = transfer.chat_with_ai(service, chat)
+            local _, title, _, err = transfer.chat_with_ai(service, chat)
+
+            if err then
+                debug:log("oasis.log", "auto_set", chat_error.format(err))
+                r.result = jsonc.stringify({
+                    status = common.status.error,
+                    desc = chat_error.format(err),
+                    error = err,
+                })
+                return r
+            end
 
             if (not title) or (#title == 0) then
                 debug:log("oasis.log", "auto_set", "No title ...")
-                r.result = jsonc.stringify({ status = common.status.error })
+                r.result = jsonc.stringify({
+                    status = common.status.error,
+                    desc = "No title was generated."
+                })
                 return r
             end
 

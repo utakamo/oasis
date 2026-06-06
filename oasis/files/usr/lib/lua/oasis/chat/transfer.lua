@@ -9,6 +9,7 @@ local datactrl  = require("oasis.chat.datactrl")
 local ous       = require("oasis.unified.chat.schema")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
+local chat_error = require("oasis.chat.error")
 
 local M = {}
 local TITLE_AUTO_SET_TIMEOUT_MS = 120000
@@ -42,19 +43,53 @@ end
 -- @param callback function Chunk handler for response body
 function M.post_to_server(service, user_msg_json, callback)
 
-    local easy = curl.easy()
-
-    service:prepare_post_to_server(easy, callback, curl.form(), user_msg_json)
-
-    -- Send Post Request
-    local success = easy:perform()
-
-    if not success then
-        -- TODO: WebUI Error Handling Support
-        print("\27[31m" .. "Error" .. "\27[0m")
+    local easy_ok, easy = pcall(curl.easy)
+    if (not easy_ok) or (not easy) then
+        return chat_error.build(service, {
+            phase = "http_request",
+            kind = "connection_error",
+            message = "Failed to initialize HTTP client.",
+            detail = tostring(easy),
+        })
     end
 
-    easy:close()
+    local function close_easy()
+        pcall(function()
+            easy:close()
+        end)
+    end
+
+    local prepare_ok, prepare_err = pcall(function()
+        service:prepare_post_to_server(easy, callback, curl.form(), user_msg_json)
+    end)
+
+    if not prepare_ok then
+        close_easy()
+        return chat_error.build(service, {
+            phase = "request_creation",
+            kind = "request_error",
+            message = "Failed to prepare AI service request.",
+            detail = tostring(prepare_err),
+        })
+    end
+
+    -- Send Post Request
+    local perform_ok, success, perform_err = pcall(function()
+        return easy:perform()
+    end)
+
+    if (not perform_ok) or (not success) then
+        close_easy()
+        return chat_error.build(service, {
+            phase = "http_request",
+            kind = "connection_error",
+            message = "Failed to communicate with the AI service.",
+            detail = tostring(perform_err or success),
+        })
+    end
+
+    close_easy()
+    return nil
 end
 
 --- Issue a GET request to url and stream response to callback.
@@ -146,7 +181,18 @@ function M.send_user_msg(service, chat)
     local recv_raw_msg = ""
     local tool_used = false
 
-    local usr_msg_json = service:convert_schema(chat)
+    local convert_ok, usr_msg_json = pcall(function()
+        return service:convert_schema(chat)
+    end)
+
+    if (not convert_ok) or (not usr_msg_json) or (#tostring(usr_msg_json) == 0) then
+        return nil, recv_raw_msg, false, chat_error.build(service, {
+            phase = "request_creation",
+            kind = "request_error",
+            message = "Failed to create AI service request body.",
+            detail = tostring(usr_msg_json),
+        })
+    end
 
     -- Debug Message Json Log
     local debug_msg_json = jsonc.stringify(chat, true)
@@ -158,15 +204,52 @@ function M.send_user_msg(service, chat)
     -- Post (Request) and Response
     local text_for_console -- text for console output
     local response_ai_json -- raw json data (Data primarily for use in the Web UI)
+    local recv_error = nil
 
-    M.post_to_server(service, usr_msg_json, function(chunk)
+    local post_error = M.post_to_server(service, usr_msg_json, function(chunk)
+        if recv_error then
+            return
+        end
 
-        text_for_console, response_ai_json, recv_raw_msg, tool_used = service:recv_ai_msg(chunk)
+        local recv_ok, text, response, raw, used, err = pcall(function()
+            return service:recv_ai_msg(chunk)
+        end)
 
-        output_response_msg(format, text_for_console, response_ai_json, tool_used)
+        if not recv_ok then
+            recv_error = chat_error.build(service, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "Failed to process the AI service response.",
+                detail = tostring(text),
+            })
+            return
+        end
+
+        if err then
+            recv_error = err
+            return
+        end
+
+        text_for_console = text
+        response_ai_json = response
+        recv_raw_msg = raw
+        tool_used = used
+
+        local output_ok, output_err = pcall(function()
+            output_response_msg(format, text_for_console, response_ai_json, tool_used)
+        end)
+
+        if not output_ok then
+            recv_error = chat_error.build(service, {
+                phase = "internal",
+                kind = "internal_error",
+                message = "Failed to output the AI service response.",
+                detail = tostring(output_err),
+            })
+        end
     end)
 
-    return response_ai_json, recv_raw_msg, tool_used
+    return response_ai_json, recv_raw_msg, tool_used, recv_error or post_error
 end
 
 --- High-level chat flow orchestration.
@@ -197,7 +280,12 @@ function M.chat_with_ai(service, chat)
     -- debug:dump("oasis.log", chat)
 
     -- send user message and receive ai message
-    local tool_info, ai_response_tbl, tool_used = M.send_user_msg(service, chat)
+    local tool_info, ai_response_tbl, tool_used, err = M.send_user_msg(service, chat)
+
+    if err then
+        debug:log("oasis.log", "chat_with_ai", chat_error.format(err))
+        return nil, nil, false, err
+    end
 
     debug:dump("oasis.log", ai_response_tbl)
 
@@ -208,6 +296,18 @@ function M.chat_with_ai(service, chat)
     end
 
     local new_chat_info = nil
+
+    if (not ai_response_tbl)
+        or (not ai_response_tbl.message)
+        or (#tostring(ai_response_tbl.message) == 0) then
+        local empty_err = chat_error.build(service, {
+            phase = "response_parse",
+            kind = "empty_response",
+            message = "AI service returned no assistant message.",
+        })
+        debug:log("oasis.log", "chat_with_ai", chat_error.format(empty_err))
+        return nil, nil, false, empty_err
+    end
 
     if format == common.ai.format.chat then
         -- debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
@@ -226,6 +326,12 @@ function M.chat_with_ai(service, chat)
             else
                 datactrl.record_chat_data(service, chat)
             end
+        else
+            return nil, nil, false, chat_error.build(service, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "Failed to store the assistant response in chat history.",
+            })
         end
     elseif (format == common.ai.format.output) or (format == common.ai.format.rpc_output) then
 
@@ -247,15 +353,32 @@ function M.chat_with_ai(service, chat)
                     -- Title generation calls the selected AI service through oasis.title and may
                     -- exceed the default ubus timeout on slow local LLMs. Use common.ubus_call()
                     -- so this long-running ubus request has an explicit timeout.
-                    local result = common.ubus_call(
+                    local result, title_err_msg = common.ubus_call(
                         common.db.ubus.object.oasis_title,
                         common.db.ubus.method.auto_set,
                         {id = chat_info.id},
                         TITLE_AUTO_SET_TIMEOUT_MS
-                    ) or {}
+                    )
+                    result = result or {}
+                    if title_err_msg or result.status == common.status.error then
+                        local title_err = chat_error.build(service, {
+                            phase = "title_generation",
+                            kind = "title_error",
+                            message = "Chat title generation failed.",
+                            provider_message = title_err_msg or result.desc,
+                        })
+                        chat_info.warning = title_err
+                        debug:log("oasis.log", "chat_with_ai", chat_error.format(title_err))
+                    end
                     chat_info.title = result.title or "--"
                     new_chat_info = jsonc.stringify(chat_info, false)
                     debug:log("oasis.log", "chat_with_ai", "new_chat_info = " .. new_chat_info)
+                else
+                    return nil, nil, false, chat_error.build(service, {
+                        phase = "response_parse",
+                        kind = "parse_error",
+                        message = "Failed to store the assistant response in chat history.",
+                    })
                 end
             end
         else
@@ -273,6 +396,11 @@ function M.chat_with_ai(service, chat)
                     ous.append_chat_data(service, save_chat)
                 else
                     debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned false, skipping append_chat_data")
+                    return nil, nil, false, chat_error.build(service, {
+                        phase = "response_parse",
+                        kind = "parse_error",
+                        message = "Failed to store the assistant response in chat history.",
+                    })
                 end
             else
                 debug:log("oasis.log", "chat_with_ai", "skip append for tool_calls response")
@@ -284,7 +412,7 @@ function M.chat_with_ai(service, chat)
         ai_response_tbl.message = ai_response_tbl.message:gsub("%s+", "")
     end
 
-    return new_chat_info, ai_response_tbl.message, false
+    return new_chat_info, ai_response_tbl.message, false, nil
 end
 
 return M

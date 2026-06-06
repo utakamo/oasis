@@ -11,6 +11,7 @@ local common            = require("oasis.common")
 local console           = require("oasis.console")
 local ous               = require("oasis.unified.chat.schema")
 local debug             = require("oasis.chat.debug")
+local chat_error        = require("oasis.chat.error")
 
 local M = {}
 
@@ -879,7 +880,11 @@ local function process_message(service, chat, message)
 
     datactrl.record_chat_data(service, chat)
 
-    local tool_info, _, tool_used = transfer.chat_with_ai(service, chat)
+    local tool_info, _, tool_used, err = transfer.chat_with_ai(service, chat)
+
+    if err then
+        return false, chat_error.format(err)
+    end
 
     debug:log("oasis.log", "process_message", "tool_used = " .. tostring(tool_used))
     debug:log("oasis.log", "process_message", "tool_info = " .. tostring(tool_info))
@@ -889,9 +894,16 @@ local function process_message(service, chat, message)
 
     if tool_used then
         if service:handle_tool_output(tool_info, chat) then
-            transfer.chat_with_ai(service, chat)
+            local _, _, _, post_err = transfer.chat_with_ai(service, chat)
+            if post_err then
+                return false, chat_error.format(post_err)
+            end
         else
-            return false, "failed to handle tool output"
+            return false, chat_error.format(chat_error.build(service, {
+                phase = "tool_execution",
+                kind = "tool_error",
+                message = "Failed to handle tool output.",
+            }))
         end
     end
 
@@ -1031,8 +1043,13 @@ function M.prompt(arg)
         return false
     end
 
-    local tool_info, _, tool_used = transfer.chat_with_ai(service, prompt)
+    local tool_info, _, tool_used, err = transfer.chat_with_ai(service, prompt)
     console.print()
+
+    if err then
+        console.print("\27[31m" .. chat_error.format(err) .. "\27[0m")
+        return
+    end
 
     debug:log("oasis.log", "prompt", "tool_used = " .. tostring(tool_used))
     debug:log("oasis.log", "prompt", "tool_info = " .. tostring(tool_info))
@@ -1042,8 +1059,17 @@ function M.prompt(arg)
 
     if tool_used then
         if service:handle_tool_output(tool_info, prompt) then
-            transfer.chat_with_ai(service, prompt)
+            local _, _, _, post_err = transfer.chat_with_ai(service, prompt)
+            if post_err then
+                console.print("\27[31m" .. chat_error.format(post_err) .. "\27[0m")
+            end
             print()
+        else
+            console.print("\27[31m" .. chat_error.format(chat_error.build(service, {
+                phase = "tool_execution",
+                kind = "tool_error",
+                message = "Failed to handle tool output.",
+            })) .. "\27[0m")
         end
     end
 
@@ -1178,24 +1204,35 @@ end
 local function process_output_message(service, chat_ctx, message)
 
     if not ous.setup_msg(service, chat_ctx, { role = common.role.user, message = message }) then
-        return nil, nil
+        return nil, nil, chat_error.build(service, {
+            phase = "request_creation",
+            kind = "request_error",
+            message = "Failed to prepare user message.",
+        })
     end
 
     -- chat_with_ai returns: new_chat_info (or tool JSON when tool_used), plain_text_message, tool_used
-    local new_chat_info, plain_text_message, tool_used = transfer.chat_with_ai(service, chat_ctx)
+    local new_chat_info, plain_text_message, tool_used, err = transfer.chat_with_ai(service, chat_ctx)
+    if err then
+        return nil, nil, err
+    end
 
     if tool_used then
         -- Provide tool outputs back to the model, then get assistant's text reply
         if service:handle_tool_output(new_chat_info, chat_ctx) then
-            local post_new_chat_info, post_message = transfer.chat_with_ai(service, chat_ctx)
-            return post_new_chat_info, post_message
+            local post_new_chat_info, post_message, _, post_err = transfer.chat_with_ai(service, chat_ctx)
+            return post_new_chat_info, post_message, post_err
         else
-            return nil, nil
+            return nil, nil, chat_error.build(service, {
+                phase = "tool_execution",
+                kind = "tool_error",
+                message = "Failed to handle tool output.",
+            })
         end
     end
 
     -- No tools used: return values as-is
-    return new_chat_info, plain_text_message
+    return new_chat_info, plain_text_message, nil
 end
 
 -- Main output function
@@ -1207,7 +1244,12 @@ function M.output(arg)
 
     local service = initialize_output_service(arg)
     if not service then
-        return nil, nil
+        return nil, nil, chat_error.build(nil, {
+            phase = "request_creation",
+            kind = "request_error",
+            message = "AI service configuration was not found.",
+            can_continue = false,
+        })
     end
 
     clear_flg()
@@ -1218,7 +1260,11 @@ function M.output(arg)
     debug:log("oasis.log", "output", "Load chat data ...")
     -- debug:dump("oasis.log", chat_ctx)
 
-    local new_chat_info, plain_text_ai_message = process_output_message(service, chat_ctx, arg.message)
+    local new_chat_info, plain_text_ai_message, err = process_output_message(service, chat_ctx, arg.message)
+    if err then
+        debug:log("oasis.log", "output", chat_error.format(err))
+        return nil, nil, err
+    end
     -- Log returned values for diagnostics
     debug:log("oasis.log", "output", "returned new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
         .. ", message_len=" .. tostring((plain_text_ai_message and #plain_text_ai_message) or 0))
@@ -1231,7 +1277,7 @@ function M.output(arg)
         debug:log("oasis.log", "output", "message=" .. tostring(plain_text_ai_message))
     end
 
-    return new_chat_info, plain_text_ai_message
+    return new_chat_info, plain_text_ai_message, nil
 end
 
 -- RPC output mode for ubus: returns (status_tbl, new_chat_info, message, reboot).
@@ -1256,7 +1302,12 @@ function M.rpc_output(arg)
     clear_flg()
 
     if not service then
-        return { status = common.status.error, desc = "AI Service Not Found." }, nil, nil
+        return chat_error.to_status(chat_error.build(nil, {
+            phase = "request_creation",
+            kind = "request_error",
+            message = "AI service configuration was not found.",
+            can_continue = false,
+        })), nil, nil
     end
 
     service:initialize(arg, common.ai.format.rpc_output)
@@ -1279,7 +1330,10 @@ function M.rpc_output(arg)
         debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] record_chat_data done ...")
 
         -- First call
-        local first, plain_text, tool_used = transfer.chat_with_ai(service, chat_ctx)
+        local first, plain_text, tool_used, err = transfer.chat_with_ai(service, chat_ctx)
+        if err then
+            return chat_error.to_status(err), nil, nil
+        end
 
         if tool_used then
             -- Keep tool JSON for external device
@@ -1287,10 +1341,17 @@ function M.rpc_output(arg)
             -- Provide tool outputs back to model
             if service:handle_tool_output(tool_info, chat_ctx) then
                 -- Second call to get assistant text (and possibly new chat info)
-                local post_new_chat_info, post_message = transfer.chat_with_ai(service, chat_ctx)
+                local post_new_chat_info, post_message, _, post_err = transfer.chat_with_ai(service, chat_ctx)
+                if post_err then
+                    return chat_error.to_status(post_err), nil, nil
+                end
                 new_chat_info, message = post_new_chat_info, post_message
             else
-                return { status = common.status.error, desc = "failed to handle tool output" }, nil, nil
+                return chat_error.to_status(chat_error.build(service, {
+                    phase = "tool_execution",
+                    kind = "tool_error",
+                    message = "Failed to handle tool output.",
+                })), nil, nil
             end
         else
             -- No tools used
@@ -1298,6 +1359,12 @@ function M.rpc_output(arg)
         end
 
         debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] chat_with_ai done ...")
+    else
+        return chat_error.to_status(chat_error.build(service, {
+            phase = "request_creation",
+            kind = "request_error",
+            message = "Failed to prepare user message.",
+        })), nil, nil
     end
 
     if new_chat_info then

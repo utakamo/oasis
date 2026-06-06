@@ -5,6 +5,7 @@ local uci   = require("luci.model.uci").cursor()
 local common= require("oasis.common")
 local oasis = require("oasis.chat.main")
 local debug = require("oasis.chat.debug")
+local chat_error = require("oasis.chat.error")
 
 -- HTTP request validation
 local function validate_request()
@@ -41,12 +42,32 @@ end
 local function process_ai_response(json_tbl)
     debug:log("oasis.log", "process_ai_response", "call oasis.output")
 
-    -- Call directly without pcall; rely on return values to detect failure
-    local new_chat_info, plain_text_ai_message = oasis.output(json_tbl)
+    local ok, new_chat_info, plain_text_ai_message, err = pcall(function()
+        return oasis.output(json_tbl)
+    end)
+
+    if not ok then
+        return nil, nil, chat_error.build(nil, {
+            phase = "internal",
+            kind = "internal_error",
+            message = "Chat processing failed.",
+            detail = tostring(new_chat_info),
+            can_continue = false,
+        })
+    end
+
+    if err then
+        return nil, nil, err
+    end
 
     -- If both are nil, treat as internal error (handled by caller)
     if (not new_chat_info) and (not plain_text_ai_message) then
-        return nil, nil, "Internal error: oasis.output failed"
+        return nil, nil, chat_error.build(nil, {
+            phase = "internal",
+            kind = "internal_error",
+            message = "Chat processing failed.",
+            detail = "oasis.output returned no response",
+        })
     end
 
     debug:log("oasis.log", "process_ai_response", "oasis.output returned: new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
@@ -116,23 +137,31 @@ local function main()
     -- Validate request
     local content_length, error_msg = validate_request()
     if not content_length then
-        io.write(error_msg)
+        io.write(chat_error.to_json(chat_error.build(nil, {
+            phase = "request_creation",
+            kind = "request_error",
+            message = error_msg,
+        })))
         return
     end
 
     -- Parse POST data
     local json_tbl, error_msg = parse_post_data(content_length)
     if not json_tbl then
-        io.write(error_msg)
-    debug:log("oasis.log", "main", "json parse error")
+        io.write(chat_error.to_json(chat_error.build(nil, {
+            phase = "request_creation",
+            kind = "parse_error",
+            message = "Failed to parse WebUI chat request.",
+            detail = error_msg,
+        })))
+        debug:log("oasis.log", "main", "json parse error")
         return
     end
 
     -- Process AI response
-    local new_chat_info, plain_text_ai_message, error_msg = process_ai_response(json_tbl)
+    local new_chat_info, plain_text_ai_message, err = process_ai_response(json_tbl)
     if not new_chat_info and not plain_text_ai_message then
-        local fallback = jsonc.stringify({ message = { role = "assistant", content = error_msg } }, false)
-        io.write(fallback)
+        io.write(chat_error.to_json(err))
         io.flush()
         return
     end
