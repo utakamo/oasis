@@ -67,6 +67,7 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/misc.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/markdown.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/debug.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/error.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/unified/chat/schema.lua $(1)$(LUA_LIBRARY_DIR)/oasis/unified/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/security/guard.lua $(1)$(LUA_LIBRARY_DIR)/oasis/security
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/ollama.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling

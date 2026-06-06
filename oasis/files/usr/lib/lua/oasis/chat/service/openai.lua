@@ -9,6 +9,7 @@ local misc      = require("oasis.chat.misc")
 local ous       = require("oasis.unified.chat.schema")
 local debug     = require("oasis.chat.debug")
 local calling   = require("oasis.chat.function.calling.openai")
+local chat_error = require("oasis.chat.error")
 
 local openai = {}
 openai.new = function()
@@ -51,12 +52,10 @@ openai.new = function()
         obj._handle_api_error = function(self, chunk_json)
             if chunk_json and chunk_json.error then
                 local error_message = chunk_json.error.message or "Unknown error"
+                local detail = chunk_json.error.type or chunk_json.error.code
                 debug:log("oasis.log", "recv_ai_msg", "API Error: " .. error_message)
-                local error_response = { message = { role = "assistant", content = error_message } }
-                local plain_text_for_console = error_message
-                local response_ai_json = jsonc.stringify(error_response, false)
                 self.chunk_all = ""
-                return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
+                return chat_error.api_error(self, error_message, { detail = detail })
             end
             return nil
         end
@@ -65,9 +64,14 @@ openai.new = function()
             if not chunk_json.choices or type(chunk_json.choices) ~= "table" or #chunk_json.choices == 0 then
                 debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing or empty choices field")
                 self.chunk_all = ""
-                return false
+                return false, chat_error.build(self, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "AI response format was not recognized.",
+                    provider_message = "missing or empty choices field",
+                })
             end
-            return true
+            return true, nil
         end
 
         obj._get_first_message = function(self, chunk_json)
@@ -111,15 +115,18 @@ openai.new = function()
 
             -- 3) API error handling
             do
-                local err_plain, err_json, err_raw, err_tool = self:_handle_api_error(chunk_json)
-                if err_plain ~= nil then
-                    return err_plain, err_json, err_raw, err_tool
+                local err = self:_handle_api_error(chunk_json)
+                if err then
+                    return nil, nil, self.recv_raw_msg, false, err
                 end
             end
 
             -- 4) Verify existence of choices (clear buffer and exit if missing)
-            if not self:_choices_exist(chunk_json) then
-                return "", "", self.recv_raw_msg, false
+            do
+                local ok, err = self:_choices_exist(chunk_json)
+                if not ok then
+                    return nil, nil, self.recv_raw_msg, false, err
+                end
             end
 
             -- 5) Get the first message
@@ -139,7 +146,12 @@ openai.new = function()
             -- 8) Exit if message is invalid (same return semantics as original)
             if not message then
                 debug:log("oasis.log", "recv_ai_msg", "Invalid response format: missing message in choices[1]")
-                return "", "", self.recv_raw_msg, false
+                return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "AI response format was not recognized.",
+                    provider_message = "missing message in choices[1]",
+                })
             end
 
             -- 9) Build normal text response

@@ -9,6 +9,7 @@ local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 local calling   = require("oasis.chat.function.calling.ollama")
 local ous       = require("oasis.unified.chat.schema")
+local chat_error = require("oasis.chat.error")
 
 local ollama ={}
 ollama.new = function()
@@ -47,11 +48,21 @@ ollama.new = function()
 		end
 
         -- [ADD] helper: detect presence of tool_calls (returns message if present)
-		obj._has_tool_calls = function(self, chunk_json)
+        obj._has_tool_calls = function(self, chunk_json)
 			if chunk_json.message and chunk_json.message.tool_calls
 				and type(chunk_json.message.tool_calls) == "table"
 				and #chunk_json.message.tool_calls > 0 then
 				return chunk_json.message
+			end
+			return nil
+		end
+
+        -- [ADD] helper: convert provider error payloads to Oasis chat errors
+		obj._handle_api_error = function(self, chunk_json)
+			if chunk_json and chunk_json.error then
+				local provider_message = tostring(chunk_json.error or "Unknown error")
+				debug:log("oasis.log", "recv_ai_msg", "API Error: " .. provider_message)
+				return chat_error.api_error(self, provider_message)
 			end
 			return nil
 		end
@@ -147,6 +158,12 @@ ollama.new = function()
             -- Raw chunk log after successful JSON parsing (unchanged)
 			debug:log("oasis.log", "recv_ai_msg", chunk)
 
+            -- API error handling
+			local api_error = self:_handle_api_error(chunk_json)
+			if api_error then
+				return nil, nil, self.recv_raw_msg, false, api_error
+			end
+
             -- Tool calls (same conditions and order as before)
 			do
 				local msg_for_tools = self:_has_tool_calls(chunk_json)
@@ -160,7 +177,15 @@ ollama.new = function()
 
             -- If message structure invalid, return as before
 			if not self:_is_valid_message(chunk_json) then
-				return "", "", self.recv_raw_msg, false
+				if chunk_json.done == true then
+					return "", "", self.recv_raw_msg, false
+				end
+				return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
+					phase = "response_parse",
+					kind = "parse_error",
+					message = "AI response format was not recognized.",
+					provider_message = tostring(chunk),
+				})
 			end
 
             -- Normal response (unchanged)

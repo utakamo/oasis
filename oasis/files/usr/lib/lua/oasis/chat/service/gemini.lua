@@ -9,6 +9,7 @@ local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 local ous      = require("oasis.unified.chat.schema")
 local calling   = require("oasis.chat.function.calling.gemini")
+local chat_error = require("oasis.chat.error")
 
 local gemini ={}
 gemini.new = function()
@@ -192,17 +193,9 @@ gemini.new = function()
 
             if chunk_json.error and (chunk_json.error.message) then
                 local msg = tostring(chunk_json.error.message)
+                local detail = chunk_json.error.status or chunk_json.error.code
                 debug:log("oasis.log", "gemini.recv_ai_msg", "api_error=" .. msg)
-                self.recv_raw_msg.role = common.role.assistant
-                self.recv_raw_msg.message = msg
-                local plain_text_for_console = misc.markdown(self.mark, msg)
-                local response_ai_json = jsonc.stringify({
-                    message = {
-                        role = common.role.assistant,
-                        content = msg
-                    }
-                }, false)
-                return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
+                return nil, nil, self.recv_raw_msg, false, chat_error.api_error(self, msg, { detail = detail })
             end
 
             -- Detect functionCall via calling module ---> execute local tool and return tool_used
