@@ -23,13 +23,16 @@ function M.get_ai_service_cfg(arg, opts)
     local cfg = {}
     local uci_ref = common.db.uci
     local ai_ref = common.ai
+    local service_section = uci:get_first(uci_ref.cfg, uci_ref.sect.service)
 
     cfg.identifier = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "identifier", "") or ""
     cfg.api_key    = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "api_key", "") or ""
     cfg.service    = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "name", "") or ""
     cfg.model      = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "model", "") or ""
     cfg.ipaddr     = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "ipaddr", "") or ""
-    cfg.function_calling = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "function_calling", "0") or "0"
+    cfg.function_calling = service_section
+        and uci:get(uci_ref.cfg, service_section, "function_calling")
+        or "0"
 
     if opts and opts.with_storage then
         cfg.path   = uci:get(uci_ref.cfg, uci_ref.sect.storage, "path")
