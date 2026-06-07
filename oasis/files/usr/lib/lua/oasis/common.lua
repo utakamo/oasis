@@ -476,14 +476,6 @@ function M.check_function_calling_enabled(service)
                 value = cfg.function_calling
             end
         end
-
-        if value == nil then
-            value = service.function_calling
-        end
-    end
-
-    if value == nil then
-        value = uci:get_first(db.uci.cfg, db.uci.sect.service, "function_calling", "0")
     end
 
     return tostring(value or "0") == "1"
