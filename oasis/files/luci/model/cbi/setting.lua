@@ -124,6 +124,12 @@ function_calling.disabled = "0"
 function_calling.default = "0"
 function_calling.description = "Enable only when the selected AI service and model support tool use."
 
+show_thinking = service:option(Flag, "show_thinking", "Show Thinking")
+show_thinking.enabled = "1"
+show_thinking.disabled = "0"
+show_thinking.default = "0"
+show_thinking.description = "Display thinking/reasoning text in the CLI and WebUI. Thinking text is not stored in chat history or returned by the external ubus chat API."
+
 -- max_tokens (ListValue), only for Anthropic and Custom Anthropic
 max_tokens = service:option(ListValue, "max_tokens", "Max Tokens")
 for i = 1000, 30000, 1000 do

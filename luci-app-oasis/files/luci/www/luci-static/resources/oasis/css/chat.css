@@ -613,6 +613,26 @@ textarea:focus-visible {
     font-size: 12px;
 }
 
+.thinking-panel {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border: 1px solid #d8dee8;
+    background: #f6f7f9;
+    color: #667085;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 12rem;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+.thinking-label {
+    margin-bottom: 4px;
+    color: #475467;
+    font-size: 11px;
+    font-weight: 600;
+}
+
 .typing-dots span:nth-child(1) { animation-delay: 0s; }
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }

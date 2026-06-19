@@ -129,9 +129,10 @@ ollama.new = function()
 		end
 
         -- [ADD] helper: update buffer and build display text / AI JSON
-		obj._build_text_response = function(self, chunk_json)
+        obj._build_text_response = function(self, chunk_json)
 			self.recv_raw_msg.role = chunk_json.message.role
 			self.recv_raw_msg.message = self.recv_raw_msg.message .. tostring(chunk_json.message.content)
+			chunk_json.message.thinking = nil
 
 			local plain_text_for_console = misc.markdown(self.mark, tostring(chunk_json.message.content))
 			local response_ai_json = jsonc.stringify(chunk_json, false)
@@ -141,6 +142,29 @@ ollama.new = function()
 			end
 
 			return plain_text_for_console, response_ai_json, self.recv_raw_msg, false
+		end
+
+		obj._is_thinking_message = function(self, chunk_json)
+			local message = chunk_json and chunk_json.message
+			if not message then
+				return false
+			end
+
+			local thinking = message.thinking
+			local content = message.content
+			return thinking ~= nil
+				and #tostring(thinking) > 0
+				and ((content == nil) or (#tostring(content) == 0))
+		end
+
+		obj._build_thinking_response = function(self, chunk_json)
+			local thinking = tostring(chunk_json.message.thinking or "")
+			local response_ai_json = jsonc.stringify({
+				type = "thinking",
+				content = thinking
+			}, false)
+
+			return thinking, response_ai_json, self.recv_raw_msg, false
 		end
 
         -- [REPLACE] recv_ai_msg (I/O and log order preserved)
@@ -173,6 +197,10 @@ ollama.new = function()
 						return p, j, s, u
 					end
 				end
+			end
+
+			if self:_is_thinking_message(chunk_json) then
+				return self:_build_thinking_response(chunk_json)
 			end
 
             -- If message structure invalid, return as before

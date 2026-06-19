@@ -33,6 +33,9 @@ function M.get_ai_service_cfg(arg, opts)
     cfg.function_calling = service_section
         and uci:get(uci_ref.cfg, service_section, "function_calling")
         or "0"
+    cfg.show_thinking = service_section
+        and uci:get(uci_ref.cfg, service_section, "show_thinking")
+        or "0"
 
     if opts and opts.with_storage then
         cfg.path   = uci:get(uci_ref.cfg, uci_ref.sect.storage, "path")

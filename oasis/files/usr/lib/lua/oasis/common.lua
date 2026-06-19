@@ -121,6 +121,7 @@ console.color = {
     ERR   = "\27[31m",
     LABEL = "\27[1;37;44m",
     VALUE = "\27[1;33;44m",
+    THINKING = "\27[2;90m",
 }
 
 local rollback  = {}
@@ -474,6 +475,24 @@ function M.check_function_calling_enabled(service)
             end)
             if ok and type(cfg) == "table" then
                 value = cfg.function_calling
+            end
+        end
+    end
+
+    return tostring(value or "0") == "1"
+end
+
+function M.check_show_thinking_enabled(service)
+
+    local value = nil
+
+    if type(service) == "table" then
+        if type(service.get_config) == "function" then
+            local ok, cfg = pcall(function()
+                return service:get_config()
+            end)
+            if ok and type(cfg) == "table" then
+                value = cfg.show_thinking
             end
         end
     end

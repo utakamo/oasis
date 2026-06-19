@@ -103,18 +103,68 @@ function M.get_to_server(url, callback)
     easy:close()
 end
 
+local is_thinking_event = function(response_ai_json)
+    if (not response_ai_json) or (#tostring(response_ai_json) == 0) then
+        return false, nil
+    end
+
+    local tbl = jsonc.parse(response_ai_json)
+    if type(tbl) == "table" and tbl.type == "thinking" then
+        return true, tbl
+    end
+
+    return false, nil
+end
+
+local close_console_thinking = function(format, output_state)
+    if ((format == common.ai.format.chat) or (format == common.ai.format.prompt))
+        and output_state
+        and output_state.thinking_started
+        and (not output_state.thinking_closed) then
+        console.write(common.console.color.RESET .. "\n")
+        console.flush()
+        output_state.thinking_closed = true
+    end
+end
+
 --- Output response for console/webui based on format.
+-- @param service table
 -- @param format string One of common.ai.format.*
 -- @param text_for_console string
 -- @param response_ai_json string
 -- @param tool_used boolean
-local output_response_msg = function(format, text_for_console, response_ai_json, tool_used)
+-- @param output_state table
+local output_response_msg = function(service, format, text_for_console, response_ai_json, tool_used, output_state)
 
     debug:log("oasis.log", "post_to_server", text_for_console)
     debug:log("oasis.log", "post_to_server", response_ai_json)
 
+    local thinking_event, thinking_tbl = is_thinking_event(response_ai_json)
+    if thinking_event then
+        if not common.check_show_thinking_enabled(service) then
+            return
+        end
+
+        if (format == common.ai.format.chat) or (format == common.ai.format.prompt) then
+            local THINKING = common.console.color.THINKING
+            local RESET = common.console.color.RESET
+            if output_state and ((not output_state.thinking_started) or output_state.thinking_closed) then
+                console.write("\n" .. THINKING .. "[thinking] ")
+                output_state.thinking_started = true
+                output_state.thinking_closed = false
+            end
+            console.write(THINKING .. tostring(thinking_tbl.content or text_for_console or "") .. RESET)
+            console.flush()
+        elseif format == common.ai.format.output then
+            console.write(response_ai_json)
+            console.flush()
+        end
+        return
+    end
+
     -- Response: output console
     if (format == common.ai.format.chat) or (format == common.ai.format.prompt) then
+        close_console_thinking(format, output_state)
 
         if tool_used then
             debug:log("oasis.log", "output_response_msg", response_ai_json)
@@ -205,6 +255,7 @@ function M.send_user_msg(service, chat)
     local text_for_console -- text for console output
     local response_ai_json -- raw json data (Data primarily for use in the Web UI)
     local recv_error = nil
+    local output_state = {}
 
     local post_error = M.post_to_server(service, usr_msg_json, function(chunk)
         if recv_error then
@@ -230,13 +281,30 @@ function M.send_user_msg(service, chat)
             return
         end
 
+        local thinking_event = is_thinking_event(response)
+        if thinking_event then
+            local output_ok, output_err = pcall(function()
+                output_response_msg(service, format, text, response, used, output_state)
+            end)
+
+            if not output_ok then
+                recv_error = chat_error.build(service, {
+                    phase = "internal",
+                    kind = "internal_error",
+                    message = "Failed to output the AI service response.",
+                    detail = tostring(output_err),
+                })
+            end
+            return
+        end
+
         text_for_console = text
         response_ai_json = response
         recv_raw_msg = raw
         tool_used = used
 
         local output_ok, output_err = pcall(function()
-            output_response_msg(format, text_for_console, response_ai_json, tool_used)
+            output_response_msg(service, format, text_for_console, response_ai_json, tool_used, output_state)
         end)
 
         if not output_ok then
@@ -248,6 +316,8 @@ function M.send_user_msg(service, chat)
             })
         end
     end)
+
+    close_console_thinking(format, output_state)
 
     return response_ai_json, recv_raw_msg, tool_used, recv_error or post_error
 end
