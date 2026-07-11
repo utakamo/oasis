@@ -13,6 +13,10 @@ local chat_error = require("oasis.chat.error")
 
 local M = {}
 local TITLE_AUTO_SET_TIMEOUT_MS = 120000
+local TITLE_THINKING_ENVELOPES = {
+    { open = "<thinking>", close = "</thinking>" },
+    { open = "<think>", close = "</think>" },
+}
 
 -- Create a shallow copy of chat and drop transient messages before persisting
 -- - Exclude role=="tool"
@@ -35,6 +39,60 @@ local function clone_chat_without_tool_messages(chat)
         end
     end
     return cloned
+end
+
+-- Extract the final answer from a title response that embeds thinking markup
+-- in message.content. Run this only after all response chunks are assembled so
+-- tag boundaries split across transport chunks cannot leak thinking into titles.
+local function extract_title_response(message)
+    local text = tostring(message or "")
+    local removed_thinking = false
+
+    while true do
+        local first_non_space = text:find("%S")
+        if not first_non_space then
+            if removed_thinking then
+                return nil, "The title response contained thinking but no final answer."
+            end
+            return text, nil
+        end
+
+        local lower = text:lower()
+        local envelope = nil
+
+        for _, candidate in ipairs(TITLE_THINKING_ENVELOPES) do
+            if lower:sub(first_non_space, first_non_space + #candidate.open - 1) == candidate.open then
+                envelope = candidate
+                break
+            end
+        end
+
+        if not envelope then
+            if lower:sub(first_non_space, first_non_space + #"</thinking>" - 1) == "</thinking>"
+                or lower:sub(first_non_space, first_non_space + #"</think>" - 1) == "</think>" then
+                return nil, "The title response contained a closing thinking tag without an opening tag."
+            end
+            break
+        end
+
+        local _, close_end = lower:find(
+            envelope.close,
+            first_non_space + #envelope.open,
+            true
+        )
+        if not close_end then
+            return nil, "The title response contained an unterminated thinking block."
+        end
+
+        text = text:sub(close_end + 1)
+        removed_thinking = true
+    end
+
+    if removed_thinking and not text:find("%S") then
+        return nil, "The title response contained thinking but no final answer."
+    end
+
+    return text, nil
 end
 
 --- Post a JSON payload to the AI service and stream the response to callback.
@@ -116,15 +174,46 @@ local is_thinking_event = function(response_ai_json)
     return false, nil
 end
 
+local get_message_thinking = function(response_ai_json)
+    if (not response_ai_json) or (#tostring(response_ai_json) == 0) then
+        return nil
+    end
+
+    local tbl = jsonc.parse(response_ai_json)
+    if type(tbl) == "table"
+        and type(tbl.message) == "table"
+        and type(tbl.message.thinking) == "string"
+        and #tbl.message.thinking > 0 then
+        return tbl.message.thinking
+    end
+
+    return nil
+end
+
 local close_console_thinking = function(format, output_state)
     if ((format == common.ai.format.chat) or (format == common.ai.format.prompt))
         and output_state
         and output_state.thinking_started
         and (not output_state.thinking_closed) then
-        console.write(common.console.color.RESET .. "\n")
+        local separator = (format == common.ai.format.chat) and "\n\n" or "\n"
+        console.write(common.console.color.RESET .. separator)
         console.flush()
         output_state.thinking_closed = true
     end
+end
+
+local output_console_thinking = function(text, output_state)
+    local THINKING = common.console.color.THINKING
+    local RESET = common.console.color.RESET
+
+    if output_state and ((not output_state.thinking_started) or output_state.thinking_closed) then
+        console.write("\n" .. THINKING .. "[thinking] ")
+        output_state.thinking_started = true
+        output_state.thinking_closed = false
+    end
+
+    console.write(THINKING .. tostring(text or "") .. RESET)
+    console.flush()
 end
 
 --- Output response for console/webui based on format.
@@ -136,8 +225,16 @@ end
 -- @param output_state table
 local output_response_msg = function(service, format, text_for_console, response_ai_json, tool_used, output_state)
 
-    debug:log("oasis.log", "post_to_server", text_for_console)
-    debug:log("oasis.log", "post_to_server", response_ai_json)
+    debug:log(
+        "oasis.log",
+        "post_to_server",
+        string.format(
+            "text_len=%d response_len=%d tool_used=%s",
+            #(tostring(text_for_console or "")),
+            #(tostring(response_ai_json or "")),
+            tostring(tool_used == true)
+        )
+    )
 
     local thinking_event, thinking_tbl = is_thinking_event(response_ai_json)
     if thinking_event then
@@ -146,15 +243,7 @@ local output_response_msg = function(service, format, text_for_console, response
         end
 
         if (format == common.ai.format.chat) or (format == common.ai.format.prompt) then
-            local THINKING = common.console.color.THINKING
-            local RESET = common.console.color.RESET
-            if output_state and ((not output_state.thinking_started) or output_state.thinking_closed) then
-                console.write("\n" .. THINKING .. "[thinking] ")
-                output_state.thinking_started = true
-                output_state.thinking_closed = false
-            end
-            console.write(THINKING .. tostring(thinking_tbl.content or text_for_console or "") .. RESET)
-            console.flush()
+            output_console_thinking(thinking_tbl.content or text_for_console or "", output_state)
         elseif format == common.ai.format.output then
             console.write(response_ai_json)
             console.flush()
@@ -164,6 +253,15 @@ local output_response_msg = function(service, format, text_for_console, response
 
     -- Response: output console
     if (format == common.ai.format.chat) or (format == common.ai.format.prompt) then
+        local message_thinking = nil
+        if common.check_show_thinking_enabled(service) then
+            message_thinking = get_message_thinking(response_ai_json)
+        end
+
+        if message_thinking then
+            output_console_thinking(message_thinking, output_state)
+        end
+
         close_console_thinking(format, output_state)
 
         if tool_used then
@@ -257,22 +355,8 @@ function M.send_user_msg(service, chat)
     local recv_error = nil
     local output_state = {}
 
-    local post_error = M.post_to_server(service, usr_msg_json, function(chunk)
+    local process_decoded_response = function(text, response, raw, used, err)
         if recv_error then
-            return
-        end
-
-        local recv_ok, text, response, raw, used, err = pcall(function()
-            return service:recv_ai_msg(chunk)
-        end)
-
-        if not recv_ok then
-            recv_error = chat_error.build(service, {
-                phase = "response_parse",
-                kind = "parse_error",
-                message = "Failed to process the AI service response.",
-                detail = tostring(text),
-            })
             return
         end
 
@@ -298,13 +382,22 @@ function M.send_user_msg(service, chat)
             return
         end
 
-        text_for_console = text
-        response_ai_json = response
-        recv_raw_msg = raw
-        tool_used = used
+        if raw ~= nil then
+            recv_raw_msg = raw
+        end
+
+        -- Tool results must remain sticky if a later empty/done record arrives.
+        if used then
+            text_for_console = text
+            response_ai_json = response
+            tool_used = true
+        elseif not tool_used then
+            text_for_console = text
+            response_ai_json = response
+        end
 
         local output_ok, output_err = pcall(function()
-            output_response_msg(service, format, text_for_console, response_ai_json, tool_used, output_state)
+            output_response_msg(service, format, text, response, used, output_state)
         end)
 
         if not output_ok then
@@ -315,11 +408,138 @@ function M.send_user_msg(service, chat)
                 detail = tostring(output_err),
             })
         end
+    end
+
+    local process_complete_record = function(record)
+        if recv_error then
+            return
+        end
+
+        local recv_ok, text, response, raw, used, err = pcall(function()
+            return service:recv_ai_msg(record)
+        end)
+
+        if not recv_ok then
+            recv_error = chat_error.build(service, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "Failed to process the AI service response.",
+                detail = tostring(text),
+            })
+            return
+        end
+
+        process_decoded_response(text, response, raw, used, err)
+    end
+
+    local process_transport_chunk = function(chunk, eof)
+        if recv_error then
+            return
+        end
+
+        if type(service.frame_ai_response) ~= "function" then
+            if not eof then
+                process_complete_record(chunk)
+            end
+            return
+        end
+
+        local frame_ok, records, frame_err = pcall(function()
+            return service:frame_ai_response(chunk, eof)
+        end)
+
+        if not frame_ok then
+            recv_error = chat_error.build(service, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "Failed to frame the AI service response.",
+                detail = tostring(records),
+            })
+            return
+        end
+
+        if frame_err then
+            if type(frame_err) == "table" then
+                recv_error = frame_err
+            else
+                recv_error = chat_error.build(service, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "AI response framing failed.",
+                    detail = tostring(frame_err),
+                })
+            end
+            return
+        end
+
+        if records ~= nil and type(records) ~= "table" then
+            recv_error = chat_error.build(service, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "AI response framer returned an invalid record list.",
+                detail = "records_type=" .. type(records),
+            })
+            return
+        end
+
+        for _, record in ipairs(records or {}) do
+            process_complete_record(record)
+            if recv_error then
+                break
+            end
+        end
+    end
+
+    local post_error = M.post_to_server(service, usr_msg_json, function(chunk)
+        process_transport_chunk(chunk, false)
     end)
+
+    if not post_error and not recv_error and type(service.frame_ai_response) == "function" then
+        process_transport_chunk("", true)
+    end
+
+    if not post_error and not recv_error and type(service.validate_ai_response_complete) == "function" then
+        local validate_ok, validation_err = pcall(function()
+            return service:validate_ai_response_complete()
+        end)
+
+        if not validate_ok then
+            recv_error = chat_error.build(service, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "Failed to validate AI response completion.",
+                detail = tostring(validation_err),
+            })
+        elseif validation_err then
+            if type(validation_err) == "table" then
+                recv_error = validation_err
+            else
+                recv_error = chat_error.build(service, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "AI response completion validation failed.",
+                    detail = tostring(validation_err),
+                })
+            end
+        end
+    end
+
+    local final_error = recv_error or post_error
+    -- Once a tool result has been produced, a retry could repeat an external side effect.
+    if final_error and tool_used and type(final_error) == "table" then
+        final_error.can_continue = false
+        final_error.display = chat_error.format(final_error)
+    end
+
+    if final_error and type(service.reset_ai_response_framer) == "function" then
+        pcall(function()
+            service:reset_ai_response_framer()
+        end)
+    end
 
     close_console_thinking(format, output_state)
 
-    return response_ai_json, recv_raw_msg, tool_used, recv_error or post_error
+    return response_ai_json, recv_raw_msg, tool_used, final_error
 end
 
 --- High-level chat flow orchestration.
@@ -395,6 +615,10 @@ function M.chat_with_ai(service, chat)
                 datactrl.set_chat_title(service, chat_info.id)
             else
                 datactrl.record_chat_data(service, chat)
+                if tostring(ai_response_tbl.message):sub(-1) ~= "\n" then
+                    console.write("\n")
+                    console.flush()
+                end
             end
         else
             return nil, nil, false, chat_error.build(service, {
@@ -479,7 +703,16 @@ function M.chat_with_ai(service, chat)
     elseif format == common.ai.format.title then
     debug:log("oasis.log", "chat_with_ai", "title format")
     debug:log("oasis.log", "chat_with_ai", ai_response_tbl.message)
-        ai_response_tbl.message = ai_response_tbl.message:gsub("%s+", "")
+        local title_message, title_parse_error = extract_title_response(ai_response_tbl.message)
+        if not title_message then
+            return nil, nil, false, chat_error.build(service, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "AI title response did not contain a usable final answer.",
+                detail = title_parse_error,
+            })
+        end
+        ai_response_tbl.message = title_message:gsub("%s+", "")
     end
 
     return new_chat_info, ai_response_tbl.message, false, nil

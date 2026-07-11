@@ -875,6 +875,45 @@ local function get_user_input(chat)
     return your_message
 end
 
+local function clone_chat_state(chat)
+    local snapshot = {}
+
+    for key, value in pairs(chat or {}) do
+        if key == "messages" and type(value) == "table" then
+            local messages = {}
+            for idx, item in ipairs(value) do
+                messages[idx] = item
+            end
+            snapshot.messages = messages
+        else
+            snapshot[key] = value
+        end
+    end
+
+    snapshot.messages = snapshot.messages or {}
+    return snapshot
+end
+
+local function restore_chat_state(chat, snapshot)
+    for key in pairs(chat) do
+        chat[key] = nil
+    end
+
+    for key, value in pairs(snapshot or {}) do
+        if key == "messages" and type(value) == "table" then
+            local messages = {}
+            for idx, item in ipairs(value) do
+                messages[idx] = item
+            end
+            chat.messages = messages
+        else
+            chat[key] = value
+        end
+    end
+
+    chat.messages = chat.messages or {}
+end
+
 -- Process message and communicate with AI
 local function process_message(service, chat, message)
 
@@ -894,7 +933,10 @@ local function process_message(service, chat, message)
         return false, "maximum chat turns reached for this chat"
     end
 
+    local chat_before_turn = clone_chat_state(chat)
+
     if not ous.setup_msg(service, chat, {role = common.role.user, message = message}) then
+        restore_chat_state(chat, chat_before_turn)
         debug:log("oasis.log", "process_message", "setup message error")
         return false, "setup message error"
     end
@@ -904,7 +946,13 @@ local function process_message(service, chat, message)
     local tool_info, _, tool_used, err = transfer.chat_with_ai(service, chat)
 
     if err then
-        return false, chat_error.format(err)
+        local can_continue = type(err) ~= "table" or err.can_continue ~= false
+        -- A non-continuable error may follow an external tool side effect.
+        -- Rolling back only the chat history would make a retry look safe when it is not.
+        if can_continue then
+            restore_chat_state(chat, chat_before_turn)
+        end
+        return false, chat_error.format(err), can_continue
     end
 
     debug:log("oasis.log", "process_message", "tool_used = " .. tostring(tool_used))
@@ -917,14 +965,20 @@ local function process_message(service, chat, message)
         if service:handle_tool_output(tool_info, chat) then
             local _, _, _, post_err = transfer.chat_with_ai(service, chat)
             if post_err then
-                return false, chat_error.format(post_err)
+                if type(post_err) == "table" then
+                    post_err.can_continue = false
+                    post_err.display = chat_error.format(post_err)
+                end
+                return false, chat_error.format(post_err), false
             end
         else
-            return false, chat_error.format(chat_error.build(service, {
+            local tool_err = chat_error.build(service, {
                 phase = "tool_execution",
                 kind = "tool_error",
                 message = "Failed to handle tool output.",
-            }))
+                can_continue = false,
+            })
+            return false, chat_error.format(tool_err), false
         end
     end
 
@@ -944,9 +998,12 @@ local function chat_loop(service, chat)
             break
         end
 
-        local ok, err = process_message(service, chat, message)
+        local ok, err, can_continue = process_message(service, chat, message)
         if not ok then
             console.print("\27[31mError: " .. (err or "Failed to process message") .. "\27[0m")
+            if can_continue == false then
+                break
+            end
         end
     end
 end

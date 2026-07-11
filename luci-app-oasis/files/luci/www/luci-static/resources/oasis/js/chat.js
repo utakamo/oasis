@@ -2412,6 +2412,10 @@
                         }
                     }
 
+                    if (evt.message && typeof evt.message.thinking === 'string') {
+                        appendThinking(evt.message.thinking);
+                    }
+
                     // Assistant message (streaming)
                     if (evt.message && typeof evt.message.content === 'string') {
                         if (evt.message.content.length === 0) {
@@ -2549,6 +2553,10 @@
                     if (evt && typeof evt.prepare_service_restart === 'string' && evt.prepare_service_restart.trim().length > 0) {
                         // console.log('[oasis] detected prepare_service_restart (single top-level):', evt.prepare_service_restart);
                         pendingServiceRestart = evt.prepare_service_restart.trim();
+                    }
+
+                    if (evt.message && typeof evt.message.thinking === 'string') {
+                        appendThinking(evt.message.thinking);
                     }
 
                     if (evt.message && typeof evt.message.content === 'string') {

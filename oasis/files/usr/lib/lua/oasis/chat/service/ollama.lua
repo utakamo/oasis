@@ -10,8 +10,11 @@ local debug     = require("oasis.chat.debug")
 local calling   = require("oasis.chat.function.calling.ollama")
 local ous       = require("oasis.unified.chat.schema")
 local chat_error = require("oasis.chat.error")
+local response_framer = require("oasis.chat.response_framer")
 
 local ollama ={}
+local MAX_RESPONSE_BUFFER_BYTES = 4 * 1024 * 1024
+
 ollama.new = function()
 
         local obj = {}
@@ -23,6 +26,9 @@ ollama.new = function()
         obj.format = nil
         obj.tool = false
         obj._reboot_required = false
+        obj._response_framer = response_framer.new(true, MAX_RESPONSE_BUFFER_BYTES)
+        obj._response_done = false
+        obj._response_record_count = 0
 
         obj.initialize = function(self, arg, format)
             self.cfg =  datactrl.get_ai_service_cfg(arg, {format = format})
@@ -32,20 +38,82 @@ ollama.new = function()
         obj.init_msg_buffer = function(self)
             self.recv_raw_msg.role = common.role.unknown
             self.recv_raw_msg.message = ""
+            self.mark = {}
+            self._response_done = false
+            self._response_record_count = 0
+            response_framer.reset(self._response_framer, true, MAX_RESPONSE_BUFFER_BYTES)
         end
 
         obj.set_chat_id = function(self, id)
             self.cfg.id = id
         end
 
-        -- [ADD] helper: parse chunk to JSON (returns nil on invalid input)
-		obj._parse_chunk = function(self, chunk)
-			local chunk_json = jsonc.parse(chunk)
-			if (not chunk_json) or (type(chunk_json) ~= "table") then
-				return nil
-			end
-			return chunk_json
-		end
+        -- Parse a complete Ollama response record.
+        obj._parse_chunk = function(self, chunk)
+            local chunk_json = jsonc.parse(chunk)
+            if (not chunk_json) or (type(chunk_json) ~= "table") then
+                return nil
+            end
+            return chunk_json
+        end
+
+        obj.reset_ai_response_framer = function(self)
+            response_framer.reset(self._response_framer, true, MAX_RESPONSE_BUFFER_BYTES)
+            self._response_done = false
+            self._response_record_count = 0
+        end
+
+        obj.validate_ai_response_complete = function(self)
+            if self._response_record_count == 0 then
+                return nil
+            end
+
+            if self._response_done then
+                return nil
+            end
+
+            return chat_error.build(self, {
+                phase = "response_parse",
+                kind = "parse_error",
+                message = "AI response ended before Ollama reported completion.",
+                detail = string.format("records=%d done=false", self._response_record_count),
+            })
+        end
+
+        -- Convert arbitrary cURL body chunks into complete Ollama JSON records.
+        -- Streaming responses use NDJSON; non-streaming responses are one JSON body.
+        obj.frame_ai_response = function(self, chunk, eof)
+            local frames, framing_error
+
+            if eof then
+                frames, framing_error = response_framer.finish(self._response_framer)
+            else
+                frames, framing_error = response_framer.push(self._response_framer, chunk)
+            end
+
+            debug:log(
+                "oasis.log",
+                "ollama.frame_ai_response",
+                string.format(
+                    "chunk_len=%d eof=%s frames=%d pending_bytes=%d",
+                    #(tostring(chunk or "")),
+                    tostring(eof == true),
+                    #(frames or {}),
+                    response_framer.pending_bytes(self._response_framer)
+                )
+            )
+
+            if framing_error then
+                return frames or {}, chat_error.build(self, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "AI response framing failed.",
+                    detail = framing_error,
+                })
+            end
+
+            return frames or {}, nil
+        end
 
         -- [ADD] helper: detect presence of tool_calls (returns message if present)
         obj._has_tool_calls = function(self, chunk_json)
@@ -132,7 +200,11 @@ ollama.new = function()
         obj._build_text_response = function(self, chunk_json)
 			self.recv_raw_msg.role = chunk_json.message.role
 			self.recv_raw_msg.message = self.recv_raw_msg.message .. tostring(chunk_json.message.content)
-			chunk_json.message.thinking = nil
+			if (self:get_format() == common.ai.format.title)
+				or (self:get_format() == common.ai.format.rpc_output)
+				or (not common.check_show_thinking_enabled(self)) then
+				chunk_json.message.thinking = nil
+			end
 
 			local plain_text_for_console = misc.markdown(self.mark, tostring(chunk_json.message.content))
 			local response_ai_json = jsonc.stringify(chunk_json, false)
@@ -167,58 +239,93 @@ ollama.new = function()
 			return thinking, response_ai_json, self.recv_raw_msg, false
 		end
 
-        -- [REPLACE] recv_ai_msg (I/O and log order preserved)
-		obj.recv_ai_msg = function(self, chunk)
+        obj.recv_ai_msg = function(self, chunk)
 
-			-- Log raw response from Ollama for troubleshooting
-			debug:log("oasis.log", "recv_ai_msg", tostring(chunk))
+            -- The transport layer passes only complete JSON records here.
+            local chunk_json = self:_parse_chunk(chunk)
+            if not chunk_json then
+                return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "AI response contained incomplete or invalid JSON.",
+                    detail = string.format("record_bytes=%d", #(tostring(chunk or ""))),
+                })
+            end
 
-            -- Parse JSON (on failure, behave silently as before)
-			local chunk_json = self:_parse_chunk(chunk)
-			if not chunk_json then
-				return "", "", self.recv_raw_msg, false
-			end
+            if self._response_done then
+                return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "Ollama returned data after the completion record.",
+                    detail = string.format("record_bytes=%d", #(tostring(chunk or ""))),
+                })
+            end
 
-            -- Raw chunk log after successful JSON parsing (unchanged)
-			debug:log("oasis.log", "recv_ai_msg", chunk)
+            self._response_record_count = self._response_record_count + 1
+            if chunk_json.done == true then
+                self._response_done = true
+            end
 
-            -- API error handling
-			local api_error = self:_handle_api_error(chunk_json)
-			if api_error then
-				return nil, nil, self.recv_raw_msg, false, api_error
-			end
+            local message = chunk_json.message or {}
+            local tool_call_count = 0
+            if type(message.tool_calls) == "table" then
+                tool_call_count = #message.tool_calls
+            end
+            debug:log(
+                "oasis.log",
+                "recv_ai_msg",
+                string.format(
+                    "record_bytes=%d done=%s content_len=%d thinking_len=%d tool_calls=%d",
+                    #(tostring(chunk or "")),
+                    tostring(chunk_json.done == true),
+                    #(tostring(message.content or "")),
+                    #(tostring(message.thinking or "")),
+                    tool_call_count
+                )
+            )
 
-            -- Tool calls (same conditions and order as before)
-			do
-				local msg_for_tools = self:_has_tool_calls(chunk_json)
-				if msg_for_tools then
-					local p, j, s, u = self:_process_tool_calls(msg_for_tools)
-					if p ~= nil then
-						return p, j, s, u
-					end
-				end
-			end
+            local api_error = self:_handle_api_error(chunk_json)
+            if api_error then
+                return nil, nil, self.recv_raw_msg, false, api_error
+            end
 
-			if self:_is_thinking_message(chunk_json) then
-				return self:_build_thinking_response(chunk_json)
-			end
+            local msg_for_tools = self:_has_tool_calls(chunk_json)
+            if msg_for_tools then
+                local tool_ok, plain, response, speaker, used = pcall(function()
+                    return self:_process_tool_calls(msg_for_tools)
+                end)
+                if not tool_ok then
+                    return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
+                        phase = "tool_execution",
+                        kind = "tool_error",
+                        message = "Failed while executing an Ollama tool call.",
+                        detail = tostring(plain),
+                        can_continue = false,
+                    })
+                end
+                if plain ~= nil then
+                    return plain, response, speaker, used
+                end
+            end
 
-            -- If message structure invalid, return as before
-			if not self:_is_valid_message(chunk_json) then
-				if chunk_json.done == true then
-					return "", "", self.recv_raw_msg, false
-				end
-				return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
-					phase = "response_parse",
-					kind = "parse_error",
-					message = "AI response format was not recognized.",
-					provider_message = tostring(chunk),
-				})
-			end
+            if self:_is_thinking_message(chunk_json) then
+                return self:_build_thinking_response(chunk_json)
+            end
 
-            -- Normal response (unchanged)
-			return self:_build_text_response(chunk_json)
-		end
+            if not self:_is_valid_message(chunk_json) then
+                if chunk_json.done == true then
+                    return "", "", self.recv_raw_msg, false
+                end
+                return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
+                    phase = "response_parse",
+                    kind = "parse_error",
+                    message = "AI response format was not recognized.",
+                    detail = string.format("record_bytes=%d", #(tostring(chunk or ""))),
+                })
+            end
+
+            return self:_build_text_response(chunk_json)
+        end
 
         obj.append_chat_data = function(self, chat)
             -- debug:log("oasis.log", "id = " .. self.cfg.id)
@@ -249,6 +356,7 @@ ollama.new = function()
 
         obj.convert_schema = function(self, user_msg)
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+            local format = self:get_format()
 
             -- When role:tool is present, it indicates that results are sent to AI
             -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
@@ -261,7 +369,7 @@ ollama.new = function()
             end
 
             -- Inject tools schema for function calling (Ollama)
-            if is_use_tool and common.check_function_calling_enabled(self) and (self:get_format() ~= common.ai.format.title) then
+            if is_use_tool and common.check_function_calling_enabled(self) and (format ~= common.ai.format.title) then
                 local client = require("oasis.local.tool.client")
                 local schema = client.get_function_call_schema()
 
@@ -308,6 +416,12 @@ ollama.new = function()
         end
 
         obj.prepare_post_to_server = function(self, easy, callback, form, user_msg_json)
+
+            local request = jsonc.parse(user_msg_json) or {}
+            local streaming = request.stream ~= false
+            response_framer.reset(self._response_framer, streaming, MAX_RESPONSE_BUFFER_BYTES)
+            self._response_done = false
+            self._response_record_count = 0
 
             easy:setopt_url(self.cfg.endpoint)
             easy:setopt_writefunction(callback)
