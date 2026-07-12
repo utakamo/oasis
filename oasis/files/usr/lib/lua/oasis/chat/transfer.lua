@@ -524,6 +524,26 @@ function M.send_user_msg(service, chat)
         end
     end
 
+    -- Providers may need the complete, validated stream before acting on it.
+    -- Ollama uses this hook to execute accumulated tool calls exactly once.
+    if not post_error and not recv_error and type(service.finalize_ai_response) == "function" then
+        local finalize_ok, text, response, raw, used, finalize_err = pcall(function()
+            return service:finalize_ai_response()
+        end)
+
+        if not finalize_ok then
+            recv_error = chat_error.build(service, {
+                phase = "tool_execution",
+                kind = "tool_error",
+                message = "Failed to finalize the AI service response.",
+                detail = tostring(text),
+                can_continue = false,
+            })
+        elseif text ~= nil or response ~= nil or raw ~= nil or used or finalize_err then
+            process_decoded_response(text, response, raw, used, finalize_err)
+        end
+    end
+
     local final_error = recv_error or post_error
     -- Once a tool result has been produced, a retry could repeat an external side effect.
     if final_error and tool_used and type(final_error) == "table" then
@@ -604,17 +624,21 @@ function M.chat_with_ai(service, chat)
         -- debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
         -- chat mode
         if ous.setup_msg(service, chat, ai_response_tbl) then
+            -- Tool-call and tool-result messages are needed for the immediate
+            -- follow-up only. Remove them after the final assistant response
+            -- so multi-tool turns do not break chat persistence parity.
+            local save_chat = clone_chat_without_tool_messages(chat)
+            chat.messages = save_chat.messages
             local cfg = service:get_config()
             if (not cfg.id) or (#cfg.id == 0) then
                 -- On the first assistant text after a tool_calls turn, persist the chat
-                local save_chat = clone_chat_without_tool_messages(chat)
                 local chat_info = {}
                 chat_info.id = datactrl.create_chat_file(service, save_chat)
                 service:set_chat_id(chat_info.id)
                 -- Set the title and announce to console
                 datactrl.set_chat_title(service, chat_info.id)
             else
-                datactrl.record_chat_data(service, chat)
+                datactrl.record_chat_data(service, save_chat)
                 if tostring(ai_response_tbl.message):sub(-1) ~= "\n" then
                     console.write("\n")
                     console.flush()
