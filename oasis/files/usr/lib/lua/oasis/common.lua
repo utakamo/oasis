@@ -68,7 +68,7 @@ ai.service.openrouter.name          = "OpenRouter"
 ai.service.openrouter.endpoint      = "https://openrouter.ai/api/v1/chat/completions"
 ai.service.lmstudio                 = {}
 ai.service.lmstudio.name            = "LM Studio"
-ai.service.lmstudio.endpoint        = "http://[LM Studio ip address]:1234/v1/chat/completions"
+ai.service.lmstudio.endpoint        = "http://[LM Studio ip address]:1234/api/v1/chat"
 ai.format                           = {}
 ai.format.chat                      = "chat"
 ai.format.prompt                    = "prompt"
@@ -176,8 +176,7 @@ function M.select_service_obj()
         --    dedicated oasis.chat.service.openrouter module and mapping back.
         target = require("oasis.chat.service.openai")
     elseif service == ai.service.lmstudio.name then
-        -- LM Studio is fully compatible with OpenAI's API and JSON schema.
-        target = require("oasis.chat.service.openai")
+        target = require("oasis.chat.service.lmstudio")
     end
 
     return target
