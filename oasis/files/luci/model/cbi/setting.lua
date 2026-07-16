@@ -79,11 +79,50 @@ lmstudio_endpoint:depends("name", common.ai.service.lmstudio.name)
 endpoint_type_for_openai = service:option(ListValue, "openai_endpoint_type", "Endpoint Type")
 endpoint_type_for_openai:value(common.endpoint.type.default, common.endpoint.type.default)
 endpoint_type_for_openai:value(common.endpoint.type.custom, common.endpoint.type.custom)
-endpoint_type_for_openai.description = "Default: " .. common.ai.service.openai.endpoint
+endpoint_type_for_openai.default = common.endpoint.type.default
+endpoint_type_for_openai.rmempty = false
+endpoint_type_for_openai.description = "Official endpoints: Responses API "
+    .. common.ai.service.openai.responses_endpoint
+    .. "; Chat Completions API "
+    .. common.ai.service.openai.chat_completions_endpoint
 endpoint_type_for_openai:depends("name", common.ai.service.openai.name)
+
+function endpoint_type_for_openai.cfgvalue(self, section)
+    local value = self.map:get(section, self.option)
+    if value == common.endpoint.type.default or value == common.endpoint.type.custom then
+        return value
+    end
+
+    local custom_endpoint = self.map:get(section, "openai_custom_endpoint") or ""
+    return (#custom_endpoint > 0) and common.endpoint.type.custom or common.endpoint.type.default
+end
 
 openai_custom_endpoint = service:option(Value, "openai_custom_endpoint", "Custom Endpoint")
 openai_custom_endpoint:depends("openai_endpoint_type", common.endpoint.type.custom)
+
+openai_api_mode = service:option(ListValue, "openai_api_mode", "OpenAI API Mode")
+openai_api_mode:value(common.ai.service.openai.api_mode.responses, "Responses API")
+openai_api_mode:value(common.ai.service.openai.api_mode.chat_completions, "Chat Completions API")
+openai_api_mode.default = common.ai.service.openai.api_mode.chat_completions
+openai_api_mode.rmempty = false
+openai_api_mode.description = "Chat Completions is the compatibility default. Select Responses API to enable OpenAI reasoning summaries, including for custom endpoints that support it."
+openai_api_mode:depends("name", common.ai.service.openai.name)
+
+function openai_api_mode.cfgvalue(self, section)
+    local value = self.map:get(section, self.option)
+    local modes = common.ai.service.openai.api_mode
+
+    if value == modes.responses or value == modes.chat_completions then
+        return value
+    end
+
+    -- Merely saving an existing legacy service must not silently migrate it.
+    if self.map:get(section, "name") == common.ai.service.openai.name then
+        return modes.chat_completions
+    end
+
+    return self.default
+end
 
 -- Anthropic
 endpoint_type_for_anthropic = service:option(ListValue, "anthropic_endpoint_type", "Endpoint Type")

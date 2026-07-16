@@ -320,6 +320,19 @@ local output_response_msg = function(service, format, text_for_console, response
     -- Other formats: no output
 end
 
+local function has_committed_tool_side_effects(service)
+    if type(service) ~= "table"
+        or type(service.get_tool_side_effects_committed) ~= "function" then
+        return false
+    end
+
+    local ok, committed = pcall(function()
+        return service:get_tool_side_effects_committed()
+    end)
+
+    return ok and committed == true
+end
+
 --- Convert chat to service schema, send, and process streaming response.
 -- @param service table
 -- @param chat table
@@ -334,12 +347,19 @@ function M.send_user_msg(service, chat)
     end)
 
     if (not convert_ok) or (not usr_msg_json) or (#tostring(usr_msg_json) == 0) then
-        return nil, recv_raw_msg, false, chat_error.build(service, {
+        local request_error = chat_error.build(service, {
             phase = "request_creation",
             kind = "request_error",
             message = "Failed to create AI service request body.",
             detail = tostring(usr_msg_json),
         })
+
+        if has_committed_tool_side_effects(service) then
+            request_error.can_continue = false
+            request_error.display = chat_error.format(request_error)
+        end
+
+        return nil, recv_raw_msg, false, request_error
     end
 
     -- Debug Message Json Log
@@ -545,8 +565,12 @@ function M.send_user_msg(service, chat)
     end
 
     local final_error = recv_error or post_error
+    local tool_side_effects_committed = tool_used
+        or has_committed_tool_side_effects(service)
+
     -- Once a tool result has been produced, a retry could repeat an external side effect.
-    if final_error and tool_used and type(final_error) == "table" then
+    -- Provider-specific services may carry that state into a follow-up request.
+    if final_error and tool_side_effects_committed and type(final_error) == "table" then
         final_error.can_continue = false
         final_error.display = chat_error.format(final_error)
     end

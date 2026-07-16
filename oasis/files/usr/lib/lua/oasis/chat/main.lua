@@ -379,6 +379,49 @@ local function format_show_thinking_status(value)
     return (tostring(value or "0") == "1") and "enable" or "disable"
 end
 
+local function normalize_openai_api_mode(value, default)
+    local modes = common.ai.service.openai.api_mode
+
+    if value == nil or value == "" then
+        return default
+    end
+
+    value = tostring(value):lower()
+    if value == modes.responses or value == modes.chat_completions then
+        return value
+    end
+
+    return nil
+end
+
+local function prepare_openai_setup(setup)
+    if setup.service ~= common.ai.service.openai.name then
+        return
+    end
+
+    local openai = common.ai.service.openai
+    local endpoint_value = setup.endpoint or ""
+    local endpoint_compare = tostring(endpoint_value):gsub("/+$", "")
+    local is_official_endpoint = endpoint_compare == ""
+        or endpoint_compare == openai.responses_endpoint
+        or endpoint_compare == openai.chat_completions_endpoint
+
+    setup.openai_endpoint_type = is_official_endpoint
+        and common.endpoint.type.default
+        or common.endpoint.type.custom
+
+    local default_mode = openai.api_mode.chat_completions
+    if endpoint_compare == openai.responses_endpoint then
+        default_mode = openai.api_mode.responses
+    end
+
+    local requested_mode = normalize_openai_api_mode(setup.openai_api_mode, default_mode)
+    setup.openai_api_mode = common.resolve_openai_api_mode(
+        requested_mode,
+        setup.openai_endpoint_type
+    )
+end
+
 -- Determine endpoint field name
 local function determine_endpoint_field_name(service_name)
     return SERVICE_CONFIG.ENDPOINT_FIELDS[service_name] or "unknown"
@@ -400,7 +443,17 @@ local function create_uci_service_section(setup, endpoint_field_name)
     -- Endpoint type configuration
     local endpoint_type_field = SERVICE_CONFIG.ENDPOINT_TYPES[setup.service]
     if endpoint_type_field then
-        uci:set(common.db.uci.cfg, unnamed_section, endpoint_type_field, common.endpoint.type.custom)
+        local endpoint_type = setup.openai_endpoint_type or common.endpoint.type.custom
+        uci:set(common.db.uci.cfg, unnamed_section, endpoint_type_field, endpoint_type)
+    end
+
+    if setup.service == common.ai.service.openai.name then
+        uci:set(
+            common.db.uci.cfg,
+            unnamed_section,
+            "openai_api_mode",
+            setup.openai_api_mode or common.ai.service.openai.api_mode.chat_completions
+        )
     end
 
     -- Anthropic-specific configuration
@@ -437,8 +490,18 @@ function M.add(args)
         api_key = collect_api_key(args, output),
         model = collect_model(args, output),
         function_calling = normalize_function_calling(args.function_calling, "0") or "0",
-        show_thinking = normalize_show_thinking(args.show_thinking, "0") or "0"
+        show_thinking = normalize_show_thinking(args.show_thinking, "0") or "0",
+        openai_api_mode = normalize_openai_api_mode(
+            args.openai_api_mode or args.api_mode,
+            nil
+        )
     }
+
+    prepare_openai_setup(setup)
+
+    if setup.service == common.ai.service.openai.name then
+        console.print(string.format(output.format_2, "OpenAI API Mode", setup.openai_api_mode))
+    end
 
     -- Collect Anthropic-specific configuration
     if setup.service == common.ai.service.anthropic.name then
@@ -471,7 +534,23 @@ local function update_endpoint(service_name, service_section, endpoint_value)
     uci:set(common.db.uci.cfg, service_section, config.endpoint_field, endpoint_value)
 
     if config.endpoint_type_field and config.endpoint_type_value then
-        uci:set(common.db.uci.cfg, service_section, config.endpoint_type_field, config.endpoint_type_value)
+        local endpoint_type = config.endpoint_type_value
+
+        if service_name == common.ai.service.openai.name then
+            local openai = common.ai.service.openai
+            local endpoint_compare = tostring(endpoint_value or ""):gsub("/+$", "")
+            if endpoint_compare == openai.responses_endpoint then
+                endpoint_type = common.endpoint.type.default
+                uci:set(common.db.uci.cfg, service_section, "openai_api_mode", openai.api_mode.responses)
+            elseif endpoint_compare == openai.chat_completions_endpoint then
+                endpoint_type = common.endpoint.type.default
+                uci:set(common.db.uci.cfg, service_section, "openai_api_mode", openai.api_mode.chat_completions)
+            else
+                uci:set(common.db.uci.cfg, service_section, "openai_api_mode", openai.api_mode.chat_completions)
+            end
+        end
+
+        uci:set(common.db.uci.cfg, service_section, config.endpoint_type_field, endpoint_type)
     end
 
     return true
@@ -528,6 +607,40 @@ local function update_service_config(service_section, opt)
         end
     end
 
+    local requested_api_mode = opt.A or opt.openai_api_mode
+    if requested_api_mode then
+        local service_name = uci:get(common.db.uci.cfg, service_section, "name")
+        local api_mode = normalize_openai_api_mode(requested_api_mode)
+
+        if service_name == common.ai.service.openai.name and api_mode then
+            local endpoint_type = uci:get(
+                common.db.uci.cfg,
+                service_section,
+                "openai_endpoint_type"
+            ) or ""
+            local custom_endpoint = uci:get(
+                common.db.uci.cfg,
+                service_section,
+                "openai_custom_endpoint"
+            ) or ""
+
+            if endpoint_type ~= common.endpoint.type.default
+                and endpoint_type ~= common.endpoint.type.custom then
+                endpoint_type = (#custom_endpoint > 0)
+                    and common.endpoint.type.custom
+                    or common.endpoint.type.default
+            end
+
+            uci:set(
+                common.db.uci.cfg,
+                service_section,
+                "openai_api_mode",
+                common.resolve_openai_api_mode(api_mode, endpoint_type)
+            )
+            updated = true
+        end
+    end
+
     if opt.s then
         uci:set(common.db.uci.cfg, service_section, "storage", opt.s)
         updated = true
@@ -567,7 +680,8 @@ end
 -- Main change function
 -- Change an existing AI service by numeric index with options.
 -- @param arg table { no: string }
--- @param opt table { u?: string, k?: string, m?: string, f?: string, s?: string }
+-- @param opt table { u?: string, k?: string, m?: string, f?: string, T?: string,
+--                    A?: string, openai_api_mode?: string, s?: string }
 function M.change(arg, opt)
 
     local output = {
@@ -638,11 +752,28 @@ function M.show_service_list()
                 if tbl.name == common.ai.service.ollama.name then
                     output.item(endpoint_str, tbl.ollama_endpoint)
                 elseif tbl.name == common.ai.service.openai.name then
-                    if (tbl.openai_endpoint_type) and (tbl.openai_endpoint_type == common.endpoint.type.default) then
-                        output.item(endpoint_str, common.ai.service.openai.endpoint)
-                    elseif (tbl.openai_endpoint_type) and (tbl.openai_endpoint_type == common.endpoint.type.custom) then
-                        output.item(endpoint_str, tbl.openai_custom_endpoint)
+                    local endpoint_type = tbl.openai_endpoint_type or ""
+                    if endpoint_type ~= common.endpoint.type.default
+                        and endpoint_type ~= common.endpoint.type.custom then
+                        endpoint_type = (tbl.openai_custom_endpoint and #tbl.openai_custom_endpoint > 0)
+                            and common.endpoint.type.custom
+                            or common.endpoint.type.default
                     end
+
+                    local api_mode = common.resolve_openai_api_mode(
+                        tbl.openai_api_mode,
+                        endpoint_type
+                    )
+
+                    if endpoint_type == common.endpoint.type.custom then
+                        output.item(endpoint_str, tbl.openai_custom_endpoint)
+                    elseif api_mode == common.ai.service.openai.api_mode.responses then
+                        output.item(endpoint_str, common.ai.service.openai.responses_endpoint)
+                    else
+                        output.item(endpoint_str, common.ai.service.openai.chat_completions_endpoint)
+                    end
+
+                    output.item("OpenAI API Mode", api_mode)
                 elseif tbl.name == common.ai.service.anthropic.name then
                     if (tbl.anthropic_endpoint_type) and (tbl.anthropic_endpoint_type == common.endpoint.type.default) then
                         output.item(endpoint_str, common.ai.service.anthropic.endpoint)
@@ -764,6 +895,9 @@ local function initialize_chat_service(arg)
     console.print("-----------------------------------")
     console.print(string.format("%-14s :\27[33m %s \27[0m", "AI Service", cfg.service))
     console.print(string.format("%-14s :\27[33m %s \27[0m", "Model", cfg.model))
+    if cfg.service == common.ai.service.openai.name then
+        console.print(string.format("%-14s :\27[33m %s \27[0m", "API Mode", cfg.openai_api_mode))
+    end
     console.print("-----------------------------------")
 
     return service

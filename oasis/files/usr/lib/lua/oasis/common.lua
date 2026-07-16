@@ -56,7 +56,13 @@ ai.service.ollama.name              = "Ollama"
 ai.service.ollama.endpoint          = "http://[ollama ip address]:11434/api/chat"
 ai.service.openai                   = {}
 ai.service.openai.name              = "OpenAI"
-ai.service.openai.endpoint          = "https://api.openai.com/v1/chat/completions"
+ai.service.openai.responses_endpoint = "https://api.openai.com/v1/responses"
+ai.service.openai.chat_completions_endpoint = "https://api.openai.com/v1/chat/completions"
+-- Compatibility alias for callers that still expect the original OpenAI endpoint.
+ai.service.openai.endpoint          = ai.service.openai.chat_completions_endpoint
+ai.service.openai.api_mode          = {}
+ai.service.openai.api_mode.responses = "responses"
+ai.service.openai.api_mode.chat_completions = "chat_completions"
 ai.service.anthropic                = {}
 ai.service.anthropic.name           = "Anthropic"
 ai.service.anthropic.endpoint       = "https://api.anthropic.com/v1/messages"
@@ -91,6 +97,23 @@ local endpoint = {}
 endpoint.type = {}
 endpoint.type.default   = "default"
 endpoint.type.custom    = "custom"
+
+local function resolve_openai_api_mode(api_mode, endpoint_type)
+    local modes = ai.service.openai.api_mode
+
+    if api_mode == modes.responses then
+        return modes.responses
+    end
+
+    if api_mode == modes.chat_completions then
+        return modes.chat_completions
+    end
+
+    -- Missing, invalid, and legacy values use the established API. This is
+    -- especially important for custom OpenAI-compatible endpoints, which must
+    -- not be assumed to implement the Responses API.
+    return modes.chat_completions
+end
 
 local flag = {}
 flag.apply = {}
@@ -159,7 +182,35 @@ function M.select_service_obj()
     if service == ai.service.ollama.name then
         target = require("oasis.chat.service.ollama")
     elseif service == ai.service.openai.name then
-        target = require("oasis.chat.service.openai")
+        local endpoint_type = uci:get_first(
+            db.uci.cfg,
+            db.uci.sect.service,
+            "openai_endpoint_type",
+            ""
+        ) or ""
+        local custom_endpoint = uci:get_first(
+            db.uci.cfg,
+            db.uci.sect.service,
+            "openai_custom_endpoint",
+            ""
+        ) or ""
+
+        if endpoint_type ~= endpoint.type.default and endpoint_type ~= endpoint.type.custom then
+            endpoint_type = (#custom_endpoint > 0) and endpoint.type.custom or endpoint.type.default
+        end
+
+        local api_mode = uci:get_first(
+            db.uci.cfg,
+            db.uci.sect.service,
+            "openai_api_mode",
+            ""
+        ) or ""
+
+        if resolve_openai_api_mode(api_mode, endpoint_type) == ai.service.openai.api_mode.responses then
+            target = require("oasis.chat.service.openai_responses")
+        else
+            target = require("oasis.chat.service.openai")
+        end
     elseif service == ai.service.anthropic.name then
         target = require("oasis.chat.service.anthropic")
     elseif service == ai.service.gemini.name then
@@ -503,6 +554,7 @@ M.db = db
 M.ai = ai
 M.file = file
 M.endpoint = endpoint
+M.resolve_openai_api_mode = resolve_openai_api_mode
 M.flag = flag
 M.role = role
 M.status = status

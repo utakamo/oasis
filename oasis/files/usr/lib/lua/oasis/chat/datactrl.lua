@@ -49,10 +49,31 @@ function M.get_ai_service_cfg(arg, opts)
                 break
             elseif cfg.service == ai_ref.service.openai.name then
                 local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_endpoint_type", "") or ""
-                if endpoint_type == common.endpoint.type.default then
-                    cfg.endpoint = common.ai.service.openai.endpoint
-                elseif endpoint_type == common.endpoint.type.custom then
-                    cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_custom_endpoint")
+                local custom_endpoint = uci:get_first(
+                    uci_ref.cfg,
+                    uci_ref.sect.service,
+                    "openai_custom_endpoint",
+                    ""
+                ) or ""
+
+                if endpoint_type ~= common.endpoint.type.default
+                    and endpoint_type ~= common.endpoint.type.custom then
+                    endpoint_type = (#custom_endpoint > 0)
+                        and common.endpoint.type.custom
+                        or common.endpoint.type.default
+                end
+
+                cfg.openai_api_mode = common.resolve_openai_api_mode(
+                    uci:get_first(uci_ref.cfg, uci_ref.sect.service, "openai_api_mode", "") or "",
+                    endpoint_type
+                )
+
+                if endpoint_type == common.endpoint.type.custom then
+                    cfg.endpoint = custom_endpoint
+                elseif cfg.openai_api_mode == common.ai.service.openai.api_mode.responses then
+                    cfg.endpoint = common.ai.service.openai.responses_endpoint
+                else
+                    cfg.endpoint = common.ai.service.openai.chat_completions_endpoint
                 end
                 break
             elseif cfg.service == ai_ref.service.anthropic.name then

@@ -73,10 +73,12 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/security/guard.lua $(1)$(LUA_LIBRARY_DIR)/oasis/security
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/ollama.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/openai.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/openai_responses.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/anthropic.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/gemini.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling	
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/ollama.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/openai.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/openai_responses.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/anthropic.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/gemini.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/lmstudio.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
