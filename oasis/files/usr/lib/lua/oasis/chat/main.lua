@@ -165,9 +165,13 @@ local SERVICE_CONFIG = {
     },
 
     ANTHROPIC_LIMITS = {
-        MAX_TOKENS = { min = 1000, max = 30000 },
-        BUDGET_TOKENS = { min = 1000, max = 20000 },
-        THINKING_TYPES = { enabled = "enabled", disabled = "disabled" }
+        DEFAULT_MAX_TOKENS = 1024,
+        MIN_BUDGET_TOKENS = 1024,
+        THINKING_TYPES = {
+            disabled = "disabled",
+            enabled = "enabled",
+            adaptive = "adaptive"
+        }
     },
 
     -- Service configuration mapping for change function
@@ -228,15 +232,15 @@ local function get_output_formats()
     output.model = "LLM MODEL"
 
     -- Anthropic-specific formats
-    output.max_tokens = string.format("Max Tokens (%d ～ %d)",
-        SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.min,
-        SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.max)
-    output.type = string.format("Thinking (\"%s\" or \"%s\")",
+    output.max_tokens = "Max Tokens (positive integer)"
+    output.thinking = string.format("Thinking (\"%s\", \"%s\", or \"%s\")",
         SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled,
-        SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled)
-    output.budget_tokens = string.format("Budget Tokens (%d ～ %d)",
-        SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.min,
-        SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.max)
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled,
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.adaptive)
+    output.budget_tokens = string.format(
+        "Budget Tokens (integer >= %d and < Max Tokens)",
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.MIN_BUDGET_TOKENS
+    )
 
     return output
 end
@@ -292,37 +296,181 @@ local function collect_endpoint(args, output)
     end
 end
 
+local function parse_positive_integer(value)
+    local text = tostring(value or "")
+    if not text:match("^%d+$") then
+        return nil
+    end
+
+    local number = tonumber(text)
+    if not number or number <= 0 or number >= math.huge or number ~= math.floor(number) then
+        return nil
+    end
+
+    local normalized = text:gsub("^0+", "")
+    if normalized == "" then
+        normalized = "0"
+    end
+
+    return number, normalized
+end
+
+local function normalize_anthropic_thinking(value, default)
+    if value == nil or value == "" then
+        return default
+    end
+
+    value = tostring(value):lower()
+    for _, mode in pairs(SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES) do
+        if value == mode then
+            return value
+        end
+    end
+
+    return nil
+end
+
+local function get_anthropic_thinking_mode(service_section)
+    local canonical = uci:get(
+        common.db.uci.cfg, service_section, "thinking"
+    )
+    if canonical ~= nil and canonical ~= "" then
+        return normalize_anthropic_thinking(canonical)
+    end
+
+    -- Backward compatibility for service sections created before "thinking"
+    -- became the canonical option.
+    return normalize_anthropic_thinking(
+        uci:get(common.db.uci.cfg, service_section, "type"),
+        SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled
+    )
+end
+
+local function validate_anthropic_config(max_tokens, thinking, budget_tokens)
+    local max_number, normalized_max = parse_positive_integer(max_tokens)
+    if not max_number then
+        return nil, "Max Tokens must be a positive integer."
+    end
+
+    local normalized_thinking = normalize_anthropic_thinking(thinking)
+    if not normalized_thinking then
+        return nil, "Thinking must be disabled, enabled, or adaptive."
+    end
+
+    local normalized_budget = nil
+    if normalized_thinking == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+        local budget_number
+        budget_number, normalized_budget = parse_positive_integer(budget_tokens)
+        if not budget_number
+            or budget_number < SERVICE_CONFIG.ANTHROPIC_LIMITS.MIN_BUDGET_TOKENS then
+            return nil, string.format(
+                "Budget Tokens must be an integer greater than or equal to %d.",
+                SERVICE_CONFIG.ANTHROPIC_LIMITS.MIN_BUDGET_TOKENS
+            )
+        end
+
+        if budget_number >= max_number then
+            return nil, "Budget Tokens must be less than Max Tokens."
+        end
+    elseif budget_tokens ~= nil and budget_tokens ~= "" then
+        return nil, "Budget Tokens can only be set when Thinking is enabled."
+    end
+
+    return {
+        max_tokens = normalized_max,
+        thinking = normalized_thinking,
+        budget_tokens = normalized_budget
+    }, nil
+end
+
+local function collect_valid_value(initial_value, output_format, label, validator)
+    local value = initial_value
+
+    while true do
+        if value == nil then
+            console.printf(output_format, label)
+            console.flush()
+            value = console.read()
+            if value == nil then
+                return nil, "Input ended while reading " .. tostring(label) .. "."
+            end
+        end
+
+        if validator(value) then
+            return value
+        end
+
+        console.print("Invalid value.")
+        value = nil
+    end
+end
+
 -- Collect Anthropic-specific configuration
-local function collect_anthropic_config(output)
+local function collect_anthropic_config(output, args)
     local config = {}
 
     -- Max Tokens
-    repeat
-        console.printf(output.format_1, output.max_tokens)
-        console.flush()
-        config.max_tokens = console.read()
-    until (tonumber(config.max_tokens) >= SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.min)
-        and (tonumber(config.max_tokens) <= SERVICE_CONFIG.ANTHROPIC_LIMITS.MAX_TOKENS.max)
-
-    -- Thinking Type
-    repeat
-        console.printf(output.format_1, output.type)
-        console.flush()
-        config.type = console.read()
-    until (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled)
-        or (config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled)
-
-    -- Budget Tokens (if thinking enabled)
-    if config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
-        repeat
-            console.printf(output.format_1, output.budget_tokens)
-            console.flush()
-            config.budget_tokens = console.read()
-        until (tonumber(config.budget_tokens) >= SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.min)
-            and (tonumber(config.budget_tokens) <= SERVICE_CONFIG.ANTHROPIC_LIMITS.BUDGET_TOKENS.max)
+    local collect_error
+    config.max_tokens, collect_error = collect_valid_value(
+        args.max_tokens,
+        output.format_1,
+        output.max_tokens,
+        function(value)
+            return parse_positive_integer(value) ~= nil
+        end
+    )
+    if not config.max_tokens then
+        return nil, collect_error
     end
 
-    return config
+    -- Thinking mode
+    config.thinking, collect_error = collect_valid_value(
+        args.thinking,
+        output.format_1,
+        output.thinking,
+        function(value)
+            return normalize_anthropic_thinking(value) ~= nil
+        end
+    )
+    if not config.thinking then
+        return nil, collect_error
+    end
+    config.thinking = normalize_anthropic_thinking(config.thinking)
+
+    -- Budget Tokens (if thinking enabled)
+    if config.thinking == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+        local max_number = parse_positive_integer(config.max_tokens)
+        config.budget_tokens, collect_error = collect_valid_value(
+            args.budget_tokens,
+            output.format_1,
+            output.budget_tokens,
+            function(value)
+                local number = parse_positive_integer(value)
+                return number ~= nil
+                    and number >= SERVICE_CONFIG.ANTHROPIC_LIMITS.MIN_BUDGET_TOKENS
+                    and number < max_number
+            end
+        )
+        if not config.budget_tokens then
+            return nil, collect_error
+        end
+    elseif args.budget_tokens ~= nil and args.budget_tokens ~= "" then
+        return nil, "Budget Tokens can only be set when Thinking is enabled."
+    end
+
+    local normalized, err = validate_anthropic_config(
+        config.max_tokens,
+        config.thinking,
+        config.budget_tokens
+    )
+    if not normalized then
+        -- All fields have already been validated individually. This protects
+        -- against future validation changes without writing an invalid UCI
+        -- service section.
+        return nil, err
+    end
+
+    return normalized, nil
 end
 
 -- Collect API key input
@@ -456,17 +604,15 @@ local function create_uci_service_section(setup, endpoint_field_name)
         )
     end
 
-    -- Anthropic-specific configuration
-    if setup.max_tokens then
+    -- Anthropic-specific configuration. "thinking" is canonical for new
+    -- sections; the legacy "type" option remains read-only compatibility.
+    if setup.service == common.ai.service.anthropic.name then
         uci:set(common.db.uci.cfg, unnamed_section, "max_tokens", setup.max_tokens)
-    end
+        uci:set(common.db.uci.cfg, unnamed_section, "thinking", setup.thinking)
 
-    if setup.type then
-        uci:set(common.db.uci.cfg, unnamed_section, "type", setup.type)
-    end
-
-    if setup.budget_tokens then
-        uci:set(common.db.uci.cfg, unnamed_section, "budget_tokens", setup.budget_tokens)
+        if setup.thinking == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+            uci:set(common.db.uci.cfg, unnamed_section, "budget_tokens", setup.budget_tokens)
+        end
     end
 
     uci:commit(common.db.uci.cfg)
@@ -482,10 +628,20 @@ function M.add(args)
     print(output.supported_title)
     print(output.supported_line)
 
+    local service_name = collect_service_name(args, output)
+    local has_anthropic_option = args.max_tokens ~= nil
+        or args.thinking ~= nil
+        or args.budget_tokens ~= nil
+    if service_name ~= common.ai.service.anthropic.name
+        and has_anthropic_option then
+        console.print("Error: Anthropic token and thinking options require an Anthropic service.")
+        return false
+    end
+
     -- Collect service configuration
     local setup = {
         identifier = common.generate_service_id("seed"),
-        service = collect_service_name(args, output),
+        service = service_name,
         endpoint = collect_endpoint(args, output),
         api_key = collect_api_key(args, output),
         model = collect_model(args, output),
@@ -505,16 +661,14 @@ function M.add(args)
 
     -- Collect Anthropic-specific configuration
     if setup.service == common.ai.service.anthropic.name then
-        local anthropic_config = collect_anthropic_config(output)
-        setup.max_tokens = anthropic_config.max_tokens
-        setup.type = anthropic_config.type
-        setup.budget_tokens = anthropic_config.budget_tokens
-        -- Persist 'thinking' for UI compatibility; keep 'type' for backward compatibility
-        if anthropic_config.type == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
-            setup.thinking = SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled
-        else
-            setup.thinking = SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled
+        local anthropic_config, anthropic_err = collect_anthropic_config(output, args)
+        if not anthropic_config then
+            console.print("Error: " .. tostring(anthropic_err))
+            return false
         end
+        setup.max_tokens = anthropic_config.max_tokens
+        setup.thinking = anthropic_config.thinking
+        setup.budget_tokens = anthropic_config.budget_tokens
     end
 
     -- Determine endpoint field name
@@ -569,13 +723,128 @@ local get_service_id_by_number = function(arg)
     return target_section
 end
 
+local function prepare_anthropic_update(service_name, service_section, opt)
+    local requested_max = opt.M or opt.max_tokens
+    local requested_thinking = opt.R or opt.thinking
+    local requested_budget = opt.B or opt.budget_tokens
+    local has_anthropic_option = requested_max ~= nil
+        or requested_thinking ~= nil
+        or requested_budget ~= nil
+
+    if not has_anthropic_option then
+        return nil, nil
+    end
+
+    if service_name ~= common.ai.service.anthropic.name then
+        return nil, "Anthropic token and thinking options require an Anthropic service."
+    end
+
+    local current_max = uci:get(
+        common.db.uci.cfg,
+        service_section,
+        "max_tokens"
+    ) or tostring(SERVICE_CONFIG.ANTHROPIC_LIMITS.DEFAULT_MAX_TOKENS)
+    local current_thinking = get_anthropic_thinking_mode(service_section)
+    local current_budget = nil
+    if current_thinking == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+        current_budget = uci:get(
+            common.db.uci.cfg,
+            service_section,
+            "budget_tokens"
+        )
+    end
+
+    local thinking = current_thinking
+    if requested_thinking ~= nil then
+        thinking = normalize_anthropic_thinking(requested_thinking)
+        if not thinking then
+            return nil, "Thinking must be disabled, enabled, or adaptive."
+        end
+    end
+
+    local max_tokens = requested_max ~= nil and requested_max or current_max
+    local budget_tokens = requested_budget ~= nil and requested_budget or current_budget
+    if thinking ~= SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+        if requested_budget ~= nil then
+            return nil, "Budget Tokens can only be set when Thinking is enabled."
+        end
+        budget_tokens = nil
+    end
+
+    local normalized, err = validate_anthropic_config(
+        max_tokens,
+        thinking,
+        budget_tokens
+    )
+    if not normalized then
+        return nil, err
+    end
+
+    normalized.update_max_tokens = requested_max ~= nil
+    normalized.update_thinking = requested_thinking ~= nil
+    normalized.update_budget_tokens = requested_budget ~= nil
+    return normalized, nil
+end
+
+local function apply_anthropic_update(service_section, update)
+    if not update then
+        return false
+    end
+
+    local updated = false
+    if update.update_max_tokens then
+        uci:set(
+            common.db.uci.cfg,
+            service_section,
+            "max_tokens",
+            update.max_tokens
+        )
+        updated = true
+    end
+
+    if update.update_thinking then
+        uci:set(
+            common.db.uci.cfg,
+            service_section,
+            "thinking",
+            update.thinking
+        )
+        updated = true
+
+        if update.thinking ~= SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+            uci:delete(common.db.uci.cfg, service_section, "budget_tokens")
+        end
+    end
+
+    if update.update_budget_tokens then
+        uci:set(
+            common.db.uci.cfg,
+            service_section,
+            "budget_tokens",
+            update.budget_tokens
+        )
+        updated = true
+    end
+
+    return updated
+end
+
 -- Update service configuration
 local function update_service_config(service_section, opt)
 
     local updated = false
+    local service_name = uci:get(common.db.uci.cfg, service_section, "name")
+    local anthropic_update, anthropic_err = prepare_anthropic_update(
+        service_name,
+        service_section,
+        opt
+    )
+    if anthropic_err then
+        console.print("Error: " .. anthropic_err)
+        return false
+    end
 
     if opt.u then
-        local service_name = uci:get(common.db.uci.cfg, service_section, "name")
         if update_endpoint(service_name, service_section, opt.u) then
             updated = true
         end
@@ -609,7 +878,6 @@ local function update_service_config(service_section, opt)
 
     local requested_api_mode = opt.A or opt.openai_api_mode
     if requested_api_mode then
-        local service_name = uci:get(common.db.uci.cfg, service_section, "name")
         local api_mode = normalize_openai_api_mode(requested_api_mode)
 
         if service_name == common.ai.service.openai.name and api_mode then
@@ -643,6 +911,10 @@ local function update_service_config(service_section, opt)
 
     if opt.s then
         uci:set(common.db.uci.cfg, service_section, "storage", opt.s)
+        updated = true
+    end
+
+    if apply_anthropic_update(service_section, anthropic_update) then
         updated = true
     end
 
@@ -681,7 +953,7 @@ end
 -- Change an existing AI service by numeric index with options.
 -- @param arg table { no: string }
 -- @param opt table { u?: string, k?: string, m?: string, f?: string, T?: string,
---                    A?: string, openai_api_mode?: string, s?: string }
+--                    A?: string, M?: string, R?: string, B?: string, s?: string }
 function M.change(arg, opt)
 
     local output = {
@@ -779,6 +1051,33 @@ function M.show_service_list()
                         output.item(endpoint_str, common.ai.service.anthropic.endpoint)
                     elseif (tbl.anthropic_endpoint_type) and (tbl.anthropic_endpoint_type == common.endpoint.type.custom) then
                         output.item(endpoint_str, tbl.anthropic_custom_endpoint)
+                    end
+
+                    local _, normalized_max = parse_positive_integer(
+                        tbl.max_tokens
+                            or tostring(SERVICE_CONFIG.ANTHROPIC_LIMITS.DEFAULT_MAX_TOKENS)
+                    )
+                    local thinking_mode
+                    if tbl.thinking ~= nil and tbl.thinking ~= "" then
+                        thinking_mode = normalize_anthropic_thinking(tbl.thinking)
+                        if not thinking_mode then
+                            thinking_mode = tostring(tbl.thinking) .. " (invalid)"
+                        end
+                    else
+                        thinking_mode = normalize_anthropic_thinking(tbl.type)
+                            or SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.disabled
+                    end
+
+                    local displayed_max = normalized_max
+                    if not displayed_max then
+                        displayed_max = tostring(tbl.max_tokens or "") .. " (invalid)"
+                    end
+                    output.item("Max Tokens", displayed_max)
+                    output.item("Thinking Mode", thinking_mode)
+                    if thinking_mode == SERVICE_CONFIG.ANTHROPIC_LIMITS.THINKING_TYPES.enabled then
+                        output.item("Budget Tokens", tbl.budget_tokens)
+                    else
+                        output.item("Budget Tokens", "(not used)")
                     end
                 elseif tbl.name == common.ai.service.gemini.name then
                     if (tbl.gemini_endpoint_type) and (tbl.gemini_endpoint_type == common.endpoint.type.default) then
@@ -1281,6 +1580,7 @@ function M.prompt(arg)
                 phase = "tool_execution",
                 kind = "tool_error",
                 message = "Failed to handle tool output.",
+                can_continue = false,
             })) .. "\27[0m")
         end
     end
@@ -1439,6 +1739,7 @@ local function process_output_message(service, chat_ctx, message)
                 phase = "tool_execution",
                 kind = "tool_error",
                 message = "Failed to handle tool output.",
+                can_continue = false,
             })
         end
     end
@@ -1563,6 +1864,7 @@ function M.rpc_output(arg)
                     phase = "tool_execution",
                     kind = "tool_error",
                     message = "Failed to handle tool output.",
+                    can_continue = false,
                 })), nil, nil
             end
         else

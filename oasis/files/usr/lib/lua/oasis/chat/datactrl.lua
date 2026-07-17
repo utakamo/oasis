@@ -15,6 +15,89 @@ sysmsg_info.fix_key = {}
 sysmsg_info.fix_key.casual = "casual"
 
 local TITLE_AUTO_SET_TIMEOUT_MS = 120000
+local ANTHROPIC_DEFAULT_MAX_TOKENS = 1024
+local ANTHROPIC_MIN_BUDGET_TOKENS = 1024
+
+local function parse_positive_integer(value)
+    local text = tostring(value or "")
+    if not text:match("^%d+$") then
+        return nil
+    end
+
+    local number = tonumber(text)
+    if not number or number <= 0 or number >= math.huge or number ~= math.floor(number) then
+        return nil
+    end
+
+    return number
+end
+
+local function normalize_anthropic_thinking(value)
+    value = tostring(value or ""):lower()
+    if value == "disabled" or value == "enabled" or value == "adaptive" then
+        return value
+    end
+
+    return nil
+end
+
+local function load_anthropic_config(cfg, service_section)
+    local raw_max_tokens = uci:get(
+        common.db.uci.cfg, service_section, "max_tokens"
+    )
+    local max_tokens
+    if raw_max_tokens == nil or raw_max_tokens == "" then
+        max_tokens = ANTHROPIC_DEFAULT_MAX_TOKENS
+    else
+        max_tokens = parse_positive_integer(raw_max_tokens)
+        if not max_tokens then
+            cfg.anthropic_config_error =
+                "Anthropic max_tokens must be a positive integer."
+        end
+    end
+
+    local raw_thinking = uci:get(
+        common.db.uci.cfg, service_section, "thinking"
+    )
+    local thinking
+    if raw_thinking ~= nil and raw_thinking ~= "" then
+        thinking = normalize_anthropic_thinking(raw_thinking)
+        if not thinking then
+            cfg.anthropic_config_error =
+                "Anthropic thinking must be disabled, enabled, or adaptive."
+        end
+    end
+
+    -- Older service sections stored the thinking mode in "type". Keep this
+    -- read-only fallback so loading a legacy service does not require a bulk
+    -- UCI migration.
+    if raw_thinking == nil or raw_thinking == "" then
+        thinking = normalize_anthropic_thinking(
+            uci:get(common.db.uci.cfg, service_section, "type")
+        ) or "disabled"
+    end
+
+    cfg.max_tokens = max_tokens
+    cfg.thinking = thinking
+    cfg.budget_tokens = nil
+
+    if thinking == "enabled" then
+        local budget_tokens = parse_positive_integer(
+            uci:get(common.db.uci.cfg, service_section, "budget_tokens")
+        )
+
+        if not budget_tokens
+            or budget_tokens < ANTHROPIC_MIN_BUDGET_TOKENS then
+            cfg.anthropic_config_error =
+                "Anthropic budget_tokens must be an integer greater than or equal to 1024."
+        elseif max_tokens and budget_tokens >= max_tokens then
+            cfg.anthropic_config_error =
+                "Anthropic budget_tokens must be less than max_tokens."
+        elseif max_tokens then
+            cfg.budget_tokens = budget_tokens
+        end
+    end
+end
 
 function M.get_ai_service_cfg(arg, opts)
 
@@ -83,6 +166,7 @@ function M.get_ai_service_cfg(arg, opts)
                 elseif endpoint_type == common.endpoint.type.custom then
                     cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "anthropic_custom_endpoint")
                 end
+                load_anthropic_config(cfg, service_section)
                 break
             elseif cfg.service == ai_ref.service.gemini.name then
                 local endpoint_type = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "gemini_endpoint_type", "") or ""
@@ -183,8 +267,13 @@ function M.create_chat_file(service, chat)
     -- os.execute("echo \"" .. message.content3 .. "\" >> /tmp/oasis-message.log")
 
     local result = util.ubus("oasis.chat", "create", message)
+    if type(result) ~= "table"
+        or result.status ~= common.status.ok
+        or #tostring(result.id or "") == 0 then
+        return nil, "oasis.chat create did not return a valid chat ID."
+    end
     service.id = result.id
-    return result.id
+    return result.id, nil
 end
 
 function M.set_chat_title(service, chat_id)
@@ -245,13 +334,18 @@ function M.record_chat_data(service, chat)
 
     -- First Conversation
     if #chat.messages == 3 then
-        local chat_id = M.create_chat_file(service, chat)
+        local chat_id, create_error = M.create_chat_file(service, chat)
+        if not chat_id then
+            return false, create_error
+        end
         M.set_chat_title(service, chat_id)
+        return true, nil
     -- Conversation after the second
     elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
         -- debug:dump("oasis.log", chat)
-        ous.append_chat_data(service, chat)
+        return ous.append_chat_data(service, chat)
     end
+    return true, nil
 end
 
 return M

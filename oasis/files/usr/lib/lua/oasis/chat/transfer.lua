@@ -333,6 +333,14 @@ local function has_committed_tool_side_effects(service)
     return ok and committed == true
 end
 
+local function protect_committed_tool_error(service, err)
+    if type(err) == "table" and has_committed_tool_side_effects(service) then
+        err.can_continue = false
+        err.display = chat_error.format(err)
+    end
+    return err
+end
+
 --- Convert chat to service schema, send, and process streaming response.
 -- @param service table
 -- @param chat table
@@ -617,6 +625,7 @@ function M.chat_with_ai(service, chat)
     local tool_info, ai_response_tbl, tool_used, err = M.send_user_msg(service, chat)
 
     if err then
+        err = protect_committed_tool_error(service, err)
         debug:log("oasis.log", "chat_with_ai", chat_error.format(err))
         return nil, nil, false, err
     end
@@ -639,10 +648,15 @@ function M.chat_with_ai(service, chat)
             kind = "empty_response",
             message = "AI service returned no assistant message.",
         })
+        empty_err = protect_committed_tool_error(service, empty_err)
         debug:log("oasis.log", "chat_with_ai", chat_error.format(empty_err))
         return nil, nil, false, empty_err
     end
 
+    -- Tool execution may already have committed an external side effect. Keep
+    -- every subsequent history/title persistence operation inside one protected
+    -- boundary so a storage exception becomes a structured, non-retryable error.
+    local integration_ok, integrated_chat_info, _, _, integration_error = pcall(function()
     if format == common.ai.format.chat then
         -- debug:log("oasis.log", "chat_with_ai", "#ai_response_tbl.message = " .. tostring(#ai_response_tbl.message))
         -- debug:log("oasis.log", "chat_with_ai", "ai_response_tbl.message = " .. tostring(ai_response_tbl.message))
@@ -657,23 +671,32 @@ function M.chat_with_ai(service, chat)
             if (not cfg.id) or (#cfg.id == 0) then
                 -- On the first assistant text after a tool_calls turn, persist the chat
                 local chat_info = {}
-                chat_info.id = datactrl.create_chat_file(service, save_chat)
+                local create_error
+                chat_info.id, create_error = datactrl.create_chat_file(service, save_chat)
+                if not chat_info.id then
+                    error(create_error or "Failed to create chat history.")
+                end
                 service:set_chat_id(chat_info.id)
                 -- Set the title and announce to console
                 datactrl.set_chat_title(service, chat_info.id)
             else
-                datactrl.record_chat_data(service, save_chat)
+                local stored, store_error = datactrl.record_chat_data(service, save_chat)
+                if not stored then
+                    error(store_error or "Failed to append chat history.")
+                end
                 if tostring(ai_response_tbl.message):sub(-1) ~= "\n" then
                     console.write("\n")
                     console.flush()
                 end
             end
         else
-            return nil, nil, false, chat_error.build(service, {
+            local store_error = chat_error.build(service, {
                 phase = "response_parse",
                 kind = "parse_error",
                 message = "Failed to store the assistant response in chat history.",
             })
+            return nil, nil, false,
+                protect_committed_tool_error(service, store_error)
         end
     elseif (format == common.ai.format.output) or (format == common.ai.format.rpc_output) then
 
@@ -691,7 +714,11 @@ function M.chat_with_ai(service, chat)
                 if ous.setup_msg(service, chat, ai_response_tbl) then
                     local save_chat = clone_chat_without_tool_messages(chat)
                     local chat_info = {}
-                    chat_info.id = datactrl.create_chat_file(service, save_chat)
+                    local create_error
+                    chat_info.id, create_error = datactrl.create_chat_file(service, save_chat)
+                    if not chat_info.id then
+                        error(create_error or "Failed to create chat history.")
+                    end
                     -- Title generation calls the selected AI service through oasis.title and may
                     -- exceed the default ubus timeout on slow local LLMs. Use common.ubus_call()
                     -- so this long-running ubus request has an explicit timeout.
@@ -716,11 +743,13 @@ function M.chat_with_ai(service, chat)
                     new_chat_info = jsonc.stringify(chat_info, false)
                     debug:log("oasis.log", "chat_with_ai", "new_chat_info = " .. new_chat_info)
                 else
-                    return nil, nil, false, chat_error.build(service, {
+                    local store_error = chat_error.build(service, {
                         phase = "response_parse",
                         kind = "parse_error",
                         message = "Failed to store the assistant response in chat history.",
                     })
+                    return nil, nil, false,
+                        protect_committed_tool_error(service, store_error)
                 end
             end
         else
@@ -735,14 +764,19 @@ function M.chat_with_ai(service, chat)
                 if setup_result then
                     debug:log("oasis.log", "chat_with_ai", "call append_chat_data")
                     local save_chat = clone_chat_without_tool_messages(chat)
-                    ous.append_chat_data(service, save_chat)
+                    local stored, store_error = ous.append_chat_data(service, save_chat)
+                    if not stored then
+                        error(store_error or "Failed to append chat history.")
+                    end
                 else
                     debug:log("oasis.log", "transfer_setup_msg", "setup_msg returned false, skipping append_chat_data")
-                    return nil, nil, false, chat_error.build(service, {
+                    local store_error = chat_error.build(service, {
                         phase = "response_parse",
                         kind = "parse_error",
                         message = "Failed to store the assistant response in chat history.",
                     })
+                    return nil, nil, false,
+                        protect_committed_tool_error(service, store_error)
                 end
             else
                 debug:log("oasis.log", "chat_with_ai", "skip append for tool_calls response")
@@ -753,15 +787,36 @@ function M.chat_with_ai(service, chat)
     debug:log("oasis.log", "chat_with_ai", ai_response_tbl.message)
         local title_message, title_parse_error = extract_title_response(ai_response_tbl.message)
         if not title_message then
-            return nil, nil, false, chat_error.build(service, {
+            local title_error = chat_error.build(service, {
                 phase = "response_parse",
                 kind = "parse_error",
                 message = "AI title response did not contain a usable final answer.",
                 detail = title_parse_error,
             })
+            return nil, nil, false,
+                protect_committed_tool_error(service, title_error)
         end
         ai_response_tbl.message = title_message:gsub("%s+", "")
     end
+
+    return new_chat_info
+    end)
+
+    if not integration_ok then
+        local storage_error = chat_error.build(service, {
+            phase = "internal",
+            kind = "storage_error",
+            message = "Failed to store or integrate the assistant response.",
+            detail = tostring(integrated_chat_info),
+        })
+        return nil, nil, false,
+            protect_committed_tool_error(service, storage_error)
+    end
+    if integration_error then
+        return nil, nil, false,
+            protect_committed_tool_error(service, integration_error)
+    end
+    new_chat_info = integrated_chat_info
 
     return new_chat_info, ai_response_tbl.message, false, nil
 end

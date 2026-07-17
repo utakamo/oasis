@@ -167,28 +167,154 @@ show_thinking = service:option(Flag, "show_thinking", "Show Thinking")
 show_thinking.enabled = "1"
 show_thinking.disabled = "0"
 show_thinking.default = "0"
-show_thinking.description = "Display thinking/reasoning text in the CLI and WebUI. Thinking text is not stored in chat history or returned by the external ubus chat API."
+show_thinking.description = "Display thinking/reasoning text in the CLI and WebUI. This controls display only; it does not enable or disable model thinking. Thinking text is not stored in chat history or returned by the external ubus chat API."
 
--- max_tokens (ListValue), only for Anthropic and Custom Anthropic
-max_tokens = service:option(ListValue, "max_tokens", "Max Tokens")
-for i = 1000, 30000, 1000 do
-    max_tokens:value(tostring(i), tostring(i))
+local ANTHROPIC_DEFAULT_MAX_TOKENS = 1024
+local ANTHROPIC_MIN_BUDGET_TOKENS = 1024
+
+local function parse_positive_integer(value)
+    local text = tostring(value or "")
+    if not text:match("^%d+$") then
+        return nil, nil
+    end
+
+    local number = tonumber(text)
+    if not number or number <= 0 or number >= math.huge or number ~= math.floor(number) then
+        return nil, nil
+    end
+
+    local normalized = text:gsub("^0+", "")
+    if normalized == "" then
+        normalized = "0"
+    end
+
+    return number, normalized
 end
+
+local function normalize_anthropic_thinking(value)
+    value = tostring(value or ""):lower()
+    if value == "disabled" or value == "enabled" or value == "adaptive" then
+        return value
+    end
+
+    return nil
+end
+
+local function form_or_config(option, section, name)
+    local target_option = nil
+    if name == "max_tokens" then
+        target_option = max_tokens
+    elseif name == "thinking" then
+        target_option = thinking
+    elseif name == "budget_tokens" then
+        target_option = budget_tokens
+    end
+
+    local value = target_option and target_option:formvalue(section) or nil
+    if value == nil then
+        value = option.map:get(section, name)
+    end
+    return value
+end
+
+local function current_anthropic_thinking(option, section)
+    local canonical = form_or_config(option, section, "thinking")
+    if canonical ~= nil and canonical ~= "" then
+        return normalize_anthropic_thinking(canonical)
+    end
+
+    return normalize_anthropic_thinking(option.map:get(section, "type"))
+        or "disabled"
+end
+
+-- max_tokens (Value), only for Anthropic. Avoid a fixed model-specific upper
+-- limit so newer models can expose larger output windows without a UI update.
+max_tokens = service:option(Value, "max_tokens", "Max Tokens")
+max_tokens.default = tostring(ANTHROPIC_DEFAULT_MAX_TOKENS)
+max_tokens.rmempty = false
+max_tokens.description = "Positive integer. Manual thinking also requires Budget Tokens to be less than Max Tokens."
 max_tokens:depends("name", common.ai.service.anthropic.name)
 
--- thinking (Flag), only for Anthropic and Custom Anthropic
-thinking = service:option(Flag, "thinking", "Thinking")
-thinking.enabled = "enabled"
-thinking.disabled = "disabled"
+function max_tokens.validate(self, value, section)
+    local number, normalized = parse_positive_integer(value)
+    if not number then
+        return nil, "Max Tokens must be a positive integer."
+    end
+
+    if current_anthropic_thinking(self, section) == "enabled" then
+        local budget = form_or_config(self, section, "budget_tokens")
+        if budget ~= nil and budget ~= "" then
+            local budget_number = parse_positive_integer(budget)
+            if budget_number and budget_number >= number then
+                return nil, "Max Tokens must be greater than Budget Tokens."
+            end
+        end
+    end
+
+    return normalized
+end
+
+-- thinking mode, only for Anthropic. "type" remains a read fallback for
+-- legacy service sections but all new writes use the canonical option.
+thinking = service:option(ListValue, "thinking", "Thinking Mode")
+thinking:value("disabled", "Disabled")
+thinking:value("enabled", "Enabled (manual budget)")
+thinking:value("adaptive", "Adaptive")
 thinking.default = "disabled"
+thinking.rmempty = false
+thinking.description = "Controls Anthropic model thinking. Show Thinking separately controls whether available thinking summaries are displayed."
 thinking:depends("name", common.ai.service.anthropic.name)
 
--- budget_tokens (ListValue), only when thinking is enabled and for Anthropic/Custom Anthropic
-budget_tokens = service:option(ListValue, "budget_tokens", "Budget Tokens")
-for i = 1000, 20000, 1000 do
-    budget_tokens:value(tostring(i), tostring(i))
+function thinking.cfgvalue(self, section)
+    local canonical = self.map:get(section, self.option)
+    if canonical ~= nil and canonical ~= "" then
+        return normalize_anthropic_thinking(canonical) or canonical
+    end
+
+    return normalize_anthropic_thinking(self.map:get(section, "type"))
+        or self.default
 end
+
+function thinking.write(self, section, value)
+    local normalized = normalize_anthropic_thinking(value)
+    if not normalized then
+        return
+    end
+
+    self.map:set(section, self.option, normalized)
+    if normalized ~= "enabled" then
+        self.map:del(section, "budget_tokens")
+    end
+    return true
+end
+
+-- budget_tokens is used only for manually enabled thinking. Adaptive thinking
+-- must not send a budget.
+budget_tokens = service:option(Value, "budget_tokens", "Budget Tokens")
+budget_tokens.rmempty = false
+budget_tokens.description = "Integer greater than or equal to 1024 and less than Max Tokens."
 budget_tokens:depends({name = common.ai.service.anthropic.name, thinking = "enabled"})
+
+function budget_tokens.validate(self, value, section)
+    local number, normalized = parse_positive_integer(value)
+    if not number or number < ANTHROPIC_MIN_BUDGET_TOKENS then
+        return nil, "Budget Tokens must be an integer greater than or equal to 1024."
+    end
+
+    local max_number = parse_positive_integer(
+        form_or_config(self, section, "max_tokens")
+            or tostring(ANTHROPIC_DEFAULT_MAX_TOKENS)
+    )
+    if not max_number then
+        return nil, "Set a valid Max Tokens value first."
+    end
+
+    if number >= max_number then
+        return nil, "Budget Tokens must be less than Max Tokens."
+    end
+
+    return normalized
+end
 
 -- Model
 model = service:option(Value, "model", "Model")

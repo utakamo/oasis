@@ -192,8 +192,6 @@ local methods = {
             -- debug:log("oasis.log", "file name = " .. file_name)
             local full_file_path = misc.normalize_path(conf.path) .. file_name
             -- debug:log("oasis.log", "full file path = " .. full_file_path)
-            misc.touch(full_file_path)
-
             local chat_json_tbl = {}
             chat_json_tbl.messages = {}
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role1, content = args.content1}
@@ -201,27 +199,47 @@ local methods = {
             chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role3, content = args.content3}
 
             local chat_json_str = jsonc.stringify(chat_json_tbl, false)
-
-            local write_chat_data = function(file_path, str)
-
-                local file = io.open(file_path, "w")
-
-                if not file then
-                    return false
-                end
-
-                file:write(str)
-                file:close()
-
-                return true
+            if type(chat_json_str) ~= "string" then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
             end
 
-            write_chat_data(full_file_path, chat_json_str)
+            local write_ok = misc.write_file_atomic(full_file_path, chat_json_str)
+            if not write_ok then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
 
-            local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.chat)
+            local add_ok, unnamed_section = pcall(function()
+                return uci:add(common.db.uci.cfg, common.db.uci.sect.chat)
+            end)
+            if not add_ok or not unnamed_section then
+                os.remove(full_file_path)
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
 
-            uci:set(common.db.uci.cfg, unnamed_section, "id", id)
-            uci:commit(common.db.uci.cfg)
+            local registration_ok = false
+            local operation_ok = pcall(function()
+                local set_ok = uci:set(
+                    common.db.uci.cfg, unnamed_section, "id", id)
+                if not set_ok then
+                    return
+                end
+                local commit_ok = uci:commit(common.db.uci.cfg)
+                if commit_ok then
+                    registration_ok = true
+                end
+            end)
+            if not operation_ok or not registration_ok then
+                pcall(function()
+                    uci:delete(common.db.uci.cfg, unnamed_section)
+                    uci:commit(common.db.uci.cfg)
+                end)
+                os.remove(full_file_path)
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
 
             r.result = jsonc.stringify({ status = common.status.ok , id = id})
             return r
@@ -256,36 +274,37 @@ local methods = {
 
             -- debug:log("oasis.log", "file path = " .. full_file_path)
 
-            local file = io.open(full_file_path, "r")
-
-            if not file then
+            local chat_data = misc.read_file(full_file_path)
+            if type(chat_data) ~= "string" then
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
 
-            local chat_data = file:read("*a")
-            file:close()
-
             -- debug:log("oasis.log", "chat data = " .. chat_data)
 
-            local chat_data_tbl = jsonc.parse(chat_data)
+            local parse_ok, chat_data_tbl = pcall(jsonc.parse, chat_data)
+            if not parse_ok or type(chat_data_tbl) ~= "table"
+                or type(chat_data_tbl.messages) ~= "table" then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
             chat_data_tbl.messages[#chat_data_tbl.messages + 1] = {role = args.role1, content = args.content1}
             chat_data_tbl.messages[#chat_data_tbl.messages + 1] = {role = args.role2, content = args.content2}
 
             local added_chat_data = jsonc.stringify(chat_data_tbl, false)
-
-            -- debug:log("oasis.log", "Added chat data = " .. added_chat_data)
-
-            file = io.open(full_file_path, "w")
-
-            if not file then
-                -- debug:log("oasis.log", common.status.error)
+            if type(added_chat_data) ~= "string" then
                 r.result = jsonc.stringify({ status = common.status.error })
                 return r
             end
 
-            file:write(added_chat_data)
-            file:close()
+            -- debug:log("oasis.log", "Added chat data = " .. added_chat_data)
+
+            local write_ok = misc.write_file_atomic(
+                full_file_path, added_chat_data)
+            if not write_ok then
+                r.result = jsonc.stringify({ status = common.status.error })
+                return r
+            end
 
             r.result = jsonc.stringify({ status = common.status.ok })
             return r

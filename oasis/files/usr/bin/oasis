@@ -111,6 +111,9 @@ local options_spec = {
     ["-f"] = "f",
     ["-T"] = "T",
     ["-A"] = "A",
+    ["-M"] = "M",
+    ["-R"] = "R",
+    ["-B"] = "B",
     ["-s"] = "s"
 }
 
@@ -146,15 +149,18 @@ local function help()
         " -k <api-key>           Set the API key",
         " -m <model>             Set the LLM model",
         " -f <0|1>               Set Function Calling / Tool Use",
-        " -T <0|1>               Set thinking display",
+        " -T <0|1>               Set thinking display only",
         " -A <API mode>          Set OpenAI API mode (responses|chat_completions)",
+        " -M <max-tokens>         Set Anthropic Max Tokens (positive integer)",
+        " -R <thinking-mode>      Set Anthropic thinking (disabled|enabled|adaptive)",
+        " -B <budget-tokens>      Set Anthropic manual thinking budget (>=1024 and < max)",
         " -p <storage>           Set the storage path",
         " -s <sysmsg key>        Select the system message key  (for sysmsg command)",
         " -c <system message>    Create new system message data (for sysmsg command)",
         "",
         "Commands:",
         " storage <path> [<chat-max>]",
-        " add [<service> [<endpoint> [<api-key> [<model> [<function-calling> [<show-thinking> [<openai-api-mode>]]]]]]]",
+        " add [<service> [<endpoint> [<api-key> [<model> [<function-calling> [<show-thinking> [<openai-api-mode> [<anthropic-max-tokens> [<anthropic-thinking> [<anthropic-budget-tokens>]]]]]]]]]]",
         " change [no=<service-number> [<options> <value>]...]",
         " select [no=<service-number>]",
         " delete no=<service-number>",
@@ -181,7 +187,7 @@ end
 -- Parse key-value style options starting from index.
 -- @param args table argv
 -- @param start_index integer
--- @return table options
+-- @return table|nil options, string|nil error
 local function parse_options(args, start_index)
     local options = {}
     local i = start_index
@@ -189,14 +195,16 @@ local function parse_options(args, start_index)
         local opt_key = args[i]
         local opt_val = args[i + 1]
         local opt_name = options_spec[opt_key]
-        if opt_name and opt_val then
-            options[opt_name] = opt_val
-            i = i + 2
-        else
-            i = i + 1
+        if not opt_name then
+            return nil, "unknown option: " .. tostring(opt_key)
         end
+        if opt_val == nil or options_spec[opt_val] then
+            return nil, "missing value for option: " .. tostring(opt_key)
+        end
+        options[opt_name] = opt_val
+        i = i + 2
     end
-    return options
+    return options, nil
 end
 
 local function parse_manifest_args(args, start_index)
@@ -249,15 +257,79 @@ commands.storage = function(args)
 end
 
 commands.add = function(args)
-    oasis.add({
-        service  = args[2],
-        endpoint = args[3],
-        api_key  = args[4],
-        model    = args[5],
-        function_calling = args[6],
-        show_thinking = args[7],
-        openai_api_mode = args[8],
-    })
+    local positional_fields = {
+        "service",
+        "endpoint",
+        "api_key",
+        "model",
+        "function_calling",
+        "show_thinking",
+        "openai_api_mode",
+        "max_tokens",
+        "thinking",
+        "budget_tokens",
+    }
+    local option_fields = {
+        u = { name = "endpoint", index = 2 },
+        k = { name = "api_key", index = 3 },
+        m = { name = "model", index = 4 },
+        f = { name = "function_calling", index = 5 },
+        T = { name = "show_thinking", index = 6 },
+        A = { name = "openai_api_mode", index = 7 },
+        M = { name = "max_tokens", index = 8 },
+        R = { name = "thinking", index = 9 },
+        B = { name = "budget_tokens", index = 10 },
+    }
+    local resolved = {}
+    local field_index = 1
+    local i = 2
+
+    while i <= #args do
+        local token = args[i]
+        local option_name = options_spec[token]
+        if option_name then
+            local option_field = option_fields[option_name]
+            if not option_field then
+                console.print("Error: unsupported option for add: "
+                    .. tostring(token))
+                return
+            end
+            if args[i + 1] == nil or options_spec[args[i + 1]] then
+                console.print("Error: missing value for option: " .. tostring(token))
+                return
+            end
+            resolved[option_field.name] = args[i + 1]
+            field_index = option_field.index + 1
+            i = i + 2
+        elseif tostring(token):sub(1, 1) == "-" then
+            console.print("Error: unknown option: " .. tostring(token))
+            return
+        else
+            -- The service name is the only positional field that may safely
+            -- appear before options. Other positionals continue from the most
+            -- recently specified field, skipping fields already supplied.
+            if resolved.service == nil then
+                resolved.service = token
+                if field_index < 2 then
+                    field_index = 2
+                end
+            else
+                while field_index <= #positional_fields
+                    and resolved[positional_fields[field_index]] ~= nil do
+                    field_index = field_index + 1
+                end
+                if field_index > #positional_fields then
+                    console.print("Error: too many arguments for add command")
+                    return
+                end
+                resolved[positional_fields[field_index]] = token
+                field_index = field_index + 1
+            end
+            i = i + 1
+        end
+    end
+
+    oasis.add(resolved)
 end
 
 commands.change = function(args)
@@ -265,7 +337,11 @@ commands.change = function(args)
     local no = extract_no(args[2])
 
     if no then
-        local options = parse_options(args, 3)
+        local options, parse_error = parse_options(args, 3)
+        if not options then
+            console.print("Error: " .. tostring(parse_error))
+            return
+        end
         oasis.change({ no = no }, options)
     else
         oasis.show_service_list()

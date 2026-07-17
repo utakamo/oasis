@@ -1,251 +1,348 @@
 #!/usr/bin/env lua
 
-local jsonc  = require("luci.jsonc")
-local common = require("oasis.common")
-local uci    = require("luci.model.uci").cursor()
-local debug  = require("oasis.chat.debug")
-local ous    = require("oasis.unified.chat.schema")
+local jsonc      = require("luci.jsonc")
+local common     = require("oasis.common")
+local uci        = require("luci.model.uci").cursor()
+local debug      = require("oasis.chat.debug")
+local ous        = require("oasis.unified.chat.schema")
+local chat_error = require("oasis.chat.error")
 
 local M = {}
 
--- Anthropic "tool use" detection helpers ------------------------------------
-local function detect_anthropic_tool_use_from_content_list(content)
-    if type(content) ~= "table" then return false end
-    for _, part in ipairs(content) do
-        if type(part) == "table" and part.type == "tool_use" then
-            return true
-        end
+local function copy_value(value)
+    if type(value) ~= "table" then
+        return value
     end
-    return false
+
+    local result = {}
+    for key, item in pairs(value) do
+        result[copy_value(key)] = copy_value(item)
+    end
+    return result
 end
 
-function M.detect(message)
-    if not message or type(message) ~= "table" then
-        return false
+local function stringify_object(value)
+    local encoded = jsonc.stringify(value, false)
+    if type(encoded) ~= "string" or encoded:match("^%s*%[%s*%]%s*$") then
+        return "{}"
     end
-
-    -- OpenAI-like tool_calls fallback (for uniformity in pipeline)
-    if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
-        local tool = message.tool_calls[1]
-        if tool and tool["function"] and type(tool["function"]) == "table" then
-            if tool["function"].name and tool["function"].arguments then
-                return true
-            end
-        end
-    end
-
-    -- Anthropic: message.content is a list of content blocks; detect tool_use
-    if message.content and type(message.content) == "table" then
-        return detect_anthropic_tool_use_from_content_list(message.content)
-    end
-
-    return false
+    return encoded
 end
 
--- Execute tool calls and return unified tool_outputs JSON and assistant speaker
-function M.process(self, message)
-    if not M.detect(message) then
-        return nil
-    end
-
-    local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-    if not (is_tool and common.check_function_calling_enabled(self)) then
-        return nil
-    end
-
-    debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled) [anthropic]")
-    local client = require("oasis.local.tool.client")
-
-    local function_call = { service = "Anthropic", tool_outputs = {} }
-    local first_output_str = ""
-    local speaker = { role = "assistant", tool_calls = {} }
-    local reboot = false
-    local shutdown = false
-
-    -- Case 1: OpenAI-like tool_calls (fallback)
-    if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
-        for _, tc in ipairs(message.tool_calls) do
-            local func = tc["function"] and tc["function"].name or ""
-            local args = {}
-            if tc["function"] and tc["function"].arguments then
-                local ok, parsed = pcall(jsonc.parse, tc["function"].arguments)
-                if ok and parsed then args = parsed end
-            end
-
-            local call_id = tostring(tc.id or "")
-            if self and self.processed_tool_call_ids and call_id ~= "" then
-                if self.processed_tool_call_ids[call_id] then
-                    debug:log("oasis.log", "process", "skip duplicate tool_call id = " .. call_id)
-                else
-                    self.processed_tool_call_ids[call_id] = true
-                    local result = client.exec_server_tool(self:get_format(), func, args)
-
-                    if result.reboot then
-                        debug:log("oasis.log", "process", "result.reboot = true")
-                        reboot = result.reboot
-                    end
-                    if result.shutdown then
-                        debug:log("oasis.log", "process", "result.shutdown = true")
-                        shutdown = result.shutdown
-                    end
-
-                    local output = jsonc.stringify(result, false)
-                    table.insert(function_call.tool_outputs, {
-                        tool_call_id = call_id,
-                        output = output,
-                        name = func
-                    })
-                    table.insert(speaker.tool_calls, {
-                        id = call_id,
-                        type = "function",
-                        ["function"] = {
-                            name = func,
-                            arguments = jsonc.stringify(args or {}, false)
-                        }
-                    })
-                    if first_output_str == "" then first_output_str = output end
-                end
-            else
-                local result = client.exec_server_tool(self:get_format(), func, args)
-                local output = jsonc.stringify(result, false)
-                table.insert(function_call.tool_outputs, { output = output, name = func })
-                table.insert(speaker.tool_calls, {
-                    id = "",
-                    type = "function",
-                    ["function"] = { name = func, arguments = jsonc.stringify(args or {}, false) }
-                })
-                if first_output_str == "" then first_output_str = output end
-            end
-        end
-    end
-
-    -- Case 2: Anthropic tool_use blocks
-    if message.content and type(message.content) == "table" then
-        for _, part in ipairs(message.content) do
-            if type(part) == "table" and part.type == "tool_use" then
-                local func = tostring(part.name or "")
-                local args = part.input
-                if type(args) ~= "table" then
-                    local ok, parsed = pcall(jsonc.parse, tostring(args or ""))
-                    if ok and parsed then args = parsed else args = {} end
-                end
-                local call_id = tostring(part.id or "")
-
-                if self and self.processed_tool_call_ids and call_id ~= "" then
-                    if self.processed_tool_call_ids[call_id] then
-                        debug:log("oasis.log", "recv_ai_msg", "skip duplicate tool_use id = " .. call_id)
-                    else
-                        self.processed_tool_call_ids[call_id] = true
-                        local result = client.exec_server_tool(self:get_format(), func, args)
-                        local output = jsonc.stringify(result, false)
-                        table.insert(function_call.tool_outputs, {
-                            tool_call_id = call_id,
-                            output = output,
-                            name = func
-                        })
-                        table.insert(speaker.tool_calls, {
-                            id = call_id,
-                            type = "function",
-                            ["function"] = {
-                                name = func,
-                                arguments = jsonc.stringify(args or {}, false)
-                            }
-                        })
-                        if first_output_str == "" then first_output_str = output end
-                    end
-                else
-                    local result = client.exec_server_tool(self:get_format(), func, args)
-                    local output = jsonc.stringify(result, false)
-                    table.insert(function_call.tool_outputs, { output = output, name = func })
-                    table.insert(speaker.tool_calls, {
-                        id = "",
-                        type = "function",
-                        ["function"] = { name = func, arguments = jsonc.stringify(args or {}, false) }
-                    })
-                    if first_output_str == "" then first_output_str = output end
-                end
-            end
-        end
-    end
-
-    local plain_text_for_console = first_output_str
-    function_call.reboot = reboot
-    function_call.shutdown = shutdown
-    local response_ai_json = jsonc.stringify(function_call, false)
-    if self then self.chunk_all = "" end
-    return plain_text_for_console, response_ai_json, speaker, true
+local function tools_enabled(self)
+    return uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+        and common.check_function_calling_enabled(self)
 end
 
--- Inject tool definitions into the Anthropic request (beta tools schema)
-function M.inject_schema(self, body)
-    local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-    if not (is_use_tool and common.check_function_calling_enabled(self)) then
-        return body
-    end
-    if self and self.get_format and (self:get_format() == common.ai.format.title) then
-        return body
+local function parse_input(self, call)
+    local input = call.input
+    local raw = call.input_json
+
+    if raw ~= nil and #tostring(raw) > 0 then
+        local trimmed = tostring(raw):match("^%s*(.-)%s*$") or ""
+        if trimmed:sub(1, 1) ~= "{" or trimmed:sub(-1) ~= "}" then
+            return nil, chat_error.build(self, {
+                phase = "function_calling",
+                kind = "parse_error",
+                message = "Anthropic returned invalid Tool Use input.",
+                detail = "tool_use_id=" .. tostring(call.id or ""),
+                can_continue = false,
+            })
+        end
+
+        local ok, parsed = pcall(jsonc.parse, trimmed)
+        if (not ok) or type(parsed) ~= "table" or #parsed > 0 then
+            return nil, chat_error.build(self, {
+                phase = "function_calling",
+                kind = "parse_error",
+                message = "Anthropic returned invalid Tool Use input.",
+                detail = "tool_use_id=" .. tostring(call.id or ""),
+                can_continue = false,
+            })
+        end
+        input = parsed
     end
 
-    local client = require("oasis.local.tool.client")
-    local schema = client.get_function_call_schema()
-
-    body.tools = body.tools or {}
-    for _, tool_def in ipairs(schema or {}) do
-        local params = tool_def.parameters or {}
-        table.insert(body.tools, {
-            type = "custom",
-            name = tool_def.name,
-            description = tool_def.description or "",
-            input_schema = {
-                type = params.type or "object",
-                properties = params.properties or {},
-                required = params.required or {}
-            }
+    if type(input) ~= "table" or #input > 0 then
+        return nil, chat_error.build(self, {
+            phase = "function_calling",
+            kind = "parse_error",
+            message = "Anthropic returned non-object Tool Use input.",
+            detail = "tool_use_id=" .. tostring(call.id or ""),
+            can_continue = false,
         })
     end
 
-    -- Add tool_choice only when tools exist; otherwise remove both
-    if body.tools and (#body.tools > 0) then
-        body.tool_choice = { type = "auto" }
-    else
-        body.tools = nil
-        body.tool_choice = nil
+    return input, nil
+end
+
+-- Add user-defined tools to an Anthropic request. During a tool-result
+-- continuation the exact same definitions are reused from the first request.
+function M.inject_schema(self, body, opts)
+    opts = opts or {}
+    body.tools = nil
+    body.tool_choice = nil
+    self._request_tools_enabled = false
+    self._request_tool_names = {}
+    self._request_tool_choice = nil
+
+    if self.get_format and self:get_format() == common.ai.format.title then
+        return body
     end
+
+    local followup = opts.followup == true
+    local definitions
+    if followup and type(self._active_tool_definitions) == "table"
+        and #self._active_tool_definitions > 0 then
+        definitions = copy_value(self._active_tool_definitions)
+    elseif tools_enabled(self) then
+        local client = require("oasis.local.tool.client")
+        definitions = {}
+        local definition_names = {}
+        for _, tool_def in ipairs(client.get_function_call_schema() or {}) do
+            if type(tool_def) ~= "table" then
+                error("Anthropic tool schema entry must be a table.")
+            end
+            local name = tostring(tool_def.name or "")
+            if #name == 0 or definition_names[name] then
+                error("Anthropic tool names must be non-empty and unique.")
+            end
+            definition_names[name] = true
+
+            local params = tool_def.parameters or {}
+            if type(params) ~= "table" or #params > 0 then
+                error("Anthropic tool input_schema must be a JSON object schema.")
+            end
+            local input_schema = copy_value(params)
+            input_schema.type = input_schema.type or "object"
+            input_schema.properties = input_schema.properties or {}
+            input_schema.required = input_schema.required or {}
+            if input_schema.type ~= "object"
+                or type(input_schema.properties) ~= "table"
+                or #input_schema.properties > 0
+                or type(input_schema.required) ~= "table" then
+                error("Anthropic tool input_schema must describe an object.")
+            end
+            definitions[#definitions + 1] = {
+                name = name,
+                description = tostring(tool_def.description or ""),
+                input_schema = input_schema,
+            }
+        end
+        self._active_tool_definitions = copy_value(definitions)
+    end
+
+    if type(definitions) ~= "table" or #definitions == 0 then
+        if not followup then
+            self._active_tool_definitions = nil
+        end
+        return body
+    end
+
+    for _, tool_def in ipairs(definitions) do
+        local name = tostring(tool_def.name or "")
+        if #name > 0 then
+            self._request_tool_names[name] = true
+        end
+    end
+
+    body.tools = definitions
+    self._request_tool_choice = opts.force_none and "none" or "auto"
+    body.tool_choice = { type = self._request_tool_choice }
+    self._request_tools_enabled = true
     return body
 end
 
--- Convert tool result message (role=tool) for Anthropic follow-up turn
-function M.convert_tool_result(chat, speaker, msg)
-    if (not speaker) or (speaker.role ~= "tool") then
-        return nil
+-- Validate the complete batch before executing any tool. This prevents a
+-- malformed later call from leaving an earlier external side effect committed.
+function M.process(self, calls)
+    if not self._request_tools_enabled or not tools_enabled(self) then
+        return nil, nil, nil, false, chat_error.build(self, {
+            phase = "function_calling",
+            kind = "unsupported_feature",
+            message = "Anthropic requested a tool when Function Calling was disabled.",
+            can_continue = false,
+        })
+    end
+    if self._request_tool_choice == "none" then
+        return nil, nil, nil, false, chat_error.build(self, {
+            phase = "function_calling",
+            kind = "unsupported_feature",
+            message = "Anthropic requested another tool after Tool Use was closed for this turn.",
+            can_continue = false,
+        })
     end
 
+    local prepared = {}
+    local batch_ids = {}
+    self.processed_tool_call_ids = self.processed_tool_call_ids or {}
+    self._processed_tool_results = self._processed_tool_results or {}
+
+    for _, call in ipairs(calls or {}) do
+        local call_id = tostring(call.id or call.tool_call_id or "")
+        local name = tostring(call.name or "")
+        if #call_id == 0 or #name == 0 then
+            return nil, nil, nil, false, chat_error.build(self, {
+                phase = "function_calling",
+                kind = "parse_error",
+                message = "Anthropic returned an incomplete Tool Use block.",
+                detail = "tool_use_id=" .. call_id .. " name=" .. name,
+                can_continue = false,
+            })
+        end
+        if batch_ids[call_id] then
+            return nil, nil, nil, false, chat_error.build(self, {
+                phase = "function_calling",
+                kind = "parse_error",
+                message = "Anthropic returned a duplicate Tool Use ID.",
+                detail = "tool_use_id=" .. call_id,
+                can_continue = false,
+            })
+        end
+        batch_ids[call_id] = true
+
+        if type(self._request_tool_names) ~= "table"
+            or self._request_tool_names[name] ~= true then
+            return nil, nil, nil, false, chat_error.build(self, {
+                phase = "function_calling",
+                kind = "unsupported_feature",
+                message = "Anthropic requested a tool that was not offered.",
+                detail = "tool_use_id=" .. call_id .. " name=" .. name,
+                can_continue = false,
+            })
+        end
+
+        local args, input_error = parse_input(self, call)
+        if input_error then
+            return nil, nil, nil, false, input_error
+        end
+        local normalized_args = stringify_object(args)
+        local signature = name .. "\0" .. normalized_args
+        local previous_signature = self.processed_tool_call_ids[call_id]
+        local cached = self._processed_tool_results[call_id]
+        if previous_signature
+            and (previous_signature ~= signature or type(cached) ~= "table") then
+            return nil, nil, nil, false, chat_error.build(self, {
+                phase = "function_calling",
+                kind = "parse_error",
+                message = "Anthropic reused a Tool Use ID with different data.",
+                detail = "tool_use_id=" .. call_id,
+                can_continue = false,
+            })
+        end
+
+        prepared[#prepared + 1] = {
+            id = call_id,
+            name = name,
+            args = args,
+            normalized_args = normalized_args,
+            signature = signature,
+            cached = previous_signature and cached or nil,
+        }
+    end
+
+    if #prepared == 0 then
+        return nil, nil, nil, false, chat_error.build(self, {
+            phase = "function_calling",
+            kind = "parse_error",
+            message = "Anthropic reported Tool Use without any tool calls.",
+            can_continue = false,
+        })
+    end
+
+    local client = require("oasis.local.tool.client")
+    local function_call = { service = "Anthropic", tool_outputs = {} }
+    local speaker = { role = common.role.assistant, content = "", tool_calls = {} }
+    local first_output = ""
+    local reboot = false
+    local shutdown = false
+
+    for _, call in ipairs(prepared) do
+        local output
+        if call.cached then
+            output = call.cached.output
+            reboot = reboot or call.cached.reboot == true
+            shutdown = shutdown or call.cached.shutdown == true
+            debug:log("oasis.log", "anthropic.process",
+                "reuse cached tool result tool_use_id=" .. call.id)
+        else
+            -- The tool may perform an external side effect before raising an
+            -- error, so retries become unsafe as soon as execution begins.
+            self._tool_side_effects_committed = true
+            local result = client.exec_server_tool(self:get_format(), call.name, call.args)
+            output = jsonc.stringify(result, false)
+            if type(output) ~= "string" then
+                output = "null"
+            end
+
+            local result_reboot = type(result) == "table" and result.reboot == true
+            local result_shutdown = type(result) == "table" and result.shutdown == true
+            reboot = reboot or result_reboot
+            shutdown = shutdown or result_shutdown
+            self.processed_tool_call_ids[call.id] = call.signature
+            self._processed_tool_results[call.id] = {
+                output = output,
+                reboot = result_reboot,
+                shutdown = result_shutdown,
+            }
+            debug:log("oasis.log", "anthropic.process",
+                "executed tool_use_id=" .. call.id .. " name=" .. call.name)
+        end
+
+        function_call.tool_outputs[#function_call.tool_outputs + 1] = {
+            tool_call_id = call.id,
+            output = output,
+            name = call.name,
+        }
+        speaker.tool_calls[#speaker.tool_calls + 1] = {
+            id = call.id,
+            type = "function",
+            ["function"] = {
+                name = call.name,
+                arguments = call.normalized_args,
+            },
+        }
+        if #first_output == 0 then
+            first_output = output
+        end
+    end
+
+    function_call.reboot = reboot
+    function_call.shutdown = shutdown
+    return first_output, jsonc.stringify(function_call, false), speaker, true, nil
+end
+
+function M.convert_tool_result(chat, speaker, msg)
+    if not speaker or speaker.role ~= "tool" then
+        return nil
+    end
     msg.name = speaker.name
     msg.content = speaker.content or speaker.message or ""
     msg.tool_call_id = speaker.tool_call_id
-
     table.insert(chat.messages, msg)
     return true
 end
 
--- Convert assistant message that contains tool_calls (OpenAI style) to unified
 function M.convert_tool_call(chat, speaker, msg)
-    if (not speaker) or (speaker.role ~= common.role.assistant) or (not speaker.tool_calls) then
+    if not speaker or speaker.role ~= common.role.assistant
+        or type(speaker.tool_calls) ~= "table" then
         return nil
     end
 
-    local fixed_tool_calls = {}
-    for _, tc in ipairs(speaker.tool_calls or {}) do
-        local fn = tc["function"] or {}
-        fn.arguments = ous.normalize_arguments(fn.arguments)
-        fn.arguments = jsonc.stringify(fn.arguments, false)
-        table.insert(fixed_tool_calls, {
-            id = tc.id,
+    local fixed = {}
+    for _, tool_call in ipairs(speaker.tool_calls) do
+        local fn = tool_call["function"] or {}
+        local args = ous.normalize_arguments(fn.arguments)
+        fixed[#fixed + 1] = {
+            id = tool_call.id,
             type = "function",
-            ["function"] = fn
-        })
+            ["function"] = {
+                name = fn.name,
+                arguments = stringify_object(args),
+            },
+        }
     end
-    msg.tool_calls = fixed_tool_calls
+    msg.tool_calls = fixed
     msg.content = speaker.content or ""
     table.insert(chat.messages, msg)
     return true
