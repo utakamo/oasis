@@ -68,6 +68,134 @@ local function is_json_object(value)
     return true
 end
 
+-- FunctionDeclaration.parameters uses Gemini's restricted Schema type, not a
+-- complete JSON Schema document. Project the shared Oasis schema onto the
+-- fields supported by that type so provider-specific-incompatible fields such
+-- as additionalProperties never reach the Gemini API.
+local GEMINI_SCHEMA_VALUE_FIELDS = {
+    type = true,
+    format = true,
+    title = true,
+    description = true,
+    nullable = true,
+    maxItems = true,
+    minItems = true,
+    minProperties = true,
+    maxProperties = true,
+    minLength = true,
+    maxLength = true,
+    pattern = true,
+    example = true,
+    default = true,
+    minimum = true,
+    maximum = true,
+}
+
+local GEMINI_SCHEMA_STRING_ARRAY_FIELDS = {
+    enum = true,
+    required = true,
+    propertyOrdering = true,
+}
+
+local function copy_schema_string_array(value, field)
+    local count = dense_array_length(value)
+    if count == nil then
+        return nil, field .. " must be an array"
+    end
+
+    local copied = {}
+    for index = 1, count do
+        if type(value[index]) ~= "string" then
+            return nil, field .. " must contain only strings"
+        end
+        copied[index] = value[index]
+    end
+    return copied
+end
+
+local normalize_gemini_schema
+
+normalize_gemini_schema = function(schema, stack)
+    if not is_json_object(schema) then
+        return nil, "Schema must be a JSON object"
+    end
+
+    stack = stack or {}
+    if stack[schema] then
+        return nil, "cyclic Schema object"
+    end
+    stack[schema] = true
+
+    local normalized = {}
+    for field in pairs(GEMINI_SCHEMA_VALUE_FIELDS) do
+        if schema[field] ~= nil then
+            normalized[field] = copy_value(schema[field])
+        end
+    end
+
+    for field in pairs(GEMINI_SCHEMA_STRING_ARRAY_FIELDS) do
+        if schema[field] ~= nil then
+            local values, values_error =
+                copy_schema_string_array(schema[field], field)
+            if not values then
+                stack[schema] = nil
+                return nil, values_error
+            end
+            normalized[field] = values
+        end
+    end
+
+    if schema.properties ~= nil then
+        if not is_json_object(schema.properties) then
+            stack[schema] = nil
+            return nil, "properties must be a JSON object"
+        end
+        normalized.properties = {}
+        for name, property_schema in pairs(schema.properties) do
+            local property, property_error =
+                normalize_gemini_schema(property_schema, stack)
+            if not property then
+                stack[schema] = nil
+                return nil, "Invalid property " .. tostring(name) .. ": "
+                    .. tostring(property_error)
+            end
+            normalized.properties[name] = property
+        end
+    end
+
+    if schema.items ~= nil then
+        local items, items_error =
+            normalize_gemini_schema(schema.items, stack)
+        if not items then
+            stack[schema] = nil
+            return nil, "Invalid items Schema: " .. tostring(items_error)
+        end
+        normalized.items = items
+    end
+
+    if schema.anyOf ~= nil then
+        local count = dense_array_length(schema.anyOf)
+        if count == nil then
+            stack[schema] = nil
+            return nil, "anyOf must be an array"
+        end
+        normalized.anyOf = {}
+        for index = 1, count do
+            local alternative, alternative_error =
+                normalize_gemini_schema(schema.anyOf[index], stack)
+            if not alternative then
+                stack[schema] = nil
+                return nil, "Invalid anyOf Schema: "
+                    .. tostring(alternative_error)
+            end
+            normalized.anyOf[index] = alternative
+        end
+    end
+
+    stack[schema] = nil
+    return normalized
+end
+
 -- Return a stable JSON representation so that a retry with reordered object
 -- keys is still recognized as the same call. The original Lua value is passed
 -- to the tool; this serializer is used for identity and saved tool-call data.
@@ -208,7 +336,10 @@ local function validate_parameters(parameters)
         return nil, "parameters must be a JSON object"
     end
 
-    local copied = copy_value(parameters)
+    local copied, copy_error = normalize_gemini_schema(parameters)
+    if not copied then
+        return nil, copy_error
+    end
     copied.type = copied.type or "object"
     if copied.type ~= "object" then
         return nil, "parameters.type must be object"
