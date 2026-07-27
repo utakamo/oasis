@@ -11,6 +11,7 @@ local transfer = require("oasis.chat.transfer")
 local ous      = require("oasis.unified.chat.schema")
 local console  = require("oasis.console")
 local debug    = require("oasis.chat.debug")
+local chat_error = require("oasis.chat.error")
 
 local DEFAULT_MAX_TURNS = 6
 
@@ -190,11 +191,19 @@ local function agent_loop(service, chat, max_turns)
         turns = turns + 1
         debug:log("oasis.log", "agent_loop", "turn=" .. tostring(turns))
 
-        local ok, tool_info, plain_text, tool_used = pcall(transfer.chat_with_ai, service, chat)
+        local ok, tool_info, plain_text, tool_used, err = pcall(transfer.chat_with_ai, service, chat)
         if not ok then
             return {
                 state = "FAILED",
                 message = "chat_with_ai failed: " .. tostring(tool_info),
+                turns = turns,
+                tool_calls = tool_calls
+            }
+        end
+        if err then
+            return {
+                state = "FAILED",
+                message = chat_error.format(err),
                 turns = turns,
                 tool_calls = tool_calls
             }

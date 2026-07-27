@@ -202,7 +202,7 @@ function M.append_chat_data(service, chat)
     local count = #msgs
 
     if count < 2 then
-        return
+        return false, "Chat history did not contain a user/assistant pair."
     end
 
     -- Find the last assistant message that does not have tool_calls (if any)
@@ -242,7 +242,11 @@ function M.append_chat_data(service, chat)
         role1 = role1, content1 = content1,
         role2 = role2, content2 = content2
     }
-    util.ubus("oasis.chat", "append", message)
+    local result = util.ubus("oasis.chat", "append", message)
+    if type(result) ~= "table" or result.status ~= common.status.ok then
+        return false, "oasis.chat append failed."
+    end
+    return true, nil
 end
 
 return M

@@ -138,7 +138,9 @@ function M.convert_tool_result(chat, speaker, msg)
 		return false
 	end
 
-	msg.name = speaker.name
+	local tool_name = speaker.tool_name or speaker.name
+	msg.name = tool_name
+	msg.tool_name = tool_name
 	msg.content = speaker.content
 	msg.tool_call_id = speaker.tool_call_id  -- OpenAI tool id requirement
 
@@ -155,11 +157,10 @@ end
 
 function M.convert_tool_call(chat, speaker, msg)
 --[[
-	Note:
-	In most AI service JSON schemas, the tool execution result must include the tool_calls field from the original invocation.
-	This is because a tool_id is issued at the time of the tool_calls request, and the same tool_id must be attached to the result when returning it to the AI.
-	In contrast, Ollama—likely due to its local LLM architecture—does not require the tool_calls and the tool result to be submitted together.
-	In fact, bundling them causes an error. As a result, this function is a no-op when running under Ollama.
+	Ollama tool calls are accumulated across the complete response stream and
+	inserted by service/ollama.lua immediately before the tool-result messages.
+	Keep this generic hook as a no-op to avoid inserting the same assistant
+	tool-call message twice.
 ]]
 	return
 end

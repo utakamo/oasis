@@ -92,22 +92,70 @@ function M.write_file(filename, data)
         return false, err or "failed to open file"
     end
     local ok, werr = file:write(data)
-    file:close()
     if not ok then
+        file:close()
         return false, werr or "failed to write"
+    end
+    local close_ok, close_err = file:close()
+    if not close_ok then
+        return false, close_err or "failed to close file"
+    end
+    return true, nil
+end
+
+--- Atomically replace a file with newly written data.
+-- The temporary file is created in the destination directory so rename does
+-- not cross filesystems. The old file remains intact if writing or closing the
+-- temporary file fails.
+-- @param filename string
+-- @param data string
+-- @return boolean ok, string|nil err
+function M.write_file_atomic(filename, data)
+    M._atomic_write_counter = (M._atomic_write_counter or 0) + 1
+
+    local process_id = "unknown"
+    local nixio_ok, nixio = pcall(require, "nixio")
+    if nixio_ok and type(nixio.getpid) == "function" then
+        process_id = tostring(nixio.getpid())
+    else
+        process_id = tostring({}):gsub("[^%w]", "")
+    end
+
+    local temporary = string.format(
+        "%s.tmp.%s.%d",
+        filename,
+        process_id,
+        M._atomic_write_counter
+    )
+    local write_ok, write_err = M.write_file(temporary, data)
+    if not write_ok then
+        os.remove(temporary)
+        return false, write_err
+    end
+
+    local rename_ok, rename_err = os.rename(temporary, filename)
+    if not rename_ok then
+        os.remove(temporary)
+        return false, rename_err or "failed to replace file"
     end
     return true, nil
 end
 
 function M.read_file(filename)
-    local file = io.open(filename, "r")  -- open in read mode
+    local file, open_err = io.open(filename, "r")  -- open in read mode
     if not file then
-        return nil, "Failed to open file"
+        return nil, open_err or "Failed to open file"
     end
 
-    local content = file:read("*a")  -- read the entire file
-    file:close()  -- close the file
-    return content
+    local content, read_err = file:read("*a")  -- read the entire file
+    local close_ok, close_err = file:close()  -- close the file
+    if content == nil then
+        return nil, read_err or "Failed to read file"
+    end
+    if not close_ok then
+        return nil, close_err or "Failed to close file"
+    end
+    return content, nil
 end
 
 function M.copy_file(src, dst)

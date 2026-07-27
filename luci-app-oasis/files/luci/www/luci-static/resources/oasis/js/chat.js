@@ -2152,9 +2152,49 @@
         let rebootRequired = false;
         let shutdownRequired = false;
         let pendingServiceRestart = '';
+        let thinkingMessage = '';
 
         function appendErrorNotice(error) {
             errorNoticesHtml += `<div class="error-notice">${escapeHTML(formatChatError(error))}</div>`;
+        }
+
+        function clearTypingIndicator() {
+            if (receivedMessageTextContainer._typingTimer) {
+                clearInterval(receivedMessageTextContainer._typingTimer);
+                delete receivedMessageTextContainer._typingTimer;
+            }
+        }
+
+        function buildThinkingHtml() {
+            if (!thinkingMessage || thinkingMessage.length === 0) {
+                return '';
+            }
+
+            return `<div class="thinking-panel"><div class="thinking-label">${escapeHTML(t('thinkingLabel', 'Thinking'))}</div><div class="thinking-body">${escapeHTML(thinkingMessage)}</div></div>`;
+        }
+
+        function renderAssistantMessage() {
+            const answerHtml = fullMessage.length > 0
+                ? sanitizeHTML(convertMarkdownToHTML(fullMessage))
+                : '';
+            receivedMessageTextContainer.innerHTML = buildThinkingHtml() + errorNoticesHtml + answerHtml;
+            clearTypingIndicator();
+        }
+
+        function appendThinking(content) {
+            if (typeof content !== 'string' || content.length === 0) {
+                return;
+            }
+
+            thinkingMessage += content;
+            renderAssistantMessage();
+
+            if (isKeyboardOpen) {
+                keepLatestMessageVisible(true);
+                setChatScrollLock(true);
+            } else {
+                keepLatestMessageVisible(true);
+            }
         }
 
         try {
@@ -2216,6 +2256,10 @@
 
                     // Custom stream events: execution/download
                     if (evt && typeof evt.type === 'string') {
+                        if (evt.type === 'thinking') {
+                            appendThinking(evt.content || '');
+                            continue;
+                        }
                         if (evt.type === 'execution') {
                             if (evt.message) showToolExecutionNotice(evt.message);
                             else showToolExecutionNotice(t('executingTool', 'Executing tool...'));
@@ -2358,11 +2402,7 @@
 
                         // Progressive rendering on desktop: keep typing until content arrives
                         if (!isSmallViewport && fullMessage.length > 0) {
-                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(fullMessage));
-                            if (receivedMessageTextContainer._typingTimer) {
-                                clearInterval(receivedMessageTextContainer._typingTimer);
-                                delete receivedMessageTextContainer._typingTimer;
-                            }
+                            renderAssistantMessage();
                             if (isKeyboardOpen) {
                                 keepLatestMessageVisible(true);
                                 setChatScrollLock(true);
@@ -2372,17 +2412,21 @@
                         }
                     }
 
+                    if (evt.message && typeof evt.message.thinking === 'string') {
+                        appendThinking(evt.message.thinking);
+                    }
+
                     // Assistant message (streaming)
                     if (evt.message && typeof evt.message.content === 'string') {
+                        if (evt.message.content.length === 0) {
+                            continue;
+                        }
+
                         // On assistant response, hide download overlay if visible
                         await hideDownloadOverlayAndWait();
                         fullMessage += evt.message.content;
                         if (!isSmallViewport) {
-                            receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(fullMessage));
-                            if (receivedMessageTextContainer._typingTimer) {
-                                clearInterval(receivedMessageTextContainer._typingTimer);
-                                delete receivedMessageTextContainer._typingTimer;
-                            }
+                            renderAssistantMessage();
                             if (isKeyboardOpen) {
                                 keepLatestMessageVisible(true);
                                 setChatScrollLock(true);
@@ -2496,7 +2540,9 @@
                     }
 
                     if (evt && typeof evt.type === 'string') {
-                        if (evt.type === 'execution') {
+                        if (evt.type === 'thinking') {
+                            appendThinking(evt.content || '');
+                        } else if (evt.type === 'execution') {
                             if (evt.message) showToolExecutionNotice(evt.message);
                         } else if (evt.type === 'download') {
                             showDownloadOverlay(evt.message || t('downloading', 'Downloading...'));
@@ -2509,9 +2555,15 @@
                         pendingServiceRestart = evt.prepare_service_restart.trim();
                     }
 
+                    if (evt.message && typeof evt.message.thinking === 'string') {
+                        appendThinking(evt.message.thinking);
+                    }
+
                     if (evt.message && typeof evt.message.content === 'string') {
-                        await hideDownloadOverlayAndWait();
-                        fullMessage += evt.message.content;
+                        if (evt.message.content.length > 0) {
+                            await hideDownloadOverlayAndWait();
+                            fullMessage += evt.message.content;
+                        }
                     }
                     if (evt.id && isNumeric(evt.id)) {
                         show_chat_popup(evt);
@@ -2528,12 +2580,13 @@
             const __hasToolNotice = !!(toolNoticesHtml && toolNoticesHtml.length > 0);
             const __hasErrorNotice = !!(errorNoticesHtml && errorNoticesHtml.length > 0);
             const __finalText = (fullMessage || '').trim();
+            const __thinkingHtml = buildThinkingHtml();
             //console.log('[AI final text]', __finalText);
             if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
-                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(t('noResponse', 'No response from AI service. Please check settings.')));
+                receivedMessageTextContainer.innerHTML = __thinkingHtml + sanitizeHTML(convertMarkdownToHTML(t('noResponse', 'No response from AI service. Please check settings.')));
             } else {
                 // Render only errors + assistant content. Tool notice is shown in a separate bubble.
-                receivedMessageTextContainer.innerHTML = errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(__finalText));
+                receivedMessageTextContainer.innerHTML = __thinkingHtml + errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(__finalText));
             }
 
             // Prompt reboot if required by tool results
@@ -2553,10 +2606,7 @@
                 // console.log('[oasis] pendingServiceRestart(final):', pendingServiceRestart);
                 setTimeout(() => { show_restart_service_popup(pendingServiceRestart); }, 0);
             }
-            if (receivedMessageTextContainer._typingTimer) {
-                clearInterval(receivedMessageTextContainer._typingTimer);
-                delete receivedMessageTextContainer._typingTimer;
-            }
+            clearTypingIndicator();
             if (isSmallViewport) {
                 keepLatestMessageVisible(true);
             } else {
