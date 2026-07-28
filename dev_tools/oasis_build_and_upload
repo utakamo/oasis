@@ -7,10 +7,13 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # Oasis Build & Upload Automation Script
 #
 # Usage:
-#   ./oasis_build_and_upload.sh
+#   ./oasis_build_and_upload
 #       → Runs automatically using saved settings (if available).
 #
-#   ./oasis_build_and_upload.sh --reset
+#   ./oasis_build_and_upload upload-only
+#       → Uploads already-built package artifacts without rebuilding.
+#
+#   ./oasis_build_and_upload --reset
 #       → Deletes stored settings and asks for inputs again.
 #
 # Requirements:
@@ -23,7 +26,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 usage() {
   cat <<'EOF'
 Usage:
-  oasis_build_and_upload [options]
+  oasis_build_and_upload [build-upload] [options]
+  oasis_build_and_upload upload-only [options]
 
 Options:
   --reset                         Delete stored settings and exit.
@@ -87,9 +91,18 @@ resolve_package_file() {
 
 RESET_CONFIG=0
 PKG_EXT_OVERRIDE=""
+COMMAND="build-upload"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    build-upload|upload-only)
+      COMMAND="$1"
+      shift
+      ;;
+    upload)
+      COMMAND="upload-only"
+      shift
+      ;;
     --reset)
       RESET_CONFIG=1
       shift
@@ -111,7 +124,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "ERROR: unknown option: $1" >&2
+      echo "ERROR: unknown command or option: $1" >&2
       usage >&2
       exit 1
       ;;
@@ -237,6 +250,7 @@ echo "Target Host : $TARGET_IP"
 echo "Password    : (hidden)"
 echo "BASE Path   : $BASE"
 echo "Package Ext : .$PKG_EXT"
+echo "Mode        : $COMMAND"
 echo "Config File : $CONFIG_FILE"
 echo "--------------------------------------"
 echo
@@ -247,24 +261,28 @@ case "$CONFIRM" in
   *) echo "Cancelled."; exit 1 ;;
 esac
 
-# ====================================
-# Detect OpenWrt Root
-# ====================================
-OPENWRT_DIR=$(echo "$BASE" | sed 's|\(.*openwrt\).*|\1|')
-cd "$OPENWRT_DIR"
+if [[ "$COMMAND" == "build-upload" ]]; then
+  # ====================================
+  # Detect OpenWrt Root
+  # ====================================
+  OPENWRT_DIR=$(echo "$BASE" | sed 's|\(.*openwrt\).*|\1|')
+  cd "$OPENWRT_DIR"
 
-# ====================================
-# Build
-# ====================================
-make package/oasis/{clean,compile}
-make package/oasis-mod-tool/{clean,compile}
-make package/oasis-mod-agent/{clean,compile}
-make package/oasis-mod-retired/{clean,compile}
-make package/luci-app-oasis/{clean,compile}
-make package/oasis-tool-edge/{clean,compile}
-make package/oasis-mod-test/{clean,compile}
-make package/oasis-tool-maker/{clean,compile}
-make package/luci-i18n-oasis-ja/{clean,compile}
+  # ====================================
+  # Build
+  # ====================================
+  make package/oasis/{clean,compile}
+  make package/oasis-mod-tool/{clean,compile}
+  make package/oasis-mod-agent/{clean,compile}
+  make package/oasis-mod-retired/{clean,compile}
+  make package/luci-app-oasis/{clean,compile}
+  make package/oasis-tool-edge/{clean,compile}
+  make package/oasis-mod-test/{clean,compile}
+  make package/oasis-tool-maker/{clean,compile}
+  make package/luci-i18n-oasis-ja/{clean,compile}
+else
+  echo "Skipping build phase; uploading existing package artifacts."
+fi
 
 # ====================================
 # Upload package files
