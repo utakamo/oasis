@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-oasis\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-19 23:03+0000\n"
+"POT-Creation-Date: 2026-07-28 23:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: \n"
@@ -96,6 +96,7 @@ msgid "Disable"
 msgstr ""
 
 #: files/luci/view/tools.htm:46
+#: files/luci/view/setting-v2.htm:144
 msgid "Disabled"
 msgstr ""
 
@@ -310,6 +311,7 @@ msgstr ""
 #: files/luci/view/chat.htm:274
 #: files/luci/view/chat.htm:328
 #: files/luci/view/rollback-list.htm:40
+#: files/luci/view/setting-v2.htm:109
 msgid "Rollback"
 msgstr ""
 
@@ -735,4 +737,325 @@ msgstr ""
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:118
 msgid "marker end line not found"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:60
+msgid "AI Services"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:103
+msgid "AI-assisted configuration"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:121
+msgid "API key"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:115
+msgid "API Key Setup"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:140
+msgid "API mode"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:116
+msgid "Active"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:149
+msgid "Budget Tokens"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:138
+msgid "Custom endpoint"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:135
+msgid "Endpoint"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:136
+msgid "Endpoint type"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:30
+msgid "Failed to load settings."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:173
+msgid "Failed to load settings. Check the settings API and try again."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:131
+msgid "Function Calling"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:8
+msgid "General Setting"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:53
+msgid "General Settings"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:102
+msgid "Integration"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:23
+msgid "Loading settings..."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:147
+msgid "Max Tokens"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:108
+msgid "Maximum turns per chat"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:118
+msgid "Model"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:112
+msgid "Monitor time"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:117
+msgid "Provider"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:104
+msgid "RPC access"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:32
+msgid "Retry"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:133
+msgid "Show thinking"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:105
+msgid "Storage"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:106
+msgid "Storage path"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:111
+msgid "Store rollback data"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:143
+msgid "Thinking mode"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:113
+msgid "seconds"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:115
+msgid "services"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:122
+msgid "A key is currently configured."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:124
+msgid "API key action"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:146
+msgid "Adaptive"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:70
+msgid "Add service"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:164
+msgid "Budget Tokens must be at least 1024."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:165
+msgid "Budget Tokens must be less than Max Tokens."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:142
+msgid "Chat Completions API"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:156
+msgid "Choose Replace with a new key or Clear stored key after changing the provider."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:127
+msgid "Clear stored key"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:9
+msgid "Configure Oasis integration, storage, rollback, and AI services."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:134
+msgid "Controls display only; it does not enable model thinking."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:168
+msgid "Correct the highlighted fields before saving."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:139
+msgid "Custom endpoint URL"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:88
+msgid "Discard"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:174
+msgid "Discard unsaved changes and load the latest settings?"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:166
+msgid "Each service identifier must be unique."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:132
+msgid "Enable only when the selected provider and model support tool use."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:145
+msgid "Enabled with manual budget"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:148
+#: files/luci/view/setting-v2.htm:161
+msgid "Enter a positive integer."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:160
+msgid "Enter a valid HTTP or HTTPS URL."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:158
+msgid "Enter an absolute path beginning with a slash."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:150
+msgid "Enter at least 1024 and less than Max Tokens."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:171
+msgid "Failed to save settings. Check the fields and try again."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:125
+msgid "Keep current key"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:48
+msgid "Load latest settings"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:129
+msgid "New API key"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:79
+msgid "No AI services are configured. Add a service to use Oasis chat."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:123
+msgid "No key is currently configured."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:137
+msgid "Official endpoint"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:153
+msgid "Remove service"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:154
+msgid "Remove this AI service from the configuration?"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:126
+msgid "Replace with a new key"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:141
+msgid "Responses API"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:94
+msgid "Save"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:169
+msgid "Saving settings..."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:162
+msgid "Select a value from 10 to 100 in steps of 10."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:163
+msgid "Select a value from 60 to 600 seconds in steps of 60."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:128
+msgid "Select an API key action"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:170
+msgid "Settings saved successfully."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:56
+msgid "The first service is active."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:130
+msgid "The new key is sent only when you save and is never returned by the server."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:155
+msgid "The provider changed. Choose whether to replace or clear the stored API key."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:110
+msgid "The rollback module is unavailable. Its settings cannot be changed."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:172
+msgid "The settings changed after this page was loaded. Load the latest settings before saving again."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:159
+msgid "The storage path must not contain parent directory segments."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:167
+msgid "The value is too long."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:157
+msgid "This field is required."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:107
+msgid "Use an absolute directory path."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:114
+msgid "service"
 msgstr ""
