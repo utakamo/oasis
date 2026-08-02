@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=8
+PKG_RELEASE:=12
 
 APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd

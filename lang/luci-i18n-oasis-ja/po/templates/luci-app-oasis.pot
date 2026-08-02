@@ -779,6 +779,113 @@ msgstr ""
 msgid "Endpoint type"
 msgstr ""
 
+#: files/luci/view/setting-v2.htm:43
+#: files/luci/view/setting-v2.htm:113
+#: files/luci/view/setting-v2.htm:765
+msgid "External RPC account"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:44
+#: files/luci/view/setting-v2.htm:114
+msgid "Create one restricted rpcd account for an external Oasis client."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:115
+#: files/luci/view/setting-v2.htm:792
+msgid "External RPC account settings are unavailable."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:116
+#: files/luci/view/setting-v2.htm:777
+msgid "Controls whether external clients can use this account."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:117
+#: files/luci/view/setting-v2.htm:806
+msgid "An external RPC account is configured."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:118
+#: files/luci/view/setting-v2.htm:807
+msgid "No external RPC account is configured."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:119
+msgid "Username"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:120
+msgid "Password"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:121
+msgid "Confirm password"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:122
+msgid "New password (optional)"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:123
+msgid "Use at least 12 characters. The password is never displayed after saving."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:124
+#: files/luci/view/setting-v2.htm:854
+msgid "Create account"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:125
+#: files/luci/view/setting-v2.htm:853
+msgid "Update account"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:126
+#: files/luci/view/setting-v2.htm:868
+msgid "Remove account"
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:127
+#: files/luci/view/setting-v2.htm:674
+msgid "Remove the external RPC account? Existing external sessions will be disconnected."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:128
+#: files/luci/view/setting-v2.htm:738
+msgid "External RPC account created successfully."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:129
+#: files/luci/view/setting-v2.htm:741
+msgid "External RPC account updated successfully."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:130
+#: files/luci/view/setting-v2.htm:740
+msgid "External RPC account removed successfully."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:131
+#: files/luci/view/setting-v2.htm:749
+msgid "Failed to save the external RPC account."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:132
+msgid "Enter a username using letters, numbers, dots, underscores, or hyphens."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:133
+msgid "Enter a password containing at least 12 characters."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:134
+msgid "The passwords do not match."
+msgstr ""
+
+#: files/luci/view/setting-v2.htm:135
+msgid "Choose a different username."
+msgstr ""
+
 #: files/luci/view/setting-v2.htm:30
 msgid "Failed to load settings."
 msgstr ""

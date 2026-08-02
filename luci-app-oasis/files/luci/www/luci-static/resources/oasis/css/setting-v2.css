@@ -208,6 +208,44 @@
     margin-top: 1rem;
 }
 
+.oasis-setting-v2__account-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.9rem 1rem;
+}
+
+.oasis-setting-v2__rpc-access {
+    grid-column: 1 / -1;
+}
+
+.oasis-setting-v2__account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.oasis-setting-v2__account-actions .cbi-button {
+    min-width: 0;
+    margin: 0;
+    padding: 0 0.55rem;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+}
+
+.oasis-setting-v2__account-warning {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    border-inline-start: 0.3rem solid var(--oasis-setting-warning);
+    border-radius: 0.35rem;
+    color: var(--oasis-setting-warning);
+    background: var(--oasis-setting-surface-muted);
+    font-size: 0.875rem;
+}
+
 .oasis-setting-v2__field {
     min-width: 0;
 }
@@ -236,6 +274,78 @@
     width: 1.2rem;
     height: 1.2rem;
     margin: 0.3rem 0;
+}
+
+.oasis-setting-v2__rpc-access {
+    position: relative;
+}
+
+.oasis-setting-v2__rpc-access > label {
+    display: inline-flex;
+    position: relative;
+    align-items: center;
+    min-height: 1.35rem;
+    margin-bottom: 0;
+    padding-left: 3rem;
+    cursor: pointer;
+}
+
+.oasis-setting-v2__rpc-access > label::before,
+.oasis-setting-v2__rpc-access > label::after {
+    content: "";
+    position: absolute;
+}
+
+.oasis-setting-v2__rpc-access > label::before {
+    top: 0;
+    left: 0;
+    width: 2.5rem;
+    height: 1.35rem;
+    border: 1px solid var(--oasis-setting-border);
+    border-radius: 999px;
+    background: var(--oasis-setting-surface-muted);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.oasis-setting-v2__rpc-access > label::after {
+    top: 0.15rem;
+    left: 0.15rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    background: var(--oasis-setting-surface, #ffffff);
+    box-shadow: 0 0.05rem 0.15rem rgba(0, 0, 0, 0.25);
+    content: "";
+    transition: transform 0.15s ease;
+}
+
+.oasis-setting-v2__rpc-access--enabled > label::before {
+    border-color: var(--oasis-setting-primary);
+    background: var(--oasis-setting-primary);
+}
+
+.oasis-setting-v2__rpc-access--enabled > label::after {
+    transform: translateX(1.15rem);
+}
+
+.oasis-setting-v2__field input.oasis-setting-v2__toggle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2.5rem;
+    height: 1.35rem;
+    margin: 0;
+    opacity: 0;
+}
+
+.oasis-setting-v2__rpc-access:focus-within > label {
+    border-radius: 999px;
+    box-shadow: 0 0 0 0.2rem var(--oasis-setting-focus);
+}
+
+.oasis-setting-v2__rpc-access:has(input:disabled) > label {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .oasis-setting-v2__field input:focus,
@@ -360,7 +470,19 @@
         grid-template-columns: 1fr;
     }
 
+    .oasis-setting-v2__account-fields {
+        grid-template-columns: 1fr;
+    }
+
     .oasis-setting-v2__secret-status {
+        grid-column: auto;
+    }
+
+    .oasis-setting-v2__rpc-access {
+        grid-column: auto;
+    }
+
+    .oasis-setting-v2__account-warning {
         grid-column: auto;
     }
 
@@ -377,5 +499,10 @@
 @media (prefers-reduced-motion: reduce) {
     .oasis-setting-v2__spinner {
         animation: none;
+    }
+
+    .oasis-setting-v2__rpc-access > label::before,
+    .oasis-setting-v2__rpc-access > label::after {
+        transition: none;
     }
 }

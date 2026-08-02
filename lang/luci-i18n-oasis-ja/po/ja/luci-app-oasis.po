@@ -882,6 +882,113 @@ msgstr "エンドポイント"
 msgid "Endpoint type"
 msgstr "エンドポイント種別"
 
+#: files/luci/view/setting-v2.htm:43
+#: files/luci/view/setting-v2.htm:113
+#: files/luci/view/setting-v2.htm:765
+msgid "External RPC account"
+msgstr "外部RPCアカウント"
+
+#: files/luci/view/setting-v2.htm:44
+#: files/luci/view/setting-v2.htm:114
+msgid "Create one restricted rpcd account for an external Oasis client."
+msgstr "外部Oasisクライアント用に、権限を制限したrpcdアカウントを1つ作成します。"
+
+#: files/luci/view/setting-v2.htm:115
+#: files/luci/view/setting-v2.htm:792
+msgid "External RPC account settings are unavailable."
+msgstr "外部RPCアカウントの設定は利用できません。"
+
+#: files/luci/view/setting-v2.htm:116
+#: files/luci/view/setting-v2.htm:777
+msgid "Controls whether external clients can use this account."
+msgstr "外部クライアントがこのアカウントを使用できるかどうかを制御します。"
+
+#: files/luci/view/setting-v2.htm:117
+#: files/luci/view/setting-v2.htm:806
+msgid "An external RPC account is configured."
+msgstr "外部RPCアカウントが設定されています。"
+
+#: files/luci/view/setting-v2.htm:118
+#: files/luci/view/setting-v2.htm:807
+msgid "No external RPC account is configured."
+msgstr "外部RPCアカウントは設定されていません。"
+
+#: files/luci/view/setting-v2.htm:119
+msgid "Username"
+msgstr "ユーザー名"
+
+#: files/luci/view/setting-v2.htm:120
+msgid "Password"
+msgstr "パスワード"
+
+#: files/luci/view/setting-v2.htm:121
+msgid "Confirm password"
+msgstr "パスワードの確認"
+
+#: files/luci/view/setting-v2.htm:122
+msgid "New password (optional)"
+msgstr "新しいパスワード（任意）"
+
+#: files/luci/view/setting-v2.htm:123
+msgid "Use at least 12 characters. The password is never displayed after saving."
+msgstr "12文字以上で入力してください。パスワードは保存後に表示されません。"
+
+#: files/luci/view/setting-v2.htm:124
+#: files/luci/view/setting-v2.htm:854
+msgid "Create account"
+msgstr "アカウントを作成"
+
+#: files/luci/view/setting-v2.htm:125
+#: files/luci/view/setting-v2.htm:853
+msgid "Update account"
+msgstr "アカウントを更新"
+
+#: files/luci/view/setting-v2.htm:126
+#: files/luci/view/setting-v2.htm:868
+msgid "Remove account"
+msgstr "アカウントを削除"
+
+#: files/luci/view/setting-v2.htm:127
+#: files/luci/view/setting-v2.htm:674
+msgid "Remove the external RPC account? Existing external sessions will be disconnected."
+msgstr "外部RPCアカウントを削除しますか？既存の外部セッションは切断されます。"
+
+#: files/luci/view/setting-v2.htm:128
+#: files/luci/view/setting-v2.htm:738
+msgid "External RPC account created successfully."
+msgstr "外部RPCアカウントを作成しました。"
+
+#: files/luci/view/setting-v2.htm:129
+#: files/luci/view/setting-v2.htm:741
+msgid "External RPC account updated successfully."
+msgstr "外部RPCアカウントを更新しました。"
+
+#: files/luci/view/setting-v2.htm:130
+#: files/luci/view/setting-v2.htm:740
+msgid "External RPC account removed successfully."
+msgstr "外部RPCアカウントを削除しました。"
+
+#: files/luci/view/setting-v2.htm:131
+#: files/luci/view/setting-v2.htm:749
+msgid "Failed to save the external RPC account."
+msgstr "外部RPCアカウントの保存に失敗しました。"
+
+#: files/luci/view/setting-v2.htm:132
+msgid "Enter a username using letters, numbers, dots, underscores, or hyphens."
+msgstr "英字、数字、ドット、アンダースコア、ハイフンを使ってユーザー名を入力してください。"
+
+#: files/luci/view/setting-v2.htm:133
+msgid "Enter a password containing at least 12 characters."
+msgstr "12文字以上のパスワードを入力してください。"
+
+#: files/luci/view/setting-v2.htm:134
+msgid "The passwords do not match."
+msgstr "パスワードが一致しません。"
+
+#: files/luci/view/setting-v2.htm:135
+msgid "Choose a different username."
+msgstr "別のユーザー名を選択してください。"
+
 #: files/luci/view/setting-v2.htm:30
 msgid "Failed to load settings."
 msgstr "設定の読み込みに失敗しました。"
