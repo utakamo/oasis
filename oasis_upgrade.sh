@@ -8,6 +8,7 @@ TOOL_VER="${TOOL_VER:-}"
 REBOOT="${REBOOT:-}"
 
 API_URL="https://api.github.com/repos/utakamo/oasis/releases/latest"
+INSTALLATION_GUIDE_URL="https://github.com/utakamo/oasis#first-installation"
 TMP_DIR="/tmp"
 BACKUP_FILE="/tmp/oasis/backup"
 
@@ -117,10 +118,16 @@ prompt_reboot_if_needed() {
 # Main process
 #------------------------------------------------------------
 main() {
-  opkg update
-
   cur_ver="$(get_installed_ver oasis || true)"
   echo "Current oasis version: ${cur_ver:-<not installed>}"
+
+  if [ -z "$cur_ver" ]; then
+    echo "Oasis is not installed. Install it before running the upgrade script:"
+    printf '\033[1;36m%s\033[0m\n' "$INSTALLATION_GUIDE_URL"
+    exit 0
+  fi
+
+  opkg update
 
   if [ -z "$RELEASE_TAG" ] || [ -z "$OASIS_VER" ] || [ -z "$LUCI_VER" ] || [ -z "$TOOL_VER" ]; then
     echo "Fetching latest release info from GitHub..."
