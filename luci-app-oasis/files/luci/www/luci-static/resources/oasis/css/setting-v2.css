@@ -1,0 +1,381 @@
+.oasis-setting-v2 {
+    --oasis-setting-border: var(--border-color-medium, #d5d9df);
+    --oasis-setting-surface: var(--background-color-high, #ffffff);
+    --oasis-setting-surface-muted: var(--background-color-low, #f6f7f8);
+    --oasis-setting-primary: var(--primary-color-medium, #1564c0);
+    --oasis-setting-success: var(--success-color-medium, #198754);
+    --oasis-setting-warning: #9a6700;
+    --oasis-setting-error: var(--error-color-medium, #c62828);
+    --oasis-setting-focus: rgba(21, 100, 192, 0.18);
+    max-width: 76rem;
+}
+
+.oasis-setting-v2[aria-busy="true"] {
+    cursor: progress;
+}
+
+.oasis-setting-v2 [hidden] {
+    display: none !important;
+}
+
+.oasis-setting-v2__heading,
+.oasis-setting-v2__section-heading,
+.oasis-setting-v2__service-heading,
+.oasis-setting-v2__service-title,
+.oasis-setting-v2__service-summary,
+.oasis-setting-v2__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.oasis-setting-v2__heading h2,
+.oasis-setting-v2__section-heading h3,
+.oasis-setting-v2__service-heading h4 {
+    margin: 0;
+}
+
+.oasis-setting-v2__heading p,
+.oasis-setting-v2__section-heading p {
+    margin: 0.35rem 0 0;
+    color: var(--text-color-medium, #5f6368);
+}
+
+.oasis-setting-v2__badge,
+.oasis-setting-v2__count {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-height: 1.75rem;
+    padding: 0.15rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.oasis-setting-v2__count {
+    color: var(--oasis-setting-primary);
+    background: var(--oasis-setting-surface-muted);
+}
+
+.oasis-setting-v2__state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 7rem;
+    padding: 1rem;
+    border: 1px solid var(--oasis-setting-border);
+    border-radius: 0.6rem;
+    background: var(--oasis-setting-surface);
+}
+
+.oasis-setting-v2__state--error {
+    flex-direction: column;
+    color: var(--oasis-setting-error);
+}
+
+.oasis-setting-v2__state--error p {
+    margin: 0;
+    text-align: center;
+}
+
+.oasis-setting-v2__spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0.2rem solid var(--oasis-setting-border);
+    border-top-color: var(--oasis-setting-primary);
+    border-radius: 50%;
+    animation: oasis-setting-v2-spin 0.8s linear infinite;
+}
+
+.oasis-setting-v2__save-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1.25rem 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--oasis-setting-border);
+    border-inline-start-width: 0.3rem;
+    border-radius: 0.4rem;
+    background: var(--oasis-setting-surface);
+}
+
+.oasis-setting-v2__save-status:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem var(--oasis-setting-focus);
+}
+
+.oasis-setting-v2__save-status--progress {
+    border-inline-start-color: var(--oasis-setting-primary);
+}
+
+.oasis-setting-v2__save-status--success {
+    border-inline-start-color: var(--oasis-setting-success);
+    color: var(--oasis-setting-success);
+}
+
+.oasis-setting-v2__save-status--warning {
+    border-inline-start-color: var(--oasis-setting-warning);
+    color: var(--oasis-setting-warning);
+}
+
+.oasis-setting-v2__save-status--error {
+    border-inline-start-color: var(--oasis-setting-error);
+    color: var(--oasis-setting-error);
+}
+
+.oasis-setting-v2__section {
+    margin-top: 1.5rem;
+}
+
+.oasis-setting-v2__section > h3,
+.oasis-setting-v2__section-heading {
+    margin-bottom: 0.85rem;
+}
+
+.oasis-setting-v2__panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1rem;
+}
+
+.oasis-setting-v2__panel,
+.oasis-setting-v2__service-card {
+    min-width: 0;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--oasis-setting-border);
+    border-radius: 0.6rem;
+    background: var(--oasis-setting-surface);
+}
+
+.oasis-setting-v2__panel legend {
+    padding: 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.oasis-setting-v2__panel-description {
+    margin: 0 0 0.75rem;
+    color: var(--text-color-medium, #5f6368);
+    font-size: 0.875rem;
+}
+
+.oasis-setting-v2__service-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.oasis-setting-v2__service-card--active {
+    border-color: var(--oasis-setting-primary);
+    box-shadow: inset 0.2rem 0 0 var(--oasis-setting-primary);
+}
+
+.oasis-setting-v2__service-title {
+    justify-content: flex-start;
+    min-width: 0;
+}
+
+.oasis-setting-v2__service-title h4 {
+    overflow-wrap: anywhere;
+}
+
+.oasis-setting-v2__badge {
+    color: var(--on-success-color, #ffffff);
+    background: var(--oasis-setting-success);
+}
+
+.oasis-setting-v2__service-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.oasis-setting-v2__service-toolbar .cbi-button {
+    margin: 0;
+}
+
+.oasis-setting-v2__service-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.9rem 1rem;
+    margin-top: 1rem;
+}
+
+.oasis-setting-v2__field {
+    min-width: 0;
+}
+
+.oasis-setting-v2__field > label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--text-color-high, inherit);
+    font-weight: 600;
+}
+
+.oasis-setting-v2__field input[type="text"],
+.oasis-setting-v2__field input[type="password"],
+.oasis-setting-v2__field select {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+}
+
+.oasis-setting-v2__field input[readonly] {
+    color: var(--text-color-medium, #5f6368);
+    background: var(--oasis-setting-surface-muted);
+}
+
+.oasis-setting-v2__field input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin: 0.3rem 0;
+}
+
+.oasis-setting-v2__field input:focus,
+.oasis-setting-v2__field select:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem var(--oasis-setting-focus);
+}
+
+.oasis-setting-v2__field--error input,
+.oasis-setting-v2__field--error select {
+    border-color: var(--oasis-setting-error);
+}
+
+.oasis-setting-v2__required,
+.oasis-setting-v2__field-error {
+    color: var(--oasis-setting-error);
+}
+
+.oasis-setting-v2__help,
+.oasis-setting-v2__field-error {
+    margin: 0.35rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.oasis-setting-v2__help {
+    color: var(--text-color-medium, #5f6368);
+}
+
+.oasis-setting-v2__field-error {
+    font-weight: 600;
+}
+
+.oasis-setting-v2__secret-status {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.35rem;
+    color: var(--text-color-medium, #5f6368);
+    background: var(--oasis-setting-surface-muted);
+}
+
+.oasis-setting-v2__secret-status--configured {
+    color: var(--oasis-setting-success);
+    font-weight: 600;
+}
+
+.oasis-setting-v2__empty {
+    margin: 0;
+    padding: 2rem 1rem;
+    border: 1px dashed var(--oasis-setting-border);
+    border-radius: 0.6rem;
+    color: var(--text-color-medium, #5f6368);
+    text-align: center;
+}
+
+.oasis-setting-v2__actions {
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    margin-bottom: 4px;
+    padding-top: 1rem;
+    border-top: 1px solid var(--oasis-setting-border);
+}
+
+.oasis-setting-v2__service-summary,
+.oasis-setting-v2__actions {
+    gap: 0.5rem;
+}
+
+.oasis-setting-v2__actions .cbi-button {
+    min-width: 0;
+    margin: 0;
+}
+
+#oasis-setting-v2-add-service,
+#oasis-setting-v2-reload,
+#oasis-setting-v2-reset,
+#oasis-setting-v2-save {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.875rem;
+    padding: 0 0.55rem;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+@keyframes oasis-setting-v2-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 48rem) {
+    .oasis-setting-v2__service-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .oasis-setting-v2__service-toolbar {
+        justify-content: flex-start;
+        width: 100%;
+    }
+}
+
+@media (max-width: 40rem) {
+    .oasis-setting-v2__heading,
+    .oasis-setting-v2__section-heading,
+    .oasis-setting-v2__save-status {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .oasis-setting-v2__service-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .oasis-setting-v2__service-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .oasis-setting-v2__secret-status {
+        grid-column: auto;
+    }
+
+    .oasis-setting-v2__actions {
+        align-items: stretch;
+        flex-direction: column-reverse;
+    }
+
+    .oasis-setting-v2__actions .cbi-button {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .oasis-setting-v2__spinner {
+        animation: none;
+    }
+}

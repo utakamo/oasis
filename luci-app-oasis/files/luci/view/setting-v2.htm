@@ -1,0 +1,178 @@
+<%+header%>
+
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/setting-v2.css?v=3.2.6-r12">
+
+<div id="oasis-setting-v2" class="oasis-setting-v2" aria-labelledby="oasis-setting-v2-title">
+    <div class="oasis-setting-v2__heading">
+        <div>
+            <h2 id="oasis-setting-v2-title"><%:General Setting%></h2>
+            <p><%:Configure Oasis integration, storage, rollback, and AI services.%></p>
+        </div>
+    </div>
+
+    <div id="oasis-setting-v2-loading"
+         class="oasis-setting-v2__state"
+         role="status"
+         aria-live="polite">
+        <span class="oasis-setting-v2__spinner" aria-hidden="true"></span>
+        <span><%:Loading settings...%></span>
+    </div>
+
+    <div id="oasis-setting-v2-error"
+         class="oasis-setting-v2__state oasis-setting-v2__state--error"
+         role="alert"
+         hidden>
+        <p id="oasis-setting-v2-error-message"><%:Failed to load settings.%></p>
+        <button id="oasis-setting-v2-retry" class="cbi-button cbi-button-action" type="button">
+            <%:Retry%>
+        </button>
+    </div>
+
+    <form id="oasis-setting-v2-form" novalidate hidden>
+        <section class="oasis-setting-v2__section" aria-labelledby="oasis-setting-v2-general-title">
+            <h3 id="oasis-setting-v2-general-title"><%:General Settings%></h3>
+            <div id="oasis-setting-v2-general" class="oasis-setting-v2__panel-grid"></div>
+        </section>
+
+        <section class="oasis-setting-v2__section" aria-labelledby="oasis-setting-v2-services-title">
+            <div class="oasis-setting-v2__section-heading">
+                <div>
+                    <h3 id="oasis-setting-v2-services-title"><%:AI Services%></h3>
+                    <p><%:The first service is active.%></p>
+                </div>
+                <div class="oasis-setting-v2__service-summary">
+                    <span id="oasis-setting-v2-service-count"
+                          class="oasis-setting-v2__count"
+                          aria-live="polite"></span>
+                    <button id="oasis-setting-v2-add-service"
+                            class="cbi-button cbi-button-add"
+                            type="button">
+                        <%:Add service%>
+                    </button>
+                </div>
+            </div>
+            <div id="oasis-setting-v2-services" class="oasis-setting-v2__service-list"></div>
+            <p id="oasis-setting-v2-services-empty"
+               class="oasis-setting-v2__empty"
+               role="status"
+               hidden>
+                <%:No AI services are configured. Add a service to use Oasis chat.%>
+            </p>
+        </section>
+
+        <div id="oasis-setting-v2-save-status"
+             class="oasis-setting-v2__save-status"
+             aria-live="polite"
+             aria-atomic="true"
+             tabindex="-1"
+             hidden>
+            <span id="oasis-setting-v2-save-status-message"></span>
+            <button id="oasis-setting-v2-reload"
+                    class="cbi-button cbi-button-action"
+                    type="button"
+                    hidden>
+                <%:Load latest settings%>
+            </button>
+        </div>
+
+        <div class="oasis-setting-v2__actions">
+            <button id="oasis-setting-v2-reset"
+                    class="cbi-button cbi-button-reset"
+                    type="button"
+                    disabled>
+                <%:Discard%>
+            </button>
+            <button id="oasis-setting-v2-save"
+                    class="cbi-button cbi-button-apply important"
+                    type="submit"
+                    disabled>
+                <%:Save%>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+window.OasisSettingV2Strings = {
+    integration: '<%:Integration%>',
+    aiAssist: '<%:AI-assisted configuration%>',
+    rpcAccess: '<%:RPC access%>',
+    storage: '<%:Storage%>',
+    storagePath: '<%:Storage path%>',
+    storagePathHelp: '<%:Use an absolute directory path.%>',
+    chatMax: '<%:Maximum turns per chat%>',
+    rollback: '<%:Rollback%>',
+    moduleUnavailable: '<%:The rollback module is unavailable. Its settings cannot be changed.%>',
+    rollbackData: '<%:Store rollback data%>',
+    monitorTime: '<%:Monitor time%>',
+    seconds: '<%:seconds%>',
+    service: '<%:service%>',
+    services: '<%:services%>',
+    active: '<%:Active%>',
+    provider: '<%:Provider%>',
+    model: '<%:Model%>',
+    apiKey: '<%:API key%>',
+    apiKeySetup: '<%:API Key Setup%>',
+    apiKeyStatusConfigured: '<%:A key is currently configured.%>',
+    apiKeyStatusEmpty: '<%:No key is currently configured.%>',
+    apiKeyAction: '<%:API key action%>',
+    apiKeyKeep: '<%:Keep current key%>',
+    apiKeyReplace: '<%:Replace with a new key%>',
+    apiKeyClear: '<%:Clear stored key%>',
+    selectApiKeyAction: '<%:Select an API key action%>',
+    newApiKey: '<%:New API key%>',
+    apiKeySecretHelp: '<%:The new key is sent only when you save and is never returned by the server.%>',
+    functionCalling: '<%:Function Calling%>',
+    functionCallingHelp: '<%:Enable only when the selected provider and model support tool use.%>',
+    showThinking: '<%:Show thinking%>',
+    showThinkingHelp: '<%:Controls display only; it does not enable model thinking.%>',
+    endpoint: '<%:Endpoint%>',
+    endpointType: '<%:Endpoint type%>',
+    officialEndpoint: '<%:Official endpoint%>',
+    customEndpointType: '<%:Custom endpoint%>',
+    customEndpoint: '<%:Custom endpoint URL%>',
+    apiMode: '<%:API mode%>',
+    responsesApi: '<%:Responses API%>',
+    chatCompletionsApi: '<%:Chat Completions API%>',
+    thinkingMode: '<%:Thinking mode%>',
+    thinkingDisabled: '<%:Disabled%>',
+    thinkingEnabled: '<%:Enabled with manual budget%>',
+    thinkingAdaptive: '<%:Adaptive%>',
+    maxTokens: '<%:Max Tokens%>',
+    maxTokensHelp: '<%:Enter a positive integer.%>',
+    budgetTokens: '<%:Budget Tokens%>',
+    budgetTokensHelp: '<%:Enter at least 1024 and less than Max Tokens.%>',
+    removeService: '<%:Remove service%>',
+    removeConfirm: '<%:Remove this AI service from the configuration?%>',
+    providerKeyCleared: '<%:The provider changed. Choose whether to replace or clear the stored API key.%>',
+    providerKeyActionRequired: '<%:Choose Replace with a new key or Clear stored key after changing the provider.%>',
+    required: '<%:This field is required.%>',
+    absolutePathRequired: '<%:Enter an absolute path beginning with a slash.%>',
+    parentPathNotAllowed: '<%:The storage path must not contain parent directory segments.%>',
+    validUrlRequired: '<%:Enter a valid HTTP or HTTPS URL.%>',
+    positiveIntegerRequired: '<%:Enter a positive integer.%>',
+    chatMaxRange: '<%:Select a value from 10 to 100 in steps of 10.%>',
+    monitorTimeRange: '<%:Select a value from 60 to 600 seconds in steps of 60.%>',
+    budgetMinimum: '<%:Budget Tokens must be at least 1024.%>',
+    budgetLessThanMax: '<%:Budget Tokens must be less than Max Tokens.%>',
+    duplicateIdentifier: '<%:Each service identifier must be unique.%>',
+    valueTooLong: '<%:The value is too long.%>',
+    validationFailed: '<%:Correct the highlighted fields before saving.%>',
+    saving: '<%:Saving settings...%>',
+    saved: '<%:Settings saved successfully.%>',
+    saveFailed: '<%:Failed to save settings. Check the fields and try again.%>',
+    conflict: '<%:The settings changed after this page was loaded. Load the latest settings before saving again.%>',
+    loadFailed: '<%:Failed to load settings. Check the settings API and try again.%>',
+    unsavedConfirm: '<%:Discard unsaved changes and load the latest settings?%>'
+};
+window.OasisSettingV2Config = {
+    csrfToken: '<%=token%>',
+    urls: {
+        loadSettings: '<%=build_url("admin", "network", "oasis", "load-settings")%>',
+        updateSettings: '<%=build_url("admin", "network", "oasis", "update-settings")%>'
+    }
+};
+</script>
+<script src="<%= resource %>/oasis/js/setting-v2.js?v=3.2.6-r12"></script>
+
+<%+footer%>
