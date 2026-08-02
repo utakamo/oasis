@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-oasis\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-19 23:03+0000\n"
-"PO-Revision-Date: 2025-11-19 23:03+0000\n"
+"POT-Creation-Date: 2026-07-28 23:15+0000\n"
+"PO-Revision-Date: 2026-07-28 23:15+0000\n"
 "Last-Translator: Codex\n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
@@ -113,6 +113,7 @@ msgstr "無効化"
 
 
 #: files/luci/view/tools.htm:46
+#: files/luci/view/setting-v2.htm:144
 msgid "Disabled"
 msgstr "無効"
 
@@ -376,6 +377,7 @@ msgstr "サービスを再起動しています..."
 #: files/luci/view/chat.htm:274
 #: files/luci/view/chat.htm:328
 #: files/luci/view/rollback-list.htm:40
+#: files/luci/view/setting-v2.htm:109
 msgid "Rollback"
 msgstr "ロールバック"
 
@@ -839,3 +841,324 @@ msgstr "終了マーカーが見つかりません"
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:118
 msgid "marker end line not found"
 msgstr "終了マーカー行が見つかりません"
+
+#: files/luci/view/setting-v2.htm:60
+msgid "AI Services"
+msgstr "AIサービス"
+
+#: files/luci/view/setting-v2.htm:103
+msgid "AI-assisted configuration"
+msgstr "AIによる設定支援"
+
+#: files/luci/view/setting-v2.htm:121
+msgid "API key"
+msgstr "APIキー"
+
+#: files/luci/view/setting-v2.htm:115
+msgid "API Key Setup"
+msgstr "APIキー設定"
+
+#: files/luci/view/setting-v2.htm:140
+msgid "API mode"
+msgstr "APIモード"
+
+#: files/luci/view/setting-v2.htm:116
+msgid "Active"
+msgstr "使用中"
+
+#: files/luci/view/setting-v2.htm:149
+msgid "Budget Tokens"
+msgstr "推論予算トークン数"
+
+#: files/luci/view/setting-v2.htm:138
+msgid "Custom endpoint"
+msgstr "カスタムエンドポイント"
+
+#: files/luci/view/setting-v2.htm:135
+msgid "Endpoint"
+msgstr "エンドポイント"
+
+#: files/luci/view/setting-v2.htm:136
+msgid "Endpoint type"
+msgstr "エンドポイント種別"
+
+#: files/luci/view/setting-v2.htm:30
+msgid "Failed to load settings."
+msgstr "設定の読み込みに失敗しました。"
+
+#: files/luci/view/setting-v2.htm:173
+msgid "Failed to load settings. Check the settings API and try again."
+msgstr "設定の読み込みに失敗しました。設定APIを確認して再試行してください。"
+
+#: files/luci/view/setting-v2.htm:131
+msgid "Function Calling"
+msgstr "Function Calling"
+
+#: files/luci/view/setting-v2.htm:8
+msgid "General Setting"
+msgstr "一般設定"
+
+#: files/luci/view/setting-v2.htm:53
+msgid "General Settings"
+msgstr "一般設定"
+
+#: files/luci/view/setting-v2.htm:102
+msgid "Integration"
+msgstr "連携"
+
+#: files/luci/view/setting-v2.htm:23
+msgid "Loading settings..."
+msgstr "設定を読み込んでいます..."
+
+#: files/luci/view/setting-v2.htm:147
+msgid "Max Tokens"
+msgstr "最大トークン数"
+
+#: files/luci/view/setting-v2.htm:108
+msgid "Maximum turns per chat"
+msgstr "チャットごとの最大ターン数"
+
+#: files/luci/view/setting-v2.htm:118
+msgid "Model"
+msgstr "モデル"
+
+#: files/luci/view/setting-v2.htm:112
+msgid "Monitor time"
+msgstr "監視時間"
+
+#: files/luci/view/setting-v2.htm:117
+msgid "Provider"
+msgstr "プロバイダー"
+
+#: files/luci/view/setting-v2.htm:104
+msgid "RPC access"
+msgstr "RPCアクセス"
+
+#: files/luci/view/setting-v2.htm:32
+msgid "Retry"
+msgstr "再試行"
+
+#: files/luci/view/setting-v2.htm:133
+msgid "Show thinking"
+msgstr "推論内容を表示"
+
+#: files/luci/view/setting-v2.htm:105
+msgid "Storage"
+msgstr "ストレージ"
+
+#: files/luci/view/setting-v2.htm:106
+msgid "Storage path"
+msgstr "保存先パス"
+
+#: files/luci/view/setting-v2.htm:111
+msgid "Store rollback data"
+msgstr "ロールバックデータを保存"
+
+#: files/luci/view/setting-v2.htm:143
+msgid "Thinking mode"
+msgstr "推論モード"
+
+#: files/luci/view/setting-v2.htm:113
+msgid "seconds"
+msgstr "秒"
+
+#: files/luci/view/setting-v2.htm:115
+msgid "services"
+msgstr "サービス"
+
+#: files/luci/view/setting-v2.htm:122
+msgid "A key is currently configured."
+msgstr "APIキーは設定済みです。"
+
+#: files/luci/view/setting-v2.htm:124
+msgid "API key action"
+msgstr "APIキーの操作"
+
+#: files/luci/view/setting-v2.htm:146
+msgid "Adaptive"
+msgstr "適応"
+
+#: files/luci/view/setting-v2.htm:70
+msgid "Add service"
+msgstr "サービスを追加"
+
+#: files/luci/view/setting-v2.htm:164
+msgid "Budget Tokens must be at least 1024."
+msgstr "推論予算トークン数は1024以上にしてください。"
+
+#: files/luci/view/setting-v2.htm:165
+msgid "Budget Tokens must be less than Max Tokens."
+msgstr "推論予算トークン数は最大トークン数未満にしてください。"
+
+#: files/luci/view/setting-v2.htm:142
+msgid "Chat Completions API"
+msgstr "Chat Completions API"
+
+#: files/luci/view/setting-v2.htm:156
+msgid "Choose Replace with a new key or Clear stored key after changing the provider."
+msgstr "プロバイダーを変更した後は、「新しいキーに置き換える」または「保存済みキーを消去」を選択してください。"
+
+#: files/luci/view/setting-v2.htm:127
+msgid "Clear stored key"
+msgstr "保存済みキーを消去"
+
+#: files/luci/view/setting-v2.htm:9
+msgid "Configure Oasis integration, storage, rollback, and AI services."
+msgstr "Oasisの連携、ストレージ、ロールバック、AIサービスを設定します。"
+
+#: files/luci/view/setting-v2.htm:134
+msgid "Controls display only; it does not enable model thinking."
+msgstr "表示のみを制御します。モデルの推論機能自体を有効にするものではありません。"
+
+#: files/luci/view/setting-v2.htm:168
+msgid "Correct the highlighted fields before saving."
+msgstr "保存する前に強調表示された項目を修正してください。"
+
+#: files/luci/view/setting-v2.htm:139
+msgid "Custom endpoint URL"
+msgstr "カスタムエンドポイントURL"
+
+#: files/luci/view/setting-v2.htm:88
+msgid "Discard"
+msgstr "破棄"
+
+#: files/luci/view/setting-v2.htm:174
+msgid "Discard unsaved changes and load the latest settings?"
+msgstr "未保存の変更を破棄して最新の設定を読み込みますか？"
+
+#: files/luci/view/setting-v2.htm:166
+msgid "Each service identifier must be unique."
+msgstr "サービスの識別子はそれぞれ一意である必要があります。"
+
+#: files/luci/view/setting-v2.htm:132
+msgid "Enable only when the selected provider and model support tool use."
+msgstr "選択したプロバイダーとモデルがツール利用に対応している場合のみ有効にしてください。"
+
+#: files/luci/view/setting-v2.htm:145
+msgid "Enabled with manual budget"
+msgstr "手動予算で有効"
+
+#: files/luci/view/setting-v2.htm:148
+#: files/luci/view/setting-v2.htm:161
+msgid "Enter a positive integer."
+msgstr "正の整数を入力してください。"
+
+#: files/luci/view/setting-v2.htm:160
+msgid "Enter a valid HTTP or HTTPS URL."
+msgstr "有効なHTTPまたはHTTPSのURLを入力してください。"
+
+#: files/luci/view/setting-v2.htm:158
+msgid "Enter an absolute path beginning with a slash."
+msgstr "スラッシュで始まる絶対パスを入力してください。"
+
+#: files/luci/view/setting-v2.htm:150
+msgid "Enter at least 1024 and less than Max Tokens."
+msgstr "1024以上かつ最大トークン数未満の値を入力してください。"
+
+#: files/luci/view/setting-v2.htm:171
+msgid "Failed to save settings. Check the fields and try again."
+msgstr "設定の保存に失敗しました。入力項目を確認して再試行してください。"
+
+#: files/luci/view/setting-v2.htm:125
+msgid "Keep current key"
+msgstr "現在のキーを保持"
+
+#: files/luci/view/setting-v2.htm:48
+msgid "Load latest settings"
+msgstr "最新の設定を読み込む"
+
+#: files/luci/view/setting-v2.htm:129
+msgid "New API key"
+msgstr "新しいAPIキー"
+
+#: files/luci/view/setting-v2.htm:79
+msgid "No AI services are configured. Add a service to use Oasis chat."
+msgstr "AIサービスが設定されていません。Oasisチャットを使用するにはサービスを追加してください。"
+
+#: files/luci/view/setting-v2.htm:123
+msgid "No key is currently configured."
+msgstr "APIキーは設定されていません。"
+
+#: files/luci/view/setting-v2.htm:137
+msgid "Official endpoint"
+msgstr "公式エンドポイント"
+
+#: files/luci/view/setting-v2.htm:153
+msgid "Remove service"
+msgstr "サービスを削除"
+
+#: files/luci/view/setting-v2.htm:154
+msgid "Remove this AI service from the configuration?"
+msgstr "このAIサービスを設定から削除しますか？"
+
+#: files/luci/view/setting-v2.htm:126
+msgid "Replace with a new key"
+msgstr "新しいキーに置き換える"
+
+#: files/luci/view/setting-v2.htm:141
+msgid "Responses API"
+msgstr "Responses API"
+
+#: files/luci/view/setting-v2.htm:94
+msgid "Save"
+msgstr "保存"
+
+#: files/luci/view/setting-v2.htm:169
+msgid "Saving settings..."
+msgstr "設定を保存しています..."
+
+#: files/luci/view/setting-v2.htm:162
+msgid "Select a value from 10 to 100 in steps of 10."
+msgstr "10から100までの値を10刻みで選択してください。"
+
+#: files/luci/view/setting-v2.htm:163
+msgid "Select a value from 60 to 600 seconds in steps of 60."
+msgstr "60秒から600秒までの値を60秒刻みで選択してください。"
+
+#: files/luci/view/setting-v2.htm:128
+msgid "Select an API key action"
+msgstr "APIキーの操作を選択"
+
+#: files/luci/view/setting-v2.htm:170
+msgid "Settings saved successfully."
+msgstr "設定を保存しました。"
+
+#: files/luci/view/setting-v2.htm:56
+msgid "The first service is active."
+msgstr "先頭のサービスが使用されます。"
+
+#: files/luci/view/setting-v2.htm:130
+msgid "The new key is sent only when you save and is never returned by the server."
+msgstr "新しいキーは保存時にのみ送信され、サーバーから返されることはありません。"
+
+#: files/luci/view/setting-v2.htm:155
+msgid "The provider changed. Choose whether to replace or clear the stored API key."
+msgstr "プロバイダーが変更されました。保存済みAPIキーを置き換えるか消去するかを選択してください。"
+
+#: files/luci/view/setting-v2.htm:110
+msgid "The rollback module is unavailable. Its settings cannot be changed."
+msgstr "ロールバックモジュールを利用できないため、この設定は変更できません。"
+
+#: files/luci/view/setting-v2.htm:172
+msgid "The settings changed after this page was loaded. Load the latest settings before saving again."
+msgstr "このページの読み込み後に設定が変更されました。再度保存する前に最新の設定を読み込んでください。"
+
+#: files/luci/view/setting-v2.htm:159
+msgid "The storage path must not contain parent directory segments."
+msgstr "保存先パスに親ディレクトリを示す区切りを含めることはできません。"
+
+#: files/luci/view/setting-v2.htm:167
+msgid "The value is too long."
+msgstr "入力値が長すぎます。"
+
+#: files/luci/view/setting-v2.htm:157
+msgid "This field is required."
+msgstr "この項目は必須です。"
+
+#: files/luci/view/setting-v2.htm:107
+msgid "Use an absolute directory path."
+msgstr "絶対ディレクトリパスを使用してください。"
+
+#: files/luci/view/setting-v2.htm:114
+msgid "service"
+msgstr "サービス"
