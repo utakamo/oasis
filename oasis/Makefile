@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=1
+PKG_RELEASE:=8
 
 APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
@@ -15,7 +15,6 @@ LUCI_MAIN_DIR:=./files/luci
 LUA_LIBRARY_DIR = /usr/lib/lua
 LUCI_LIBRARYDIR = $(LUA_LIBRARY_DIR)/luci
 LUCI_MODULEDIR = $(LUCI_LIBRARYDIR)/controller
-LUCI_MODELDIR = $(LUCI_LIBRARYDIR)/model/cbi
 LUCI_CGI_BIN_DIR = /www/cgi-bin
 
 include $(INCLUDE_DIR)/package.mk
@@ -56,7 +55,6 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list9
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list10
 	$(INSTALL_DIR) $(1)$(LUCI_MODULEDIR)/oasis
-	$(INSTALL_DIR) $(1)$(LUCI_MODELDIR)/oasis
 	$(INSTALL_DIR) $(1)$(LUCI_CGI_BIN_DIR)
 	$(INSTALL_DATA) ./files/usr/share/rpcd/acl.d/oasis.json $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
@@ -91,7 +89,6 @@ define Package/oasis/install
 	$(INSTALL_DATA) ./files/etc/config/oasis.config $(1)$(UCI_CONFIG_DIR)/oasis
 	$(INSTALL_DATA) ./files/etc/oasis/oasis.conf $(1)$(OASIS_DIR)
 	$(INSTALL_DATA) $(LUCI_MAIN_DIR)/controller/module.lua $(1)$(LUCI_MODULEDIR)/oasis
-	$(INSTALL_DATA) $(LUCI_MAIN_DIR)/model/cbi/setting.lua $(1)$(LUCI_MODELDIR)/oasis
 	$(INSTALL_BIN) $(LUCI_MAIN_DIR)$(LUCI_CGI_BIN_DIR)/oasis $(1)$(LUCI_CGI_BIN_DIR)
 endef
 

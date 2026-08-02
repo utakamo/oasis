@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=1
+PKG_RELEASE:=12
 
 SOURCE_DIR:=./files/luci
 
@@ -34,17 +34,20 @@ define Package/luci-app-oasis/install
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/icons.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/sysmsg.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/chat.htm $(1)$(LUCI_VIEWDIR)/oasis
+	$(INSTALL_DATA) $(SOURCE_DIR)/view/setting-v2.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/rollback-list.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)/view/tools.htm $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/chat.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/icons.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/rollback-list.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/setting-v2.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/sysmsg.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/tools.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-utils.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/icons.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/rollback.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/setting-v2.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/sysmsg.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/tools.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/operator.png $(1)$(LUCI_RESOURCES_DIR)/oasis
