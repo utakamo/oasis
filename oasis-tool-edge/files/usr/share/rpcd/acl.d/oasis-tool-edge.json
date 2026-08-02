@@ -1,10 +1,14 @@
 {
-        "oasis": {
-                "description": "Access Oasis Local Tool (AI Edge Use)",
-
+        "oasis-tool-edge": {
+                "description": "Access Oasis Tool Edge RPC",
                 "read": {
                         "ubus": {
-                            "oasis.tool.edge": [ "function_calling", "tool_list" ]
+                                "oasis.tool.edge": [ "tool_list" ]
+                        }
+                },
+                "write": {
+                        "ubus": {
+                                "oasis.tool.edge": [ "function_calling" ]
                         }
                 }
         }

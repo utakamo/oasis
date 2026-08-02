@@ -6,6 +6,8 @@
     const URLS = CONFIG.urls || {};
     const LOAD_SETTINGS_URL = URLS.loadSettings || '';
     const UPDATE_SETTINGS_URL = URLS.updateSettings || '';
+    const LOAD_TOOL_EDGE_ACCOUNT_URL = URLS.loadToolEdgeAccount || '';
+    const UPDATE_TOOL_EDGE_ACCOUNT_URL = URLS.updateToolEdgeAccount || '';
     const CSRF_TOKEN = CONFIG.csrfToken || '';
     const MAX_SERVICES = 32;
     const PROVIDERS = [
@@ -68,6 +70,8 @@
     const retryButton = document.getElementById('oasis-setting-v2-retry');
     const form = document.getElementById('oasis-setting-v2-form');
     const generalContainer = document.getElementById('oasis-setting-v2-general');
+    const toolEdgeSection = document.getElementById('oasis-setting-v2-tool-edge');
+    const toolEdgeContent = document.getElementById('oasis-setting-v2-tool-edge-content');
     const servicesContainer = document.getElementById('oasis-setting-v2-services');
     const servicesEmpty = document.getElementById('oasis-setting-v2-services-empty');
     const serviceCount = document.getElementById('oasis-setting-v2-service-count');
@@ -84,6 +88,8 @@
     let capabilities = {};
     let dirty = false;
     let saving = false;
+    let toolEdgeAccount = null;
+    let toolEdgeSaving = false;
     let clientKey = 0;
 
     function t(key, fallback) {
@@ -144,6 +150,35 @@
         }));
 
         return requestJson(UPDATE_SETTINGS_URL, {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: body.toString()
+        }, true);
+    }
+
+    function getToolEdgeAccount() {
+        return requestJson(LOAD_TOOL_EDGE_ACCOUNT_URL, {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                Accept: 'application/json'
+            }
+        }, false);
+    }
+
+    function setToolEdgeAccount(payload) {
+        const body = new URLSearchParams();
+
+        body.set('token', CSRF_TOKEN);
+        body.set('payload', JSON.stringify(payload));
+
+        return requestJson(UPDATE_TOOL_EDGE_ACCOUNT_URL, {
             method: 'POST',
             credentials: 'same-origin',
             cache: 'no-store',
@@ -393,6 +428,26 @@
         return input;
     }
 
+    function createToggle(value, onChange, disabled) {
+        const input = createCheckbox(value, onChange, disabled);
+
+        input.classList.add('oasis-setting-v2__toggle');
+        input.setAttribute('role', 'switch');
+        input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+        input.addEventListener('change', function() {
+            const field = input.closest('.oasis-setting-v2__rpc-access');
+
+            input.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+            if (field) {
+                field.classList.toggle(
+                    'oasis-setting-v2__rpc-access--enabled', input.checked
+                );
+            }
+        });
+
+        return input;
+    }
+
     function createPanel(title, description) {
         const panel = document.createElement('fieldset');
         const legend = createElement('legend', '', title);
@@ -443,15 +498,6 @@
                 })
             );
         }
-
-        addGeneralField(
-            integration,
-            'rpc_enable',
-            t('rpcAccess', 'RPC access'),
-            createCheckbox(settings.rpc_enable, function(value) {
-                settings.rpc_enable = value;
-            })
-        );
 
         addGeneralField(
             storage,
@@ -512,6 +558,325 @@
         generalContainer.appendChild(integration);
         generalContainer.appendChild(storage);
         generalContainer.appendChild(rollback);
+    }
+
+    function validToolEdgeAccountResponse(response) {
+        return isObject(response) &&
+            response.schema_version === 1 &&
+            typeof response.revision === 'string' &&
+            typeof response.available === 'boolean' &&
+            typeof response.rpc_enabled === 'boolean' &&
+            isObject(response.account) &&
+            typeof response.account.configured === 'boolean' &&
+            typeof response.account.username === 'string';
+    }
+
+    function createAccountInput(value, type, path, options) {
+        const opts = options || {};
+        const input = document.createElement('input');
+
+        input.type = type;
+        input.className = 'cbi-input-text';
+        input.value = stringValue(value);
+        input.autocomplete = opts.autocomplete || 'off';
+        input.maxLength = opts.maxLength || 256;
+        input.dataset.accountControl = '1';
+        input.addEventListener('input', function() {
+            clearControlError(input);
+        });
+
+        return createField(opts.label, input, {
+            path: path,
+            required: opts.required === true,
+            help: opts.help
+        });
+    }
+
+    function accountControl(path) {
+        return Array.prototype.find.call(
+            toolEdgeContent.querySelectorAll('[data-field-path]'),
+            function(control) {
+                return control.dataset.fieldPath === path;
+            }
+        );
+    }
+
+    function setToolEdgeSaving(value) {
+        toolEdgeSaving = value === true;
+        toolEdgeContent.querySelectorAll('[data-account-control], [data-account-action]').forEach(
+            function(control) {
+                if (toolEdgeSaving) {
+                    control.dataset.oasisWasDisabled = control.disabled ? '1' : '0';
+                    control.disabled = true;
+                } else if (hasOwn(control.dataset, 'oasisWasDisabled')) {
+                    control.disabled = control.dataset.oasisWasDisabled === '1';
+                    delete control.dataset.oasisWasDisabled;
+                }
+            }
+        );
+    }
+
+    function toolEdgeAccountError(response) {
+        const failure = isObject(response) && isObject(response.error)
+            ? response.error
+            : {};
+        const fields = parseServerFields(failure.fields);
+
+        Object.keys(fields).forEach(function(key) {
+            const path = key === 'username' || key === 'password'
+                ? 'tool_edge.' + key
+                : key === 'rpc_enable'
+                    ? 'settings.rpc_enable'
+                    : key;
+            setFieldError(path, fields[key]);
+        });
+        showSaveStatus(
+            'error',
+            stringValue(failure.message, t(
+                'accountSaveFailed', 'Failed to save the external RPC account.'
+            )),
+            false
+        );
+    }
+
+    function applyToolEdgeAccount(response) {
+        if (!validToolEdgeAccountResponse(response)) {
+            throw new Error('Invalid external RPC account API response');
+        }
+        toolEdgeAccount = deepClone(response);
+        renderToolEdgeAccount();
+    }
+
+    function loadToolEdgeAccount() {
+        if (capabilities.tool_edge !== true) {
+            toolEdgeAccount = null;
+            renderToolEdgeAccount();
+            return Promise.resolve();
+        }
+
+        return getToolEdgeAccount()
+            .then(function(response) {
+                applyToolEdgeAccount(response);
+            })
+            .catch(function(error) {
+                console.error('Failed to load the external RPC account:', error);
+                toolEdgeAccount = null;
+                renderToolEdgeAccount();
+            });
+    }
+
+    function submitToolEdgeAccount(action) {
+        if (!toolEdgeAccount || toolEdgeSaving || saving) {
+            return;
+        }
+        if (action === 'remove' && !window.confirm(t(
+            'removeAccountConfirm',
+            'Remove the external RPC account? Existing external sessions will be disconnected.'
+        ))) {
+            return;
+        }
+
+        clearAllErrors();
+        const usernameControl = accountControl('tool_edge.username');
+        const passwordControl = accountControl('tool_edge.password');
+        const confirmControl = accountControl('tool_edge.confirm_password');
+        const username = usernameControl ? usernameControl.value : '';
+        const password = passwordControl ? passwordControl.value : '';
+        const confirmPassword = confirmControl ? confirmControl.value : '';
+        let valid = true;
+
+        if (action !== 'remove') {
+            if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(username)) {
+                setFieldError(
+                    'tool_edge.username',
+                    t('usernameRequired', 'Enter a username using letters, numbers, dots, underscores, or hyphens.')
+                );
+                valid = false;
+            }
+            if ((action === 'create' && password.length < 12) ||
+                (action === 'update' && password.length > 0 && password.length < 12)) {
+                setFieldError(
+                    'tool_edge.password',
+                    t('passwordMinimum', 'Enter a password containing at least 12 characters.')
+                );
+                valid = false;
+            }
+            if (password !== confirmPassword) {
+                setFieldError(
+                    'tool_edge.confirm_password',
+                    t('passwordMismatch', 'The passwords do not match.')
+                );
+                valid = false;
+            }
+        }
+        if (!valid) {
+            showSaveStatus(
+                'error',
+                t('validationFailed', 'Correct the highlighted fields before saving.'),
+                false
+            );
+            return;
+        }
+
+        setToolEdgeSaving(true);
+        showSaveStatus('progress', t('saving', 'Saving settings...'), false);
+        setToolEdgeAccount({
+            action: action,
+            revision: toolEdgeAccount.revision,
+            username: username,
+            password: password
+        }).then(function(response) {
+            setToolEdgeSaving(false);
+            if (!isObject(response) || response.ok !== true) {
+                toolEdgeAccountError(response);
+                return;
+            }
+            applyToolEdgeAccount(response);
+            showSaveStatus(
+                'success',
+                action === 'create'
+                    ? t('accountCreated', 'External RPC account created successfully.')
+                    : action === 'remove'
+                        ? t('accountRemoved', 'External RPC account removed successfully.')
+                        : t('accountUpdated', 'External RPC account updated successfully.'),
+                false
+            );
+        }).catch(function() {
+            setToolEdgeSaving(false);
+            console.error('Failed to save the external RPC account.');
+            showSaveStatus(
+                'error',
+                t('accountSaveFailed', 'Failed to save the external RPC account.'),
+                false
+            );
+        });
+    }
+
+    function renderToolEdgeAccount() {
+        if (!toolEdgeSection || !toolEdgeContent) {
+            return;
+        }
+        const available = capabilities.tool_edge === true;
+        toolEdgeSection.hidden = !available;
+        clearElement(toolEdgeContent);
+        if (!available) {
+            return;
+        }
+        const panel = createPanel(t('externalRpcAccount', 'External RPC account'));
+        const fields = createElement('div', 'oasis-setting-v2__account-fields');
+        const rpcControl = createToggle(draft.settings.rpc_enable, function(value) {
+            draft.settings.rpc_enable = value;
+        });
+        const rpcField = createField(
+            t('rpcAccess', 'RPC access'),
+            rpcControl,
+            {
+                path: fieldPath('settings', 0, 'rpc_enable'),
+                help: t(
+                    'externalRpcAccessHelp',
+                    'Controls whether external clients can use this account.'
+                )
+            }
+        );
+
+        rpcField.classList.add('oasis-setting-v2__rpc-access');
+        rpcField.classList.toggle(
+            'oasis-setting-v2__rpc-access--enabled', rpcControl.checked
+        );
+        fields.appendChild(rpcField);
+
+        if (!toolEdgeAccount) {
+            fields.appendChild(createElement(
+                'p',
+                'oasis-setting-v2__account-warning',
+                t('externalRpcUnavailable', 'External RPC account settings are unavailable.')
+            ));
+            panel.appendChild(fields);
+            toolEdgeContent.appendChild(panel);
+            return;
+        }
+
+        const account = toolEdgeAccount.account;
+        const configured = account.configured === true;
+        const status = createElement(
+            'p',
+            'oasis-setting-v2__secret-status' +
+                (configured ? ' oasis-setting-v2__secret-status--configured' : ''),
+            configured
+                ? t('externalRpcConfigured', 'An external RPC account is configured.')
+                : t('externalRpcNotConfigured', 'No external RPC account is configured.')
+        );
+        fields.appendChild(status);
+        fields.appendChild(createAccountInput(
+            configured ? account.username : '',
+            'text',
+            'tool_edge.username',
+            {
+                label: t('username', 'Username'),
+                required: true,
+                maxLength: 64,
+                autocomplete: 'username'
+            }
+        ));
+        fields.appendChild(createAccountInput(
+            '',
+            'password',
+            'tool_edge.password',
+            {
+                label: configured
+                    ? t('newPasswordOptional', 'New password (optional)')
+                    : t('password', 'Password'),
+                required: !configured,
+                maxLength: 256,
+                autocomplete: 'new-password',
+                help: t('passwordHelp', 'Use at least 12 characters. The password is never displayed after saving.')
+            }
+        ));
+        fields.appendChild(createAccountInput(
+            '',
+            'password',
+            'tool_edge.confirm_password',
+            {
+                label: t('confirmPassword', 'Confirm password'),
+                required: !configured,
+                maxLength: 256,
+                autocomplete: 'new-password'
+            }
+        ));
+        panel.appendChild(fields);
+
+        const actions = createElement('div', 'oasis-setting-v2__account-actions');
+        const save = createElement(
+            'button',
+            'cbi-button cbi-button-apply important',
+            configured
+                ? t('updateAccount', 'Update account')
+                : t('createAccount', 'Create account')
+        );
+        save.type = 'button';
+        save.dataset.accountAction = '1';
+        save.disabled = toolEdgeSaving;
+        save.addEventListener('click', function() {
+            submitToolEdgeAccount(configured ? 'update' : 'create');
+        });
+        actions.appendChild(save);
+
+        if (configured) {
+            const remove = createElement(
+                'button',
+                'cbi-button cbi-button-remove',
+                t('removeAccount', 'Remove account')
+            );
+            remove.type = 'button';
+            remove.dataset.accountAction = '1';
+            remove.disabled = toolEdgeSaving;
+            remove.addEventListener('click', function() {
+                submitToolEdgeAccount('remove');
+            });
+            actions.appendChild(remove);
+        }
+        panel.appendChild(actions);
+        toolEdgeContent.appendChild(panel);
     }
 
     function normalizeServiceForDisplay(service) {
@@ -1455,7 +1820,11 @@
 
         settings.storage_path = trimmed(settings.storage_path);
         settings.chat_max = stringValue(settings.chat_max);
-        settings.rpc_enable = flagEnabled(settings.rpc_enable) ? '1' : '0';
+        if (capabilities.tool_edge === true) {
+            settings.rpc_enable = flagEnabled(settings.rpc_enable) ? '1' : '0';
+        } else {
+            delete settings.rpc_enable;
+        }
         if (capabilities.rollback === true) {
             settings.rollback_time = stringValue(settings.rollback_time);
             settings.rollback_enable = flagEnabled(settings.rollback_enable) ? '1' : '0';
@@ -1587,6 +1956,11 @@
                 }
 
                 applySnapshot(response);
+                if (capabilities.tool_edge === true) {
+                    loadToolEdgeAccount().catch(function() {
+                        // The account panel presents its own error state.
+                    });
+                }
                 showSaveStatus(
                     'success',
                     t('saved', 'Settings saved successfully.'),
@@ -1618,6 +1992,9 @@
         return getSettings()
             .then(function(response) {
                 applySnapshot(response);
+                return loadToolEdgeAccount();
+            })
+            .then(function() {
                 setInitialState('ready');
             })
             .catch(showLoadError);
@@ -1630,6 +2007,7 @@
 
         draft = deepClone(snapshot);
         renderGeneralSettings();
+        renderToolEdgeAccount();
         renderServices();
         clearAllErrors();
         hideSaveStatus();
@@ -1656,7 +2034,8 @@
             !generalContainer || !servicesContainer || !servicesEmpty ||
             !serviceCount || !retryButton || !errorMessage ||
             !addServiceButton || !resetButton || !saveButton ||
-            !saveStatus || !saveStatusMessage || !reloadButton) {
+            !saveStatus || !saveStatusMessage || !reloadButton ||
+            !toolEdgeSection || !toolEdgeContent) {
             return;
         }
 
@@ -1690,7 +2069,9 @@
             event.returnValue = '';
         });
 
-        if (!LOAD_SETTINGS_URL || !UPDATE_SETTINGS_URL || !CSRF_TOKEN) {
+        if (!LOAD_SETTINGS_URL || !UPDATE_SETTINGS_URL ||
+            !LOAD_TOOL_EDGE_ACCOUNT_URL || !UPDATE_TOOL_EDGE_ACCOUNT_URL ||
+            !CSRF_TOKEN) {
             showLoadError(new Error('The Oasis settings API configuration is unavailable.'));
             return;
         }

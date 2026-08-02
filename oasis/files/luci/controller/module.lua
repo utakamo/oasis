@@ -34,6 +34,9 @@ function index()
     entry({"admin", "network", "oasis", "load-settings"}, call("load_settings"), nil).leaf = true
     local update_settings_entry = entry({"admin", "network", "oasis", "update-settings"}, post("update_settings"), nil)
     update_settings_entry.leaf = true
+    entry({"admin", "network", "oasis", "load-tool-edge-account"}, call("load_tool_edge_account"), nil).leaf = true
+    local update_tool_edge_entry = entry({"admin", "network", "oasis", "update-tool-edge-account"}, post("update_tool_edge_account"), nil)
+    update_tool_edge_entry.leaf = true
     entry({"admin", "network", "oasis", "chat"}, template("oasis/chat"), "Chat with AI", 10).dependent=false
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "import-chat-data"}, call("import_chat_data"), nil).leaf = true
@@ -790,6 +793,11 @@ local SETTINGS_CONFIG_PATH = "/etc/config/oasis"
 local SETTINGS_LOCK_PATH = "/var/lock/oasis-settings.lock"
 local SETTINGS_ASSIST_FILTER = "/usr/lib/lua/oasis/chat/filter.lua"
 local SETTINGS_ROLLBACK_DAEMON = "/usr/bin/oasisd"
+local SETTINGS_RPCD_CONFIG = "rpcd"
+local SETTINGS_RPCD_CONFIG_PATH = "/etc/config/rpcd"
+local SETTINGS_TOOL_EDGE_LOCK_PATH = "/var/lock/oasis-tool-edge-account.lock"
+local SETTINGS_TOOL_EDGE_ROLE = "oasis-tool-edge"
+local SETTINGS_TOOL_EDGE_MARKER = "oasis_tool_edge"
 local SETTINGS_MAX_PAYLOAD = 524288
 local SETTINGS_MAX_REQUEST = 2097152
 local SETTINGS_MAX_SERVICES = 32
@@ -801,6 +809,8 @@ local SETTINGS_MAX_ENDPOINT = 2048
 local SETTINGS_MAX_API_KEY = 8192
 local SETTINGS_MAX_TOKEN_LENGTH = 12
 local SETTINGS_MIN_THINKING_BUDGET = 1024
+local SETTINGS_MAX_RPC_USERNAME = 64
+local SETTINGS_MAX_RPC_PASSWORD = 256
 
 local SETTINGS_PROVIDERS = {
     ["Ollama"] = true,
@@ -937,8 +947,8 @@ local function settings_canonical(value)
     return table.concat(parts)
 end
 
-local function settings_file_metadata()
-    local stat = nixio_fs.stat(SETTINGS_CONFIG_PATH)
+local function settings_file_metadata(path)
+    local stat = nixio_fs.stat(path or SETTINGS_CONFIG_PATH)
     if not stat or stat.type ~= "reg" then
         return nil
     end
@@ -1106,10 +1116,12 @@ local function settings_read_configuration()
 
     local capabilities = {
         assist = settings_file_exists(SETTINGS_ASSIST_FILTER),
-        rollback = settings_file_exists(SETTINGS_ROLLBACK_DAEMON)
+        rollback = settings_file_exists(SETTINGS_ROLLBACK_DAEMON),
+        tool_edge = uci:get_bool(
+            SETTINGS_CONFIG, "support", "tool_edge"
+        ) == true
     }
     local settings = {
-        rpc_enable = read_option("rpc", "enable", "0"),
         storage_path = read_option(
             "storage", "path", "/etc/oasis/chat_data"
         ),
@@ -1119,6 +1131,9 @@ local function settings_read_configuration()
     }
     if capabilities.assist then
         settings.assist_enable = read_option("assist", "enable", "0")
+    end
+    if capabilities.tool_edge then
+        settings.rpc_enable = read_option("rpc", "enable", "0")
     end
     if read_failed then
         return nil
@@ -1438,9 +1453,16 @@ local function settings_validate_general(value, capabilities, errors)
         end
     end
     if settings_has_own(value, "rpc_enable") then
-        normalized.rpc_enable = settings_normalized_flag(
-            value.rpc_enable, "settings.rpc_enable", errors
-        )
+        if not capabilities.tool_edge then
+            settings_add_error(
+                errors, "settings.rpc_enable",
+                "External RPC settings are unavailable."
+            )
+        else
+            normalized.rpc_enable = settings_normalized_flag(
+                value.rpc_enable, "settings.rpc_enable", errors
+            )
+        end
     end
     if settings_has_own(value, "storage_path") then
         local path = settings_required_text(
@@ -2019,6 +2041,414 @@ local function settings_release_lock(lock)
     lock:seek(0, "set")
     lock:lock("ulock")
     lock:close()
+end
+
+-- External RPC account API -----------------------------------------------
+--
+-- rpcd owns authentication and ACL assignment.  The Oasis setting page only
+-- manages one explicitly marked login and never returns its password hash.
+
+local function tool_edge_file_metadata()
+    return settings_file_metadata(SETTINGS_RPCD_CONFIG_PATH)
+end
+
+local function tool_edge_revision(public_data, metadata)
+    if type(public_data) ~= "table" or not metadata then
+        return nil
+    end
+    return "edge:" .. settings_checksum(settings_canonical(public_data))
+        .. ":" .. metadata
+end
+
+local function tool_edge_available()
+    return uci:get_bool(SETTINGS_CONFIG, "support", "tool_edge") == true
+end
+
+local function tool_edge_find_account()
+    local found = nil
+    local duplicate = false
+    local ok, foreach_error = uci:foreach(SETTINGS_RPCD_CONFIG, "login", function(section)
+        if settings_string_option(section, SETTINGS_TOOL_EDGE_MARKER, "0") == "1" then
+            if found then
+                duplicate = true
+                return false
+            end
+            found = section
+        end
+    end)
+    if not ok and foreach_error
+        and foreach_error ~= "No data"
+        and foreach_error ~= "Entry not found" then
+        return nil, "read_failed"
+    end
+    if duplicate then
+        return nil, "duplicate"
+    end
+    return found, nil
+end
+
+local function tool_edge_read_state()
+    local public_data = {
+        schema_version = 1,
+        available = tool_edge_available(),
+        rpc_enabled = false,
+        account = {
+            configured = false,
+            username = ""
+        }
+    }
+    if not public_data.available then
+        return public_data, "disabled"
+    end
+    if not settings_file_exists(SETTINGS_RPCD_CONFIG_PATH) then
+        return nil, nil
+    end
+
+    local account, account_error = tool_edge_find_account()
+    if account_error then
+        return nil, nil
+    end
+    public_data.rpc_enabled = uci:get_bool(
+        SETTINGS_CONFIG, "rpc", "enable"
+    ) == true
+    if account then
+        public_data.account.configured = true
+        public_data.account.username = settings_string_option(
+            account, "username", ""
+        )
+    end
+
+    local revision = tool_edge_revision(public_data, tool_edge_file_metadata())
+    if not revision then
+        return nil, nil
+    end
+    return public_data, revision
+end
+
+local function tool_edge_snapshot(state, revision)
+    local snapshot = {
+        schema_version = state.schema_version,
+        available = state.available,
+        rpc_enabled = state.rpc_enabled,
+        account = state.account,
+        revision = revision
+    }
+    return snapshot
+end
+
+local function tool_edge_acquire_lock()
+    local lock = nixio.open(SETTINGS_TOOL_EDGE_LOCK_PATH, "a", "0600")
+    if not lock then
+        return nil
+    end
+    lock:seek(0, "set")
+    if not lock:lock("tlock") then
+        lock:close()
+        return nil
+    end
+    return lock
+end
+
+local function tool_edge_release_lock(lock)
+    if not lock then
+        return
+    end
+    lock:seek(0, "set")
+    lock:lock("ulock")
+    lock:close()
+end
+
+local function tool_edge_shell_quote(value)
+    return "'" .. value:gsub("'", "'\\''") .. "'"
+end
+
+local function tool_edge_password_hash(password)
+    local output = sys.exec("uhttpd -m " .. tool_edge_shell_quote(password))
+    local hash = settings_trim(output or "")
+    if hash == "" or #hash > 512 or settings_has_control(hash) then
+        return nil
+    end
+    return hash
+end
+
+local function tool_edge_username_valid(username)
+    return type(username) == "string"
+        and username == settings_trim(username)
+        and #username >= 1
+        and #username <= SETTINGS_MAX_RPC_USERNAME
+        and not settings_has_control(username)
+        and username:match("^[-A-Za-z0-9_.]+$") ~= nil
+        and username:match("^[A-Za-z0-9]") ~= nil
+end
+
+local function tool_edge_password_valid(password)
+    return type(password) == "string"
+        and #password >= 12
+        and #password <= SETTINGS_MAX_RPC_PASSWORD
+        and not settings_has_control(password)
+end
+
+local function tool_edge_username_in_use(username, own_section)
+    local duplicate = false
+    local ok, foreach_error = uci:foreach(SETTINGS_RPCD_CONFIG, "login", function(section)
+        if section[".name"] ~= own_section
+            and settings_string_option(section, "username", "") == username then
+            duplicate = true
+            return false
+        end
+    end)
+    if not ok and foreach_error
+        and foreach_error ~= "No data"
+        and foreach_error ~= "Entry not found" then
+        return nil
+    end
+    return duplicate
+end
+
+local function tool_edge_set_login_acl(section)
+    -- rpcd treats a write role as including its read permission. Keep the
+    -- login minimal and replace any ACLs with this one least-privileged role.
+    uci:delete(SETTINGS_RPCD_CONFIG, section, "read")
+    return uci:set_list(
+        SETTINGS_RPCD_CONFIG, section, "write", { SETTINGS_TOOL_EDGE_ROLE }
+    )
+end
+
+local function tool_edge_restart_rpcd()
+    if not settings_file_exists("/etc/init.d/rpcd") then
+        return false
+    end
+    return sys.call("/etc/init.d/rpcd restart >/dev/null 2>&1") == 0
+end
+
+local function tool_edge_validate_request(args)
+    local errors = {}
+    local allowed = {
+        action = true,
+        revision = true,
+        username = true,
+        password = true
+    }
+    settings_reject_unknown(args, allowed, "payload", errors)
+    if type(args.action) ~= "string"
+        or (args.action ~= "create" and args.action ~= "update"
+            and args.action ~= "remove") then
+        settings_add_error(errors, "action", "Select a supported account action.")
+    end
+    if type(args.revision) ~= "string" or args.revision == ""
+        or #args.revision > 128 or settings_has_control(args.revision) then
+        settings_add_error(errors, "revision", "An account revision is required.")
+    end
+
+    if args.action == "create" or args.action == "update" then
+        if not tool_edge_username_valid(args.username) then
+            settings_add_error(
+                errors, "username",
+                "Enter a username using letters, numbers, dots, underscores, or hyphens."
+            )
+        end
+        if args.action == "create" then
+            if not tool_edge_password_valid(args.password) then
+                settings_add_error(
+                    errors, "password",
+                    "Enter a password containing at least 12 characters."
+                )
+            end
+        elseif args.password ~= nil and args.password ~= ""
+            and not tool_edge_password_valid(args.password) then
+            settings_add_error(
+                errors, "password",
+                "Enter a password containing at least 12 characters."
+            )
+        end
+    end
+    return errors
+end
+
+local function tool_edge_apply_update(args, state)
+    local section, find_error = tool_edge_find_account()
+    if find_error then
+        return nil, "write_failed", "The external RPC account configuration is invalid."
+    end
+
+    if args.action == "create" then
+        if section then
+            return nil, "account_exists", "An external RPC account is already configured."
+        end
+        local duplicate = tool_edge_username_in_use(args.username, nil)
+        if duplicate == nil then
+            return nil, "write_failed", "The RPC account configuration could not be read."
+        end
+        if duplicate then
+            return nil, "validation_failed", "Choose a different username.", {
+                username = "Choose a different username."
+            }
+        end
+        local password_hash = tool_edge_password_hash(args.password)
+        if not password_hash then
+            return nil, "write_failed", "The password could not be secured."
+        end
+        section = uci:add(SETTINGS_RPCD_CONFIG, "login")
+        if type(section) ~= "string"
+            or not uci:set(SETTINGS_RPCD_CONFIG, section, "username", args.username)
+            or not uci:set(SETTINGS_RPCD_CONFIG, section, "password", password_hash)
+            or not uci:set(SETTINGS_RPCD_CONFIG, section, SETTINGS_TOOL_EDGE_MARKER, "1")
+            or not tool_edge_set_login_acl(section) then
+            uci:revert(SETTINGS_RPCD_CONFIG)
+            return nil, "write_failed", "The external RPC account could not be created."
+        end
+    elseif args.action == "update" then
+        if not section then
+            return nil, "account_missing", "The external RPC account no longer exists."
+        end
+        local duplicate = tool_edge_username_in_use(args.username, section[".name"])
+        if duplicate == nil then
+            return nil, "write_failed", "The RPC account configuration could not be read."
+        end
+        if duplicate then
+            return nil, "validation_failed", "Choose a different username.", {
+                username = "Choose a different username."
+            }
+        end
+        if not uci:set(SETTINGS_RPCD_CONFIG, section[".name"], "username", args.username)
+            or not tool_edge_set_login_acl(section[".name"]) then
+            uci:revert(SETTINGS_RPCD_CONFIG)
+            return nil, "write_failed", "The external RPC account could not be updated."
+        end
+        if args.password and args.password ~= "" then
+            local password_hash = tool_edge_password_hash(args.password)
+            if not password_hash
+                or not uci:set(SETTINGS_RPCD_CONFIG, section[".name"], "password", password_hash) then
+                uci:revert(SETTINGS_RPCD_CONFIG)
+                return nil, "write_failed", "The password could not be secured."
+            end
+        end
+    elseif args.action == "remove" then
+        if section and not uci:delete(SETTINGS_RPCD_CONFIG, section[".name"]) then
+            uci:revert(SETTINGS_RPCD_CONFIG)
+            return nil, "write_failed", "The external RPC account could not be removed."
+        end
+    end
+
+    if not uci:commit(SETTINGS_RPCD_CONFIG) then
+        uci:revert(SETTINGS_RPCD_CONFIG)
+        return nil, "write_failed", "The external RPC account could not be saved."
+    end
+
+    if args.action ~= "create" and not tool_edge_restart_rpcd() then
+        return nil, "restart_failed", "The account was saved, but rpcd could not be restarted."
+    end
+    return true, nil, nil
+end
+
+function load_tool_edge_account()
+    local state, revision = tool_edge_read_state()
+    if not state then
+        settings_write_json(
+            settings_error(
+                "read_failed", "The external RPC account configuration could not be read."
+            ),
+            500, "Internal Server Error"
+        )
+        return
+    end
+    settings_write_json(tool_edge_snapshot(state, revision))
+end
+
+function update_tool_edge_account()
+    local content_length = tonumber(luci_http.getenv("CONTENT_LENGTH") or "0") or 0
+    if content_length > SETTINGS_MAX_REQUEST then
+        settings_write_json(
+            settings_error(
+                "validation_failed", "The account update request is invalid.",
+                { payload = "The account payload is too large." }
+            ),
+            413, "Payload Too Large"
+        )
+        return
+    end
+    local payload_ok, payload = pcall(luci_http.formvalue, "payload")
+    if not payload_ok or type(payload) ~= "string" or #payload == 0
+        or #payload > SETTINGS_MAX_PAYLOAD then
+        settings_write_json(
+            settings_error(
+                "validation_failed", "A valid account payload is required.",
+                { payload = "A valid account payload is required." }
+            ),
+            400, "Bad Request"
+        )
+        return
+    end
+    local parse_ok, args = pcall(jsonc.parse, payload)
+    if not parse_ok or type(args) ~= "table" then
+        settings_write_json(
+            settings_error("request_failed", "The account payload could not be parsed."),
+            400, "Bad Request"
+        )
+        return
+    end
+
+    local lock_ok, lock = pcall(tool_edge_acquire_lock)
+    if not lock_ok or not lock then
+        settings_write_json(
+            settings_error("write_failed", "The account update lock could not be acquired."),
+            503, "Service Unavailable"
+        )
+        return
+    end
+
+    local ok, body, status, status_message = pcall(function()
+        local state, revision = tool_edge_read_state()
+        if not state then
+            return settings_error(
+                "write_failed", "The external RPC account configuration could not be read."
+            ), 500, "Internal Server Error"
+        end
+        if not state.available then
+            return settings_error(
+                "unavailable", "External RPC account settings are unavailable."
+            ), 404, "Not Found"
+        end
+        if args.revision ~= revision then
+            return settings_error(
+                "revision_conflict",
+                "The external RPC account changed after this page was loaded. Load the latest settings before saving again."
+            ), 409, "Conflict"
+        end
+        local errors = tool_edge_validate_request(args)
+        if next(errors) ~= nil then
+            return settings_error(
+                "validation_failed", "One or more account settings are invalid.", errors
+            ), 400, "Bad Request"
+        end
+        local applied, code, message, fields = tool_edge_apply_update(args, state)
+        if not applied then
+            local status_code = code == "validation_failed" and 400 or 500
+            return settings_error(code or "write_failed", message, fields),
+                status_code, status_code == 400 and "Bad Request" or "Internal Server Error"
+        end
+        local updated_state, updated_revision = tool_edge_read_state()
+        if not updated_state or not updated_revision then
+            return settings_error(
+                "write_failed", "The account was saved but could not be reloaded."
+            ), 500, "Internal Server Error"
+        end
+        local response = tool_edge_snapshot(updated_state, updated_revision)
+        response.ok = true
+        return response
+    end)
+    tool_edge_release_lock(lock)
+    if not ok then
+        pcall(function()
+            uci:revert(SETTINGS_RPCD_CONFIG)
+        end)
+        body = settings_error(
+            "write_failed", "An unexpected error prevented the account update."
+        )
+        status = 500
+        status_message = "Internal Server Error"
+    end
+    settings_write_json(body, status, status_message)
 end
 
 function load_settings()

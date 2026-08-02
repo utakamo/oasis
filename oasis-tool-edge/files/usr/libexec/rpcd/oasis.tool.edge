@@ -79,6 +79,16 @@ local methods = {
     tool_list = {
         call = function()
             local uci = require("luci.model.uci").cursor()
+            local enable = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.rpc, "enable")
+
+            if not enable then
+                return {
+                    result = jsonc.stringify({
+                        status = common.status.error,
+                        desc = "Oasis's RPC function is not enabled."
+                    })
+                }
+            end
 
             local all = uci:get_all(common.db.uci.cfg) or {}
 

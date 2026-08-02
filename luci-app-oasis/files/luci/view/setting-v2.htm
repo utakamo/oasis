@@ -1,6 +1,6 @@
 <%+header%>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/setting-v2.css?v=3.2.6-r12">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/setting-v2.css?v=3.2.6-r18">
 
 <div id="oasis-setting-v2" class="oasis-setting-v2" aria-labelledby="oasis-setting-v2-title">
     <div class="oasis-setting-v2__heading">
@@ -32,6 +32,19 @@
         <section class="oasis-setting-v2__section" aria-labelledby="oasis-setting-v2-general-title">
             <h3 id="oasis-setting-v2-general-title"><%:General Settings%></h3>
             <div id="oasis-setting-v2-general" class="oasis-setting-v2__panel-grid"></div>
+        </section>
+
+        <section id="oasis-setting-v2-tool-edge"
+                 class="oasis-setting-v2__section"
+                 aria-labelledby="oasis-setting-v2-tool-edge-title"
+                 hidden>
+            <div class="oasis-setting-v2__section-heading">
+                <div>
+                    <h3 id="oasis-setting-v2-tool-edge-title"><%:External RPC account%></h3>
+                    <p><%:Create one restricted rpcd account for an external Oasis client.%></p>
+                </div>
+            </div>
+            <div id="oasis-setting-v2-tool-edge-content"></div>
         </section>
 
         <section class="oasis-setting-v2__section" aria-labelledby="oasis-setting-v2-services-title">
@@ -97,6 +110,29 @@ window.OasisSettingV2Strings = {
     integration: '<%:Integration%>',
     aiAssist: '<%:AI-assisted configuration%>',
     rpcAccess: '<%:RPC access%>',
+    externalRpcAccount: '<%:External RPC account%>',
+    externalRpcAccountHelp: '<%:Create one restricted rpcd account for an external Oasis client.%>',
+    externalRpcUnavailable: '<%:External RPC account settings are unavailable.%>',
+    externalRpcAccessHelp: '<%:Controls whether external clients can use this account.%>',
+    externalRpcConfigured: '<%:An external RPC account is configured.%>',
+    externalRpcNotConfigured: '<%:No external RPC account is configured.%>',
+    username: '<%:Username%>',
+    password: '<%:Password%>',
+    confirmPassword: '<%:Confirm password%>',
+    newPasswordOptional: '<%:New password (optional)%>',
+    passwordHelp: '<%:Use at least 12 characters. The password is never displayed after saving.%>',
+    createAccount: '<%:Create account%>',
+    updateAccount: '<%:Update account%>',
+    removeAccount: '<%:Remove account%>',
+    removeAccountConfirm: '<%:Remove the external RPC account? Existing external sessions will be disconnected.%>',
+    accountCreated: '<%:External RPC account created successfully.%>',
+    accountUpdated: '<%:External RPC account updated successfully.%>',
+    accountRemoved: '<%:External RPC account removed successfully.%>',
+    accountSaveFailed: '<%:Failed to save the external RPC account.%>',
+    usernameRequired: '<%:Enter a username using letters, numbers, dots, underscores, or hyphens.%>',
+    passwordMinimum: '<%:Enter a password containing at least 12 characters.%>',
+    passwordMismatch: '<%:The passwords do not match.%>',
+    usernameInUse: '<%:Choose a different username.%>',
     storage: '<%:Storage%>',
     storagePath: '<%:Storage path%>',
     storagePathHelp: '<%:Use an absolute directory path.%>',
@@ -169,10 +205,12 @@ window.OasisSettingV2Config = {
     csrfToken: '<%=token%>',
     urls: {
         loadSettings: '<%=build_url("admin", "network", "oasis", "load-settings")%>',
-        updateSettings: '<%=build_url("admin", "network", "oasis", "update-settings")%>'
+        updateSettings: '<%=build_url("admin", "network", "oasis", "update-settings")%>',
+        loadToolEdgeAccount: '<%=build_url("admin", "network", "oasis", "load-tool-edge-account")%>',
+        updateToolEdgeAccount: '<%=build_url("admin", "network", "oasis", "update-tool-edge-account")%>'
     }
 };
 </script>
-<script src="<%= resource %>/oasis/js/setting-v2.js?v=3.2.6-r12"></script>
+<script src="<%= resource %>/oasis/js/setting-v2.js?v=3.2.6-r18"></script>
 
 <%+footer%>
