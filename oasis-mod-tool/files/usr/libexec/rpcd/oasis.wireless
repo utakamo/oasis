@@ -130,4 +130,184 @@ server.tool("wifi_scan", {
     end
 })
 
+server.tool("get_wifi_config", {
+    tool_desc = "List wireless UCI configuration and runtime status without exposing Wi-Fi credentials.",
+    call = function()
+        local uci = require("luci.model.uci").cursor()
+        local util = require("luci.util")
+
+        local function is_sensitive_option(name)
+            local normalized = tostring(name or ""):lower()
+            return normalized == "key"
+                or normalized:match("^key%d*$") ~= nil
+                or normalized:find("password", 1, true) ~= nil
+                or normalized:find("secret", 1, true) ~= nil
+                or normalized:find("private_key", 1, true) ~= nil
+        end
+
+        local function sanitize_value(value)
+            if type(value) ~= "table" then
+                return value
+            end
+
+            local sanitized = {}
+            for key, child in pairs(value) do
+                if is_sensitive_option(key) then
+                    sanitized[key] = "[redacted]"
+                else
+                    sanitized[key] = sanitize_value(child)
+                end
+            end
+            return sanitized
+        end
+
+        local function describe_section(section)
+            local options = {}
+            local redacted_options = {}
+
+            for key, value in pairs(section) do
+                if type(key) == "string" and key:sub(1, 1) ~= "." then
+                    if is_sensitive_option(key) then
+                        redacted_options[#redacted_options + 1] = key
+                    else
+                        options[key] = sanitize_value(value)
+                    end
+                end
+            end
+
+            table.sort(redacted_options)
+            return {
+                section = section[".name"],
+                options = options,
+                credentials_configured = #redacted_options > 0,
+                redacted_options = redacted_options
+            }
+        end
+
+        local devices = {}
+        uci:foreach("wireless", "wifi-device", function(section)
+            devices[#devices + 1] = describe_section(section)
+        end)
+
+        local interfaces = {}
+        uci:foreach("wireless", "wifi-iface", function(section)
+            interfaces[#interfaces + 1] = describe_section(section)
+        end)
+
+        local networks = {}
+        uci:foreach("network", "interface", function(section)
+            networks[#networks + 1] = section[".name"]
+        end)
+        table.sort(networks)
+
+        local runtime = util.ubus("network.wireless", "status", {})
+        return server.response({
+            devices = devices,
+            interfaces = interfaces,
+            network_interfaces = networks,
+            runtime = sanitize_value(runtime or {}),
+            note = "Wi-Fi credentials are intentionally omitted from this result."
+        })
+    end
+})
+
+local function open_wifi_form(operation, band)
+    return server.response({
+        ui_action = {
+            type = "wifi_config",
+            operation = operation,
+            band = band
+        },
+        user_only = "Open the Wi-Fi settings form to continue.",
+        request = "The Oasis WebUI has opened a Wi-Fi settings form. Wait for the user to finish it; do not ask for credentials in chat."
+    })
+end
+
+local WIFI_FORM_BANDS = {
+    ["2g"] = { value = "2G", label = "2.4 GHz" },
+    ["5g"] = { value = "5G", label = "5 GHz" },
+    ["6g"] = { value = "6G", label = "6 GHz" }
+}
+
+local WIFI_FORM_BANDS_BY_VALUE = {
+    ["2G"] = WIFI_FORM_BANDS["2g"],
+    ["5G"] = WIFI_FORM_BANDS["5g"],
+    ["6G"] = WIFI_FORM_BANDS["6g"]
+}
+
+local WIFI_FORM_BAND_ORDER = { "2G", "5G", "6G" }
+
+local function configured_wifi_bands()
+    local uci = require("luci.model.uci").cursor()
+    local found = {}
+
+    uci:foreach("wireless", "wifi-device", function(section)
+        local definition = WIFI_FORM_BANDS[tostring(section.band or "")]
+        if definition then
+            found[definition.value] = true
+        elseif section.band == nil or section.band == "" then
+            -- Pre-21.02 configurations may identify the 2.4/5 GHz radio with
+            -- hwmode.  6 GHz has no legacy equivalent and requires band=6g.
+            local hwmode = tostring(section.hwmode or "")
+            if hwmode == "11b" or hwmode == "11g" then
+                found["2G"] = true
+            elseif hwmode == "11a" then
+                found["5G"] = true
+            end
+        end
+    end)
+
+    local available = {}
+    for _, band in ipairs(WIFI_FORM_BAND_ORDER) do
+        if found[band] then
+            available[#available + 1] = band
+        end
+    end
+    return found, available
+end
+
+server.tool("update_wifi_config", {
+    tool_desc = "Open the Oasis WebUI form to edit existing Wi-Fi access point settings. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+    call = function()
+        return open_wifi_form("update")
+    end
+})
+
+server.tool("delete_wifi_config", {
+    tool_desc = "Open the Oasis WebUI form to remove an existing Wi-Fi access point configuration. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+    call = function()
+        return open_wifi_form("delete")
+    end
+})
+
+server.tool("add_wifi_config", {
+    tool_desc = "Open the Oasis WebUI form to add a Wi-Fi access point configuration. The band argument must be exactly 2G, 5G, or 6G. The tool returns an error if no radio for the requested band is configured. This tool does not modify Wi-Fi settings directly.",
+    args_desc = {
+        "Wi-Fi band: exactly 2G for 2.4 GHz, 5G for 5 GHz, or 6G for 6 GHz."
+    },
+    args = { band = "a_string" },
+    call = function(args)
+        local band = args and args.band or nil
+        local definition = WIFI_FORM_BANDS_BY_VALUE[band]
+        if not definition then
+            return server.response({
+                status = "NG",
+                error = "band must be exactly 2G, 5G, or 6G."
+            })
+        end
+
+        local configured, available = configured_wifi_bands()
+        if not configured[band] then
+            return server.response({
+                status = "NG",
+                error = "No " .. definition.label .. " radio is configured or available on this router.",
+                available_bands = available,
+                request = "Tell the user that a Wi-Fi configuration cannot be added for the requested band on the currently available radios. Suggest an available band or checking Network → Wireless."
+            })
+        end
+
+        return open_wifi_form("add", band)
+    end
+})
+
 server.run(arg)

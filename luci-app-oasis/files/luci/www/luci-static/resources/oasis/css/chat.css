@@ -1403,3 +1403,192 @@ pre {
 .md-table th[align="center"], .md-table td[align="center"] { text-align: center; }
 .md-table th[align="right"], .md-table td[align="right"] { text-align: right; }
 /* ===== end styles moved from chat.htm ===== */
+
+.oasis-wifi-modal[hidden] {
+  display: none;
+}
+
+.oasis-wifi-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2600;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.oasis-wifi-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 28, 40, 0.48);
+}
+
+.oasis-wifi-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 720px);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 18px;
+  border: 1px solid #d9e0ea;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
+}
+
+.oasis-wifi-modal__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.oasis-wifi-modal__heading h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+}
+
+.oasis-wifi-modal__heading p {
+  margin: 6px 0 0;
+  color: #5c6675;
+  font-size: 0.9rem;
+}
+
+.oasis-wifi-modal__close {
+  flex: 0 0 auto;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: #4b5563;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.oasis-wifi-modal__close:hover,
+.oasis-wifi-modal__close:focus {
+  color: #111827;
+  background: #edf1f6;
+}
+
+.oasis-wifi-modal__content {
+  display: grid;
+  gap: 12px;
+}
+
+.oasis-wifi-card {
+  padding: 14px;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.oasis-wifi-card__title {
+  margin: 0 0 10px;
+  color: #263447;
+  font-size: 1rem;
+}
+
+.oasis-wifi-card__note {
+  margin: -4px 0 10px;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.oasis-wifi-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.oasis-wifi-card__actions .cbi-button {
+  min-height: 32px;
+  padding: 5px 11px;
+}
+
+.oasis-wifi-field {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.oasis-wifi-field label {
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.oasis-wifi-field input,
+.oasis-wifi-field select {
+  width: 100%;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #bfc9d7;
+  border-radius: 5px;
+  color: #1f2937;
+  background: #fff;
+}
+
+.oasis-wifi-field input:focus,
+.oasis-wifi-field select:focus {
+  border-color: #2c7bd0;
+  outline: 2px solid rgba(44, 123, 208, 0.18);
+}
+
+.oasis-wifi-field small {
+  color: #687486;
+  font-size: 0.8rem;
+}
+
+.oasis-wifi-field--error input,
+.oasis-wifi-field--error select {
+  border-color: #c0392b;
+}
+
+.oasis-wifi-card--unsupported {
+  border-color: #e4bb65;
+  background: #fffaf0;
+}
+
+.oasis-wifi-modal__status {
+  margin: 14px 0 0;
+  color: #374151;
+}
+
+.oasis-wifi-modal__status--error {
+  color: #b42318;
+}
+
+.oasis-wifi-modal__status--success {
+  color: #067647;
+}
+
+.oasis-wifi-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.oasis-wifi-modal__actions .cbi-button {
+  min-height: 32px;
+  padding: 5px 11px;
+}
+
+@media (max-width: 768px) {
+  .oasis-wifi-modal {
+    padding: 8px;
+  }
+
+  .oasis-wifi-modal__dialog {
+    max-height: calc(100vh - 16px);
+    padding: 14px;
+  }
+}

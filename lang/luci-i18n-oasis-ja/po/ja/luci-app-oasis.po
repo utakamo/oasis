@@ -1269,3 +1269,127 @@ msgstr "絶対ディレクトリパスを使用してください。"
 #: files/luci/view/setting-v2.htm:114
 msgid "service"
 msgstr "サービス"
+
+#: files/luci/view/chat.htm
+msgid "Add {band} Wi-Fi settings"
+msgstr "{band} Wi-Fi設定を追加"
+
+#: files/luci/view/chat.htm
+msgid "A passphrase is already configured and is not displayed."
+msgstr "パスフレーズは設定済みですが表示されません。"
+
+#: files/luci/view/chat.htm
+msgid "Check the Wi-Fi settings fields."
+msgstr "Wi-Fi設定の入力項目を確認してください。"
+
+#: files/luci/view/chat.htm
+msgid "Close"
+msgstr "閉じる"
+
+#: files/luci/view/chat.htm
+msgid "Encryption"
+msgstr "暗号化方式"
+
+#: files/luci/view/chat.htm
+msgid "Failed to load Wi-Fi settings. Try again."
+msgstr "Wi-Fi設定の読み込みに失敗しました。再試行してください。"
+
+#: files/luci/view/chat.htm
+msgid "Failed to save Wi-Fi settings. Check the fields and try again."
+msgstr "Wi-Fi設定の保存に失敗しました。入力項目を確認して再試行してください。"
+
+#: files/luci/view/chat.htm
+msgid "Leave empty to keep the current passphrase."
+msgstr "現在のパスフレーズを保持する場合は空欄のままにしてください。"
+
+#: files/luci/view/chat.htm
+msgid "No editable Wi-Fi access points were found."
+msgstr "編集可能なWi-Fiアクセスポイント設定が見つかりません。"
+
+#: files/luci/view/chat.htm
+msgid "No radio is available for the requested Wi-Fi band."
+msgstr "指定されたWi-Fi帯域に利用可能な無線デバイスがありません。"
+
+#: files/luci/view/chat.htm
+msgid "Open networks do not use a passphrase."
+msgstr "オープンネットワークではパスフレーズを使用しません。"
+
+#: files/luci/view/chat.htm
+msgid "Open (no password)"
+msgstr "オープン（パスワードなし）"
+
+#: files/luci/view/chat.htm
+msgid "Passphrase"
+msgstr "パスフレーズ"
+
+#: files/luci/view/chat.htm
+msgid "Radio"
+msgstr "無線デバイス"
+
+#: files/luci/view/chat.htm
+msgid "Save Wi-Fi settings"
+msgstr "Wi-Fi設定を保存"
+
+#: files/luci/view/chat.htm
+msgid "SSID"
+msgstr "SSID"
+
+#: files/luci/view/chat.htm
+msgid "This encryption mode is not supported by the Oasis Wi-Fi form. Use Network → Wireless to edit it."
+msgstr "この暗号化方式はOasisのWi-Fi設定画面では対応していません。Network → Wirelessから編集してください。"
+
+#: files/luci/view/chat.htm
+msgid "Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key."
+msgstr "8～63文字を使用してください。WPA2では64文字の16進数キーも使用できます。"
+
+#: files/luci/view/chat.htm
+msgid "Use 8–63 characters for WPA3."
+msgstr "WPA3には8～63文字を使用してください。"
+
+#: files/luci/view/chat.htm
+msgid "Wi-Fi changes can temporarily interrupt wireless connections. Use a wired connection when possible."
+msgstr "Wi-Fi設定の変更により、無線接続が一時的に切断される場合があります。可能であれば有線接続を使用してください。"
+
+#: files/luci/view/chat.htm
+msgid "Wi-Fi settings"
+msgstr "Wi-Fi設定"
+
+#: files/luci/view/chat.htm
+msgid "WPA2 Personal"
+msgstr "WPA2 パーソナル"
+
+#: files/luci/view/chat.htm
+msgid "WPA2 Personal (CCMP)"
+msgstr "WPA2 パーソナル（CCMP）"
+
+#: files/luci/view/chat.htm
+msgid "WPA2/WPA3 Personal"
+msgstr "WPA2/WPA3 パーソナル"
+
+#: files/luci/view/chat.htm
+msgid "WPA3 Personal"
+msgstr "WPA3 パーソナル"
+
+#: files/luci/view/chat.htm
+msgid "Wi-Fi settings saved. The wireless connection may take a moment to return."
+msgstr "Wi-Fi設定を保存しました。無線接続が復帰するまで少し時間がかかる場合があります。"
+
+#: files/luci/view/chat.htm
+msgid "Delete Wi-Fi settings"
+msgstr "Wi-Fi設定を削除"
+
+#: files/luci/view/chat.htm
+msgid "Failed to delete Wi-Fi settings. Try again."
+msgstr "Wi-Fi設定の削除に失敗しました。再試行してください。"
+
+#: files/luci/view/chat.htm
+msgid "No Wi-Fi access point settings were found."
+msgstr "Wi-Fiアクセスポイント設定が見つかりません。"
+
+#: files/luci/view/chat.htm
+msgid "Remove Wi-Fi network \"{ssid}\"? This cannot be undone."
+msgstr "Wi-Fiネットワーク「{ssid}」を削除しますか？この操作は取り消せません。"
+
+#: files/luci/view/chat.htm
+msgid "Wi-Fi settings deleted. The wireless connection may take a moment to return."
+msgstr "Wi-Fi設定を削除しました。無線接続が復帰するまで少し時間がかかる場合があります。"

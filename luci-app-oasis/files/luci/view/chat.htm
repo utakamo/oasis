@@ -1,6 +1,6 @@
 <%+header%>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r22">
 <div class="oasis-container">
     <div class="chat-list-container">
         <label for="import-chat-data" id="import-button" style="width:100%;"><%:Import Chat Data +%></label>
@@ -116,12 +116,37 @@
         </div>
     </div>
 
+    <div id="wifi-config-modal"
+         class="oasis-wifi-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="wifi-config-modal-title"
+         hidden>
+        <div class="oasis-wifi-modal__backdrop" data-wifi-config-close></div>
+        <form id="wifi-config-form" class="oasis-wifi-modal__dialog" novalidate>
+            <div class="oasis-wifi-modal__heading">
+                <div>
+                    <h2 id="wifi-config-modal-title"><%:Wi-Fi settings%></h2>
+                    <p><%:Wi-Fi changes can temporarily interrupt wireless connections. Use a wired connection when possible.%></p>
+                </div>
+                <button id="wifi-config-close" class="oasis-wifi-modal__close" type="button" aria-label="<%:Close%>">×</button>
+            </div>
+            <div id="wifi-config-content" class="oasis-wifi-modal__content" aria-live="polite"></div>
+            <p id="wifi-config-status" class="oasis-wifi-modal__status" role="status" hidden></p>
+            <div class="oasis-wifi-modal__actions">
+                <button id="wifi-config-cancel" class="cbi-button cbi-button-reset" type="button"><%:Cancel%></button>
+                <button id="wifi-config-save" class="cbi-button cbi-button-apply important" type="submit"><%:Save Wi-Fi settings%></button>
+            </div>
+        </form>
+    </div>
+
     <!-- System Message popup removed -->
 </div>
 
 <script>
 window.OasisChatConfig = {
     resourcePath: '<%= resource %>',
+    csrfToken: '<%=token%>',
     urls: {
         confirm: '<%=build_url("admin", "network", "oasis", "confirm")%>',
         finalize: '<%=build_url("admin", "network", "oasis", "finalize")%>',
@@ -136,7 +161,9 @@ window.OasisChatConfig = {
         restartService: '<%=build_url("admin", "network", "oasis", "restart-service")%>',
         uciShow: '<%=build_url("admin", "network", "oasis", "uci-show")%>',
         importChat: '<%=build_url("admin", "network", "oasis", "import-chat-data")%>',
-        selectAiService: '<%=build_url("admin", "network", "oasis", "select-ai-service")%>'
+        selectAiService: '<%=build_url("admin", "network", "oasis", "select-ai-service")%>',
+        loadWifiConfig: '<%=build_url("admin", "network", "oasis", "load-wifi-config")%>',
+        updateWifiConfig: '<%=build_url("admin", "network", "oasis", "update-wifi-config")%>'
     }
 };
 </script>
@@ -177,10 +204,39 @@ window.OasisChatStrings = {
     exportText: '<%:Text%>',
     inputPlaceholder: '<%:Your Message (Enter to send, Shift+Enter for newline)%>',
     applySettings: '<%:Applying the settings...%>',
-    uciInfoTitle: '<%:### [User\'s {config} config]%>'
+    uciInfoTitle: '<%:### [User\'s {config} config]%>',
+    wifiSettings: '<%:Wi-Fi settings%>',
+    addWifiSettings: '<%:Add {band} Wi-Fi settings%>',
+    deleteWifiSettings: '<%:Delete Wi-Fi settings%>',
+    wifiLoadFailed: '<%:Failed to load Wi-Fi settings. Try again.%>',
+    wifiSaveFailed: '<%:Failed to save Wi-Fi settings. Check the fields and try again.%>',
+    wifiSaved: '<%:Wi-Fi settings saved. The wireless connection may take a moment to return.%>',
+    wifiDeleteFailed: '<%:Failed to delete Wi-Fi settings. Try again.%>',
+    wifiDeleted: '<%:Wi-Fi settings deleted. The wireless connection may take a moment to return.%>',
+    deleteWifiConfig: '<%:Delete%>',
+    wifiDeleteConfirm: '<%:Remove Wi-Fi network "{ssid}"? This cannot be undone.%>',
+    wifiNoAccessPoints: '<%:No editable Wi-Fi access points were found.%>',
+    wifiNoWifiConfigs: '<%:No Wi-Fi access point settings were found.%>',
+    wifiNoRadio: '<%:No radio is available for the requested Wi-Fi band.%>',
+    wifiSsid: '<%:SSID%>',
+    wifiEncryption: '<%:Encryption%>',
+    wifiEncryptionOpen: '<%:Open (no password)%>',
+    wifiEncryptionPsk2: '<%:WPA2 Personal%>',
+    wifiEncryptionPsk2Ccmp: '<%:WPA2 Personal (CCMP)%>',
+    wifiEncryptionSae: '<%:WPA3 Personal%>',
+    wifiEncryptionSaeMixed: '<%:WPA2/WPA3 Personal%>',
+    wifiPassphrase: '<%:Passphrase%>',
+    wifiPassphraseHint: '<%:Leave empty to keep the current passphrase.%>',
+    wifiPassphraseNewHint: '<%:Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key.%>',
+    wifiPassphraseWpa3Hint: '<%:Use 8–63 characters for WPA3.%>',
+    wifiCurrentPassphrase: '<%:A passphrase is already configured and is not displayed.%>',
+    wifiRadio: '<%:Radio%>',
+    wifiUnsupportedEncryption: '<%:This encryption mode is not supported by the Oasis Wi-Fi form. Use Network → Wireless to edit it.%>',
+    wifiFormInvalid: '<%:Check the Wi-Fi settings fields.%>',
+    wifiOpenNetwork: '<%:Open networks do not use a passphrase.%>'
 };
 </script>
 <script src="<%= resource %>/oasis/js/chat-utils.js"></script>
-<script src="<%= resource %>/oasis/js/chat.js"></script>
+<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r22"></script>
 
 <%+footer%>
