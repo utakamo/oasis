@@ -456,14 +456,12 @@ local WIFI_ENCRYPTIONS = {
 
 local WIFI_BANDS = {
     ["2g"] = { label = "2.4 GHz", value = "2G" },
-    ["5g"] = { label = "5 GHz", value = "5G" },
-    ["6g"] = { label = "6 GHz", value = "6G" }
+    ["5g"] = { label = "5 GHz", value = "5G" }
 }
 
 local WIFI_SUPPORTED_BANDS = {
     ["2G"] = true,
-    ["5G"] = true,
-    ["6G"] = true
+    ["5G"] = true
 }
 
 local WIFI_ENCRYPTION_OPTIONS = {
@@ -474,14 +472,9 @@ local WIFI_ENCRYPTION_OPTIONS = {
     { value = "sae-mixed", label = "WPA2/WPA3 Personal" }
 }
 
-local WIFI_6G_ENCRYPTION_OPTIONS = {
-    { value = "sae", label = "WPA3 Personal" }
-}
-
 local WIFI_BAND_ENCRYPTIONS = {
     ["2G"] = WIFI_ENCRYPTIONS,
-    ["5G"] = WIFI_ENCRYPTIONS,
-    ["6G"] = { sae = true }
+    ["5G"] = WIFI_ENCRYPTIONS
 }
 
 local function wifi_write_json(value, status, status_message)
@@ -523,8 +516,7 @@ local function wifi_band_label(raw_band, hwmode)
         return definition.label, definition.value
     end
 
-    -- Older OpenWrt configurations may use hwmode instead of band.  There is
-    -- no equivalent legacy value for 6 GHz, so only recognise 2.4/5 GHz here.
+    -- Older OpenWrt configurations may use hwmode instead of band.
     if hwmode == "11b" or hwmode == "11g" then
         return "2.4 GHz", "2G"
     elseif hwmode == "11a" then
@@ -542,10 +534,7 @@ local function wifi_encryption_supported(band, encryption)
     return type(encryption) == "string" and allowed and allowed[encryption] == true
 end
 
-local function wifi_encryption_options(band)
-    if band == "6G" then
-        return WIFI_6G_ENCRYPTION_OPTIONS
-    end
+local function wifi_encryption_options(_band)
     return WIFI_ENCRYPTION_OPTIONS
 end
 

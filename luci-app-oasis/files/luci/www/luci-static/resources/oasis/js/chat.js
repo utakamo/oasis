@@ -306,7 +306,11 @@
             ));
             return card;
         }
-        if (!isAdd) card.dataset.wifiEditable = '1';
+        if (!isAdd) {
+            card.dataset.wifiEditable = '1';
+            card.dataset.wifiOriginalEncryption = item.encryption || 'none';
+            card.dataset.wifiKeyConfigured = item.key_configured ? '1' : '0';
+        }
 
         if (isAdd && Array.isArray(item.devices) && item.devices.length > 1) {
             const device = document.createElement('select');
@@ -331,7 +335,7 @@
         wifiAddField(card, t('wifiSsid', 'SSID'), ssid);
 
         const encryption = wifiCreateEncryptionSelect(
-            options, isAdd ? (item.band === '6G' ? 'sae' : 'psk2') : item.encryption
+            options, isAdd ? 'psk2' : item.encryption
         );
         wifiAddField(card, t('wifiEncryption', 'Encryption'), encryption);
 
@@ -341,10 +345,8 @@
         passphrase.autocomplete = 'new-password';
         passphrase.dataset.wifiField = 'passphrase';
         const hint = isAdd
-            ? (item.band === '6G'
-                ? t('wifiPassphraseWpa3Hint', 'Use 8–63 characters for WPA3.')
-                : t('wifiPassphraseNewHint', 'Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key.'))
-            : t('wifiPassphraseHint', 'Leave empty to keep the current passphrase.');
+            ? t('wifiPassphraseNewHint', 'Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key.')
+            : t('wifiPassphraseHint', 'Leave empty to keep the current passphrase, unless you changed the encryption mode.');
         const passphraseField = wifiAddField(card, t('wifiPassphrase', 'Passphrase'), passphrase, hint);
         if (!isAdd && item.key_configured) {
             passphraseField.appendChild(wifiCreateElement(
@@ -550,9 +552,19 @@
                     invalid = true;
                     wifiMarkInvalid(passphrase);
                 }
-            } else if (passphrase.value !== '' && !wifiValidPassphrase(passphrase.value, encryption.value)) {
-                invalid = true;
-                wifiMarkInvalid(passphrase);
+            } else {
+                const encryptionChanged = encryption.value !== (card.dataset.wifiOriginalEncryption || 'none');
+                const keyConfigured = card.dataset.wifiKeyConfigured === '1';
+                const passphraseRequired = encryptionChanged || !keyConfigured;
+                if (passphrase.value !== '') {
+                    if (!wifiValidPassphrase(passphrase.value, encryption.value)) {
+                        invalid = true;
+                        wifiMarkInvalid(passphrase);
+                    }
+                } else if (passphraseRequired) {
+                    invalid = true;
+                    wifiMarkInvalid(passphrase);
+                }
             }
             updates.push({
                 section: card.dataset.wifiSection,
