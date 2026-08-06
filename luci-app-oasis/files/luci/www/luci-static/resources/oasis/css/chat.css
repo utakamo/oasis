@@ -1489,10 +1489,46 @@ pre {
   background: #fbfcfe;
 }
 
-.oasis-wifi-card__title {
+.oasis-wifi-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 0 10px;
+}
+
+.oasis-wifi-card__title {
+  min-width: 0;
+  margin: 0;
   color: #263447;
   font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.oasis-wifi-band-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 24px;
+  box-sizing: border-box;
+  padding: 3px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.oasis-wifi-band-badge--2g {
+  color: #166534;
+  border-color: #86efac;
+  background: #eaf7ef;
+}
+
+.oasis-wifi-band-badge--5g {
+  color: #1d4ed8;
+  border-color: #93c5fd;
+  background: #edf4ff;
 }
 
 .oasis-wifi-card__note {
@@ -1590,5 +1626,10 @@ pre {
   .oasis-wifi-modal__dialog {
     max-height: calc(100vh - 16px);
     padding: 14px;
+  }
+
+  .oasis-wifi-card__heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }

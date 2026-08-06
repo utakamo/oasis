@@ -245,6 +245,21 @@
         return element;
     }
 
+    const WIFI_BAND_BADGES = {
+        '2G': { className: 'oasis-wifi-band-badge--2g', label: '2.4 GHz' },
+        '5G': { className: 'oasis-wifi-band-badge--5g', label: '5 GHz' }
+    };
+
+    function wifiCreateBandBadge(band) {
+        const badge = WIFI_BAND_BADGES[band];
+        if (!badge) return null;
+        return wifiCreateElement(
+            'span',
+            'oasis-wifi-band-badge ' + badge.className,
+            badge.label
+        );
+    }
+
     function wifiAddField(card, labelText, input, hint) {
         const field = wifiCreateElement('div', 'oasis-wifi-field');
         const label = wifiCreateElement('label', '', labelText);
@@ -295,8 +310,14 @@
 
         const title = isAdd
             ? formatString(t('addWifiSettings', 'Add {band} Wi-Fi settings'), { band: item.band || '' })
-            : ((item.band_label || item.band || '') + (item.ssid ? ' · ' + item.ssid : ''));
-        card.appendChild(wifiCreateElement('h3', 'oasis-wifi-card__title', title));
+            : (item.ssid || item.band_label || item.band || '');
+        const heading = wifiCreateElement('div', 'oasis-wifi-card__heading');
+        if (!isAdd) {
+            const badge = wifiCreateBandBadge(item.band);
+            if (badge) heading.appendChild(badge);
+        }
+        heading.appendChild(wifiCreateElement('h3', 'oasis-wifi-card__title', title));
+        card.appendChild(heading);
 
         if (!isAdd && item.encryption_supported === false) {
             card.classList.add('oasis-wifi-card--unsupported');
@@ -364,9 +385,12 @@
     function wifiCreateDeleteCard(item) {
         const card = wifiCreateElement('section', 'oasis-wifi-card');
         card.dataset.wifiSection = item.section;
-        const title = (item.band_label || item.band || '')
-            + (item.ssid ? ' · ' + item.ssid : '');
-        card.appendChild(wifiCreateElement('h3', 'oasis-wifi-card__title', title));
+        const title = item.ssid || item.band_label || item.band || '';
+        const heading = wifiCreateElement('div', 'oasis-wifi-card__heading');
+        const badge = wifiCreateBandBadge(item.band);
+        if (badge) heading.appendChild(badge);
+        heading.appendChild(wifiCreateElement('h3', 'oasis-wifi-card__title', title));
+        card.appendChild(heading);
         card.appendChild(wifiCreateElement(
             'p', 'oasis-wifi-card__note',
             t('wifiEncryption', 'Encryption') + ': ' + (item.encryption || '')
