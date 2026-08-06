@@ -434,6 +434,9 @@
         wifiConfigSnapshot = snapshot;
 
         const operation = snapshot.operation;
+        if (elements.cancel) {
+            elements.cancel.textContent = t('closeButton', 'Close');
+        }
         elements.save.hidden = false;
         if (operation === 'delete') {
             elements.title.textContent = t('deleteWifiSettings', 'Delete Wi-Fi settings');
