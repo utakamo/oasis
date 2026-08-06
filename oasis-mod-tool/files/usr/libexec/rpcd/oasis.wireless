@@ -140,6 +140,10 @@ server.tool("get_wifi_config", {
             local normalized = tostring(name or ""):lower()
             return normalized == "key"
                 or normalized:match("^key%d*$") ~= nil
+                or normalized == "psk"
+                or normalized == "pin"
+                or normalized:sub(-4) == "_pin"
+                or normalized:find("passphrase", 1, true) ~= nil
                 or normalized:find("password", 1, true) ~= nil
                 or normalized:find("secret", 1, true) ~= nil
                 or normalized:find("private_key", 1, true) ~= nil
@@ -225,17 +229,15 @@ end
 
 local WIFI_FORM_BANDS = {
     ["2g"] = { value = "2G", label = "2.4 GHz" },
-    ["5g"] = { value = "5G", label = "5 GHz" },
-    ["6g"] = { value = "6G", label = "6 GHz" }
+    ["5g"] = { value = "5G", label = "5 GHz" }
 }
 
 local WIFI_FORM_BANDS_BY_VALUE = {
     ["2G"] = WIFI_FORM_BANDS["2g"],
-    ["5G"] = WIFI_FORM_BANDS["5g"],
-    ["6G"] = WIFI_FORM_BANDS["6g"]
+    ["5G"] = WIFI_FORM_BANDS["5g"]
 }
 
-local WIFI_FORM_BAND_ORDER = { "2G", "5G", "6G" }
+local WIFI_FORM_BAND_ORDER = { "2G", "5G" }
 
 local function configured_wifi_bands()
     local uci = require("luci.model.uci").cursor()
@@ -246,8 +248,7 @@ local function configured_wifi_bands()
         if definition then
             found[definition.value] = true
         elseif section.band == nil or section.band == "" then
-            -- Pre-21.02 configurations may identify the 2.4/5 GHz radio with
-            -- hwmode.  6 GHz has no legacy equivalent and requires band=6g.
+            -- Pre-21.02 configurations may identify the radio with hwmode.
             local hwmode = tostring(section.hwmode or "")
             if hwmode == "11b" or hwmode == "11g" then
                 found["2G"] = true
@@ -281,9 +282,9 @@ server.tool("delete_wifi_config", {
 })
 
 server.tool("add_wifi_config", {
-    tool_desc = "Open the Oasis WebUI form to add a Wi-Fi access point configuration. The band argument must be exactly 2G, 5G, or 6G. The tool returns an error if no radio for the requested band is configured. This tool does not modify Wi-Fi settings directly.",
+    tool_desc = "Open the Oasis WebUI form to add a Wi-Fi access point configuration. The band argument must be exactly 2G or 5G. The tool returns an error if no radio for the requested band is configured. This tool does not modify Wi-Fi settings directly.",
     args_desc = {
-        "Wi-Fi band: exactly 2G for 2.4 GHz, 5G for 5 GHz, or 6G for 6 GHz."
+        "Wi-Fi band: exactly 2G for 2.4 GHz or 5G for 5 GHz."
     },
     args = { band = "a_string" },
     call = function(args)
@@ -292,7 +293,7 @@ server.tool("add_wifi_config", {
         if not definition then
             return server.response({
                 status = "NG",
-                error = "band must be exactly 2G, 5G, or 6G."
+                error = "band must be exactly 2G or 5G."
             })
         end
 

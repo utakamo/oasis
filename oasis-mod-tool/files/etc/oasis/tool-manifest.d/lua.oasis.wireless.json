@@ -52,12 +52,12 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Open the Oasis WebUI form to add a Wi-Fi access point configuration. The band argument must be exactly 2G, 5G, or 6G. The tool returns an error if no radio for the requested band is configured. This tool does not modify Wi-Fi settings directly.",
+      "description": "Open the Oasis WebUI form to add a Wi-Fi access point configuration. The band argument must be exactly 2G or 5G. The tool returns an error if no radio for the requested band is configured. This tool does not modify Wi-Fi settings directly.",
       "properties": [
         {
           "type": "string",
           "name": "band",
-          "description": "Wi-Fi band: exactly 2G for 2.4 GHz, 5G for 5 GHz, or 6G for 6 GHz."
+          "description": "Wi-Fi band: exactly 2G for 2.4 GHz or 5G for 5 GHz."
         }
       ],
       "download_message": "",
