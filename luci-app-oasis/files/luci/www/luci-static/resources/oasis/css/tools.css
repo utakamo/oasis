@@ -367,7 +367,8 @@ h3 {
 }
 
 .tools-confirm-meta,
-.tools-confirm-servers {
+.tools-confirm-servers,
+.tools-confirm-tools {
     margin-top: 6px;
     color: #5e6f82;
     font-size: 0.9rem;
