@@ -66,7 +66,11 @@ local function rebuild_manifest_store()
     return true
 end
 
-local function run_setup()
+local function run_init()
+    ensure_runtime_prerequisites(MIN_TIMEOUT)
+end
+
+local function run_refresh()
     ensure_runtime_prerequisites(MIN_TIMEOUT)
 
     local ok, err = refresh_local_tool_registry()
@@ -77,9 +81,9 @@ local function run_setup()
 end
 
 if arg[1] == "init" then
-    run_setup()
+    run_init()
 elseif arg[1] == "refresh" then
-    run_setup()
+    run_refresh()
 elseif arg[1] == "rebuild-manifest" then
     local ok, err = rebuild_manifest_store()
     if not ok then
