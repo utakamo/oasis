@@ -38,7 +38,7 @@
   const confirmListEl = document.getElementById('tools-confirm-list');
   const confirmApplyBtn = document.getElementById('tools-confirm-apply');
   const confirmCancelBtn = document.getElementById('tools-confirm-cancel');
-  let pendingManualManifests = [];
+  let pendingManifests = [];
 
   function showToast(message, type = 'info', timeout = 2000) {
     if (!toastEl) return;
@@ -94,19 +94,24 @@
       servers.textContent = `${t('confirmServersLabel', 'Servers')}: ${(manifest.servers || []).join(', ') || '-'}`;
       item.appendChild(servers);
 
+      const tools = document.createElement('div');
+      tools.className = 'tools-confirm-tools';
+      tools.textContent = `${t('confirmToolsLabel', 'Tools')}: ${(manifest.tools || []).join(', ') || '-'}`;
+      item.appendChild(tools);
+
       confirmListEl.appendChild(item);
     });
   }
 
   function openConfirmModal(manifests) {
-    pendingManualManifests = Array.isArray(manifests) ? manifests : [];
+    pendingManifests = Array.isArray(manifests) ? manifests : [];
     if (confirmMessageEl) {
       confirmMessageEl.textContent = t(
         'confirmRequiredMessage',
-        'The following manual manifests are not yet applied. Applying them will register their tools in Oasis.'
+        'The following AI tool manifests are not yet applied. Applying them will register their tools in Oasis.'
       );
     }
-    renderConfirmList(pendingManualManifests);
+    renderConfirmList(pendingManifests);
     if (confirmApplyBtn) {
       confirmApplyBtn.disabled = false;
       confirmApplyBtn.textContent = t('confirmApplyButton', 'Apply');

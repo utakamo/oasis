@@ -62,8 +62,8 @@ local function source_type_from_script_kind(script_kind)
         return "lua_script"
     elseif script_kind == "ucode" then
         return "ucode_script"
-    elseif script_kind == "manual" then
-        return "manual"
+    elseif script_kind == "ubus_direct" then
+        return "ubus_direct"
     end
 
     return nil
@@ -74,8 +74,8 @@ local function script_kind_from_source_type(source_type)
         return "lua"
     elseif source_type == "ucode_script" then
         return "ucode"
-    elseif source_type == "manual" then
-        return "manual"
+    elseif source_type == "ubus_direct" then
+        return "ubus_direct"
     end
 
     return nil
@@ -535,7 +535,7 @@ local function load_manifest_file(path, opts)
     if manifest.version ~= 1 then
         return nil, nil, "unsupported manifest version: " .. path
     end
-    if manifest.source_type ~= "lua_script" and manifest.source_type ~= "ucode_script" and manifest.source_type ~= "manual" then
+    if manifest.source_type ~= "lua_script" and manifest.source_type ~= "ucode_script" and manifest.source_type ~= "ubus_direct" then
         return nil, nil, "invalid manifest source_type: " .. path
     end
     if type(manifest.tools) ~= "table" then
@@ -552,11 +552,11 @@ local function load_manifest_file(path, opts)
         end
     end
 
-    if manifest.source_type ~= "manual" and not source_path then
+    if manifest.source_type ~= "ubus_direct" and not source_path then
         return nil, nil, "invalid manifest source_path: " .. path
     end
 
-    if manifest.source_type ~= "manual" and not is_regular_file(source_path) then
+    if manifest.source_type ~= "ubus_direct" and not is_regular_file(source_path) then
         if opts and opts.strict then
             return nil, nil, "stale manifest target: " .. source_path
         end

@@ -35,7 +35,7 @@ Manifest files are stored under:
 
 Manifest files can be generated from AI tool ubus server scripts written for Oasis. Use the `oasis manifest` command to inspect candidate scripts and generate Manifest JSON from those scripts.
 
-The generator targets Oasis-managed tool server scripts that use `oasis.local.tool.server`. If you want to expose an existing ubus method, such as a standard OpenWrt ubus API, write a `manual` Manifest instead of generating one from a script.
+The generator targets Oasis-managed tool server scripts that use `oasis.local.tool.server`. If you want to expose an existing ubus method, such as a standard OpenWrt ubus API, write an `ubus_direct` Manifest instead of generating one from a script.
 
 Package-provided Manifest files are installed into this directory. During installation, oasis-mod-tool applies its bundled Manifest files automatically. The Tools page refresh action and `oasis_tool_setup refresh` rebuild the Oasis UCI `tool` sections from Manifest definitions.
 
@@ -79,11 +79,11 @@ Manifest files support these source types:
 |----------|----------|
 | `lua_script` | Tool definitions generated from an Oasis Lua rpcd script. |
 | `ucode_script` | Tool definitions generated from an Oasis ucode rpcd script. |
-| `manual` | Hand-written tool definitions for an existing ubus server or standard OpenWrt functionality. |
+| `ubus_direct` | Hand-written tool definitions that call an existing ubus server or standard OpenWrt functionality directly. |
 
-`manual` Manifests are useful when a tool does not need a new Oasis-specific script. For example, an existing OpenWrt ubus method can be exposed to the AI by writing a Manifest that describes the method and its parameters.
+`ubus_direct` Manifests are useful when a tool does not need a new Oasis-specific script. For example, an existing OpenWrt ubus method can be exposed to the AI by writing a Manifest that describes the method and its parameters.
 
-Manual Manifests may require user confirmation from the Tools page before Oasis applies them to the runtime UCI tool registry.
+The Tools page requires user confirmation before it applies any new Manifest to the runtime UCI tool registry, regardless of its source type.
 
 ### Manifest Example
 The following is a minimal Manifest structure:
@@ -91,7 +91,7 @@ The following is a minimal Manifest structure:
 ```json
 {
   "version": 1,
-  "source_type": "manual",
+  "source_type": "ubus_direct",
   "source_path": "",
   "tools": [
     {
@@ -141,7 +141,7 @@ oasis_tool_setup rebuild-manifest
 oasis_tool_setup refresh
 ```
 
-- `rebuild-manifest` regenerates the Manifest store from installed Oasis-managed tool scripts. It does not generate `manual` Manifests.
+- `rebuild-manifest` regenerates the Manifest store from installed Oasis-managed tool scripts. It does not generate `ubus_direct` Manifests.
 - `refresh` rebuilds the runtime UCI tool registry from Manifest files.
 
 ## Lua OLT Server Example

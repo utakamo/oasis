@@ -289,29 +289,42 @@ end
 local function build_manifest_summary(path, manifest)
     local servers = {}
     local seen = {}
+    local tools = {}
 
     for _, tool in ipairs(manifest.tools or {}) do
         if type(tool) == "table" then
-            local server = tool.server or ""
+            local server = type(tool.server) == "string" and tool.server or ""
+            local name = type(tool.name) == "string" and tool.name or ""
             if server ~= "" and not seen[server] then
                 seen[server] = true
                 servers[#servers + 1] = server
+            end
+            if server ~= "" and name ~= "" then
+                tools[#tools + 1] = server .. "." .. name
             end
         end
     end
 
     table.sort(servers)
+    table.sort(tools)
 
     return {
         path = path,
         source_type = manifest.source_type or "",
         source_path = manifest.source_path or "",
         tool_count = #(manifest.tools or {}),
-        servers = servers
+        servers = servers,
+        tools = tools
     }
 end
 
-local function list_pending_manual_manifests()
+local confirmation_source_types = {
+    lua_script = true,
+    ucode_script = true,
+    ubus_direct = true,
+}
+
+local function list_pending_manifests()
     local manifests = {}
     local files = fs.dir(manifest_dir)
 
@@ -326,7 +339,7 @@ local function list_pending_manual_manifests()
             local manifest = raw and jsonc.parse(raw) or nil
 
             if type(manifest) == "table"
-                and manifest.source_type == "manual"
+                and confirmation_source_types[manifest.source_type] == true
                 and type(manifest.tools) == "table"
                 and not manifest_is_applied(path) then
                 manifests[#manifests + 1] = build_manifest_summary(path, manifest)
@@ -396,7 +409,7 @@ end
 
 function refresh_tools()
     if luci_http.formvalue("confirm") ~= "1" then
-        local pending = list_pending_manual_manifests()
+        local pending = list_pending_manifests()
         if #pending > 0 then
             luci_http.prepare_content("application/json")
             luci_http.write_json({
