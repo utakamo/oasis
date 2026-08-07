@@ -1230,6 +1230,31 @@ function M.exec_server_tool(format, tool, data)
     local found = false
     local result = {}
 
+    local function is_sensitive_debug_key(key)
+        local normalized = tostring(key or ""):lower()
+        return normalized == "config"
+            or normalized == "key"
+            or normalized:match("^key%d*$") ~= nil
+            or normalized:find("password", 1, true) ~= nil
+            or normalized:find("secret", 1, true) ~= nil
+            or normalized:find("private_key", 1, true) ~= nil
+    end
+
+    local function redact_debug_value(value, key)
+        if is_sensitive_debug_key(key) then
+            return "[redacted]"
+        end
+        if type(value) ~= "table" then
+            return value
+        end
+
+        local redacted = {}
+        for child_key, child_value in pairs(value) do
+            redacted[child_key] = redact_debug_value(child_value, child_key)
+        end
+        return redacted
+    end
+
     local function merge_parsed_result(tbl)
         if type(tbl) ~= "table" then
             return tbl
@@ -1260,7 +1285,10 @@ function M.exec_server_tool(format, tool, data)
             handle_option_message(s.download_message,  "download",  format)
 
             found = true
-            debug:log("oasis.log", "exec_server_tool", "request payload = " .. jsonc.stringify(data, false))
+            -- Tool arguments can contain passwords or serialized configuration.
+            -- Never write those values to the shared Oasis debug log.
+            debug:log("oasis.log", "exec_server_tool",
+                "request payload = " .. jsonc.stringify(redact_debug_value(data), false))
             result = ubus_call(s.server, s.name, data, s.timeout)
             result = merge_parsed_result(result)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))

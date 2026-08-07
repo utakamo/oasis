@@ -29,6 +29,9 @@
     const URL_UCI_SHOW = getUrl('uciShow');
     const URL_IMPORT_CHAT = getUrl('importChat');
     const URL_SELECT_AI_SERVICE = getUrl('selectAiService');
+    const URL_LOAD_WIFI_CONFIG = getUrl('loadWifiConfig');
+    const URL_UPDATE_WIFI_CONFIG = getUrl('updateWifiConfig');
+    const CSRF_TOKEN = config.csrfToken || '';
     const STR = window.OasisChatStrings || {};
     const t = (key, fallback) => (Object.prototype.hasOwnProperty.call(STR, key) ? STR[key] : fallback);
     function formatString(template, replacements) {
@@ -137,6 +140,616 @@
     let mobileLayoutForce = false;
     let mobileLayoutRemeasure = false;
     const MAX_CHAT_IMPORT_BYTES = 512 * 1024; // 512KB cap to avoid huge uploads on routers
+    const WIFI_FORM_ENCRYPTIONS = {
+        '2G': ['none', 'psk2', 'psk2+ccmp', 'sae', 'sae-mixed'],
+        '5G': ['none', 'psk2', 'psk2+ccmp', 'sae', 'sae-mixed'],
+        '6G': ['sae']
+    };
+    let wifiConfigSnapshot = null;
+    let wifiConfigSaving = false;
+    let wifiConfigLastFocus = null;
+    let wifiConfigCloseTimer = null;
+
+    function wifiModalElements() {
+        return {
+            modal: document.getElementById('wifi-config-modal'),
+            form: document.getElementById('wifi-config-form'),
+            title: document.getElementById('wifi-config-modal-title'),
+            content: document.getElementById('wifi-config-content'),
+            status: document.getElementById('wifi-config-status'),
+            save: document.getElementById('wifi-config-save'),
+            cancel: document.getElementById('wifi-config-cancel'),
+            close: document.getElementById('wifi-config-close')
+        };
+    }
+
+    function wifiSetStatus(kind, message) {
+        const status = wifiModalElements().status;
+        if (!status) return;
+        status.textContent = message || '';
+        status.hidden = !message;
+        status.classList.toggle('oasis-wifi-modal__status--error', kind === 'error');
+        status.classList.toggle('oasis-wifi-modal__status--success', kind === 'success');
+    }
+
+    function wifiClearCloseTimer() {
+        if (wifiConfigCloseTimer !== null) {
+            window.clearTimeout(wifiConfigCloseTimer);
+            wifiConfigCloseTimer = null;
+        }
+    }
+
+    function wifiCloseAfterSave() {
+        wifiClearCloseTimer();
+        wifiConfigCloseTimer = window.setTimeout(function() {
+            wifiConfigCloseTimer = null;
+            wifiCloseModal();
+        }, 2000);
+    }
+
+    function wifiByteLength(value) {
+        const text = String(value || '');
+        if (window.TextEncoder) {
+            return new TextEncoder().encode(text).length;
+        }
+        return unescape(encodeURIComponent(text)).length;
+    }
+
+    function wifiHasControl(value) {
+        return /[\x00-\x1f\x7f]/.test(String(value || ''));
+    }
+
+    function wifiValidSsid(value) {
+        const bytes = wifiByteLength(value);
+        return bytes >= 1 && bytes <= 32 && !wifiHasControl(value);
+    }
+
+    function wifiValidPassphrase(value, encryption) {
+        const text = String(value || '');
+        if (wifiHasControl(text)) return false;
+        return (wifiByteLength(text) >= 8 && wifiByteLength(text) <= 63)
+            || ((encryption === 'psk2' || encryption === 'psk2+ccmp')
+                && /^[0-9A-Fa-f]{64}$/.test(text));
+    }
+
+    function wifiSupportedBand(band) {
+        return Object.prototype.hasOwnProperty.call(WIFI_FORM_ENCRYPTIONS, band);
+    }
+
+    function wifiEncryptionAllowed(band, encryption) {
+        const allowed = WIFI_FORM_ENCRYPTIONS[band];
+        return Array.isArray(allowed) && allowed.indexOf(encryption) !== -1;
+    }
+
+    function wifiRequestJson(url, options) {
+        return fetch(url, options).then(function(response) {
+            return response.text().then(function(body) {
+                let data = null;
+                try {
+                    data = body ? JSON.parse(body) : null;
+                } catch (_) {
+                    throw new Error('The Wi-Fi settings API returned invalid JSON.');
+                }
+                if (!response.ok && !data) {
+                    throw new Error('The Wi-Fi settings API request failed with HTTP ' + response.status + '.');
+                }
+                return data;
+            });
+        });
+    }
+
+    function wifiCreateElement(name, className, text) {
+        const element = document.createElement(name);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+    }
+
+    const WIFI_BAND_BADGES = {
+        '2G': { className: 'oasis-wifi-band-badge--2g', label: '2.4 GHz' },
+        '5G': { className: 'oasis-wifi-band-badge--5g', label: '5 GHz' }
+    };
+
+    function wifiCreateBandBadge(band) {
+        const badge = WIFI_BAND_BADGES[band];
+        if (!badge) return null;
+        return wifiCreateElement(
+            'span',
+            'oasis-wifi-band-badge ' + badge.className,
+            badge.label
+        );
+    }
+
+    function wifiAddField(card, labelText, input, hint) {
+        const field = wifiCreateElement('div', 'oasis-wifi-field');
+        const label = wifiCreateElement('label', '', labelText);
+        const inputId = 'oasis-wifi-' + Math.random().toString(36).slice(2);
+        label.htmlFor = inputId;
+        input.id = inputId;
+        field.appendChild(label);
+        field.appendChild(input);
+        if (hint) field.appendChild(wifiCreateElement('small', '', hint));
+        card.appendChild(field);
+        return field;
+    }
+
+    function wifiCreateEncryptionSelect(options, selected) {
+        const select = document.createElement('select');
+        select.dataset.wifiField = 'encryption';
+        const labels = {
+            none: t('wifiEncryptionOpen', 'Open (no password)'),
+            psk2: t('wifiEncryptionPsk2', 'WPA2 Personal'),
+            'psk2+ccmp': t('wifiEncryptionPsk2Ccmp', 'WPA2 Personal (CCMP)'),
+            sae: t('wifiEncryptionSae', 'WPA3 Personal'),
+            'sae-mixed': t('wifiEncryptionSaeMixed', 'WPA2/WPA3 Personal')
+        };
+        (Array.isArray(options) ? options : []).forEach(function(option) {
+            if (!option || typeof option.value !== 'string') return;
+            const item = document.createElement('option');
+            item.value = option.value;
+            item.textContent = labels[option.value] || option.label || option.value;
+            select.appendChild(item);
+        });
+        select.value = selected || 'none';
+        return select;
+    }
+
+    function wifiUpdatePassphraseState(card) {
+        const encryption = card.querySelector('[data-wifi-field="encryption"]');
+        const passphrase = card.querySelector('[data-wifi-field="passphrase"]');
+        if (!encryption || !passphrase) return;
+        const isOpen = encryption.value === 'none';
+        passphrase.disabled = isOpen;
+        if (isOpen) passphrase.value = '';
+    }
+
+    function wifiCreateConfigCard(item, options, isAdd) {
+        const card = wifiCreateElement('section', 'oasis-wifi-card');
+        card.dataset.wifiBand = item.band || '';
+        if (!isAdd) card.dataset.wifiSection = item.section;
+
+        const title = isAdd
+            ? formatString(t('addWifiSettings', 'Add {band} Wi-Fi settings'), { band: item.band || '' })
+            : (item.ssid || item.band_label || item.band || '');
+        const heading = wifiCreateElement('div', 'oasis-wifi-card__heading');
+        if (!isAdd) {
+            const badge = wifiCreateBandBadge(item.band);
+            if (badge) heading.appendChild(badge);
+        }
+        heading.appendChild(wifiCreateElement('h3', 'oasis-wifi-card__title', title));
+        card.appendChild(heading);
+
+        if (!isAdd && item.encryption_supported === false) {
+            card.classList.add('oasis-wifi-card--unsupported');
+            card.appendChild(wifiCreateElement(
+                'p', 'oasis-wifi-card__note',
+                t('wifiUnsupportedEncryption', 'This encryption mode is not supported by the Oasis Wi-Fi form. Use Network → Wireless to edit it.')
+            ));
+            return card;
+        }
+        if (!isAdd) {
+            card.dataset.wifiEditable = '1';
+            card.dataset.wifiOriginalEncryption = item.encryption || 'none';
+            card.dataset.wifiKeyConfigured = item.key_configured ? '1' : '0';
+        }
+
+        if (isAdd && Array.isArray(item.devices) && item.devices.length > 1) {
+            const device = document.createElement('select');
+            device.dataset.wifiField = 'device';
+            item.devices.forEach(function(value) {
+                const option = document.createElement('option');
+                option.value = value.section;
+                option.textContent = value.label + ' (' + value.section + ')';
+                device.appendChild(option);
+            });
+            wifiAddField(card, t('wifiRadio', 'Radio'), device);
+        } else if (isAdd && Array.isArray(item.devices) && item.devices.length === 1) {
+            card.dataset.wifiDevice = item.devices[0].section;
+        }
+
+        const ssid = document.createElement('input');
+        ssid.type = 'text';
+        ssid.maxLength = 32;
+        ssid.autocomplete = 'off';
+        ssid.value = isAdd ? '' : (item.ssid || '');
+        ssid.dataset.wifiField = 'ssid';
+        wifiAddField(card, t('wifiSsid', 'SSID'), ssid);
+
+        const encryption = wifiCreateEncryptionSelect(
+            options, isAdd ? 'psk2' : item.encryption
+        );
+        wifiAddField(card, t('wifiEncryption', 'Encryption'), encryption);
+
+        const passphrase = document.createElement('input');
+        passphrase.type = 'password';
+        passphrase.maxLength = 64;
+        passphrase.autocomplete = 'new-password';
+        passphrase.dataset.wifiField = 'passphrase';
+        const hint = isAdd
+            ? t('wifiPassphraseNewHint', 'Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key.')
+            : t('wifiPassphraseHint', 'Leave empty to keep the current passphrase, unless you changed the encryption mode.');
+        const passphraseField = wifiAddField(card, t('wifiPassphrase', 'Passphrase'), passphrase, hint);
+        if (!isAdd && item.key_configured) {
+            passphraseField.appendChild(wifiCreateElement(
+                'small', '',
+                t('wifiCurrentPassphrase', 'A passphrase is already configured and is not displayed.')
+            ));
+        }
+        encryption.addEventListener('change', function() {
+            wifiUpdatePassphraseState(card);
+        });
+        wifiUpdatePassphraseState(card);
+        return card;
+    }
+
+    function wifiCreateDeleteCard(item) {
+        const card = wifiCreateElement('section', 'oasis-wifi-card');
+        card.dataset.wifiSection = item.section;
+        const title = item.ssid || item.band_label || item.band || '';
+        const heading = wifiCreateElement('div', 'oasis-wifi-card__heading');
+        const badge = wifiCreateBandBadge(item.band);
+        if (badge) heading.appendChild(badge);
+        heading.appendChild(wifiCreateElement('h3', 'oasis-wifi-card__title', title));
+        card.appendChild(heading);
+        card.appendChild(wifiCreateElement(
+            'p', 'oasis-wifi-card__note',
+            t('wifiEncryption', 'Encryption') + ': ' + (item.encryption || '')
+        ));
+
+        const actions = wifiCreateElement('div', 'oasis-wifi-card__actions');
+        const remove = wifiCreateElement(
+            'button', 'cbi-button cbi-button-negative', t('deleteWifiConfig', 'Delete')
+        );
+        remove.type = 'button';
+        remove.dataset.wifiDelete = '1';
+        remove.addEventListener('click', function() {
+            wifiDeleteConfig(item.section, item.ssid);
+        });
+        actions.appendChild(remove);
+        card.appendChild(actions);
+        return card;
+    }
+
+    function wifiSetSaving(saving) {
+        wifiConfigSaving = saving;
+        const elements = wifiModalElements();
+        if (elements.save) {
+            elements.save.disabled = saving || !wifiConfigSnapshot
+                || wifiConfigSnapshot.operation === 'delete';
+        }
+        if (elements.cancel) elements.cancel.disabled = saving;
+        if (elements.close) elements.close.disabled = saving;
+        if (elements.content) {
+            elements.content.querySelectorAll('[data-wifi-delete]').forEach(function(button) {
+                button.disabled = saving;
+            });
+        }
+    }
+
+    function wifiRenderForm(snapshot) {
+        const elements = wifiModalElements();
+        if (!elements.content || !elements.save || !elements.title) return;
+        elements.content.replaceChildren();
+        wifiSetStatus('', '');
+        wifiConfigSnapshot = snapshot;
+
+        const operation = snapshot.operation;
+        if (elements.cancel) {
+            elements.cancel.textContent = t('closeButton', 'Close');
+        }
+        elements.save.hidden = false;
+        if (operation === 'delete') {
+            elements.title.textContent = t('deleteWifiSettings', 'Delete Wi-Fi settings');
+            elements.save.hidden = true;
+            const interfaces = Array.isArray(snapshot.interfaces) ? snapshot.interfaces : [];
+            if (interfaces.length === 0) {
+                elements.content.appendChild(wifiCreateElement(
+                    'p', 'oasis-wifi-card__note',
+                    t('wifiNoWifiConfigs', 'No Wi-Fi access point settings were found.')
+                ));
+            } else {
+                interfaces.forEach(function(item) {
+                    elements.content.appendChild(wifiCreateDeleteCard(item));
+                });
+            }
+            wifiSetSaving(false);
+            return;
+        }
+        if (operation === 'add') {
+            elements.title.textContent = formatString(
+                t('addWifiSettings', 'Add {band} Wi-Fi settings'), { band: snapshot.band || '' }
+            );
+            if (!Array.isArray(snapshot.devices) || snapshot.devices.length === 0) {
+                elements.content.appendChild(wifiCreateElement(
+                    'p', 'oasis-wifi-card__note',
+                    t('wifiNoRadio', 'No radio is available for the requested Wi-Fi band.')
+                ));
+                wifiSetSaving(false);
+                elements.save.disabled = true;
+                return;
+            }
+            elements.content.appendChild(wifiCreateConfigCard({
+                band: snapshot.band,
+                devices: snapshot.devices
+            }, snapshot.encryption_options, true));
+        } else {
+            elements.title.textContent = t('wifiSettings', 'Wi-Fi settings');
+            const editable = (Array.isArray(snapshot.interfaces) ? snapshot.interfaces : [])
+                .filter(function(item) { return item.encryption_supported !== false; });
+            if (editable.length === 0) {
+                elements.content.appendChild(wifiCreateElement(
+                    'p', 'oasis-wifi-card__note',
+                    t('wifiNoAccessPoints', 'No editable Wi-Fi access points were found.')
+                ));
+                (snapshot.interfaces || []).forEach(function(item) {
+                    elements.content.appendChild(wifiCreateConfigCard(
+                        item, item.encryption_options || snapshot.encryption_options, false
+                    ));
+                });
+                wifiSetSaving(false);
+                elements.save.disabled = true;
+                return;
+            }
+            (snapshot.interfaces || []).forEach(function(item) {
+                elements.content.appendChild(wifiCreateConfigCard(
+                    item, item.encryption_options || snapshot.encryption_options, false
+                ));
+            });
+        }
+        wifiSetSaving(false);
+    }
+
+    function wifiClearFieldErrors() {
+        const content = wifiModalElements().content;
+        if (!content) return;
+        content.querySelectorAll('.oasis-wifi-field--error').forEach(function(field) {
+            field.classList.remove('oasis-wifi-field--error');
+        });
+    }
+
+    function wifiMarkInvalid(input) {
+        if (input && input.parentNode) input.parentNode.classList.add('oasis-wifi-field--error');
+    }
+
+    function wifiCollectPayload() {
+        const snapshot = wifiConfigSnapshot;
+        const content = wifiModalElements().content;
+        if (!snapshot || !content) return null;
+        wifiClearFieldErrors();
+        const invalidMessage = t('wifiFormInvalid', 'Check the Wi-Fi settings fields.');
+
+        if (snapshot.operation === 'delete') return null;
+
+        if (snapshot.operation === 'add') {
+            const card = content.querySelector('.oasis-wifi-card');
+            if (!card) return null;
+            const deviceInput = card.querySelector('[data-wifi-field="device"]');
+            const ssid = card.querySelector('[data-wifi-field="ssid"]');
+            const encryption = card.querySelector('[data-wifi-field="encryption"]');
+            const passphrase = card.querySelector('[data-wifi-field="passphrase"]');
+            const device = deviceInput ? deviceInput.value : card.dataset.wifiDevice;
+            let invalid = !device || !wifiSupportedBand(snapshot.band)
+                || !wifiValidSsid(ssid && ssid.value);
+            if (!wifiValidSsid(ssid && ssid.value)) wifiMarkInvalid(ssid);
+            if (!encryption || !wifiEncryptionAllowed(snapshot.band, encryption.value)) {
+                invalid = true;
+                wifiMarkInvalid(encryption);
+            }
+            if (encryption && encryption.value === 'none') {
+                if (passphrase && passphrase.value !== '') {
+                    invalid = true;
+                    wifiMarkInvalid(passphrase);
+                }
+            } else if (!wifiValidPassphrase(passphrase && passphrase.value, encryption && encryption.value)) {
+                invalid = true;
+                wifiMarkInvalid(passphrase);
+            }
+            if (invalid) {
+                wifiSetStatus('error', invalidMessage);
+                return null;
+            }
+            return {
+                revision: snapshot.revision,
+                operation: 'add',
+                band: snapshot.band,
+                device: device,
+                ssid: ssid.value,
+                encryption: encryption.value,
+                passphrase: passphrase.value
+            };
+        }
+
+        const updates = [];
+        let invalid = false;
+        content.querySelectorAll('.oasis-wifi-card[data-wifi-section][data-wifi-editable]').forEach(function(card) {
+            const ssid = card.querySelector('[data-wifi-field="ssid"]');
+            const encryption = card.querySelector('[data-wifi-field="encryption"]');
+            const passphrase = card.querySelector('[data-wifi-field="passphrase"]');
+            if (!ssid || !encryption || !passphrase) return;
+            if (!wifiValidSsid(ssid.value)) {
+                invalid = true;
+                wifiMarkInvalid(ssid);
+            }
+            if (!wifiEncryptionAllowed(card.dataset.wifiBand, encryption.value)) {
+                invalid = true;
+                wifiMarkInvalid(encryption);
+            }
+            if (encryption.value === 'none') {
+                if (passphrase.value !== '') {
+                    invalid = true;
+                    wifiMarkInvalid(passphrase);
+                }
+            } else {
+                const encryptionChanged = encryption.value !== (card.dataset.wifiOriginalEncryption || 'none');
+                const keyConfigured = card.dataset.wifiKeyConfigured === '1';
+                const passphraseRequired = encryptionChanged || !keyConfigured;
+                if (passphrase.value !== '') {
+                    if (!wifiValidPassphrase(passphrase.value, encryption.value)) {
+                        invalid = true;
+                        wifiMarkInvalid(passphrase);
+                    }
+                } else if (passphraseRequired) {
+                    invalid = true;
+                    wifiMarkInvalid(passphrase);
+                }
+            }
+            updates.push({
+                section: card.dataset.wifiSection,
+                ssid: ssid.value,
+                encryption: encryption.value,
+                passphrase: passphrase.value
+            });
+        });
+        if (invalid || updates.length === 0) {
+            wifiSetStatus('error', invalidMessage);
+            return null;
+        }
+        return {
+            revision: snapshot.revision,
+            operation: 'update',
+            interfaces: updates
+        };
+    }
+
+    function wifiShowApiError(response) {
+        const fields = response && response.error && response.error.fields;
+        const message = response && response.error && response.error.message
+            ? response.error.message
+            : t('wifiSaveFailed', 'Failed to save Wi-Fi settings. Check the fields and try again.');
+        wifiSetStatus('error', message);
+        if (!fields || typeof fields !== 'object') return;
+        Object.keys(fields).forEach(function(path) {
+            const match = path.match(/^interfaces\.(\d+)\.(ssid|encryption|passphrase)$/);
+            if (!match) return;
+            const cards = wifiModalElements().content.querySelectorAll('.oasis-wifi-card[data-wifi-section][data-wifi-editable]');
+            const card = cards[Number(match[1]) - 1];
+            if (card) wifiMarkInvalid(card.querySelector('[data-wifi-field="' + match[2] + '"]'));
+        });
+    }
+
+    function wifiSubmitPayload(payload, successMessage, failureMessage) {
+        if (!CSRF_TOKEN || !URL_UPDATE_WIFI_CONFIG) {
+            wifiSetStatus('error', failureMessage);
+            return;
+        }
+        const body = new URLSearchParams();
+        body.set('token', CSRF_TOKEN);
+        body.set('payload', JSON.stringify(payload));
+        wifiClearCloseTimer();
+        wifiSetSaving(true);
+        wifiSetStatus('', '');
+        wifiRequestJson(URL_UPDATE_WIFI_CONFIG, {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: body.toString()
+        }).then(function(response) {
+            if (!response || response.ok !== true) {
+                wifiShowApiError(response);
+                return;
+            }
+            wifiRenderForm(response);
+            wifiSetStatus('success', successMessage);
+            if (payload.operation === 'update') wifiCloseAfterSave();
+        }).catch(function(error) {
+            console.error('Failed to update Wi-Fi settings:', error);
+            wifiSetStatus('error', failureMessage);
+        }).finally(function() {
+            wifiSetSaving(false);
+        });
+    }
+
+    function wifiSaveForm(event) {
+        event.preventDefault();
+        if (wifiConfigSaving) return;
+        const payload = wifiCollectPayload();
+        if (!payload) return;
+        wifiSubmitPayload(
+            payload,
+            t('wifiSaved', 'Wi-Fi settings saved. The wireless connection may take a moment to return.'),
+            t('wifiSaveFailed', 'Failed to save Wi-Fi settings. Check the fields and try again.')
+        );
+    }
+
+    function wifiDeleteConfig(section, ssid) {
+        const snapshot = wifiConfigSnapshot;
+        if (wifiConfigSaving || !snapshot || snapshot.operation !== 'delete'
+            || typeof section !== 'string' || section === '') {
+            return;
+        }
+        if (!window.confirm(formatString(
+            t('wifiDeleteConfirm', 'Remove Wi-Fi network "{ssid}"? This cannot be undone.'),
+            { ssid: ssid || section }
+        ))) {
+            return;
+        }
+        wifiSubmitPayload({
+            revision: snapshot.revision,
+            operation: 'delete',
+            section: section
+        },
+        t('wifiDeleted', 'Wi-Fi settings deleted. The wireless connection may take a moment to return.'),
+        t('wifiDeleteFailed', 'Failed to delete Wi-Fi settings. Try again.'));
+    }
+
+    function wifiCloseModal() {
+        if (wifiConfigSaving) return;
+        wifiClearCloseTimer();
+        const elements = wifiModalElements();
+        if (!elements.modal) return;
+        elements.modal.hidden = true;
+        wifiConfigSnapshot = null;
+        if (wifiConfigLastFocus && typeof wifiConfigLastFocus.focus === 'function') {
+            wifiConfigLastFocus.focus();
+        }
+        wifiConfigLastFocus = null;
+    }
+
+    function wifiOpenModal(action) {
+        if (!action || action.type !== 'wifi_config'
+            || (action.operation !== 'update' && action.operation !== 'add' && action.operation !== 'delete')
+            || (action.operation === 'add' && !wifiSupportedBand(action.band))) {
+            return;
+        }
+        wifiClearCloseTimer();
+        const elements = wifiModalElements();
+        if (!elements.modal || !elements.content || !URL_LOAD_WIFI_CONFIG) return;
+        wifiConfigLastFocus = document.activeElement;
+        elements.modal.hidden = false;
+        elements.content.replaceChildren(wifiCreateElement('p', 'oasis-wifi-card__note', t('downloading', 'Loading...')));
+        elements.save.hidden = false;
+        elements.save.disabled = true;
+        wifiSetStatus('', '');
+        const params = new URLSearchParams({ operation: action.operation });
+        if (action.operation === 'add') params.set('band', action.band);
+        wifiRequestJson(URL_LOAD_WIFI_CONFIG + '?' + params.toString(), {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'application/json' }
+        }).then(function(snapshot) {
+            if (!snapshot || snapshot.ok !== true) {
+                wifiSetStatus('error', (snapshot && snapshot.error && snapshot.error.message)
+                    || t('wifiLoadFailed', 'Failed to load Wi-Fi settings. Try again.'));
+                return;
+            }
+            wifiRenderForm(snapshot);
+        }).catch(function(error) {
+            console.error('Failed to load Wi-Fi settings:', error);
+            wifiSetStatus('error', t('wifiLoadFailed', 'Failed to load Wi-Fi settings. Try again.'));
+        });
+    }
+
+    function wifiHandleUiAction(action) {
+        if (!action || action.type !== 'wifi_config') return;
+        window.setTimeout(function() {
+            wifiOpenModal(action);
+        }, 0);
+    }
 
     function isValidChatImportFile(file) {
         if (!file) return false;
@@ -2344,6 +2957,9 @@
                                                 pendingServiceRestart = svc;
                                             }
                                         }
+                                        if (parsed && parsed.ui_action) {
+                                            wifiHandleUiAction(parsed.ui_action);
+                                        }
                                         const userOnly = (parsed && typeof parsed.user_only === 'string') ? parsed.user_only.trim() : '';
                                         if (!userOnly) return;
 
@@ -2523,6 +3139,9 @@
                                                 // console.log('[oasis] detected prepare_service_restart in tool_outputs (single):', svc);
                                                 pendingServiceRestart = svc;
                                             }
+                                        }
+                                        if (parsed && parsed.ui_action) {
+                                            wifiHandleUiAction(parsed.ui_action);
                                         }
                                         const userOnly = (parsed && typeof parsed.user_only === 'string') ? parsed.user_only.trim() : '';
                                         if (!userOnly) return;
@@ -2874,6 +3493,21 @@
             };
             reader.readAsDataURL(file);
         }
+    });
+
+    const wifiElements = wifiModalElements();
+    if (wifiElements.form) wifiElements.form.addEventListener('submit', wifiSaveForm);
+    if (wifiElements.cancel) wifiElements.cancel.addEventListener('click', wifiCloseModal);
+    if (wifiElements.close) wifiElements.close.addEventListener('click', wifiCloseModal);
+    if (wifiElements.modal) {
+        wifiElements.modal.addEventListener('click', function(event) {
+            if (event.target && event.target.hasAttribute('data-wifi-config-close')) {
+                wifiCloseModal();
+            }
+        });
+    }
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') wifiCloseModal();
     });
 
     document.getElementById("ai-service-list").addEventListener("change", function(event) {

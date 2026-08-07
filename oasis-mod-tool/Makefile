@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-tool
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=1
+PKG_RELEASE:=5
 
 USR_BIN_DIR = /usr/bin
 RPCD_ACL_DIR = /usr/share/rpcd/acl.d
@@ -67,6 +67,10 @@ endef
 
 define Package/oasis-mod-tool/postinst
 	#!/bin/sh
+	[ -n "$${IPKG_INSTROOT}" ] && exit 0
+	if [ -x /usr/bin/oasis ] && [ -f /etc/oasis/tool-manifest.d/lua.oasis.wireless.json ]; then
+		/usr/bin/oasis manifest apply --yes /etc/oasis/tool-manifest.d/lua.oasis.wireless.json >/dev/null 2>&1 || true
+	fi
 	touch /tmp/oasis/reboot_required_for_oasis-mod-tool
 endef
 
