@@ -1,54 +1,5 @@
 {
-  "source_path": "\/usr\/libexec\/rpcd\/oasis.wireless",
   "tools": [
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "List wireless UCI configuration and runtime status without exposing Wi-Fi credentials.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_wifi_config",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.wireless"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Get the Active Wireless Interface List of this OpenWrt device.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_active_wlan_if_list",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.wireless"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Open the Oasis WebUI form to edit existing Wi-Fi access point settings. This tool takes no arguments and does not modify Wi-Fi settings directly.",
-      "properties": [],
-      "download_message": "",
-      "name": "update_wifi_config",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.wireless"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Open the Oasis WebUI form to remove an existing Wi-Fi access point configuration. This tool takes no arguments and does not modify Wi-Fi settings directly.",
-      "properties": [],
-      "download_message": "",
-      "name": "delete_wifi_config",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.wireless"
-    },
     {
       "execution_message": "",
       "type": "function",
@@ -72,24 +23,73 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Scan for nearby Wireless networks",
+      "description": "Open the Oasis WebUI form to remove an existing Wi-Fi access point configuration. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+      "properties": [],
+      "download_message": "",
+      "name": "delete_wifi_config",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.wireless"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Advanced\/diagnostic tool: list the raw wireless interface names on this device (e.g. wlan0, phy0-ap0). Only use this if the user explicitly asks for low-level interface names or Wi-Fi diagnostics. To scan for nearby networks, use wifi_scan with a band instead - it no longer requires an interface name.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_active_wlan_if_list",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.wireless"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "List wireless UCI configuration and runtime status without exposing Wi-Fi credentials.",
+      "properties": [],
+      "download_message": "",
+      "name": "get_wifi_config",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.wireless"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Open the Oasis WebUI form to edit existing Wi-Fi access point settings. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+      "properties": [],
+      "download_message": "",
+      "name": "update_wifi_config",
+      "additional_properties": false,
+      "required": [],
+      "timeout": "",
+      "server": "oasis.wireless"
+    },
+    {
+      "execution_message": "",
+      "type": "function",
+      "description": "Scan for nearby Wi-Fi networks on a given band. The band argument must be exactly 2G or 5G.",
       "properties": [
         {
           "type": "string",
-          "name": "ifname",
-          "description": "Wireless interface name [ex: wlan0]"
+          "name": "band",
+          "description": "Wi-Fi band: exactly 2G for 2.4 GHz or 5G for 5 GHz."
         }
       ],
       "download_message": "",
       "name": "wifi_scan",
       "additional_properties": false,
       "required": [
-        "ifname"
+        "band"
       ],
       "timeout": "",
       "server": "oasis.wireless"
     }
   ],
+  "source_type": "lua_script",
   "version": 1,
-  "source_type": "lua_script"
+  "source_path": "\/usr\/libexec\/rpcd\/oasis.wireless"
 }
