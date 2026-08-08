@@ -39,7 +39,7 @@
 local server = require("oasis.local.tool.server")
 
 server.tool("get_active_wlan_if_list", {
-    tool_desc = "Get the Active Wireless Interface List of this OpenWrt device.",
+    tool_desc = "Advanced/diagnostic tool: list the raw wireless interface names on this device (e.g. wlan0, phy0-ap0). Only use this if the user explicitly asks for low-level interface names or Wi-Fi diagnostics. To scan for nearby networks, use wifi_scan with a band instead - it no longer requires an interface name.",
     call = function()
         local util = require("luci.util")
         local iwinfo = util.exec("iwinfo")
@@ -48,9 +48,9 @@ server.tool("get_active_wlan_if_list", {
 })
 
 server.tool("wifi_scan", {
-    tool_desc = "Scan for nearby Wireless networks",
-    args_desc = { "Wireless interface name [ex: wlan0]" },
-    args = { ifname = "a_string"},
+    tool_desc = "Scan for nearby Wi-Fi networks on a given band. The band argument must be exactly 2G or 5G.",
+    args_desc = { "Wi-Fi band: exactly 2G for 2.4 GHz or 5G for 5 GHz." },
+    args = { band = "a_string"},
 
     call = function(args)
         local util  = require("luci.util")
@@ -58,7 +58,32 @@ server.tool("wifi_scan", {
         local mkd   = require("oasis.chat.markdown")
         local debug = require("oasis.chat.debug")
 
-        local ifname = args and args.ifname or nil
+        -- Classify a device by its reported frequency (MHz) rather than by
+        -- hwmode/htmode, since hwmode alone does not distinguish 5 GHz from
+        -- 6 GHz on newer radios.
+        local function band_of_frequency(freq)
+            freq = tonumber(freq)
+            if not freq then
+                return nil
+            elseif freq >= 2400 and freq <= 2495 then
+                return "2G"
+            elseif freq >= 5150 and freq <= 5895 then
+                return "5G"
+            elseif freq >= 5925 and freq <= 7125 then
+                return "6G"
+            end
+            return nil
+        end
+
+        local band = args and args.band or nil
+        if band ~= "2G" and band ~= "5G" then
+            return server.response(
+                {
+                    error = "band must be exactly 2G or 5G.",
+                    request = "Ask the user which Wi-Fi band to scan: 2G for 2.4 GHz or 5G for 5 GHz."
+                }
+            )
+        end
 
         local wlan_vif = util.ubus("iwinfo", "devices", {})
 
@@ -71,24 +96,35 @@ server.tool("wifi_scan", {
             )
         end
 
-        local is_wlan_vif = false
-        local wlan_vif_list = ""
-        for _, vif in ipairs(wlan_vif.devices or {}) do
-            wlan_vif_list = wlan_vif_list .. vif
-            if vif == ifname then
-                is_wlan_vif = true
-                break
+        -- Build the list of interfaces that actually match the requested
+        -- band, using each device's live frequency from iwinfo.
+        local candidates = {}
+        for _, vif in ipairs(wlan_vif.devices) do
+            local info = util.ubus("iwinfo", "info", { device = vif })
+            if info and band_of_frequency(info.frequency) == band then
+                candidates[#candidates + 1] = { name = vif, mode = info.mode }
             end
-            wlan_vif_list = wlan_vif_list .. ", "
         end
 
-        if not is_wlan_vif then
+        if #candidates == 0 then
             return server.response(
                 {
-                    error = "The specified interface is not intended for wireless use.",
-                    wlan_vif_list = wlan_vif_list
+                    error = "No wireless device supports the " .. band .. " band on this router, or Wi-Fi is disabled.",
+                    request = "Tell the user that no radio is available for the requested band. Suggest checking Network -> Wireless or trying the other band."
                 }
             )
+        end
+
+        -- Selection policy when more than one interface matches the band:
+        -- prefer the interface currently operating in AP (Master) mode,
+        -- since that is the radio actively serving this band on the router.
+        -- Otherwise use the first interface iwinfo reported.
+        local ifname = candidates[1].name
+        for _, c in ipairs(candidates) do
+            if c.mode == "Master" then
+                ifname = c.name
+                break
+            end
         end
 
         local out = util.ubus("iwinfo", "scan", { device = ifname })
@@ -123,6 +159,8 @@ server.tool("wifi_scan", {
         return server.response(
             {
                 result = "success",
+                scanned_band = band,
+                scanned_interface = ifname,
                 user_only = markdown_scan_tbl,
                 request = "The user has been notified of the WiFi scan results. Please prompt the user to review the scan results.",
             }
