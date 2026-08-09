@@ -866,6 +866,7 @@ openai_responses.new = function()
             expected[call_id] = tostring(call.name or "")
         end
         local seen = {}
+        local sanitized_by_call_id = {}
         for _, result in ipairs(info.tool_outputs) do
             local call_id = tostring(result.tool_call_id or result.id or "")
             local name = tostring(result.name or "")
@@ -873,7 +874,17 @@ openai_responses.new = function()
                 or result.output == nil then
                 return false
             end
+
+            local sanitized_output, sanitize_err =
+                ous.sanitize_tool_output_for_ai(result.output)
+            if not sanitized_output then
+                debug:log("oasis.log", "openai_responses.handle_tool_output",
+                    "Rejecting tool output for AI continuation: "
+                    .. tostring(sanitize_err))
+                return false
+            end
             seen[call_id] = true
+            sanitized_by_call_id[call_id] = sanitized_output
         end
 
         chat.messages = chat.messages or {}
@@ -886,13 +897,13 @@ openai_responses.new = function()
         table.insert(chat.messages, assistant)
 
         for _, result in ipairs(info.tool_outputs) do
+            local call_id = tostring(result.tool_call_id or result.id or "")
             local added = ous.setup_msg(self, chat, {
                 role = "tool",
-                tool_call_id = result.tool_call_id or result.id,
+                tool_call_id = call_id,
                 tool_name = result.name,
                 name = result.name,
-                content = type(result.output) == "string"
-                    and result.output or (jsonc.stringify(result.output, false) or "null"),
+                content = sanitized_by_call_id[call_id],
             })
             if not added then
                 while #chat.messages > initial_count do table.remove(chat.messages) end
@@ -905,11 +916,11 @@ openai_responses.new = function()
             pending[#pending + 1] = item
         end
         for _, result in ipairs(info.tool_outputs) do
+            local call_id = tostring(result.tool_call_id or result.id or "")
             pending[#pending + 1] = {
                 type = "function_call_output",
-                call_id = tostring(result.tool_call_id or result.id or ""),
-                output = type(result.output) == "string"
-                    and result.output or (jsonc.stringify(result.output, false) or "null"),
+                call_id = call_id,
+                output = sanitized_by_call_id[call_id],
             }
         end
 

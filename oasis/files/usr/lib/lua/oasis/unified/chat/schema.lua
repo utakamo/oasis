@@ -85,6 +85,48 @@ function M.normalize_arguments(args)
     return {}
 end
 
+-- Produce the representation of a tool result that may be sent to an AI
+-- provider. `user_only` is intentionally kept in the original tool event for
+-- the UI, but it must never enter chat history or a provider continuation.
+--
+-- Local tool results are JSON objects. Reject malformed or non-object values
+-- rather than risking a provider-specific path forwarding an unsanitized value.
+function M.sanitize_tool_output_for_ai(output)
+    local encoded
+
+    if type(output) == "string" then
+        encoded = output
+    elseif type(output) == "table" then
+        local ok, value = pcall(jsonc.stringify, output, false)
+        if not ok or type(value) ~= "string" then
+            return nil, "tool output could not be serialized as JSON"
+        end
+        encoded = value
+    else
+        return nil, "tool output must be a JSON object"
+    end
+
+    if not encoded:match("^%s*{") then
+        return nil, "tool output must be a JSON object"
+    end
+
+    local parsed_ok, value = pcall(jsonc.parse, encoded)
+    if not parsed_ok or type(value) ~= "table" then
+        return nil, "tool output is not valid JSON"
+    end
+
+    -- Remove the reserved field regardless of whether its value is a string,
+    -- empty string, boolean, table, or another JSON value.
+    value.user_only = nil
+
+    local stringify_ok, sanitized = pcall(jsonc.stringify, value, false)
+    if not stringify_ok or type(sanitized) ~= "string" then
+        return nil, "sanitized tool output could not be serialized as JSON"
+    end
+
+    return sanitized
+end
+
 -- Main: prepare system/user messages based on format and chat state --------
 function M.setup_system_msg(service, chat)
     -- If a tool was involved in previous interaction, clean tool-specific fields and stop.
@@ -162,14 +204,22 @@ function M.setup_msg(service, chat, speaker)
     debug:log("oasis.log", "setup_msg", string.format("speaker.content = %s", tostring(speaker and speaker.content or "nil")))
     debug:log("oasis.log", "setup_msg", string.format("speaker.tool_calls = %s", tostring((speaker and (speaker.tool_calls ~= nil)) and "true" or "nil")))
 
-    -- Remove User Only Message
-    if speaker and speaker.content and type(speaker.content) == "string" then
-        debug:log("oasis.log", "setup_msg", "Remove User Only Message.")
-        local content = jsonc.parse(speaker.content)
-        if content and content.user_only then
-            content.user_only = nil
-            speaker.content = jsonc.stringify(content, false)
+    -- Tool output has a UI-only channel. Keep the caller's raw event intact,
+    -- but only add its sanitized representation to the AI-facing chat state.
+    if speaker and speaker.role == "tool" then
+        local sanitized, err = M.sanitize_tool_output_for_ai(speaker.content)
+        if not sanitized then
+            debug:log("oasis.log", "setup_msg",
+                "Rejecting tool output for AI continuation: " .. tostring(err))
+            return false
         end
+
+        local sanitized_speaker = {}
+        for key, value in pairs(speaker) do
+            sanitized_speaker[key] = value
+        end
+        sanitized_speaker.content = sanitized
+        speaker = sanitized_speaker
     end
 
     if (not speaker) or (not speaker.role) then
