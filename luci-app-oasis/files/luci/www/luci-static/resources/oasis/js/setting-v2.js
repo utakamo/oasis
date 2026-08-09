@@ -1030,7 +1030,7 @@
                     service.lmstudio_endpoint = value;
                 }, {
                     maxLength: 2048,
-                    placeholder: 'http://192.0.2.1:1234/api/v1/chat'
+                    placeholder: 'http://192.0.2.1:1234'
                 }),
                 { required: true }
             );
@@ -1351,10 +1351,17 @@
                 service.function_calling = value;
             }),
             {
-                help: t(
-                    'functionCallingHelp',
-                    'Enable only when the selected provider and model support tool use.'
-                )
+                help: service.name === 'LM Studio'
+                    ? t(
+                        'lmStudioFunctionCallingHelp',
+                        'For LM Studio, this uses the OpenAI-compatible ' +
+                        '/v1/chat/completions endpoint. Enable only with a ' +
+                        'tool-use capable model.'
+                    )
+                    : t(
+                        'functionCallingHelp',
+                        'Enable only when the selected provider and model support tool use.'
+                    )
             }
         );
         addServiceField(

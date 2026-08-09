@@ -200,6 +200,7 @@ openai.new = function()
                 local model_name = tostring(user_msg.model or (self.cfg and self.cfg.model) or "")
                 local model_lc = model_name:lower()
                 local is_openai_service = (cfg_service == common.ai.service.openai.name)
+                local is_lmstudio_service = (cfg_service == common.ai.service.lmstudio.name)
                 local is_gpt5 = (model_lc:match("^gpt%-5") ~= nil)
 
                 local n1 = tonumber(v1)
@@ -219,12 +220,19 @@ openai.new = function()
                         user_msg.temperature = nil
                     end
 
-                    if n2 then
+                    if is_lmstudio_service then
+                        -- Thinking models can emit their reasoning before the
+                        -- title. Preserve the native LM Studio behavior and do
+                        -- not apply the legacy 10-token title limit, which can
+                        -- end the response inside a <think> block.
+                        user_msg.max_completion_tokens = nil
+                        user_msg.max_tokens = nil
+                    elseif n2 then
                         if is_openai_service then
                             user_msg.max_completion_tokens = n2
                             user_msg.max_tokens = nil
                         else
-                            -- Keep legacy behavior for OpenRouter/LM Studio compatibility.
+                            -- Keep legacy behavior for OpenRouter compatibility.
                             user_msg.max_tokens = n2
                             user_msg.max_completion_tokens = nil
                         end
@@ -260,10 +268,12 @@ openai.new = function()
             easy:setopt_url(self.cfg.endpoint)
             easy:setopt_writefunction(callback)
 
-            easy:setopt_httpheader({
-                "Content-Type: application/json",
-                "Authorization: Bearer " .. self.cfg.api_key
-            })
+            local headers = { "Content-Type: application/json" }
+            local api_key = tostring((self.cfg and self.cfg.api_key) or "")
+            if #api_key > 0 then
+                headers[#headers + 1] = "Authorization: Bearer " .. api_key
+            end
+            easy:setopt_httpheader(headers)
 
             easy:setopt_httppost(form)
             easy:setopt_postfields(user_msg_json)
@@ -294,12 +304,14 @@ openai.new = function()
                 for _, t in ipairs(tool_info_tbl.tool_outputs) do
                     local tool_id = t.tool_call_id or t.id or ""
                     local tool_name = t.name or ""
+                    local tool_arguments = calling.serialize_function_arguments(t.arguments)
+
                     table.insert(tool_calls, {
                         id = tool_id,
                         type = "function",
                         ["function"] = {
                             name = tool_name,
-                            arguments = "{}"
+                            arguments = tool_arguments
                         }
                     })
                 end
