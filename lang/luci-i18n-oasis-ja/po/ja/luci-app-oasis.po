@@ -1001,6 +1001,10 @@ msgstr "設定の読み込みに失敗しました。設定APIを確認して再
 msgid "Function Calling"
 msgstr "Function Calling"
 
+#: files/luci/view/setting-v2.htm:163
+msgid "For LM Studio, this uses the OpenAI-compatible /v1/chat/completions endpoint. Enable only with a tool-use capable model."
+msgstr "LM StudioではOpenAI互換の /v1/chat/completions endpointを使用します。ツール利用に対応したmodelでのみ有効にしてください。"
+
 #: files/luci/view/setting-v2.htm:8
 msgid "General Setting"
 msgstr "一般設定"

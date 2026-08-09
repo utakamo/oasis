@@ -186,6 +186,11 @@ function M.get_ai_service_cfg(arg, opts)
                 break
             elseif cfg.service == ai_ref.service.lmstudio.name then
                 cfg.endpoint = uci:get_first(uci_ref.cfg, uci_ref.sect.service, "lmstudio_endpoint")
+                if common.is_lmstudio_function_calling_enabled(cfg.function_calling) then
+                    cfg.endpoint = common.resolve_lmstudio_chat_completions_endpoint(
+                        cfg.endpoint
+                    )
+                end
                 break
             end
         end

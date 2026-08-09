@@ -1,6 +1,6 @@
 <%+header%>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/setting-v2.css?v=3.2.6-r18">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/setting-v2.css?v=3.2.6-r19">
 
 <div id="oasis-setting-v2" class="oasis-setting-v2" aria-labelledby="oasis-setting-v2-title">
     <div class="oasis-setting-v2__heading">
@@ -160,6 +160,7 @@ window.OasisSettingV2Strings = {
     apiKeySecretHelp: '<%:The new key is sent only when you save and is never returned by the server.%>',
     functionCalling: '<%:Function Calling%>',
     functionCallingHelp: '<%:Enable only when the selected provider and model support tool use.%>',
+    lmStudioFunctionCallingHelp: '<%:For LM Studio, this uses the OpenAI-compatible /v1/chat/completions endpoint. Enable only with a tool-use capable model.%>',
     showThinking: '<%:Show thinking%>',
     showThinkingHelp: '<%:Controls display only; it does not enable model thinking.%>',
     endpoint: '<%:Endpoint%>',
@@ -211,6 +212,6 @@ window.OasisSettingV2Config = {
     }
 };
 </script>
-<script src="<%= resource %>/oasis/js/setting-v2.js?v=3.2.6-r18"></script>
+<script src="<%= resource %>/oasis/js/setting-v2.js?v=3.2.6-r19"></script>
 
 <%+footer%>

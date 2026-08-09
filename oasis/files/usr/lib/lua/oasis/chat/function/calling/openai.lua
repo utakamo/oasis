@@ -8,6 +8,17 @@ local ous	 = require("oasis.unified.chat.schema")
 
 local M = {}
 
+function M.serialize_function_arguments(arguments)
+	local normalized = ous.normalize_arguments(arguments)
+	if next(normalized) == nil then
+		-- Function parameters are JSON objects. jsonc.stringify({})
+		-- serializes an empty Lua table as [], so retain the object form.
+		return "{}"
+	end
+
+	return jsonc.stringify(normalized, false)
+end
+
 function M.detect(message)
 	if not message or type(message) ~= "table" then
 		return false
@@ -57,6 +68,7 @@ function M.process(self, message)
 			self.processed_tool_call_ids[call_id] = true
 			local result = client.exec_server_tool(self:get_format(), func, args)
 			debug:log("oasis.log", "process", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
+			local serialized_args = M.serialize_function_arguments(args)
 
 			if result.reboot then
 				debug:log("oasis.log", "process", "result.reboot = true")
@@ -71,7 +83,8 @@ function M.process(self, message)
 			table.insert(function_call.tool_outputs, {
 				tool_call_id = tc.id,
 				output = output,
-				name = func
+				name = func,
+				arguments = serialized_args
 			})
 
 			table.insert(speaker.tool_calls, {
@@ -79,7 +92,7 @@ function M.process(self, message)
 				type = "function",
 				["function"] = {
 					name = func,
-					arguments = jsonc.stringify(args, false)
+					arguments = serialized_args
 				}
 			})
 
@@ -159,9 +172,7 @@ function M.convert_tool_call(chat, speaker, msg)
 
 	for _, tc in ipairs(speaker.tool_calls or {}) do
 		local fn = tc["function"] or {}
-		fn.arguments = ous.normalize_arguments(fn.arguments)
-		local norm = ous.normalize_arguments(fn.arguments)
-		fn.arguments = jsonc.stringify(norm, false)
+		fn.arguments = M.serialize_function_arguments(fn.arguments)
 
 		table.insert(fixed_tool_calls, {
 			id = tc.id,

@@ -174,6 +174,21 @@ local function generate_random_id(method)
     return id
 end
 
+-- Accept a value from an already-loaded service config, or read the active
+-- UCI setting when the caller is selecting the service implementation.
+function M.is_lmstudio_function_calling_enabled(value)
+    if value == nil then
+        value = uci:get_first(
+            db.uci.cfg,
+            db.uci.sect.service,
+            "function_calling",
+            "0"
+        )
+    end
+
+    return tostring(value or "0") == "1"
+end
+
 function M.select_service_obj()
 
     local target = nil
@@ -227,10 +242,51 @@ function M.select_service_obj()
         --    dedicated oasis.chat.service.openrouter module and mapping back.
         target = require("oasis.chat.service.openai")
     elseif service == ai.service.lmstudio.name then
-        target = require("oasis.chat.service.lmstudio")
+        -- LM Studio's native /api/v1/chat API does not accept Custom tools.
+        -- Its OpenAI-compatible Chat Completions endpoint does, so reuse the
+        -- proven OpenAI tool lifecycle only when the user opts into Function
+        -- Calling. Keep the native service for normal LM Studio chat.
+        if M.is_lmstudio_function_calling_enabled() then
+            target = require("oasis.chat.service.openai")
+        else
+            target = require("oasis.chat.service.lmstudio")
+        end
     end
 
     return target
+end
+
+function M.resolve_lmstudio_chat_completions_endpoint(value)
+    local endpoint_value = tostring(value or "")
+        :gsub("^%s+", "")
+        :gsub("%s+$", "")
+
+    if #endpoint_value == 0 then
+        return endpoint_value
+    end
+
+    endpoint_value = endpoint_value:gsub("/+$", "")
+
+    if endpoint_value:match("/v1/chat/completions$") then
+        return endpoint_value
+    end
+
+    if endpoint_value:match("/api/v1/chat$") then
+        return endpoint_value:gsub(
+            "/api/v1/chat$",
+            "/v1/chat/completions"
+        )
+    end
+
+    if endpoint_value:match("/api/v1$") then
+        return endpoint_value:gsub("/api/v1$", "/v1/chat/completions")
+    end
+
+    if endpoint_value:match("/v1$") then
+        return endpoint_value .. "/chat/completions"
+    end
+
+    return endpoint_value .. "/v1/chat/completions"
 end
 
 function M.get_target_id_section(id)
