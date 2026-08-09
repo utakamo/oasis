@@ -1230,6 +1230,14 @@ anthropic.new = function()
             if type(output) ~= "table" or tostring(output.name or "") ~= call.name then
                 return false
             end
+            local sanitized_output, sanitize_err =
+                ous.sanitize_tool_output_for_ai(output.output)
+            if not sanitized_output then
+                debug:log("oasis.log", "anthropic.handle_tool_output",
+                    "Rejecting tool output for AI continuation: "
+                    .. tostring(sanitize_err))
+                return false
+            end
             tool_calls[#tool_calls + 1] = {
                 id = call.id,
                 type = "function",
@@ -1241,9 +1249,7 @@ anthropic.new = function()
             tool_results[#tool_results + 1] = {
                 type = "tool_result",
                 tool_use_id = call.id,
-                content = type(output.output) == "string"
-                    and output.output
-                    or jsonc.stringify(output.output, false),
+                content = sanitized_output,
             }
         end
 

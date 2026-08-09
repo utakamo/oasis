@@ -286,6 +286,8 @@ openai.new = function()
                 if tool_info_tbl.reboot == true then
                     self._reboot_required = true
                 end
+                chat.messages = chat.messages or {}
+                local initial_message_count = #chat.messages
                 -- Insert assistant message with tool_calls first to satisfy OpenAI sequencing
                 local tool_calls = {}
 
@@ -311,7 +313,14 @@ openai.new = function()
                             #tool_calls
                         )
                     )
-                    ous.setup_msg(self, chat, { role = common.role.assistant, tool_calls = tool_calls, content = "" })
+                    local added = ous.setup_msg(self, chat, {
+                        role = common.role.assistant,
+                        tool_calls = tool_calls,
+                        content = "",
+                    })
+                    if not added then
+                        return false
+                    end
                 end
 
                 for _, t in ipairs(tool_info_tbl.tool_outputs) do
@@ -333,12 +342,18 @@ openai.new = function()
                         )
                     )
 
-                    ous.setup_msg(self, chat, {
+                    local added = ous.setup_msg(self, chat, {
                         role = "tool",
                         tool_call_id = t.tool_call_id or t.id,
                         name = t.name,
                         content = content
                     })
+                    if not added then
+                        while #chat.messages > initial_message_count do
+                            table.remove(chat.messages)
+                        end
+                        return false
+                    end
                 end
 
                 local chat_json = jsonc.stringify(chat, true)
