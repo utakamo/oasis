@@ -200,6 +200,7 @@ openai.new = function()
                 local model_name = tostring(user_msg.model or (self.cfg and self.cfg.model) or "")
                 local model_lc = model_name:lower()
                 local is_openai_service = (cfg_service == common.ai.service.openai.name)
+                local is_openrouter_service = (cfg_service == common.ai.service.openrouter.name)
                 local is_lmstudio_service = (cfg_service == common.ai.service.lmstudio.name)
                 local is_gpt5 = (model_lc:match("^gpt%-5") ~= nil)
 
@@ -220,11 +221,11 @@ openai.new = function()
                         user_msg.temperature = nil
                     end
 
-                    if is_lmstudio_service then
-                        -- Thinking models can emit their reasoning before the
-                        -- title. Preserve the native LM Studio behavior and do
-                        -- not apply the legacy 10-token title limit, which can
-                        -- end the response inside a <think> block.
+                    if is_lmstudio_service or is_openrouter_service then
+                        -- Reasoning-capable models can emit reasoning before
+                        -- the title. Do not apply the legacy 10-token title
+                        -- limit, which can end the response before its final
+                        -- answer.
                         user_msg.max_completion_tokens = nil
                         user_msg.max_tokens = nil
                     elseif n2 then
