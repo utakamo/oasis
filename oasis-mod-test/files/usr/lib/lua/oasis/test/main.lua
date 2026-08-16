@@ -112,30 +112,38 @@ local ubus_menu = {
 }
 
 -- ============ CLI tests ============
-local function exec_cli(cmd)
-    local out = sys.exec(cmd .. " 2>/dev/null") or ""
+local function shell_quote(value)
+    return "'" .. tostring(value or ""):gsub("'", "'\"'\"'") .. "'"
+end
+
+local function exec_cli(argv)
+    local quoted = {}
+    for _, value in ipairs(argv or {}) do
+        quoted[#quoted + 1] = shell_quote(value)
+    end
+    local out = sys.exec(table.concat(quoted, " ") .. " 2>/dev/null") or ""
     return out
 end
 
 local cli_menu = {
     { key = "1", title = "oasis list", desc = "List chats", args = {}, run = function()
-        local out = exec_cli("oasis list")
+        local out = exec_cli({ "/usr/bin/oasis", "list" })
         println(out)
     end },
     { key = "2", title = "oasis prompt <message>", desc = "Send single prompt", args = { {name="message"} }, run = function(a)
-        local out = exec_cli("oasis prompt " .. (a.message or ""))
+        local out = exec_cli({ "/usr/bin/oasis", "prompt", a.message or "" })
         println(out)
     end },
     { key = "3", title = "oasis chat no=<n>", desc = "Join chat (interactive wizard)", args = { {name="no"} }, run = function(a)
-        local out = exec_cli("oasis chat no=" .. (a.no or ""))
+        local out = exec_cli({ "/usr/bin/oasis", "chat", "no=" .. (a.no or "") })
         println(out)
     end },
     { key = "4", title = "oasis sysmsg list", desc = "List system messages", args = {}, run = function()
-        local out = exec_cli("oasis sysmsg list")
+        local out = exec_cli({ "/usr/bin/oasis", "sysmsg", "list" })
         println(out)
     end },
     { key = "5", title = "oasis tools", desc = "List/execute tools", args = {}, run = function()
-        local out = exec_cli("oasis tools")
+        local out = exec_cli({ "/usr/bin/oasis", "tools" })
         println(out)
     end },
 }

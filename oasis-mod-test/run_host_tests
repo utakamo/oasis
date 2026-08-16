@@ -1,0 +1,30 @@
+#!/bin/sh
+
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPOSITORY_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+OASIS_TEST_LUA=${OASIS_TEST_LUA:-lua}
+
+if ! command -v "$OASIS_TEST_LUA" >/dev/null 2>&1; then
+    echo "ERROR: Lua interpreter not found: $OASIS_TEST_LUA" >&2
+    exit 2
+fi
+
+LUA_PATH="$SCRIPT_DIR/files/usr/lib/lua/?.lua;$SCRIPT_DIR/files/usr/lib/lua/?/init.lua;$REPOSITORY_DIR/oasis/files/usr/lib/lua/?.lua;$REPOSITORY_DIR/oasis/files/usr/lib/lua/?/init.lua;;"
+export LUA_PATH
+
+suite_selected=false
+for argument in "$@"; do
+    case "$argument" in
+        --suite|--suite=*)
+            suite_selected=true
+            ;;
+    esac
+done
+
+if [ "$suite_selected" = false ]; then
+    set -- --suite portable "$@"
+fi
+
+exec "$OASIS_TEST_LUA" "$SCRIPT_DIR/files/usr/bin/oasis_test" "$@"
