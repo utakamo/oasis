@@ -1,0 +1,10 @@
+#!/usr/bin/env lua
+
+local loaded, runner = pcall(require, "oasis.test.runner")
+if not loaded then
+    io.stderr:write("oasis_test: failed to load test runner: "
+        .. tostring(runner) .. "\n")
+    os.exit(2)
+end
+
+os.exit(runner.main(arg or {}))
