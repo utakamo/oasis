@@ -1,8 +1,11 @@
 local jsonc = require("luci.jsonc")
 local common = require("oasis.common")
 local M = {}
-local INSTRUCTION = "When the user makes a router-related request, "
-    .. "proactively call `get_tool_list` to review the available tools."
+local INSTRUCTION = "For router-related requests, proactively use `get_tool_list`. "
+    .. "Enable a needed disabled tool with `set_tool_enabled` using its exact server and name. "
+    .. "After success, Oasis adds its callable definition to the next model request in the same user turn; "
+    .. "then call it directly. Enabling does not execute the tool. "
+    .. "Make each Tool Search management call separately and wait for its result."
 
 local function replace(t, name, value)
     local previous = package.loaded[name]
@@ -47,7 +50,7 @@ local function chat()
 end
 
 function M.register(harness)
-    harness:test("unit", "Auto prompt appends one English sentence without changing selected text or history", function(t)
+    harness:test("unit", "Auto prompt appends the English tool workflow without changing selected text or history", function(t)
         local env = fixture(t)
         for _, format in ipairs({ common.ai.format.chat, common.ai.format.output,
             common.ai.format.rpc_output, common.ai.format.prompt, common.ai.format.call }) do

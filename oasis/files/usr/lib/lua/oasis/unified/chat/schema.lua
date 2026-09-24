@@ -7,8 +7,11 @@ local jsonc     = require("luci.jsonc")
 local debug     = require("oasis.chat.debug")
 
 local M = {}
-local AUTO_TOOL_SEARCH_PROMPT = "When the user makes a router-related request, "
-    .. "proactively call `get_tool_list` to review the available tools."
+local AUTO_TOOL_SEARCH_PROMPT = "For router-related requests, proactively use `get_tool_list`. "
+    .. "Enable a needed disabled tool with `set_tool_enabled` using its exact server and name. "
+    .. "After success, Oasis adds its callable definition to the next model request in the same user turn; "
+    .. "then call it directly. Enabling does not execute the tool. "
+    .. "Make each Tool Search management call separately and wait for its result."
 
 -- Helpers -----------------------------------------------------------------
 local function normalize_newlines(s)
