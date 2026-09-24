@@ -134,7 +134,6 @@
     let ai_service_list = [];
     let scrollLockEnabled = false;
     let isKeyboardOpen = false;
-    let currentAssistantMessageDiv = null;
     let cachedInputHeight = null;
     let mobileLayoutTimer = null;
     let mobileLayoutForce = false;
@@ -871,31 +870,6 @@
         requestAnimationFrame(tick);
     }
 
-    // Tool execution notice (use existing look & feel as Tool used)
-    function showToolExecutionNotice(message) {
-        const iconPath = `${resourcePath}/oasis/${icon_name}`;
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'message received';
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'icon';
-        iconDiv.style.backgroundImage = `url(${iconPath})`;
-        const textDiv = document.createElement('div');
-        textDiv.className = 'message-text chat-bubble';
-        const safe = typeof message === 'string' && message.length ? message : t('executingTool', 'Executing tool...');
-        textDiv.innerHTML = sanitizeHTML(safe);
-        msgDiv.appendChild(iconDiv);
-        msgDiv.appendChild(textDiv);
-        const chatRoot = document.querySelector('.chat-messages');
-        if (chatRoot) {
-            if (currentAssistantMessageDiv && chatRoot.contains(currentAssistantMessageDiv)) {
-                chatRoot.insertBefore(msgDiv, currentAssistantMessageDiv);
-            } else {
-                chatRoot.appendChild(msgDiv);
-            }
-        }
-        keepLatestMessageVisible(false);
-    }
-
     // Center popups within the right column (.chat-container)
     function centerElementInChat(element) {
         const chatContainer = document.querySelector('.chat-container');
@@ -962,41 +936,20 @@
         dropdown.style.top = `${top}px`;
     }
 
-    // Ensure an element is fully visible inside a scroll container
-    function ensureElementFullyVisible(container, target, extraPadding = 24, smooth = false) {
-        if (!container || !target) return;
-        const cRect = container.getBoundingClientRect();
-        const tRect = target.getBoundingClientRect();
-        const overshootBottom = tRect.bottom - (cRect.bottom - extraPadding);
-        const overshootTop = (cRect.top + extraPadding) - tRect.top;
-        let delta = 0;
-        if (overshootBottom > 0) delta = overshootBottom;
-        else if (overshootTop > 0) delta = -overshootTop;
-        if (delta !== 0) {
-            if (smooth) {
-                container.scrollTo({ top: container.scrollTop + delta, behavior: 'smooth' });
-            } else {
-                container.scrollTop += delta;
-            }
-        }
-    }
+    let chatScrollFrame = null;
+    let chatLastScrollTop = null;
 
-    // Keep the latest chat message visible (handles mobile soft keyboard animations)
-    // If force=false, only scroll when user is near bottom (stickToBottom=true)
-    function keepLatestMessageVisible(force = false) {
+    // Follow the tail, not the whole response (which may exceed the viewport).
+    // Even keyboard/layout updates must respect a reader who scrolled away.
+    function keepLatestMessageVisible() {
         const chatMessages = document.querySelector('.chat-messages');
-        if (!chatMessages) return;
-        if (!force && !window.__oasisStickToBottom) return;
-        const lastReceived = chatMessages.querySelector('.message.received:last-of-type');
-        const target = lastReceived || chatMessages.querySelector('.message:last-child');
-        const doScroll = (smooth = false) => ensureElementFullyVisible(chatMessages, target, 24, smooth);
-        // prefer smooth scroll for user-triggered updates
-        doScroll(true);
-        if (force) {
-            // Retry to absorb viewport/IME animation timing
-            setTimeout(() => doScroll(true), 100);
-            setTimeout(() => doScroll(true), 250);
-        }
+        if (!chatMessages || !window.__oasisStickToBottom || chatScrollFrame !== null) return;
+        chatScrollFrame = requestAnimationFrame(function() {
+            chatScrollFrame = null;
+            if (!window.__oasisStickToBottom) return;
+            chatMessages.scrollTop = Math.max(0, chatMessages.scrollHeight - chatMessages.clientHeight);
+            chatLastScrollTop = chatMessages.scrollTop;
+        });
     }
 
     // Align conversation start to the top of the chat viewport
@@ -1322,8 +1275,8 @@
         const scrollBtn = document.getElementById('scroll-bottom-btn');
         if (scrollBtn) {
             scrollBtn.addEventListener('click', () => {
-                const cm = document.querySelector('.chat-messages');
-                if (cm) cm.scrollTo({ top: cm.scrollHeight, behavior: 'smooth' });
+                window.__oasisStickToBottom = true;
+                keepLatestMessageVisible();
             });
         }
 
@@ -1366,7 +1319,7 @@
                 chatMessages.style.paddingBottom = paddingBottom + 'px';
 
                 if (forceBottom && window.__oasisStickToBottom) {
-                    keepLatestMessageVisible(true);
+                    keepLatestMessageVisible();
                 }
             }
 
@@ -1394,7 +1347,14 @@
             const cm = document.querySelector('.chat-messages');
             if (!cm) return;
             const threshold = 40; // px
-            window.__oasisStickToBottom = (cm.scrollHeight - cm.scrollTop - cm.clientHeight) < threshold;
+            const nearBottom = (cm.scrollHeight - cm.scrollTop - cm.clientHeight) < threshold;
+            if (nearBottom) {
+                window.__oasisStickToBottom = true;
+            } else if (chatLastScrollTop === null || cm.scrollTop < chatLastScrollTop) {
+                window.__oasisStickToBottom = false;
+            }
+            // Content growth alone must not cancel following between render frames.
+            chatLastScrollTop = cm.scrollTop;
             // Show/hide scroll-to-bottom button
             const btn = document.getElementById('scroll-bottom-btn');
             if (btn) {
@@ -1682,8 +1642,8 @@
             // Initial adjust for mobile keyboard when focusing the input
         messageInputEl.addEventListener('focus', () => {
                 scheduleMobileLayout(true, true);
-                setTimeout(() => { if (window.__oasisStickToBottom) keepLatestMessageVisible(true); }, 50);
-                setTimeout(() => { if (window.__oasisStickToBottom) keepLatestMessageVisible(true); }, 200);
+                setTimeout(() => { if (window.__oasisStickToBottom) keepLatestMessageVisible(); }, 50);
+                setTimeout(() => { if (window.__oasisStickToBottom) keepLatestMessageVisible(); }, 200);
         });
         }
 
@@ -2185,6 +2145,7 @@
         messageInput.focus();
 
         const chatMessages = document.querySelector('.chat-messages');
+        window.__oasisStickToBottom = true;
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         const receivedMessageContainer = document.createElement('div');
@@ -2219,7 +2180,6 @@
         receivedMessageContainer.appendChild(receivedMessageTextContainer);
 
         chatMessagesRoot.appendChild(receivedMessageContainer);
-        currentAssistantMessageDiv = receivedMessageContainer;
         // If this is the very first conversation while IME is open, anchor start to top
         const vp = window.visualViewport;
         const keyboardShown = vp ? (window.innerHeight - vp.height - vp.offsetTop) > 0 : false;
@@ -2527,7 +2487,7 @@
         chatMessagesContainer.appendChild(systemMessage);
 
         if (typeof keepLatestMessageVisible === 'function') {
-            keepLatestMessageVisible(true);
+            keepLatestMessageVisible();
         }
     }
 
@@ -2614,7 +2574,7 @@
         chatMessagesContainer.appendChild(systemMessage);
 
         if (typeof keepLatestMessageVisible === 'function') {
-            keepLatestMessageVisible(true);
+            keepLatestMessageVisible();
         }
     }
 
@@ -2700,7 +2660,7 @@
         chatMessagesContainer.appendChild(systemMessage);
 
         if (typeof keepLatestMessageVisible === 'function') {
-            keepLatestMessageVisible(true);
+            keepLatestMessageVisible();
         }
     }
 
@@ -2758,17 +2718,10 @@
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
         const baseUrl = window.location.origin || `${window.location.protocol}//${window.location.host}`;
-        let fullMessage = '';
         let is_notify = false;
-        let errorNoticesHtml = '';
         let rebootRequired = false;
         let shutdownRequired = false;
         let pendingServiceRestart = '';
-        let thinkingMessage = '';
-
-        function appendErrorNotice(error) {
-            errorNoticesHtml += `<div class="error-notice">${escapeHTML(formatChatError(error))}</div>`;
-        }
 
         function clearTypingIndicator() {
             if (receivedMessageTextContainer._typingTimer) {
@@ -2777,39 +2730,15 @@
             }
         }
 
-        function buildThinkingHtml() {
-            if (!thinkingMessage || thinkingMessage.length === 0) {
-                return '';
-            }
-
-            return `<div class="thinking-panel"><div class="thinking-label">${escapeHTML(t('thinkingLabel', 'Thinking'))}</div><div class="thinking-body">${escapeHTML(thinkingMessage)}</div></div>`;
-        }
-
-        function renderAssistantMessage() {
-            const answerHtml = fullMessage.length > 0
-                ? sanitizeHTML(convertMarkdownToHTML(fullMessage))
-                : '';
-            receivedMessageTextContainer.innerHTML = buildThinkingHtml() + errorNoticesHtml + answerHtml;
-            clearTypingIndicator();
-        }
-
-        function appendThinking(content) {
-            if (typeof content !== 'string' || content.length === 0) {
-                return;
-            }
-
-            thinkingMessage += content;
-            renderAssistantMessage();
-
-            if (isKeyboardOpen) {
-                keepLatestMessageVisible(true);
-                setChatScrollLock(true);
-            } else {
-                keepLatestMessageVisible(true);
-            }
-        }
+        clearTypingIndicator();
+        let turn = null;
 
         try {
+            turn = window.OasisChatTurn.create({
+                container: receivedMessageTextContainer,
+                t, sanitizeHTML, convertMarkdownToHTML,
+                onUpdate: keepLatestMessageVisible
+            });
             const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2823,16 +2752,13 @@
 
             if (!response.ok) {
                 console.error('HTTP Error:', response.status, response.statusText);
-                receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(t('networkError', 'A network error occurred. Please try again later.')));
+                turn.appendError(t('networkError', 'A network error occurred. Please try again later.'));
                 return;
             }
 
-            const chatMessages = document.querySelector('.chat-messages');
-            const isSmallViewport = window.innerWidth <= 768;
             const toolActivity = window.OasisChatTools.create({
-                container: chatMessages,
-                before: receivedMessageTextContainer.parentNode,
-                resourcePath, iconName: icon_name, t, sanitizeHTML, convertMarkdownToHTML
+                getContainer: turn.toolContainer,
+                t, sanitizeHTML, convertMarkdownToHTML
             });
 
             function collectActions(output) {
@@ -2850,24 +2776,22 @@
                 collectActions(evt);
                 if (evt.error) {
                     await hideDownloadOverlayAndWait();
-                    appendErrorNotice(evt.error);
-                    renderAssistantMessage();
+                    turn.appendError(formatChatError(evt.error));
                     return;
                 }
                 if (evt.warning) {
-                    appendErrorNotice(evt.warning);
-                    renderAssistantMessage();
+                    turn.appendError(formatChatError(evt.warning));
                 }
 
                 if (evt.type === 'thinking') {
-                    appendThinking(evt.content || '');
+                    turn.appendThinking(evt.content || '');
                     return;
                 }
                 if (evt.type === 'execution') {
                     // Empty optional manifest messages are not execution events
                     // with a call ID; do not add an anonymous bubble per tool.
                     if (typeof evt.message === 'string' && evt.message.trim()) {
-                        showToolExecutionNotice(evt.message);
+                        turn.appendExecution(evt.message);
                     }
                     return;
                 }
@@ -2881,8 +2805,7 @@
                 if (Object.prototype.hasOwnProperty.call(evt, 'tool_outputs')) {
                     const results = toolActivity.consume(evt);
                     if (results.invalid) {
-                        appendErrorNotice(t('invalidToolEvent', 'Invalid tool response.'));
-                        renderAssistantMessage();
+                        turn.appendError(t('invalidToolEvent', 'Invalid tool response.'));
                     }
                     // Only newly accepted calls may trigger UI actions. Replayed
                     // result events must not reopen forms or duplicate notices.
@@ -2890,26 +2813,21 @@
                         collectActions(output);
                         if (output.ui_action) wifiHandleUiAction(output.ui_action);
                     });
-                    keepLatestMessageVisible(false);
+                    keepLatestMessageVisible();
                     if (isKeyboardOpen) setChatScrollLock(true);
                 }
 
                 if (evt.message && typeof evt.message.thinking === 'string') {
-                    appendThinking(evt.message.thinking);
+                    turn.appendThinking(evt.message.thinking);
                 }
                 if (evt.message && typeof evt.message.content === 'string' && evt.message.content.length) {
                     await hideDownloadOverlayAndWait();
-                    fullMessage += evt.message.content;
-                    if (!isSmallViewport) {
-                        renderAssistantMessage();
-                        keepLatestMessageVisible(isKeyboardOpen);
-                        if (isKeyboardOpen) setChatScrollLock(true);
-                    }
+                    turn.appendText(evt.message.content);
                 }
                 if (evt.id && isNumeric(evt.id)) show_chat_popup(evt);
                 if (evt.uci_notify && !is_notify) {
                     show_notify_popup(evt);
-                    keepLatestMessageVisible(false);
+                    keepLatestMessageVisible();
                     is_notify = true;
                 }
             }
@@ -2938,18 +2856,8 @@
                 await handleJson(trimmed);
             }
 
-            // Final output
-            const __hasToolNotice = toolActivity.count > 0;
-            const __hasErrorNotice = !!(errorNoticesHtml && errorNoticesHtml.length > 0);
-            const __finalText = (fullMessage || '').trim();
-            const __thinkingHtml = buildThinkingHtml();
-            //console.log('[AI final text]', __finalText);
-            if (!__hasToolNotice && !__hasErrorNotice && __finalText.length === 0) {
-                receivedMessageTextContainer.innerHTML = __thinkingHtml + sanitizeHTML(convertMarkdownToHTML(t('noResponse', 'No response from AI service. Please check settings.')));
-            } else {
-                // Render only errors + assistant content. Tool notice is shown in a separate bubble.
-                receivedMessageTextContainer.innerHTML = __thinkingHtml + errorNoticesHtml + sanitizeHTML(convertMarkdownToHTML(__finalText));
-            }
+            // Flush the tail without rebuilding earlier text or tool notices.
+            turn.flush();
 
             // Prompt reboot if required by tool results
             if (rebootRequired === true) {
@@ -2968,25 +2876,17 @@
                 // console.log('[oasis] pendingServiceRestart(final):', pendingServiceRestart);
                 setTimeout(() => { show_restart_service_popup(pendingServiceRestart); }, 0);
             }
-            clearTypingIndicator();
-            if (isSmallViewport) {
-                keepLatestMessageVisible(true);
-            } else {
-                if (isKeyboardOpen) {
-                    keepLatestMessageVisible(true);
-                } else {
-                    keepLatestMessageVisible(false);
-                }
-            }
         } catch (error) {
             console.error('Request failed', error);
-            receivedMessageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(t('networkErrorDetailed', 'A network error occurred. Please check your network connection and AI service settings.')));
+            const message = t('networkErrorDetailed', 'A network error occurred. Please check your network connection and AI service settings.');
+            if (turn) turn.appendError(message);
+            else receivedMessageTextContainer.textContent = message;
         } finally {
+            if (turn) turn.finish();
             clearTypingIndicator();
             message_outputing = false;
             activeConversation = false;
             setChatScrollLock(false);
-            currentAssistantMessageDiv = null;
         }
     }
 
@@ -3050,7 +2950,9 @@
                     }
                 });
                 // Scroll to the latest message after history is rendered
-                keepLatestMessageVisible(true);
+                window.__oasisStickToBottom = true;
+                chatLastScrollTop = chatMessagesContainer.scrollTop;
+                keepLatestMessageVisible();
             } 
             
             //else {

@@ -20,6 +20,7 @@
         const t = options.t;
         const seen = new Map();
         let list = null;
+        let container = null;
         let count = 0;
 
         function element(tag, className, text) {
@@ -30,21 +31,15 @@
         }
 
         function ensureList() {
-            if (list) return;
-            const message = element('div', 'message received tool-activity');
-            const icon = element('div', 'icon');
-            icon.style.backgroundImage = `url(${options.resourcePath}/oasis/${options.iconName})`;
-            const bubble = element('div', 'message-text chat-bubble');
-            bubble.appendChild(element('div', 'tool-activity-title', t('toolActivity', 'Tool activity')));
+            const next = options.getContainer ? options.getContainer() : options.container;
+            if (list && container === next) return;
+            container = next;
+            const group = element('section', 'tool-activity');
+            group.appendChild(element('div', 'tool-activity-title', t('toolActivity', 'Tool activity')));
             list = element('ol', 'tool-activity-list');
-            bubble.appendChild(list);
-            message.appendChild(icon);
-            message.appendChild(bubble);
-            if (options.before && options.container.contains(options.before)) {
-                options.container.insertBefore(message, options.before);
-            } else {
-                options.container.appendChild(message);
-            }
+            list.start = count + 1;
+            group.appendChild(list);
+            container.appendChild(group);
         }
 
         function statusOf(output, management) {
@@ -66,10 +61,10 @@
             const status = statusOf(output, management);
             const card = element('li', 'tool-call' + (management ? ' tool-call-management' : ''));
             const header = element('div', 'tool-call-header');
+            header.appendChild(element('code', 'tool-call-name', name));
             header.appendChild(element('span', 'tool-call-kind', t(label[0], label[1])));
             header.appendChild(element('span', 'tool-call-status tool-call-' + status[0], status[1]));
             card.appendChild(header);
-            card.appendChild(element('code', 'tool-call-name', name));
 
             if (management && name !== 'get_tool_list') {
                 // Show only the target identity, never arbitrary tool arguments.

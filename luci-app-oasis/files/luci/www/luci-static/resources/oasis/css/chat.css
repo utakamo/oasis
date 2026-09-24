@@ -991,16 +991,43 @@ textarea:focus-visible {
     color: #ffffff;
 }
 
-/* A turn contains one ordered activity list, with one card per tool call. */
-.tool-activity .icon {
-    flex-shrink: 0;
+/* One outer bubble; its text and tool groups are appended in receive order. */
+.turn-text,
+.turn-tools {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
-.message.tool-activity .message-text {
-    min-width: 0;
-    width: 34rem;
-    max-width: calc(100% - 50px);
-    box-sizing: border-box;
+.turn-text > :first-child {
+    margin-top: 0;
+}
+
+.turn-text > :last-child {
+    margin-bottom: 0;
+}
+
+.turn-tools,
+.turn-execution,
+.turn-pending {
+    margin-top: 10px;
+}
+
+.turn-tools:first-child,
+.turn-pending:first-child {
+    margin-top: 0;
+}
+
+.turn-tools + .turn-text,
+.thinking-panel + .turn-text,
+.turn-execution + .turn-text,
+.error-notice + .turn-text {
+    margin-top: 10px;
+}
+
+.turn-execution,
+.turn-pending {
+    color: #667085;
+    font-size: 12px;
 }
 
 .tool-activity-title {
@@ -1015,9 +1042,9 @@ textarea:focus-visible {
 }
 
 .message .message-text .tool-call {
-    padding: 10px;
-    margin: 0 0 8px;
-    border-radius: 10px;
+    padding: 7px 10px;
+    margin: 0 0 6px;
+    border-radius: 8px;
     background: #fff7eb;
     border: 1px solid #ffd8a8;
     color: #7a4e00;
@@ -1039,12 +1066,12 @@ textarea:focus-visible {
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 4px 10px;
-    margin-bottom: 4px;
+    gap: 4px 8px;
 }
 
 .tool-call-kind {
     font-weight: 600;
+    font-size: 11px;
 }
 
 .tool-call-status {
@@ -1075,7 +1102,13 @@ textarea:focus-visible {
     color: inherit;
 }
 
-.message.tool-activity .message-text code.tool-call-name {
+.message .message-text .tool-activity code.tool-call-name {
+    flex: 1 1 10rem;
+    min-width: 0;
+    margin: 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #333333;
     color: #ffffff;
 }
 
