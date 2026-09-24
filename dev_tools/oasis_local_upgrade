@@ -20,6 +20,50 @@
 #
 
 MODE="$1"
+PACKAGE_NAMES="
+oasis
+luci-app-oasis
+oasis-mod-tool
+oasis-mod-agent
+oasis-mod-retired
+oasis-tool-edge
+oasis-mod-test
+oasis-tool-maker
+"
+LOCAL_PACKAGES=""
+
+die() {
+    echo "ERROR: $*" >&2
+    exit 1
+}
+
+find_latest_ipk() {
+    package_name="$1"
+    best_file=""
+    best_version=""
+
+    for file in ./${package_name}_*_all.ipk; do
+        [ -s "$file" ] || continue
+
+        version="${file#./${package_name}_}"
+        version="${version%_all.ipk}"
+        if [ -z "$best_file" ] || opkg compare-versions "$best_version" '<<' "$version"; then
+            best_file="$file"
+            best_version="$version"
+        fi
+    done
+
+    [ -n "$best_file" ] || return 1
+    printf '%s\n' "$best_file"
+}
+
+collect_local_packages() {
+    for package_name in $PACKAGE_NAMES; do
+        package_file="$(find_latest_ipk "$package_name")" ||
+            die "Missing local IPK package for $package_name."
+        LOCAL_PACKAGES="$LOCAL_PACKAGES $package_file"
+    done
+}
 
 is_installed() {
     opkg status "$1" 2>/dev/null | grep -q "^Status: .* installed"
@@ -31,12 +75,16 @@ remove_if_installed() {
     fi
 }
 
+# Verify every package before removing anything.  Each selected file is
+# explicitly prefixed with ./ so opkg never mistakes a missing file for a
+# repository package name.
+collect_local_packages
+
 # Backup configuration if keep-config mode is enabled
 if [ "$MODE" = "keep-config" ]; then
-    mkdir -p /tmp/oasis
-    touch /tmp/oasis/backup
-    uci export oasis > /tmp/oasis/backup
-    cp -r /etc/oasis/oasis.conf /tmp/oasis/oasis.conf
+    mkdir -p /tmp/oasis || die "Failed to create backup directory."
+    uci export oasis > /tmp/oasis/backup || die "Failed to back up Oasis UCI configuration."
+    cp -r /etc/oasis/oasis.conf /tmp/oasis/oasis.conf || die "Failed to back up oasis.conf."
 fi
 
 opkg update
@@ -60,22 +108,24 @@ remove_if_installed oasis-mod-tool
 remove_if_installed oasis-mod-retired
 remove_if_installed oasis
 
-# Install new versions
-opkg install oasis_3.2.6-r1_all.ipk
-opkg install luci-app-oasis_3.2.6-r1_all.ipk
-opkg install oasis-mod-tool_1.1.1-r1_all.ipk
-opkg install oasis-mod-agent_1.0.0-r1_all.ipk
-opkg install oasis-mod-retired_1.0.0-r1_all.ipk
-opkg install oasis-tool-edge_1.0.0-r1_all.ipk
-opkg install oasis-mod-test_1.0.0-r1_all.ipk
-opkg install oasis-tool-maker_1.0.0-r1_all.ipk
+# Install the verified local package set.
+for package_file in $LOCAL_PACKAGES; do
+    opkg install "$package_file" || die "Failed to install $package_file."
+done
 
 # Restore configuration if keep-config mode is enabled
 if [ "$MODE" = "keep-config" ]; then
-    uci -f /tmp/oasis/backup import oasis
-    cp -r /tmp/oasis/oasis.conf /etc/oasis/oasis.conf
+    uci -f /tmp/oasis/backup import oasis || die "Failed to restore Oasis UCI configuration."
+    cp -r /tmp/oasis/oasis.conf /etc/oasis/oasis.conf || die "Failed to restore oasis.conf."
+
+    # Restoring UCI also restores the old tool schemas, after postinst has
+    # already marked initialization complete. Reapply package-owned manifests
+    # explicitly; a normal init would skip this migration because of its marker.
+    /usr/bin/oasis_tool_setup refresh-package-manifests ||
+        die "Failed to update package-owned tool definitions after configuration restore."
 fi
 
-# Restart services
-service olt_tool restart
-service rpcd restart
+# Reload RPC objects only after configuration and tool definitions are ready.
+if [ -x /etc/init.d/rpcd ]; then
+    /etc/init.d/rpcd restart || die "Failed to restart rpcd."
+fi

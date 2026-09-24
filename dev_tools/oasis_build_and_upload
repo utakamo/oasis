@@ -55,38 +55,50 @@ normalize_pkg_ext() {
 
 resolve_package_file() {
   local name="$1"
-  local version="$2"
-  local ext="$3"
-  local patterns=()
+  local ext="$2"
+  local matches=()
   local match
+  local filename
+  local version
+  local best_file=""
+  local best_version=""
 
   case "$ext" in
     ipk)
-      patterns=(
-        "$BASE/${name}_${version}_all.${ext}"
-        "$BASE/${name}_${version}_*.${ext}"
-        "$BASE/${name}_*.${ext}"
-      )
+      matches=("$BASE/${name}_"*_all."$ext")
       ;;
     apk)
-      patterns=(
-        "$BASE/${name}-${version}.${ext}"
-        "$BASE/${name}-${version}*.${ext}"
-        "$BASE/${name}-[0-9]*.${ext}"
-      )
+      # Versions begin with a number, which keeps oasis from matching
+      # oasis-mod-* artifacts.
+      matches=("$BASE/${name}-"[0-9]*."$ext")
       ;;
   esac
 
-  for pattern in "${patterns[@]}"; do
-    while IFS= read -r match; do
-      if [[ -f "$match" ]]; then
-        printf '%s\n' "$match"
-        return 0
-      fi
-    done < <(compgen -G "$pattern")
+  for match in "${matches[@]}"; do
+    [[ -s "$match" ]] || continue
+
+    filename="${match##*/}"
+    case "$ext" in
+      ipk)
+        version="${filename#${name}_}"
+        version="${version%_all.${ext}}"
+        ;;
+      apk)
+        version="${filename#${name}-}"
+        version="${version%.${ext}}"
+        ;;
+    esac
+
+    if [[ -z "$best_file" ]] ||
+       [[ "$version" != "$best_version" &&
+          "$(printf '%s\n' "$best_version" "$version" | LC_ALL=C sort -V | tail -n 1)" == "$version" ]]; then
+      best_file="$match"
+      best_version="$version"
+    fi
   done
 
-  return 1
+  [[ -n "$best_file" ]] || return 1
+  printf '%s\n' "$best_file"
 }
 
 RESET_CONFIG=0
@@ -157,18 +169,6 @@ if ! command -v sshpass >/dev/null 2>&1; then
   echo "After installing sshpass, run this script again."
   exit 1
 fi
-
-# ====================================
-# Package Version Variables
-# ====================================
-OASIS_VER="3.2.6-r1"
-LUCIOASIS_VER="3.2.6-r1"
-TOOL_VER="1.1.1-r1"
-AGENT_VER="1.0.0-r1"
-RETIRED_VER="1.0.0-r1"
-EDGE_VER="1.0.0-r1"
-TEST_VER="1.0.0-r1"
-MAKER_VER="1.0.0-r1"
 
 # ====================================
 # Config File (User Home)
@@ -287,25 +287,22 @@ fi
 # ====================================
 # Upload package files
 # ====================================
-PACKAGE_SPECS=(
-  "oasis:$OASIS_VER"
-  "luci-app-oasis:$LUCIOASIS_VER"
-  "oasis-mod-tool:$TOOL_VER"
-  "oasis-mod-agent:$AGENT_VER"
-  "oasis-mod-retired:$RETIRED_VER"
-  "oasis-tool-edge:$EDGE_VER"
-  "oasis-mod-test:$TEST_VER"
-  "oasis-tool-maker:$MAKER_VER"
+PACKAGE_NAMES=(
+  oasis
+  luci-app-oasis
+  oasis-mod-tool
+  oasis-mod-agent
+  oasis-mod-retired
+  oasis-tool-edge
+  oasis-mod-test
+  oasis-tool-maker
 )
 
 UPLOAD_FILES=()
 MISSING_PACKAGES=()
 
-for spec in "${PACKAGE_SPECS[@]}"; do
-  pkg_name="${spec%%:*}"
-  pkg_version="${spec#*:}"
-
-  if pkg_file="$(resolve_package_file "$pkg_name" "$pkg_version" "$PKG_EXT")"; then
+for pkg_name in "${PACKAGE_NAMES[@]}"; do
+  if pkg_file="$(resolve_package_file "$pkg_name" "$PKG_EXT")"; then
     UPLOAD_FILES+=("$pkg_file")
   else
     MISSING_PACKAGES+=("$pkg_name")
@@ -322,8 +319,8 @@ if [[ "${#UPLOAD_FILES[@]}" == "0" ]]; then
   echo "  - The target packages are selected under 'utakamo' in make menuconfig."
   echo
   echo "Expected package names:"
-  for spec in "${PACKAGE_SPECS[@]}"; do
-    echo "  ${spec%%:*}"
+  for pkg_name in "${PACKAGE_NAMES[@]}"; do
+    echo "  $pkg_name"
   done
   echo
   echo "Available .${PKG_EXT} files:"
