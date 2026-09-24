@@ -1,7 +1,7 @@
 <%+header%>
 <% local translate_js = require("luci.oasis.i18n").translate_js %>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tools.css">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tools.css?v=3.2.6-r32">
 
 <div id="tools-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
 <h2><%:Local Tools%></h2>
@@ -98,6 +98,6 @@ window.OasisToolsStrings = {
     confirmNoSourcePath: <%= translate_js("None") %>
 };
 </script>
-<script src="<%= resource %>/oasis/js/tools.js"></script>
+<script src="<%= resource %>/oasis/js/tools.js?v=3.2.6-r32"></script>
 
 <%+footer%>

@@ -41,7 +41,10 @@
   const confirmCancelBtn = document.getElementById('tools-confirm-cancel');
   let pendingManifests = [];
   let autoMode = false;
-  let changingMode = false;
+  let changingState = false;
+  let stateKnown = false;
+  let pendingSwitchKey = null;
+  let switches = [];
   let loadGeneration = 0;
 
   function showToast(message, type = 'info', timeout = 2000) {
@@ -388,6 +391,75 @@
     return list;
   }
 
+  function syncSwitches() {
+    switches.forEach(control => {
+      const busy = changingState && control.key === pendingSwitchKey;
+      control.button.disabled = !control.available || changingState || !stateKnown;
+      control.button.setAttribute('aria-busy', String(busy));
+      control.state.textContent = busy ? t('loading', 'Loading...') : control.label;
+    });
+  }
+
+  function createStateSwitch(key, name, checked, label, available, isAuto) {
+    // A native button provides both Space and Enter activation. Keep its
+    // accessible name stable while aria-checked conveys the current state.
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tools-switch' + (isAuto ? ' tools-switch-auto' : '');
+    button.setAttribute('role', 'switch');
+    button.setAttribute('aria-label', name);
+    button.setAttribute('aria-checked', String(checked));
+    const track = document.createElement('span');
+    track.className = 'tools-switch-track';
+    track.setAttribute('aria-hidden', 'true');
+    const thumb = document.createElement('span');
+    thumb.className = 'tools-switch-thumb';
+    track.appendChild(thumb);
+    const state = document.createElement('span');
+    state.className = 'tools-switch-state';
+    button.appendChild(track);
+    button.appendChild(state);
+    const control = { key, button, state, label, available };
+    switches.push(control);
+    syncSwitches();
+    return control;
+  }
+
+  async function saveSwitch(control, url, values) {
+    if (changingState || !stateKnown || !control.available || !switches.includes(control)) return;
+    const hadFocus = document.activeElement === control.button;
+    let failed = false;
+    changingState = true;
+    pendingSwitchKey = control.key;
+    syncSwitches();
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ ...values, token: config.csrfToken || '' })
+      });
+      const data = await response.json();
+      if (!response.ok || !data || data.status !== 'OK') {
+        throw new Error((data && data.error) || t('updateFailed', 'Failed to update tool state'));
+      }
+    } catch (err) {
+      failed = true;
+      showErrorModal(err.message || t('updateFailed', 'Failed to update tool state'));
+    } finally {
+      // A lost POST response may still mean that the change was saved. Never
+      // guess the state or allow another write until the snapshot is reloaded.
+      await loadTools();
+      changingState = false;
+      pendingSwitchKey = null;
+      syncSwitches();
+      if (hadFocus && !failed && stateKnown
+          && (document.activeElement === control.button || document.activeElement === document.body)) {
+        const replacement = switches.find(item => item.key === control.key);
+        if (replacement && !replacement.button.disabled) replacement.button.focus();
+      }
+    }
+  }
+
   function createCard(tool, options) {
     const opts = options || {};
     const cell = document.createElement('div');
@@ -429,48 +501,29 @@
     const footer = document.createElement('div');
     footer.className = 'cell-footer';
 
-    const btn = document.createElement('button');
-    let isEnabled = tool.enable === '1';
-    btn.className = isEnabled ? 'delete-button' : 'load-button';
-    btn.textContent = isEnabled ? t('disableButton', 'Disable') : t('enableButton', 'Enable');
+    const isEnabled = tool.enable === '1';
+    const control = createStateSwitch(
+      JSON.stringify([tool.server || '', tool.name || '']),
+      (tool.server ? tool.server + ' / ' : '') + (tool.name || t('unknownTool', 'Unknown')),
+      isEnabled, isEnabled ? t('enabled', 'Enabled') : t('disabled', 'Disabled'),
+      !isConflict && !autoMode, false
+    );
     if (isConflict || autoMode) {
-      btn.disabled = true;
-      btn.title = isConflict ? t('conflictTitle', 'Conflict: cannot change state') : t('autoManaged', 'Managed by AI');
+      control.button.title = isConflict ? t('conflictTitle', 'Conflict: cannot change state') : t('autoManaged', 'Managed by AI');
     }
-    if (autoMode) btn.textContent = t('autoManaged', 'Managed by AI');
-
-    btn.addEventListener('click', () => {
-      if (isConflict || autoMode || changingMode) return;
+    if (autoMode) {
+      const managed = document.createElement('span');
+      managed.className = 'tools-switch-note';
+      managed.textContent = t('autoManaged', 'Managed by AI');
+      footer.appendChild(managed);
+    }
+    control.button.addEventListener('click', () => {
       if (!tool.name) { showToast(t('missingName', 'Missing tool name'), 'error'); return; }
-      const enabling = !isEnabled; // current button action
-      const url = enabling ? API_ENABLE : API_DISABLE;
-      const prevText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = t('loading', 'Loading...');
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ name: tool.name, server: tool.server || '', token: config.csrfToken || '' })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (!data || data.status !== 'OK') throw new Error((data && data.error) || t('updateFailed', 'Failed to update tool state'));
-        // apply UI only on success
-        isEnabled = enabling;
-        btn.textContent = isEnabled ? t('disableButton', 'Disable') : t('enableButton', 'Enable');
-        btn.className = isEnabled ? 'delete-button' : 'load-button';
-        status.textContent = isEnabled ? t('enabled', 'Enabled') : t('disabled', 'Disabled');
-        status.className = 'status-pill' + (isEnabled ? ' enabled' : '');
-      })
-      .catch(err => {
-        console.error('toggle failed:', err);
-        showErrorModal(err && err.message ? err.message : t('updateFailed', 'Failed to update tool state'));
-        btn.textContent = prevText;
-      })
-      .finally(() => { btn.disabled = false; });
+      return saveSwitch(control, isEnabled ? API_DISABLE : API_ENABLE,
+        { name: tool.name, server: tool.server || '' });
     });
 
-    footer.appendChild(btn);
+    footer.appendChild(control.button);
     cell.appendChild(title);
     cell.appendChild(desc);
     cell.appendChild(footer);
@@ -481,52 +534,37 @@
   function createAutoSwitch(available) {
     const block = document.createElement('div');
     block.className = 'server-block auto-mode-block';
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = autoMode ? 'load-button auto-mode-on' : 'load-button';
-    button.textContent = autoMode ? t('autoOn', 'Auto: ON') : t('autoOff', 'Auto: OFF');
-    button.setAttribute('aria-label', t('autoMode', 'Auto mode'));
-    button.setAttribute('aria-pressed', String(autoMode));
-    button.disabled = !available || changingMode;
+    const control = createStateSwitch('auto', t('autoMode', 'Auto mode'), autoMode,
+      autoMode ? t('autoOn', 'Auto: ON') : t('autoOff', 'Auto: OFF'), available, true);
     const description = document.createElement('p');
     description.className = 'server-description';
     description.textContent = autoMode
       ? t('autoDescription', 'AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots.')
       : t('manualDescription', 'Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled.');
-    block.appendChild(button);
+    block.appendChild(control.button);
     block.appendChild(description);
-    button.addEventListener('click', async () => {
-      if (changingMode) return;
-      changingMode = true;
-      button.disabled = true;
-      try {
-        const response = await fetch(API_AUTO, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ enable: autoMode ? '0' : '1', token: config.csrfToken || '' })
-        });
-        const data = await response.json();
-        if (!response.ok || !data || data.status !== 'OK') {
-          throw new Error((data && data.error) || t('updateFailed', 'Failed to update tool state'));
-        }
-      } catch (err) {
-        showErrorModal(err.message || t('updateFailed', 'Failed to update tool state'));
-      } finally {
-        changingMode = false;
-        // Always fetch authoritative state, including after a lost response.
-        button.disabled = true;
-        loadTools();
-      }
-    });
+    control.button.addEventListener('click', () =>
+      saveSwitch(control, API_AUTO, { enable: autoMode ? '0' : '1' }));
     return block;
   }
 
   function loadTools() {
     const generation = ++loadGeneration;
     return fetch(URL_LOAD_TOOLS, { cache: 'no-store' })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) throw new Error(t('updateFailed', 'Failed to update tool state'));
+        return response.json();
+      })
       .then(data => {
         if (generation !== loadGeneration) return;
+        if (!data || typeof data !== 'object' || Array.isArray(data)
+            || (data.local_tool !== false && (typeof data.auto_mode !== 'boolean'
+              || typeof data.mode_available !== 'boolean'
+              || (data.status !== 'OK' && data.status !== 'NG')))) {
+          throw new Error(t('updateFailed', 'Failed to update tool state'));
+        }
+        stateKnown = true;
+        switches = [];
         if (data && data.local_tool === false) {
           if (headBar) headBar.style.display = 'none';
           if (container) {
@@ -574,6 +612,9 @@
           });
       })
       .catch(err => {
+        if (generation !== loadGeneration) return;
+        stateKnown = false;
+        syncSwitches();
         console.error('Failed to load server info:', err);
         showErrorModal(t('updateFailed', 'Failed to update tool state'));
       });
