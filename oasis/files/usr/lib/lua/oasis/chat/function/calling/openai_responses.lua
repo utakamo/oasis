@@ -6,15 +6,13 @@ local uci        = require("luci.model.uci").cursor()
 local debug      = require("oasis.chat.debug")
 local ous        = require("oasis.unified.chat.schema")
 local chat_error = require("oasis.chat.error")
+local policy     = require("oasis.chat.function.calling.policy")
 
 local M = {}
 
-local function stringify_object(value)
-    local encoded = jsonc.stringify(value, false)
-    if type(encoded) ~= "string" or encoded:match("^%s*%[%s*%]%s*$") then
-        return "{}"
-    end
-    return encoded
+local function validation_can_continue(self)
+    return not (type(self) == "table"
+        and self._tool_side_effects_committed == true)
 end
 
 local function tools_enabled(self)
@@ -31,7 +29,7 @@ local function parse_arguments(self, call)
             kind = "parse_error",
             message = "OpenAI returned invalid Function Calling arguments.",
             detail = "call_id=" .. tostring(call.call_id or call.id or ""),
-            can_continue = false,
+            can_continue = validation_can_continue(self),
         })
     end
 
@@ -42,7 +40,7 @@ local function parse_arguments(self, call)
             kind = "parse_error",
             message = "OpenAI returned invalid Function Calling arguments.",
             detail = "call_id=" .. tostring(call.call_id or call.id or ""),
-            can_continue = false,
+            can_continue = validation_can_continue(self),
         })
     end
 
@@ -93,10 +91,10 @@ function M.process(self, calls)
             phase = "function_calling",
             kind = "unsupported_feature",
             message = "OpenAI requested a tool when Function Calling was disabled.",
+            can_continue = validation_can_continue(self),
         })
     end
 
-    local client = require("oasis.local.tool.client")
     local function_call = { service = "OpenAI", tool_outputs = {} }
     local speaker = { role = common.role.assistant, content = "", tool_calls = {} }
     local first_output = ""
@@ -119,7 +117,7 @@ function M.process(self, calls)
                 kind = "parse_error",
                 message = "OpenAI returned an incomplete function call.",
                 detail = "call_id=" .. call_id .. " name=" .. name,
-                can_continue = false,
+                can_continue = validation_can_continue(self),
             })
         end
         if type(self._request_tool_names) ~= "table"
@@ -129,7 +127,7 @@ function M.process(self, calls)
                 kind = "unsupported_feature",
                 message = "OpenAI requested a function that was not offered.",
                 detail = "call_id=" .. call_id .. " name=" .. name,
-                can_continue = false,
+                can_continue = validation_can_continue(self),
             })
         end
 
@@ -138,8 +136,19 @@ function M.process(self, calls)
             return nil, nil, nil, false, args_err
         end
 
-        local normalized_args = stringify_object(args)
-        local signature = name .. "\0" .. normalized_args
+        local normalized_args, normalization_error =
+            policy.stringify_object(args)
+        if not normalized_args then
+            return nil, nil, nil, false, chat_error.build(self, {
+                phase = "function_calling",
+                kind = "parse_error",
+                message = "OpenAI returned invalid Function Calling arguments.",
+                detail = "call_id=" .. call_id
+                    .. " reason=" .. tostring(normalization_error),
+                can_continue = validation_can_continue(self),
+            })
+        end
+        local signature = name .. "\0" .. policy.canonical_object(args)
         local previous_signature = self.processed_tool_call_ids[call_id]
         local cached = self._processed_tool_results[call_id]
         if batch_ids[call_id] then
@@ -148,7 +157,7 @@ function M.process(self, calls)
                 kind = "parse_error",
                 message = "OpenAI returned a duplicate Function Calling ID.",
                 detail = "call_id=" .. call_id,
-                can_continue = false,
+                can_continue = validation_can_continue(self),
             })
         end
         batch_ids[call_id] = true
@@ -160,7 +169,7 @@ function M.process(self, calls)
                 kind = "parse_error",
                 message = "OpenAI reused a Function Calling ID with different data.",
                 detail = "call_id=" .. call_id,
-                can_continue = false,
+                can_continue = validation_can_continue(self),
             })
         end
 
@@ -174,6 +183,23 @@ function M.process(self, calls)
         }
     end
 
+    if #prepared == 0 then
+        return nil, nil, nil, false, chat_error.build(self, {
+            phase = "function_calling",
+            kind = "parse_error",
+            message = "OpenAI reported Function Calling without any calls.",
+            can_continue = validation_can_continue(self),
+        })
+    end
+
+    local authorized, authorization_error =
+        policy.authorize_tool_batch(self, prepared)
+    if not authorized then
+        return nil, nil, nil, false, authorization_error
+    end
+
+    local client = require("oasis.local.tool.client")
+
     for _, call in ipairs(prepared) do
         local output
         if call.cached then
@@ -183,7 +209,10 @@ function M.process(self, calls)
             debug:log("oasis.log", "openai_responses.process",
                 "reuse cached tool result call_id=" .. call.call_id)
         else
-            local result = client.exec_server_tool(self:get_format(), call.name, call.args)
+            -- A local tool may commit an external side effect before it
+            -- returns or raises, so retry safety ends immediately before exec.
+            self._tool_side_effects_committed = true
+            local result = client.exec_server_tool(self:get_format(), call.name, call.args, self._tool_mode_token)
             output = jsonc.stringify(result, false)
             if type(output) ~= "string" then
                 output = "null"
@@ -199,7 +228,6 @@ function M.process(self, calls)
                 reboot = result_reboot,
                 shutdown = result_shutdown,
             }
-            self._tool_side_effects_committed = true
             debug:log("oasis.log", "openai_responses.process",
                 "executed tool call_id=" .. call.call_id .. " name=" .. call.name)
         end
@@ -208,6 +236,7 @@ function M.process(self, calls)
             tool_call_id = call.call_id,
             output = output,
             name = call.name,
+            arguments = call.normalized_args,
         }
         speaker.tool_calls[#speaker.tool_calls + 1] = {
             id = call.call_id,
@@ -249,7 +278,7 @@ function M.convert_tool_call(chat, speaker, msg)
             type = "function",
             ["function"] = {
                 name = fn.name,
-                arguments = stringify_object(args),
+                arguments = policy.stringify_object(args) or "{}",
             },
         }
     end

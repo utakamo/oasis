@@ -5,33 +5,72 @@ local common = require("oasis.common")
 local uci    = require("luci.model.uci").cursor()
 local debug  = require("oasis.chat.debug")
 local ous	 = require("oasis.unified.chat.schema")
+local chat_error = require("oasis.chat.error")
+local policy = require("oasis.chat.function.calling.policy")
 
 local M = {}
 
-function M.serialize_function_arguments(arguments)
-	local normalized = ous.normalize_arguments(arguments)
-	if next(normalized) == nil then
-		-- Function parameters are JSON objects. jsonc.stringify({})
-		-- serializes an empty Lua table as [], so retain the object form.
-		return "{}"
+local function build_error(self, kind, message, detail)
+	return chat_error.build(self, {
+		phase = "function_calling",
+		kind = kind,
+		message = message,
+		detail = detail,
+		can_continue = not (type(self) == "table"
+			and self._tool_side_effects_committed == true),
+	})
+end
+
+local function parse_arguments(self, tool_call)
+	local fn = type(tool_call["function"]) == "table"
+		and tool_call["function"] or {}
+	local raw = fn.arguments
+	local parsed
+
+	if type(raw) == "table" then
+		parsed = raw
+	elseif type(raw) == "string" then
+		local trimmed = raw:match("^%s*(.-)%s*$") or ""
+		if trimmed:sub(1, 1) ~= "{" or trimmed:sub(-1) ~= "}" then
+			return nil, nil, build_error(self, "parse_error",
+				"OpenAI returned invalid Function Calling arguments.",
+				"tool_call_id=" .. tostring(tool_call.id or ""))
+		end
+		local ok
+		ok, parsed = pcall(jsonc.parse, trimmed)
+		if not ok then
+			parsed = nil
+		end
+	else
+		parsed = nil
 	end
 
-	return jsonc.stringify(normalized, false)
+	if not policy.is_json_object(parsed) then
+		return nil, nil, build_error(self, "parse_error",
+			"OpenAI returned non-object Function Calling arguments.",
+			"tool_call_id=" .. tostring(tool_call.id or ""))
+	end
+
+	local encoded, encode_error = policy.stringify_object(parsed)
+	if not encoded then
+		return nil, nil, build_error(self, "parse_error",
+			"OpenAI returned invalid Function Calling arguments.",
+			"tool_call_id=" .. tostring(tool_call.id or "")
+				.. " reason=" .. tostring(encode_error))
+	end
+	return parsed, encoded, nil
+end
+
+function M.serialize_function_arguments(arguments)
+	local normalized = ous.normalize_arguments(arguments)
+	local encoded = policy.stringify_object(normalized)
+	return encoded or "{}"
 end
 
 function M.detect(message)
-	if not message or type(message) ~= "table" then
-		return false
-	end
-	if message.tool_calls and type(message.tool_calls) == "table" and #message.tool_calls > 0 then
-		local tool = message.tool_calls[1]
-		if tool and tool["function"] and type(tool["function"]) == "table" then
-			if tool["function"].name and tool["function"].arguments then
-				return true
-			end
-		end
-	end
-	return false
+	return type(message) == "table"
+		and type(message.tool_calls) == "table"
+		and next(message.tool_calls) ~= nil
 end
 
 function M.process(self, message)
@@ -40,63 +79,139 @@ function M.process(self, message)
 	end
 
 	local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-	if not (is_tool and common.check_function_calling_enabled(self) and message and message.tool_calls) then
-		return nil
+	if not (is_tool and common.check_function_calling_enabled(self)
+		and message and message.tool_calls) then
+		return nil, nil, nil, false, build_error(self, "unsupported_feature",
+			"OpenAI requested a tool when Function Calling was disabled.")
 	end
 
 	debug:log("oasis.log", "recv_ai_msg", "is_tool (local_tool flag is enabled)")
-	local client = require("oasis.local.tool.client")
+	local prepared = {}
+	local batch_ids = {}
+	self.processed_tool_call_ids = self.processed_tool_call_ids or {}
+	self._processed_tool_results = self._processed_tool_results or {}
+	local call_count = policy.dense_array_length(message.tool_calls)
+	if call_count == nil then
+		return nil, nil, nil, false, build_error(self, "parse_error",
+			"OpenAI returned a sparse or invalid Function Calling batch.")
+	end
 
-	local function_call = { service = "OpenAI", tool_outputs = {} }
-	local first_output_str = ""
-	local speaker = { role = "assistant", tool_calls = {} }
-	local reboot = false
-    local shutdown = false
+	-- Validate the complete batch before executing the first local tool.
+	for index = 1, call_count do
+		local tc = message.tool_calls[index]
+		if type(tc) ~= "table" or type(tc["function"]) ~= "table" then
+			return nil, nil, nil, false, build_error(self, "parse_error",
+				"OpenAI returned an invalid Function Calling block.")
+		end
+		local call_id = tostring(tc.id or "")
+		local name = tostring(tc["function"].name or "")
+		if #call_id == 0 or #name == 0 then
+			return nil, nil, nil, false, build_error(self, "parse_error",
+				"OpenAI returned an incomplete Function Calling block.",
+				"tool_call_id=" .. call_id .. " name=" .. name)
+		end
+		if batch_ids[call_id] then
+			return nil, nil, nil, false, build_error(self, "parse_error",
+				"OpenAI returned a duplicate Function Calling ID.",
+				"tool_call_id=" .. call_id)
+		end
+		batch_ids[call_id] = true
 
-	for _, tc in ipairs(message.tool_calls or {}) do
-		local func = tc["function"] and tc["function"].name or ""
-		local args = {}
-		if tc["function"] and tc["function"].arguments then
-			args = jsonc.parse(tc["function"].arguments) or {}
+		if self._request_tools_enabled == false
+			or (type(self._request_tool_names) == "table"
+				and next(self._request_tool_names) ~= nil
+				and self._request_tool_names[name] ~= true) then
+			return nil, nil, nil, false, build_error(self, "unsupported_feature",
+				"OpenAI requested a function that was not offered.",
+				"tool_call_id=" .. call_id .. " name=" .. name)
 		end
 
-		debug:log("oasis.log", "process", "func = " .. tostring(func) .. " (detected function name)")
-		local call_id = tc.id or ""
-		if self.processed_tool_call_ids[call_id] then
-			debug:log("oasis.log", "process", "skip duplicate tool_call id = " .. tostring(call_id))
+		local args, normalized_args, args_error = parse_arguments(self, tc)
+		if args_error then
+			return nil, nil, nil, false, args_error
+		end
+		local signature = name .. "\0" .. policy.canonical_object(args)
+		local previous_signature = self.processed_tool_call_ids[call_id]
+		local cached = self._processed_tool_results[call_id]
+		if previous_signature
+			and (previous_signature ~= signature or type(cached) ~= "table") then
+			return nil, nil, nil, false, build_error(self, "parse_error",
+				"OpenAI reused a Function Calling ID with different data.",
+				"tool_call_id=" .. call_id)
+		end
+
+		prepared[#prepared + 1] = {
+			id = call_id,
+			name = name,
+			args = args,
+			normalized_args = normalized_args,
+			signature = signature,
+			cached = previous_signature and cached or nil,
+		}
+	end
+
+	if #prepared == 0 then
+		return nil, nil, nil, false, build_error(self, "parse_error",
+			"OpenAI reported Function Calling without any calls.")
+	end
+
+	local authorized, authorization_error =
+		policy.authorize_tool_batch(self, prepared)
+	if not authorized then
+		return nil, nil, nil, false, authorization_error
+	end
+
+	local client = require("oasis.local.tool.client")
+	local function_call = { service = "OpenAI", tool_outputs = {} }
+	local first_output_str = ""
+	local speaker = { role = "assistant", content = message.content or "", tool_calls = {} }
+	local reboot = false
+	local shutdown = false
+
+	for _, call in ipairs(prepared) do
+		local output
+		if call.cached then
+			output = call.cached.output
+			reboot = reboot or call.cached.reboot == true
+			shutdown = shutdown or call.cached.shutdown == true
 		else
-			self.processed_tool_call_ids[call_id] = true
-			local result = client.exec_server_tool(self:get_format(), func, args)
-			debug:log("oasis.log", "process", "tool exec result (pretty) = " .. jsonc.stringify(result, true))
-			local serialized_args = M.serialize_function_arguments(args)
-
-			if result.reboot then
-				debug:log("oasis.log", "process", "result.reboot = true")
-				reboot = result.reboot
+			self._tool_side_effects_committed = true
+			local result = client.exec_server_tool(
+				self:get_format(), call.name, call.args, self._tool_mode_token)
+			debug:log("oasis.log", "process",
+				"tool exec result (pretty) = " .. tostring(jsonc.stringify(result, true)))
+			output = jsonc.stringify(result, false)
+			if type(output) ~= "string" then
+				output = "null"
 			end
-            if result.shutdown then
-                debug:log("oasis.log", "process", "result.shutdown = true")
-                shutdown = result.shutdown
-            end
-
-			local output = jsonc.stringify(result, false)
-			table.insert(function_call.tool_outputs, {
-				tool_call_id = tc.id,
+			local result_reboot = type(result) == "table" and result.reboot == true
+			local result_shutdown = type(result) == "table" and result.shutdown == true
+			reboot = reboot or result_reboot
+			shutdown = shutdown or result_shutdown
+			self.processed_tool_call_ids[call.id] = call.signature
+			self._processed_tool_results[call.id] = {
 				output = output,
-				name = func,
-				arguments = serialized_args
-			})
+				reboot = result_reboot,
+				shutdown = result_shutdown,
+			}
+		end
 
-			table.insert(speaker.tool_calls, {
-				id = tc.id,
-				type = "function",
-				["function"] = {
-					name = func,
-					arguments = serialized_args
-				}
-			})
-
-			if first_output_str == "" then first_output_str = output end
+		table.insert(function_call.tool_outputs, {
+			tool_call_id = call.id,
+			output = output,
+			name = call.name,
+			arguments = call.normalized_args,
+		})
+		table.insert(speaker.tool_calls, {
+			id = call.id,
+			type = "function",
+			["function"] = {
+				name = call.name,
+				arguments = call.normalized_args,
+			},
+		})
+		if first_output_str == "" then
+			first_output_str = output
 		end
 	end
 
@@ -110,10 +225,12 @@ function M.process(self, message)
 			#speaker.tool_calls, #function_call.tool_outputs))
 
 	self.chunk_all = ""
-	return plain_text_for_console, response_ai_json, speaker, true
+	return plain_text_for_console, response_ai_json, speaker, true, nil
 end
 
 function M.inject_schema(self, user_msg)
+	self._request_tools_enabled = false
+	self._request_tool_names = {}
 	local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 	if not (is_use_tool and common.check_function_calling_enabled(self)) then
 		return user_msg
@@ -123,20 +240,27 @@ function M.inject_schema(self, user_msg)
 	end
 
 	local client = require("oasis.local.tool.client")
-	local schema = client.get_function_call_schema()
+	local schema = client.get_function_call_schema() or {}
 
 	user_msg["tools"] = {}
 	for _, tool_def in ipairs(schema) do
+		local name = tostring(tool_def.name or "")
 		table.insert(user_msg["tools"], {
 			type = "function",
 			["function"] = {
-				name = tool_def.name,
+				name = name,
 				description = tool_def.description or "",
 				parameters = tool_def.parameters
 			}
 		})
+		self._request_tool_names[name] = true
 	end
-	user_msg["tool_choice"] = "auto"
+	if #user_msg["tools"] > 0 then
+		user_msg["tool_choice"] = "auto"
+		self._request_tools_enabled = true
+	else
+		user_msg["tool_choice"] = nil
+	end
 	return user_msg
 end
 

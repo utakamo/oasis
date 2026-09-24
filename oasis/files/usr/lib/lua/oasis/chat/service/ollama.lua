@@ -8,6 +8,7 @@ local datactrl  = require("oasis.chat.datactrl")
 local misc      = require("oasis.chat.misc")
 local debug     = require("oasis.chat.debug")
 local calling   = require("oasis.chat.function.calling.ollama")
+local calling_policy = require("oasis.chat.function.calling.policy")
 local ous       = require("oasis.unified.chat.schema")
 local chat_error = require("oasis.chat.error")
 local response_framer = require("oasis.chat.response_framer")
@@ -39,10 +40,65 @@ ollama.new = function()
         obj._completed_tool_message = nil
         obj._collect_tool_stream = false
         obj._tool_call_signatures = {}
+        obj.processed_tool_call_ids = {}
+        obj._processed_tool_results = {}
+        obj._tool_side_effects_committed = false
+        obj._tool_sequence_context = nil
+        obj._request_tools_enabled = false
+        obj._request_tool_names = {}
 
         obj.initialize = function(self, arg, format)
             self.cfg =  datactrl.get_ai_service_cfg(arg, {format = format})
             self.format = format
+            self._agent_mode = nil
+            self._tool_sequence_context = nil
+            self.processed_tool_call_ids = {}
+            self._processed_tool_results = {}
+            self._tool_side_effects_committed = false
+            self._request_tools_enabled = false
+            self._request_tool_names = {}
+            self._reboot_required = false
+        end
+
+        obj.set_tool_sequence_context = function(self, context)
+            if type(context) ~= "table" or context.active ~= true then
+                self._tool_sequence_context = nil
+                return true
+            end
+
+            self._tool_sequence_context = {
+                active = true,
+                allow_followup_tools = context.allow_followup_tools == true,
+                refresh_tool_registry = context.refresh_tool_registry == true,
+                remaining_ai_requests = context.remaining_ai_requests,
+                remaining_tool_rounds = context.remaining_tool_rounds,
+                remaining_tool_calls = context.remaining_tool_calls,
+                authorize_tool_batch = context.authorize_tool_batch,
+            }
+            return true
+        end
+
+        obj.begin_tool_sequence = function(self)
+            self.processed_tool_call_ids = {}
+            self._processed_tool_results = {}
+            self._tool_side_effects_committed = false
+            self._request_tools_enabled = false
+            self._request_tool_names = {}
+            return true
+        end
+
+        obj._tool_sequence_allows_followup = function(self)
+            local context = self._tool_sequence_context
+            if type(context) == "table" and context.active == true then
+                return context.allow_followup_tools == true
+            end
+            return self._agent_mode == true
+        end
+
+        obj._tool_sequence_blocks_current_request = function(self)
+            local context = self._tool_sequence_context
+            return type(context) == "table" and context.active == true
+                and context.allow_followup_tools ~= true
         end
 
         obj._reset_response_accumulator = function(self)
@@ -75,7 +131,13 @@ ollama.new = function()
                 accumulated.thinking = accumulated.thinking .. tostring(message.thinking)
             end
             if type(message.tool_calls) == "table" then
-                for _, tool_call in ipairs(message.tool_calls) do
+                local call_count =
+                    calling_policy.dense_array_length(message.tool_calls)
+                if call_count == nil then
+                    return "Ollama returned a sparse or invalid tool-call batch."
+                end
+                for index = 1, call_count do
+                    local tool_call = message.tool_calls[index]
                     local tool_id = tostring(tool_call.id or "")
                     local should_append = true
 
@@ -214,74 +276,7 @@ ollama.new = function()
 
         -- Execute only the fully accumulated tool-call list after Ollama reports done=true.
         obj._process_tool_calls = function(self, message)
-            local is_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-            if not (is_tool and common.check_function_calling_enabled(self)) then
-                return nil
-            end
-
-            local client = require("oasis.local.tool.client")
-            local function_call = { service = "Ollama", tool_outputs = {} }
-            local first_output_str = ""
-            local speaker = {
-                role = message.role or common.role.assistant,
-                content = tostring(message.content or ""),
-                tool_calls = {}
-            }
-            local reboot = false
-            local shutdown = false
-
-            if message.thinking and #tostring(message.thinking) > 0 then
-                speaker.thinking = tostring(message.thinking)
-            end
-
-            for _, tc in ipairs(message.tool_calls or {}) do
-                local fn = type(tc["function"]) == "table" and tc["function"] or {}
-                local func = tostring(fn.name or "")
-                local args = ous.normalize_arguments(fn.arguments)
-                local tool_id = tc.id
-
-                debug:log("oasis.log", "recv_ai_msg", "ollama func = " .. func)
-                local result = client.exec_server_tool(self:get_format(), func, args)
-                debug:log("oasis.log", "recv_ai_msg", jsonc.stringify(result, true))
-
-                if type(result) == "table" then
-                    if result.reboot == true then
-                        reboot = true
-                    end
-                    if result.shutdown == true then
-                        shutdown = true
-                    end
-                end
-
-                local output = jsonc.stringify(result, false)
-                if type(output) ~= "string" then
-                    output = "null"
-                end
-                table.insert(function_call.tool_outputs, {
-                    tool_call_id = tool_id,
-                    output = output,
-                    name = func
-                })
-
-                table.insert(speaker.tool_calls, {
-                    id = tool_id,
-                    type = tc.type or "function",
-                    ["function"] = {
-                        name = func,
-                        arguments = args
-                    }
-                })
-
-                if first_output_str == "" then
-                    first_output_str = output
-                end
-            end
-
-            function_call.reboot = reboot
-            function_call.shutdown = shutdown
-            local response_ai_json = jsonc.stringify(function_call, false)
-            debug:log("oasis.log", "recv_ai_msg", response_ai_json)
-            return first_output_str, response_ai_json, speaker, true
+            return calling.process(self, message)
         end
 
         -- [ADD] helper: validate message structure
@@ -392,7 +387,7 @@ ollama.new = function()
                 return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
                     phase = "response_parse",
                     kind = "parse_error",
-                    message = "Ollama returned conflicting streamed tool calls.",
+                    message = "Ollama returned invalid streamed tool calls.",
                     detail = accumulation_error,
                 })
             end
@@ -434,7 +429,7 @@ ollama.new = function()
 
             self._tool_calls_finalized = true
             accumulated.content = tostring(self.recv_raw_msg.message or "")
-            local ok, plain, response, speaker, used = pcall(function()
+            local ok, plain, response, speaker, used, process_error = pcall(function()
                 return self:_process_tool_calls(accumulated)
             end)
 
@@ -444,8 +439,12 @@ ollama.new = function()
                     kind = "tool_error",
                     message = "Failed while executing an Ollama tool call.",
                     detail = tostring(plain),
-                    can_continue = false,
+                    can_continue = not self._tool_side_effects_committed,
                 })
+            end
+
+            if process_error then
+                return nil, nil, nil, false, process_error
             end
 
             if plain == nil then
@@ -487,12 +486,18 @@ ollama.new = function()
             return self._reboot_required or false
         end
 
+        obj.get_tool_side_effects_committed = function(self)
+            return self._tool_side_effects_committed == true
+        end
+
         obj.convert_schema = function(self, user_msg)
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
             local format = self:get_format()
             local use_function_calling = is_use_tool
                 and common.check_function_calling_enabled(self)
                 and (format ~= common.ai.format.title)
+            self._request_tools_enabled = false
+            self._request_tool_names = {}
             local encode_user_msg = function()
                 local user_msg_json = jsonc.stringify(user_msg, false)
                 user_msg_json = user_msg_json
@@ -516,7 +521,9 @@ ollama.new = function()
             -- When role:tool is present, it indicates that results are sent to AI
             -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
             local last = user_msg.messages and user_msg.messages[#user_msg.messages]
-            if last and last.role == "tool" and (not self._agent_mode) then
+            if self:_tool_sequence_blocks_current_request()
+                or (last and last.role == "tool"
+                    and not self:_tool_sequence_allows_followup()) then
                 user_msg.tool_choice = nil
                 user_msg.tools = nil
                 return encode_user_msg()
@@ -525,19 +532,24 @@ ollama.new = function()
             -- Inject tools schema for function calling (Ollama)
             if use_function_calling then
                 local client = require("oasis.local.tool.client")
-                local schema = client.get_function_call_schema()
+                local schema = client.get_function_call_schema() or {}
 
                 user_msg["tools"] = {}
 
                 for _, tool_def in ipairs(schema) do
+                    local name = tostring(tool_def.name or "")
                     table.insert(user_msg["tools"], {
                         type = "function",
                         ["function"] = {
-                            name = tool_def.name,
+                            name = name,
                             description = tool_def.description or "",
                             parameters = tool_def.parameters
                         }
                     })
+                    self._request_tool_names[name] = true
+                end
+                if #user_msg["tools"] > 0 then
+                    self._request_tools_enabled = true
                 end
             end
 
@@ -571,11 +583,10 @@ ollama.new = function()
             self._response_record_count = 0
             self:_reset_response_accumulator()
             self._completed_tool_message = nil
-            self._collect_tool_stream = self:get_format() ~= common.ai.format.title
-                and uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
-                and common.check_function_calling_enabled(self)
-                and type(request.tools) == "table"
-                and #request.tools > 0
+            -- Capture unsolicited tool calls as well. The calling adapter
+            -- rejects them when this request intentionally omitted tools,
+            -- instead of letting them disappear into a text-only response.
+            self._collect_tool_stream = true
 
             easy:setopt_url(self.cfg.endpoint)
             easy:setopt_writefunction(callback)

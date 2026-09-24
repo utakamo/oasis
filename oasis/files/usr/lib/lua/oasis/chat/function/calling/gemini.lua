@@ -6,6 +6,7 @@ local uci        = require("luci.model.uci").cursor()
 local debug      = require("oasis.chat.debug")
 local ous        = require("oasis.unified.chat.schema")
 local chat_error = require("oasis.chat.error")
+local policy     = require("oasis.chat.function.calling.policy")
 
 local M = {}
 
@@ -261,10 +262,7 @@ local function canonical_json(value, stack)
 end
 
 local function stringify_object(value)
-    if not is_json_object(value) then
-        return nil
-    end
-    return canonical_json(value)
+    return policy.stringify_object(value)
 end
 
 local function tools_enabled(self)
@@ -279,7 +277,8 @@ local function build_error(self, kind, message, detail)
         kind = kind,
         message = message,
         detail = detail,
-        can_continue = false,
+        can_continue = not (type(self) == "table"
+            and self._tool_side_effects_committed == true),
     })
 end
 
@@ -376,8 +375,9 @@ local function validate_parameters(parameters)
     return copied
 end
 
--- Add user-defined tools to a native Gemini GenerateContent request. Tool
--- result continuations reuse the exact declaration snapshot from request one.
+-- Add user-defined tools to a native Gemini GenerateContent request. Ordinary
+-- tool-result continuations reuse the exact declaration snapshot from request
+-- one. A Tool Search management round explicitly refreshes the registry.
 function M.inject_schema(self, body, opts)
     if type(self) ~= "table" then
         error("Gemini Function Calling requires a service instance.")
@@ -395,6 +395,13 @@ function M.inject_schema(self, body, opts)
     self._request_tool_choice = nil
 
     local followup = opts.followup == true
+    local refresh_registry = followup and opts.refresh_tool_registry == true
+    if opts.disable_tools == true then
+        if not followup then
+            self._active_tool_definitions = nil
+        end
+        return body
+    end
     if self.get_format and self:get_format() == common.ai.format.title then
         if not followup then
             self._active_tool_definitions = nil
@@ -403,10 +410,11 @@ function M.inject_schema(self, body, opts)
     end
 
     local definitions
-    if followup and type(self._active_tool_definitions) == "table"
+    if followup and not refresh_registry
+        and type(self._active_tool_definitions) == "table"
         and #self._active_tool_definitions > 0 then
         definitions = copy_value(self._active_tool_definitions)
-    elseif not followup and tools_enabled(self) then
+    elseif (not followup or refresh_registry) and tools_enabled(self) then
         local client = require("oasis.local.tool.client")
         local schema = client.get_function_call_schema() or {}
         local schema_count = dense_array_length(schema)
@@ -449,13 +457,18 @@ function M.inject_schema(self, body, opts)
             }
         end
         self._active_tool_definitions = copy_value(definitions)
+    elseif refresh_registry then
+        -- A management operation can intentionally leave no enabled tools.
+        -- Do not leak the previous declaration snapshot into this request.
+        self._active_tool_definitions = nil
     end
 
-    if followup and (type(definitions) ~= "table" or #definitions == 0) then
+    if followup and not refresh_registry
+        and (type(definitions) ~= "table" or #definitions == 0) then
         error("Gemini Tool continuation lost its active tool definitions.")
     end
     if type(definitions) ~= "table" or #definitions == 0 then
-        if not followup then
+        if not followup or refresh_registry then
             self._active_tool_definitions = nil
         end
         return body
@@ -588,7 +601,7 @@ function M.process(self, calls)
         local signature_source = {
             provider_id = provider_id or "",
             name = name,
-            args = args,
+            arguments_json = policy.canonical_object(args),
         }
         if provider_part_json ~= nil then
             signature_source.provider_part_json = provider_part_json
@@ -624,6 +637,12 @@ function M.process(self, calls)
         }
     end
 
+    local authorized, authorization_error =
+        policy.authorize_tool_batch(self, prepared)
+    if not authorized then
+        return nil, nil, nil, false, authorization_error
+    end
+
     local client = require("oasis.local.tool.client")
     local function_call = { service = "Gemini", tool_outputs = {} }
     local speaker = {
@@ -649,7 +668,7 @@ function M.process(self, calls)
             -- or raising, so retries become unsafe immediately before exec.
             self._tool_side_effects_committed = true
             local result = client.exec_server_tool(
-                self:get_format(), call.name, call.args)
+                self:get_format(), call.name, call.args, self._tool_mode_token)
             local ok, encoded = pcall(jsonc.stringify, result, false)
             output = (ok and type(encoded) == "string") and encoded or "null"
 
@@ -684,6 +703,7 @@ function M.process(self, calls)
             tool_call_id = call.id,
             output = output,
             name = call.name,
+            arguments = call.normalized_args,
         }
         speaker.tool_calls[#speaker.tool_calls + 1] = {
             id = call.id,

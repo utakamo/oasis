@@ -21,13 +21,74 @@ openai.new = function()
         obj.recv_raw_msg.role = common.role.unknown
         obj.recv_raw_msg.message = ""
         obj.processed_tool_call_ids = {}
+        obj._processed_tool_results = {}
         obj.cfg = nil
         obj.format = nil
         obj._reboot_required = false
+        obj._tool_side_effects_committed = false
+        obj._tool_sequence_context = nil
+        obj._request_tools_enabled = false
+        obj._request_tool_names = {}
 
         obj.initialize = function(self, arg, format)
             self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
             self.format = format
+            -- Service objects are singletons. Never let sequence-local policy
+            -- or tool-call caches leak into the next top-level request.
+            self._agent_mode = nil
+            self._tool_sequence_context = nil
+            self.processed_tool_call_ids = {}
+            self._processed_tool_results = {}
+            self._tool_side_effects_committed = false
+            self._reboot_required = false
+            self._request_tools_enabled = false
+            self._request_tool_names = {}
+        end
+
+        obj.set_tool_sequence_context = function(self, context)
+            if type(context) ~= "table" or context.active ~= true then
+                self._tool_sequence_context = nil
+                return true
+            end
+
+            self._tool_sequence_context = {
+                active = true,
+                allow_followup_tools = context.allow_followup_tools == true,
+                refresh_tool_registry = context.refresh_tool_registry == true,
+                remaining_ai_requests = context.remaining_ai_requests,
+                remaining_tool_rounds = context.remaining_tool_rounds,
+                remaining_tool_calls = context.remaining_tool_calls,
+                authorize_tool_batch = context.authorize_tool_batch,
+            }
+            return true
+        end
+
+        obj.begin_tool_sequence = function(self)
+            -- initialize() runs once for an interactive chat, not once per
+            -- user turn. Reset only turn-local execution state here; reboot
+            -- status remains available to the caller after the prior turn.
+            self.chunk_all = ""
+            self.mark = {}
+            self.processed_tool_call_ids = {}
+            self._processed_tool_results = {}
+            self._tool_side_effects_committed = false
+            self._request_tools_enabled = false
+            self._request_tool_names = {}
+            return true
+        end
+
+        obj._tool_sequence_allows_followup = function(self)
+            local context = self._tool_sequence_context
+            if type(context) == "table" and context.active == true then
+                return context.allow_followup_tools == true
+            end
+            return self._agent_mode == true
+        end
+
+        obj._tool_sequence_blocks_current_request = function(self)
+            local context = self._tool_sequence_context
+            return type(context) == "table" and context.active == true
+                and context.allow_followup_tools ~= true
         end
 
         obj.init_msg_buffer = function(self)
@@ -108,8 +169,10 @@ openai.new = function()
                 return "", "", self.recv_raw_msg, false
             end
 
-            -- 2) Reset duplicate tool_call guard per message
-            self.processed_tool_call_ids = {}
+            -- 2) Keep the duplicate-call guard for the complete top-level
+            -- request. initialize() resets it before the next request.
+            self.processed_tool_call_ids = self.processed_tool_call_ids or {}
+            self._processed_tool_results = self._processed_tool_results or {}
 
             debug:log("oasis.log", "recv_ai_msg", self.chunk_all)
 
@@ -134,7 +197,12 @@ openai.new = function()
 
             -- 6) Process tool calls (if any, return immediately; buffer cleared internally)
             do
-                local t_plain, t_json, t_speaker, t_used = self:_process_tool_calls(message)
+                local t_plain, t_json, t_speaker, t_used, t_error =
+                    self:_process_tool_calls(message)
+                if t_error then
+                    self.chunk_all = ""
+                    return nil, nil, self.recv_raw_msg, false, t_error
+                end
                 if t_plain ~= nil then
                     return t_plain, t_json, t_speaker, t_used
                 end
@@ -170,14 +238,22 @@ openai.new = function()
             return self._reboot_required or false
         end
 
+        obj.get_tool_side_effects_committed = function(self)
+            return self._tool_side_effects_committed == true
+        end
+
         obj.convert_schema = function(self, user_msg)
 
             -- When role:tool is present, it indicates that results are sent to AI
             -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)
             local last = user_msg.messages and user_msg.messages[#user_msg.messages]
-            if last and last.role == "tool" and (not self._agent_mode) then
+            if self:_tool_sequence_blocks_current_request()
+                or (last and last.role == "tool"
+                    and not self:_tool_sequence_allows_followup()) then
                 user_msg.tool_choice = nil
                 user_msg.tools = nil
+                self._request_tools_enabled = false
+                self._request_tool_names = {}
                 local user_msg_json = jsonc.stringify(user_msg, false)
                 return user_msg_json
             end

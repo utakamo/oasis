@@ -202,10 +202,38 @@ lmstudio.new = function()
         obj._message_delta_buffer = ""
         obj._embedded_thinking_state = new_embedded_thinking_state()
         obj._thinking_source = nil
+        obj._tool_sequence_context = nil
 
         obj.initialize = function(self, arg, format)
             self.cfg = datactrl.get_ai_service_cfg(arg, {format = format})
             self.format = format
+            self._agent_mode = nil
+            self._tool_sequence_context = nil
+        end
+
+        -- Native LM Studio mode has no Function Calling path, but expose the
+        -- same lifecycle API as the tool-capable services so a sequence cannot
+        -- leave transient context on this singleton if service selection
+        -- changes between formats.
+        obj.set_tool_sequence_context = function(self, context)
+            if type(context) ~= "table" or context.active ~= true then
+                self._tool_sequence_context = nil
+                return true
+            end
+            self._tool_sequence_context = {
+                active = true,
+                allow_followup_tools = context.allow_followup_tools == true,
+                refresh_tool_registry = context.refresh_tool_registry == true,
+                remaining_ai_requests = context.remaining_ai_requests,
+                remaining_tool_rounds = context.remaining_tool_rounds,
+                remaining_tool_calls = context.remaining_tool_calls,
+                authorize_tool_batch = context.authorize_tool_batch,
+            }
+            return true
+        end
+
+        obj.begin_tool_sequence = function()
+            return true
         end
 
         obj.init_msg_buffer = function(self)

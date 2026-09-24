@@ -5,13 +5,13 @@ local util              = require("luci.util")
 local uci               = require("luci.model.uci").cursor()
 local jsonc             = require("luci.jsonc")
 local misc              = require("oasis.chat.misc")
-local transfer          = require("oasis.chat.transfer")
 local datactrl          = require("oasis.chat.datactrl")
 local common            = require("oasis.common")
 local console           = require("oasis.console")
 local ous               = require("oasis.unified.chat.schema")
 local debug             = require("oasis.chat.debug")
 local chat_error        = require("oasis.chat.error")
+local tool_sequence     = require("oasis.chat.tool_sequence")
 
 local M = {}
 
@@ -1376,9 +1376,15 @@ local function process_message(service, chat, message)
 
     datactrl.record_chat_data(service, chat)
 
-    local tool_info, _, tool_used, err = transfer.chat_with_ai(service, chat)
+    local result = tool_sequence.run(service, chat)
 
-    if err then
+    if not result.ok then
+        local err = result.error or chat_error.build(service, {
+            phase = "tool_execution",
+            kind = "tool_error",
+            message = result.message or "Tool sequence failed.",
+            can_continue = false,
+        })
         local can_continue = type(err) ~= "table" or err.can_continue ~= false
         -- A non-continuable error may follow an external tool side effect.
         -- Rolling back only the chat history would make a retry look safe when it is not.
@@ -1388,32 +1394,9 @@ local function process_message(service, chat, message)
         return false, chat_error.format(err), can_continue
     end
 
-    debug:log("oasis.log", "process_message", "tool_used = " .. tostring(tool_used))
-    debug:log("oasis.log", "process_message", "tool_info = " .. tostring(tool_info))
-    if tool_info then
-        debug:log("oasis.log", "process_message", "tool_info length = " .. tostring(#tool_info))
-    end
-
-    if tool_used then
-        if service:handle_tool_output(tool_info, chat) then
-            local _, _, _, post_err = transfer.chat_with_ai(service, chat)
-            if post_err then
-                if type(post_err) == "table" then
-                    post_err.can_continue = false
-                    post_err.display = chat_error.format(post_err)
-                end
-                return false, chat_error.format(post_err), false
-            end
-        else
-            local tool_err = chat_error.build(service, {
-                phase = "tool_execution",
-                kind = "tool_error",
-                message = "Failed to handle tool output.",
-                can_continue = false,
-            })
-            return false, chat_error.format(tool_err), false
-        end
-    end
+    debug:log("oasis.log", "process_message",
+        string.format("tool sequence: requests=%d rounds=%d calls=%d",
+            result.turns or 0, result.tool_rounds or 0, result.tool_calls or 0))
 
     return true
 end
@@ -1554,40 +1537,25 @@ function M.prompt(arg)
         return false
     end
 
-    local tool_info, _, tool_used, err = transfer.chat_with_ai(service, prompt)
+    local result = tool_sequence.run(service, prompt)
     console.print()
 
-    if err then
-        console.print("\27[31m" .. chat_error.format(err) .. "\27[0m")
-        return
-    end
-
-    debug:log("oasis.log", "prompt", "tool_used = " .. tostring(tool_used))
-    debug:log("oasis.log", "prompt", "tool_info = " .. tostring(tool_info))
-    if tool_info then
-        debug:log("oasis.log", "prompt", "tool_info length = " .. tostring(#tool_info))
-    end
-
-    if tool_used then
-        if service:handle_tool_output(tool_info, prompt) then
-            local _, _, _, post_err = transfer.chat_with_ai(service, prompt)
-            if post_err then
-                console.print("\27[31m" .. chat_error.format(post_err) .. "\27[0m")
-            end
-            print()
-        else
-            console.print("\27[31m" .. chat_error.format(chat_error.build(service, {
-                phase = "tool_execution",
-                kind = "tool_error",
-                message = "Failed to handle tool output.",
-                can_continue = false,
-            })) .. "\27[0m")
-        end
-    end
-
+    -- A tool may have created a confirmation flag before a later AI
+    -- continuation failed. Preserve the prompt command's historical behavior
+    -- and surface those confirmations even on the error path.
     judge_system_shutdown()
     judge_system_reboot()
     judge_service_restart()
+
+    if not result.ok then
+        console.print("\27[31m" .. chat_error.format(result.error) .. "\27[0m")
+        return
+    end
+
+    debug:log("oasis.log", "prompt",
+        string.format("tool sequence: requests=%d rounds=%d calls=%d",
+            result.turns or 0, result.tool_rounds or 0, result.tool_calls or 0))
+
 end
 
 -- Manage system messages: list/select/create.
@@ -1723,29 +1691,12 @@ local function process_output_message(service, chat_ctx, message)
         })
     end
 
-    -- chat_with_ai returns: new_chat_info (or tool JSON when tool_used), plain_text_message, tool_used
-    local new_chat_info, plain_text_message, tool_used, err = transfer.chat_with_ai(service, chat_ctx)
-    if err then
-        return nil, nil, err
+    local result = tool_sequence.run(service, chat_ctx)
+    if not result.ok then
+        return nil, nil, result.error
     end
 
-    if tool_used then
-        -- Provide tool outputs back to the model, then get assistant's text reply
-        if service:handle_tool_output(new_chat_info, chat_ctx) then
-            local post_new_chat_info, post_message, _, post_err = transfer.chat_with_ai(service, chat_ctx)
-            return post_new_chat_info, post_message, post_err
-        else
-            return nil, nil, chat_error.build(service, {
-                phase = "tool_execution",
-                kind = "tool_error",
-                message = "Failed to handle tool output.",
-                can_continue = false,
-            })
-        end
-    end
-
-    -- No tools used: return values as-is
-    return new_chat_info, plain_text_message, nil
+    return result.new_chat_info, result.message, nil
 end
 
 -- Main output function
@@ -1842,35 +1793,12 @@ function M.rpc_output(arg)
         datactrl.record_chat_data(service, chat_ctx)
         debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] record_chat_data done ...")
 
-        -- First call
-        local first, plain_text, tool_used, err = transfer.chat_with_ai(service, chat_ctx)
-        if err then
-            return chat_error.to_status(err), nil, nil
+        local result = tool_sequence.run(service, chat_ctx)
+        if not result.ok then
+            return chat_error.to_status(result.error), nil, nil
         end
-
-        if tool_used then
-            -- Keep tool JSON for external device
-            tool_info = first
-            -- Provide tool outputs back to model
-            if service:handle_tool_output(tool_info, chat_ctx) then
-                -- Second call to get assistant text (and possibly new chat info)
-                local post_new_chat_info, post_message, _, post_err = transfer.chat_with_ai(service, chat_ctx)
-                if post_err then
-                    return chat_error.to_status(post_err), nil, nil
-                end
-                new_chat_info, message = post_new_chat_info, post_message
-            else
-                return chat_error.to_status(chat_error.build(service, {
-                    phase = "tool_execution",
-                    kind = "tool_error",
-                    message = "Failed to handle tool output.",
-                    can_continue = false,
-                })), nil, nil
-            end
-        else
-            -- No tools used
-            new_chat_info, message = first, plain_text
-        end
+        tool_info = result.tool_info
+        new_chat_info, message = result.new_chat_info, result.message
 
         debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] chat_with_ai done ...")
     else
@@ -1942,27 +1870,72 @@ function M.list()
     end
 end
 
--- Manage local tools (enable/disable) when oasis-mod-tool is available.
-function M.tools()
+local function print_tool_auto_mode(auto_mode)
+    local status = auto_mode and "ON" or "OFF"
+    local color = auto_mode and "\27[32m" or "\27[33m"
+    local description = auto_mode and "managed by AI" or "manual settings"
+    print(string.format("Auto mode: %s%s\27[0m (%s)", color, status, description))
+    print()
+end
+
+-- Manage local tools or the shared Auto mode when oasis-mod-tool is available.
+-- Return an exit code to the CLI; never exit the caller's Lua process here.
+function M.tools(command)
+
+    if command ~= nil and command ~= "on" and command ~= "off" and command ~= "status" then
+        io.stderr:write("Usage: oasis tools [on|off|status]\n")
+        return 2
+    end
 
 	local is_local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
 	if not is_local_tool then
-		print("This command is exclusive to oasis-mod-tool.")
-        print("Please install oasis-mod-tool to use it.")
-		return
+        io.stderr:write("This command requires oasis-mod-tool and enabled local-tool support.\n")
+        return 1
 	end
 
+    local loaded, tool_state = pcall(require, "oasis.local.tool.state")
+    if not loaded or type(tool_state) ~= "table"
+        or type(tool_state.get_mode) ~= "function"
+        or type(tool_state.set_auto_mode) ~= "function" then
+        io.stderr:write("Auto mode support is unavailable. Install or update oasis-mod-tool.\n")
+        return 1
+    end
+    if command ~= nil then
+        local result, err
+        if command == "status" then
+            -- Status is a read-only mode query, not a volatile tool-state read.
+            result, err = tool_state.get_mode(uci)
+        else
+            result = tool_state.set_auto_mode(uci, command == "on" and "1" or "0")
+            if result.status ~= "OK" then err, result = result, nil end
+        end
+        if not result then
+            io.stderr:write((err and err.error or "Failed to read or update Auto mode.") .. "\n")
+            return 1
+        end
+        print_tool_auto_mode(result.auto_mode)
+        return 0
+    end
+
+	local snapshot, state_err = tool_state.snapshot(uci)
+	if not snapshot then
+		print(state_err.error or "Failed to read tool state.")
+		return
+	end
+	print_tool_auto_mode(snapshot.auto_mode)
 	local by_server = {}
-	uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-		local server = s.server or "-"
-		if not by_server[server] then by_server[server] = {} end
-		table.insert(by_server[server], {
-			name   = s.name or "-",
-			enable = s.enable or "0",
-			conflict = s.conflict or "0",
-			sect   = s[".name"]
-		})
-	end)
+	for _, s in ipairs(snapshot.tools) do
+		if not tool_state.is_control_tool(s.server, s.name) then
+			local server = s.server or "-"
+			if not by_server[server] then by_server[server] = {} end
+			table.insert(by_server[server], {
+				name   = s.name or "-",
+				enable = s.enable or "0",
+				conflict = s.conflict or "0",
+				server = s.server
+			})
+		end
+	end
 
 	local servers = {}
 	for srv, _ in pairs(by_server) do table.insert(servers, srv) end
@@ -1983,13 +1956,17 @@ function M.tools()
             end
 			local conflict_suffix = (t.conflict == "1") and " [conflict]" or ""
 			print(string.format(" %3d: %-30s - %s%s\27[0m\27[31m%s\27[0m", idx, t.name, status_text_color, status, conflict_suffix))
-			index_map[idx] = { sect = t.sect, name = t.name }
+			index_map[idx] = { server = t.server, name = t.name }
 		end
 		print()
 	end
 
 	if idx == 0 then
 		print("No tools found.")
+		return
+	end
+	if snapshot.auto_mode then
+		print("Run 'oasis tools off' or turn Auto mode OFF on the Tools page to edit manual tool settings.")
 		return
 	end
 
@@ -2017,21 +1994,14 @@ function M.tools()
 		return
 	end
 
-	local sect = index_map[num].sect
-	if action == "enable" then
-		local conflict = uci:get(common.db.uci.cfg, sect, "conflict")
-		if conflict == "1" then
-			print("Cannot enable this tool due to conflict.")
-			return
-		end
-		uci:set(common.db.uci.cfg, sect, "enable", "1")
-		uci:commit(common.db.uci.cfg)
-		print("\n Enabled tool: " .. index_map[num].name)
-	else
-		uci:set(common.db.uci.cfg, sect, "enable", "0")
-		uci:commit(common.db.uci.cfg)
-		print("\n Disabled tool: " .. index_map[num].name)
+	local target = index_map[num]
+	local result = tool_state.set_enabled_persistent(uci, target.server,
+		target.name, action == "enable", { manual_only = true })
+	if result.status ~= "OK" then
+		print(result.error or "Failed to update tool state.")
+		return
 	end
+	print("\n " .. (action == "enable" and "Enabled" or "Disabled") .. " tool: " .. target.name)
 end
 
 return M

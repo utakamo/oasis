@@ -351,7 +351,8 @@ function M.send_user_msg(service, chat)
     local tool_used = false
 
     local convert_ok, usr_msg_json = pcall(function()
-        return service:convert_schema(chat)
+        local request_chat = ous.with_auto_tool_search_prompt(service, chat)
+        return service:convert_schema(request_chat)
     end)
 
     if (not convert_ok) or (not usr_msg_json) or (#tostring(usr_msg_json) == 0) then
@@ -565,7 +566,7 @@ function M.send_user_msg(service, chat)
                 kind = "tool_error",
                 message = "Failed to finalize the AI service response.",
                 detail = tostring(text),
-                can_continue = false,
+                can_continue = not has_committed_tool_side_effects(service),
             })
         elseif text ~= nil or response ~= nil or raw ~= nil or used or finalize_err then
             process_decoded_response(text, response, raw, used, finalize_err)

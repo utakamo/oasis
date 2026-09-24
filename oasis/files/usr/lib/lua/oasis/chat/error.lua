@@ -27,6 +27,7 @@ local kind_label = {
     title_error = "title generation error",
     internal_error = "internal error",
     empty_response = "empty response",
+    limit_reached = "tool sequence limit",
 }
 
 local function non_empty(value)
