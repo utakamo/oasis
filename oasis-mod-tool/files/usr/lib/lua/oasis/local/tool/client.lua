@@ -6,12 +6,15 @@ local debug     = require("oasis.chat.debug")
 local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
+local tool_state = require("oasis.local.tool.state")
+local uci_transaction = require("oasis.local.tool.uci_transaction")
 
 local M = {}
 
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
 local manifest_dir = "/etc/oasis/tool-manifest.d/"
+local control_tool_server = "oasis.tool.manager"
 local listup_server_candidate
 local check_tool_name_conflict
 local sort_tool_defs
@@ -599,7 +602,8 @@ end
 
 local function load_current_tool_map(uci)
     local old_map = {}
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+    local foreach_ok, foreach_err = uci:foreach(
+        common.db.uci.cfg, common.db.uci.sect.tool, function(s)
         if s.name and s.server and s.script then
             local def = normalize_tool_def(s)
             local key = make_tool_key(def)
@@ -611,7 +615,10 @@ local function load_current_tool_map(uci)
             }
         end
     end)
-    return old_map
+    if foreach_ok == false and foreach_err then
+        return nil, "failed to read tool registry: " .. tostring(foreach_err)
+    end
+    return old_map, nil
 end
 
 sort_tool_defs = function(defs)
@@ -660,57 +667,126 @@ end
 
 local function add_tool_section(uci, def, enable)
     local s = uci:section(common.db.uci.cfg, common.db.uci.sect.tool)
-    uci:set(common.db.uci.cfg, s, "name", def.name)
-    uci:set(common.db.uci.cfg, s, "script", def.script)
-    uci:set(common.db.uci.cfg, s, "server", def.server)
-    uci:set(common.db.uci.cfg, s, "enable", enable or "0")
-    uci:set(common.db.uci.cfg, s, "type", def.type or "function")
-    uci:set(common.db.uci.cfg, s, "description", def.description or "")
-    uci:set(common.db.uci.cfg, s, "execution_message", def.execution_message or "")
-    uci:set(common.db.uci.cfg, s, "download_message", def.download_message or "")
-    uci:set(common.db.uci.cfg, s, "timeout", def.timeout or "")
-    uci:set(common.db.uci.cfg, s, "conflict", def.conflict or "0")
+    if type(s) ~= "string" or s == "" then
+        return false, "failed to create tool section"
+    end
+
+    local function set_option(option, value)
+        local ok, err = uci:set(common.db.uci.cfg, s, option, value)
+        if ok ~= true then
+            return false, string.format(
+                "failed to set tool section %s.%s: %s",
+                s, option, tostring(err or "unknown UCI error"))
+        end
+        return true, nil
+    end
+
+    local scalar_options = {
+        { "name", def.name },
+        { "script", def.script },
+        { "server", def.server },
+        { "enable", enable or "0" },
+        { "type", def.type or "function" },
+        { "description", def.description or "" },
+        { "execution_message", def.execution_message or "" },
+        { "download_message", def.download_message or "" },
+        { "timeout", def.timeout or "" },
+        { "conflict", def.conflict or "0" },
+    }
+    for _, option in ipairs(scalar_options) do
+        local ok, err = set_option(option[1], option[2])
+        if not ok then
+            return false, err
+        end
+    end
+
     if def.required and #def.required > 0 then
-        uci:set_list(common.db.uci.cfg, s, "required", def.required)
+        local ok, err = uci:set_list(
+            common.db.uci.cfg, s, "required", def.required)
+        if ok ~= true then
+            return false, string.format(
+                "failed to set tool section %s.required: %s",
+                s, tostring(err or "unknown UCI error"))
+        end
     end
     if def.property and #def.property > 0 then
-        uci:set_list(common.db.uci.cfg, s, "property", def.property)
+        local ok, err = uci:set_list(
+            common.db.uci.cfg, s, "property", def.property)
+        if ok ~= true then
+            return false, string.format(
+                "failed to set tool section %s.property: %s",
+                s, tostring(err or "unknown UCI error"))
+        end
     end
-    uci:set(common.db.uci.cfg, s, "additionalProperties", def.additionalProperties or "0")
+
+    local ok, err = set_option(
+        "additionalProperties", def.additionalProperties or "0")
+    if not ok then
+        return false, err
+    end
     if def.source_type and #tostring(def.source_type) > 0 then
-        uci:set(common.db.uci.cfg, s, "source_type", def.source_type)
+        ok, err = set_option("source_type", def.source_type)
+        if not ok then
+            return false, err
+        end
     end
     if def.source_path and #tostring(def.source_path) > 0 then
-        uci:set(common.db.uci.cfg, s, "source_path", def.source_path)
+        ok, err = set_option("source_path", def.source_path)
+        if not ok then
+            return false, err
+        end
     end
     if def.manifest_path and #tostring(def.manifest_path) > 0 then
-        uci:set(common.db.uci.cfg, s, "manifest_path", def.manifest_path)
+        ok, err = set_option("manifest_path", def.manifest_path)
+        if not ok then
+            return false, err
+        end
     end
+
+    return true, s
 end
 
 local function count_tool_sections(uci)
     local count = 0
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function()
+    local foreach_ok, foreach_err = uci:foreach(
+        common.db.uci.cfg, common.db.uci.sect.tool, function()
         count = count + 1
     end)
-    return count
+    if foreach_ok == false and foreach_err then
+        return nil, "failed to count tool registry: " .. tostring(foreach_err)
+    end
+    return count, nil
 end
 
-local function list_manifest_tool_sections(uci, manifest_path)
+local function make_server_tool_key(server_name, tool_name)
+    return tostring(server_name or "") .. "\0" .. tostring(tool_name or "")
+end
+
+local function list_manifest_tool_sections(uci, manifest_path, legacy_targets)
     local sections = {}
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if (s.manifest_path or "") == manifest_path then
+    local foreach_ok, foreach_err = uci:foreach(
+        common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        local current_manifest_path = s.manifest_path or ""
+        local replaces_legacy = current_manifest_path == ""
+            and legacy_targets
+            and legacy_targets[make_server_tool_key(s.server, s.name)] == true
+        if current_manifest_path == manifest_path or replaces_legacy then
             sections[#sections + 1] = {
                 section = s[".name"],
                 name = s.name or "",
                 server = s.server or "",
+                legacy = replaces_legacy == true,
             }
         end
     end)
+    if foreach_ok == false and foreach_err then
+        return nil, "failed to read manifest-owned tools: "
+            .. tostring(foreach_err)
+    end
     table.sort(sections, function(a, b)
         return (a.section or "") < (b.section or "")
     end)
-    return sections
+    return sections, nil
 end
 
 local function render_manifest_apply_commands(plan)
@@ -765,7 +841,8 @@ local function render_manifest_apply_commands(plan)
     return commands
 end
 
-function M.build_manifest_apply_plan(manifest_path)
+function M.build_manifest_apply_plan(manifest_path, options)
+    options = options or {}
     if type(manifest_path) ~= "string" or manifest_path == "" then
         return false, "missing manifest path"
     end
@@ -782,11 +859,36 @@ function M.build_manifest_apply_plan(manifest_path)
         return false, "manifest contains no tools: " .. manifest_path
     end
 
-    local plan_uci = require("luci.model.uci").cursor()
-    local old_map = load_current_tool_map(plan_uci)
-    local delete_sections = list_manifest_tool_sections(plan_uci, manifest_path)
-    local current_tool_count = count_tool_sections(plan_uci)
-    local current_support_value = plan_uci:get(common.db.uci.cfg, common.db.uci.sect.support, "local_tool") or "0"
+    local plan_uci = uci
+    local old_map, old_map_err = load_current_tool_map(plan_uci)
+    if not old_map then
+        return false, old_map_err or "failed to read current tool registry"
+    end
+    local legacy_targets = {}
+    for _, def in ipairs(defs) do
+        legacy_targets[make_server_tool_key(def.server, def.name)] = true
+    end
+    -- In releases before Manifest ownership was recorded, the same tool may
+    -- already exist without manifest_path. Replace only an unowned legacy
+    -- section with the exact server+name from this Manifest; sections owned by
+    -- another Manifest and unrelated custom tools remain untouched.
+    local delete_sections, delete_sections_err = list_manifest_tool_sections(
+        plan_uci, manifest_path, legacy_targets)
+    if not delete_sections then
+        return false, delete_sections_err
+            or "failed to read manifest-owned tool registry"
+    end
+    local current_tool_count, count_err = count_tool_sections(plan_uci)
+    if current_tool_count == nil then
+        return false, count_err or "failed to count current tool registry"
+    end
+    local current_support_value, support_err = plan_uci:get(
+        common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
+    if current_support_value == false then
+        return false, "failed to read local tool support: "
+            .. tostring(support_err or "unknown UCI error")
+    end
+    current_support_value = current_support_value or "0"
     local add_entries = {}
 
     for _, def in ipairs(defs) do
@@ -808,6 +910,9 @@ function M.build_manifest_apply_plan(manifest_path)
 
     local final_tool_count = current_tool_count - #delete_sections + #add_entries
     local support_value = (final_tool_count > 0) and "1" or "0"
+    if options.preserve_local_tool_support == true then
+        support_value = current_support_value
+    end
     local plan = {
         manifest_path = manifest_path,
         delete_sections = delete_sections,
@@ -816,44 +921,129 @@ function M.build_manifest_apply_plan(manifest_path)
         final_tool_count = final_tool_count,
         current_support_value = current_support_value,
         support_value = support_value,
+        preserve_local_tool_support = options.preserve_local_tool_support == true,
     }
     plan.commands = render_manifest_apply_commands(plan)
 
     return true, plan
 end
 
-function M.apply_manifest_plan(plan)
-    if type(plan) ~= "table" then
-        return false, "invalid manifest apply plan"
+local function command_lists_equal(left, right)
+    if type(left) ~= "table" or type(right) ~= "table"
+        or #left ~= #right then
+        return false
     end
+    for i = 1, #left do
+        if left[i] ~= right[i] then
+            return false
+        end
+    end
+    return true
+end
 
-    local apply_uci = require("luci.model.uci").cursor()
-
+local function stage_manifest_plan(apply_uci, plan)
     for _, item in ipairs(plan.delete_sections or {}) do
-        apply_uci:delete(common.db.uci.cfg, item.section)
+        if type(item) ~= "table" or type(item.section) ~= "string"
+            or item.section == "" then
+            return false, "invalid manifest delete section"
+        end
+        local delete_ok, delete_err = apply_uci:delete(
+            common.db.uci.cfg, item.section)
+        if delete_ok ~= true then
+            return false, string.format(
+                "failed to delete tool section %s: %s",
+                item.section,
+                tostring(delete_err or "unknown UCI error"))
+        end
     end
 
     for _, item in ipairs(plan.add_entries or {}) do
-        add_tool_section(apply_uci, item.def, item.enable)
+        if type(item) ~= "table" or type(item.def) ~= "table" then
+            return false, "invalid manifest tool entry"
+        end
+        local add_ok, add_err = add_tool_section(
+            apply_uci, item.def, item.enable)
+        if not add_ok then
+            return false, add_err or "failed to add manifest tool section"
+        end
     end
 
-    apply_uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", plan.support_value)
-    check_tool_name_conflict(apply_uci)
-
-    local commit_ok = apply_uci:commit(common.db.uci.cfg)
-    if commit_ok == false then
-        return false, "failed to commit manifest apply changes"
+    if plan.support_value ~= "0" and plan.support_value ~= "1" then
+        return false, "invalid manifest local tool support value"
+    end
+    local support_ok, support_err = apply_uci:set(
+        common.db.uci.cfg,
+        common.db.uci.sect.support,
+        "local_tool",
+        plan.support_value)
+    if support_ok ~= true then
+        return false, "failed to set local tool support: "
+            .. tostring(support_err or "unknown UCI error")
     end
 
-    return true, {
-        added = #(plan.add_entries or {}),
-        removed = #(plan.delete_sections or {}),
-        manifest_path = plan.manifest_path,
-    }
+    local conflict_ok, conflict_err = check_tool_name_conflict(apply_uci)
+    if not conflict_ok then
+        return false, conflict_err or "failed to update tool conflicts"
+    end
+
+    return true, nil
 end
 
-function M.apply_manifest_file(manifest_path)
-    local ok, plan_or_err = M.build_manifest_apply_plan(manifest_path)
+function M.apply_manifest_plan(plan)
+    if type(plan) ~= "table" or type(plan.manifest_path) ~= "string"
+        or plan.manifest_path == "" or type(plan.commands) ~= "table" then
+        return false, "invalid manifest apply plan"
+    end
+
+    local operation_ok, info_or_err = uci_transaction.run({
+        cursor = uci,
+        config = common.db.uci.cfg,
+        label = "Oasis manifest apply",
+    }, function(apply_uci)
+        -- The preview may have been displayed before confirmation. Rebuild it
+        -- after acquiring the lock and inside the isolated session, then stop
+        -- if any targeted command changed instead of applying a stale plan.
+        local current_ok, current_plan = M.build_manifest_apply_plan(
+            plan.manifest_path, {
+                preserve_local_tool_support = plan.preserve_local_tool_support == true,
+            })
+        if not current_ok then
+            return false, current_plan
+                or "failed to rebuild manifest apply plan"
+        end
+        if not command_lists_equal(plan.commands, current_plan.commands) then
+            return false,
+                "manifest apply plan changed; review and confirm it again"
+        end
+
+        local staged, stage_err = stage_manifest_plan(
+            apply_uci, current_plan)
+        if not staged then
+            return false, stage_err
+        end
+
+        return true, {
+            added = #(current_plan.add_entries or {}),
+            removed = #(current_plan.delete_sections or {}),
+            manifest_path = current_plan.manifest_path,
+        }
+    end)
+
+    if not operation_ok then
+        return false, info_or_err or "manifest apply failed"
+    end
+    if type(info_or_err) == "table" and info_or_err.warning then
+        debug:log(
+            "oasis.log",
+            "apply_manifest_plan",
+            "manifest committed with cleanup warning: "
+                .. tostring(info_or_err.warning))
+    end
+    return true, info_or_err
+end
+
+function M.apply_manifest_file(manifest_path, options)
+    local ok, plan_or_err = M.build_manifest_apply_plan(manifest_path, options)
     if not ok then
         return false, plan_or_err
     end
@@ -861,31 +1051,99 @@ function M.apply_manifest_file(manifest_path)
     return M.apply_manifest_plan(plan_or_err)
 end
 
-local function apply_tool_defs(defs)
-    local apply_uci = require("luci.model.uci").cursor()
-    local old_map = load_current_tool_map(apply_uci)
-
-    apply_uci:delete_all(common.db.uci.cfg, common.db.uci.sect.tool)
-
-    for _, def in ipairs(defs or {}) do
-        local normalized = normalize_tool_def(def)
-        local key = make_tool_key(normalized)
-        local old = old_map[key]
-        local enable = "0"
-        if old and defs_equal(old.def, normalized) then
-            enable = old.enable or "0"
+function M.enable_remote_mcp_support()
+    return uci_transaction.run({
+        cursor = uci,
+        config = common.db.uci.cfg,
+        label = "Oasis remote MCP support",
+    }, function(apply_uci)
+        local current, get_err = apply_uci:get(
+            common.db.uci.cfg,
+            common.db.uci.sect.support,
+            "remote_mcp_server")
+        if current == false then
+            return false, "failed to read remote MCP support: "
+                .. tostring(get_err or "unknown UCI error")
         end
-        add_tool_section(apply_uci, def, enable)
-    end
+        if current == "1" then
+            return true, { changed = false }
+        end
 
-    apply_uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", (#(defs or {}) > 0) and "1" or "0")
-    check_tool_name_conflict(apply_uci)
+        local set_ok, set_err = apply_uci:set(
+            common.db.uci.cfg,
+            common.db.uci.sect.support,
+            "remote_mcp_server",
+            "1")
+        if set_ok ~= true then
+            return false, "failed to enable remote MCP support: "
+                .. tostring(set_err or "unknown UCI error")
+        end
 
-    local ok = apply_uci:commit(common.db.uci.cfg)
-    if ok == false then
-        return false, "failed to commit tool registry"
-    end
-    return true, { count = #(defs or {}) }
+        return true, { changed = true }
+    end)
+end
+
+local function apply_tool_defs(defs)
+    return uci_transaction.run({
+        cursor = uci,
+        config = common.db.uci.cfg,
+        label = "Oasis tool registry refresh",
+    }, function(apply_uci)
+        -- Read the enable snapshot only after the global transaction lock is
+        -- held. This prevents refresh from overwriting a concurrent manager
+        -- or LuCI state change with a stale value.
+        local old_map, old_map_err = load_current_tool_map(apply_uci)
+        if not old_map then
+            return false, old_map_err or "failed to read tool registry"
+        end
+
+        local current_count, count_err = count_tool_sections(apply_uci)
+        if current_count == nil then
+            return false, count_err or "failed to count tool registry"
+        end
+        if current_count > 0 then
+            local delete_ok, delete_err = apply_uci:delete_all(
+                common.db.uci.cfg, common.db.uci.sect.tool)
+            if delete_ok ~= true then
+                return false, "failed to clear tool registry: "
+                    .. tostring(delete_err or "unknown UCI error")
+            end
+        end
+
+        for _, def in ipairs(defs or {}) do
+            local normalized = normalize_tool_def(def)
+            local key = make_tool_key(normalized)
+            local old = old_map[key]
+            local enable = "0"
+            if old and defs_equal(old.def, normalized) then
+                enable = old.enable or "0"
+            end
+            local add_ok, add_err = add_tool_section(
+                apply_uci, def, enable)
+            if not add_ok then
+                return false, add_err
+                    or "failed to add tool registry entry"
+            end
+        end
+
+        local support_ok, support_err = apply_uci:set(
+            common.db.uci.cfg,
+            common.db.uci.sect.support,
+            "local_tool",
+            (#(defs or {}) > 0) and "1" or "0")
+        if support_ok ~= true then
+            return false, "failed to update local tool support: "
+                .. tostring(support_err or "unknown UCI error")
+        end
+        local conflict_ok, conflict_err = check_tool_name_conflict(
+            apply_uci)
+        if not conflict_ok then
+            return false, conflict_err
+                or "failed to update tool conflicts"
+        end
+
+        return true, { count = #(defs or {}) }
+    end)
 end
 
 function M.setup_lua_server_config(server_name)
@@ -895,11 +1153,26 @@ function M.setup_lua_server_config(server_name)
         return false, err
     end
     for _, def in ipairs(defs) do
-        add_tool_section(uci, def, "0")
+        local add_ok, add_err = add_tool_section(uci, def, "0")
+        if not add_ok then
+            return false, add_err or "failed to add lua tool section"
+        end
     end
     if #defs > 0 then
-        uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
-        uci:commit(common.db.uci.cfg)
+        local support_ok, support_err = uci:set(
+            common.db.uci.cfg,
+            common.db.uci.sect.support,
+            "local_tool",
+            "1")
+        if support_ok ~= true then
+            return false, "failed to update local tool support: "
+                .. tostring(support_err or "unknown UCI error")
+        end
+        local commit_ok, commit_err = uci:commit(common.db.uci.cfg)
+        if commit_ok ~= true then
+            return false, "failed to commit lua tool registry: "
+                .. tostring(commit_err or "unknown UCI error")
+        end
     end
     return true, { count = #defs }
 end
@@ -911,11 +1184,26 @@ function M.setup_ucode_server_config(server_name)
         return false, err
     end
     for _, def in ipairs(defs) do
-        add_tool_section(uci, def, "0")
+        local add_ok, add_err = add_tool_section(uci, def, "0")
+        if not add_ok then
+            return false, add_err or "failed to add ucode tool section"
+        end
     end
     if #defs > 0 then
-        uci:set(common.db.uci.cfg, common.db.uci.sect.support, "local_tool", "1")
-        uci:commit(common.db.uci.cfg)
+        local support_ok, support_err = uci:set(
+            common.db.uci.cfg,
+            common.db.uci.sect.support,
+            "local_tool",
+            "1")
+        if support_ok ~= true then
+            return false, "failed to update local tool support: "
+                .. tostring(support_err or "unknown UCI error")
+        end
+        local commit_ok, commit_err = uci:commit(common.db.uci.cfg)
+        if commit_ok ~= true then
+            return false, "failed to commit ucode tool registry: "
+                .. tostring(commit_err or "unknown UCI error")
+        end
     end
     return true, { count = #defs }
 end
@@ -1121,20 +1409,51 @@ check_tool_name_conflict = function(uci)
     -- Check Conflict Tool Name
     -- If the value of the conflict option is set to 1, usage will be prohibited.
     local name_to_sections = {}
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        uci:set(common.db.uci.cfg, s[".name"], "conflict", "0")
+    local mutation_err
+    local foreach_ok, foreach_err = uci:foreach(
+        common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+        local section_name = s[".name"]
+        if type(section_name) ~= "string" or section_name == "" then
+            mutation_err = "tool registry contains an invalid section"
+            return false
+        end
+        local reset_ok, reset_err = uci:set(
+            common.db.uci.cfg, section_name, "conflict", "0")
+        if reset_ok ~= true then
+            mutation_err = string.format(
+                "failed to reset tool conflict for %s: %s",
+                section_name,
+                tostring(reset_err or "unknown UCI error"))
+            return false
+        end
         if s.name then
             name_to_sections[s.name] = name_to_sections[s.name] or {}
-            table.insert(name_to_sections[s.name], s[".name"])
+            table.insert(name_to_sections[s.name], section_name)
         end
     end)
+    if mutation_err then
+        return false, mutation_err
+    end
+    if foreach_ok == false and foreach_err then
+        return false, "failed to read tool conflicts: "
+            .. tostring(foreach_err)
+    end
+
     for _, sections in pairs(name_to_sections) do
         if #sections > 1 then
             for _, sec in ipairs(sections) do
-                uci:set(common.db.uci.cfg, sec, "conflict", "1")
+                local conflict_ok, conflict_err = uci:set(
+                    common.db.uci.cfg, sec, "conflict", "1")
+                if conflict_ok ~= true then
+                    return false, string.format(
+                        "failed to set tool conflict for %s: %s",
+                        sec,
+                        tostring(conflict_err or "unknown UCI error"))
+                end
             end
         end
     end
+    return true, nil
 end
 
 function M.update_server_info()
@@ -1166,9 +1485,29 @@ end
 -- This function is called when sending a message to the LLM.
 function M.get_function_call_schema()
     local tools = {}
+    local name_counts = {}
+    local effective, state_err = tool_state.snapshot(uci)
+    if not effective then error(state_err.error) end
+    local tool_snapshot = effective.tools
+    for _, snapshot in ipairs(tool_snapshot) do
+        if snapshot.name then
+            name_counts[snapshot.name] =
+                (name_counts[snapshot.name] or 0) + 1
+        end
+    end
 
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if s.enable == "1" then
+    for _, s in ipairs(tool_snapshot) do
+        -- A conflicted function name cannot be addressed unambiguously by
+        -- provider Function Calling, which carries the function name but not
+        -- the backing ubus server. Reserved manager names must additionally
+        -- resolve to oasis.tool.manager so another server cannot impersonate
+        -- a persistent management operation.
+        local reserved_control_name =
+            tool_state.is_control_tool(control_tool_server, s.name)
+        local valid_control_binding = not reserved_control_name
+            or tool_state.is_control_tool(s.server, s.name)
+        if s.enable == "1" and s.conflict ~= "1"
+            and name_counts[s.name] == 1 and valid_control_binding then
             local required = s.required or {}
             if type(required) == "string" then
                 required = {required}
@@ -1201,7 +1540,7 @@ function M.get_function_call_schema()
             }
             table.insert(tools, tool)
         end
-    end)
+    end
     return tools
 end
 
@@ -1224,11 +1563,14 @@ local function handle_option_message(msg, msg_type, format)
     end
 end
 
-function M.exec_server_tool(format, tool, data)
+function M.exec_server_tool(format, tool, data, expected_mode_token)
 
     local nixio = require("nixio")
     local found = false
     local result = {}
+    local effective, state_err = tool_state.snapshot(uci, expected_mode_token)
+    if not effective then return state_err end
+    local tool_snapshot = effective.tools
 
     local function is_sensitive_debug_key(key)
         local normalized = tostring(key or ""):lower()
@@ -1274,13 +1616,28 @@ function M.exec_server_tool(format, tool, data)
         return tbl
     end
 
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
+    local matches = {}
+    for _, snapshot in ipairs(tool_snapshot) do
+        debug:log("oasis.log", "exec_server_tool",
+            "config: s.server = " .. tostring(snapshot.server or ""))
+        debug:log("oasis.log", "exec_server_tool",
+            "config: s.name   = " .. tostring(snapshot.name or ""))
+        debug:log("oasis.log", "exec_server_tool",
+            "config: s.enable = " .. tostring(snapshot.enable or ""))
+        if snapshot.name == tool then
+            matches[#matches + 1] = snapshot
+        end
+    end
 
-        debug:log("oasis.log", "exec_server_tool", "config: s.server = " .. s.server)
-        debug:log("oasis.log", "exec_server_tool", "config: s.name   = " .. s.name)
-        debug:log("oasis.log", "exec_server_tool", "config: s.enable = " .. s.enable)
-
-        if s.name == tool and s.enable == "1" then
+    -- Function Calling identifies a tool by name only. Resolve exactly one
+    -- immutable snapshot, then execute at most that one target.
+    local s = (#matches == 1) and matches[1] or nil
+    local reserved_control_name =
+        tool_state.is_control_tool(control_tool_server, tool)
+    local valid_control_binding = not reserved_control_name
+        or (s and tool_state.is_control_tool(s.server, s.name))
+    if s and valid_control_binding
+        and s.enable == "1" and s.conflict ~= "1" then
             handle_option_message(s.execution_message, "execution", format)
             handle_option_message(s.download_message,  "download",  format)
 
@@ -1377,7 +1734,6 @@ function M.exec_server_tool(format, tool, data)
                 misc.write_file(common.file.service.restart_required, svc)
             end
         end
-    end)
 
     if not found then
         -- Handles cases where the AI requests a non-existent tool.

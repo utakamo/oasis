@@ -10,7 +10,7 @@
 
                 "read": {
                         "ubus": {
-                            "oasis.tool.manager": [ "get_tool_info" ]
+                            "oasis.tool.manager": [ "get_tool_list" ]
                         }
                 }
         }

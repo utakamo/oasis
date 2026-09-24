@@ -12,10 +12,20 @@ local datactrl      = require("oasis.chat.datactrl")
 local nixio         = require("nixio")
 local oasis_ubus    = require("oasis.ubus.util")
 local debug         = require("oasis.chat.debug")
+local tool_state    = require("oasis.local.tool.state")
 
 module("luci.controller.oasis-tool.module", package.seeall)
 
 local manifest_dir = "/etc/oasis/tool-manifest.d/"
+
+local function write_tool_state_result(result)
+    if type(result.changed) == "boolean" then
+        result.changed_bool = result.changed
+        result.changed = result.changed and "1" or "0"
+    end
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
 
 function index()
 
@@ -26,9 +36,10 @@ function index()
     end
 
     entry({"admin", "network", "oasis", "tools"}, template("oasis/tools"), "Tools", 50).dependent=false
-    entry({"admin", "network", "oasis", "change-tool-enable"}, call("change_tool_enable"), nil).leaf = true
-    entry({"admin", "network", "oasis", "enable-tool"}, call("enable_tool"), nil).leaf = true
-    entry({"admin", "network", "oasis", "disable-tool"}, call("disable_tool"), nil).leaf = true
+    entry({"admin", "network", "oasis", "change-tool-enable"}, post("change_tool_enable"), nil).leaf = true
+    entry({"admin", "network", "oasis", "enable-tool"}, post("enable_tool"), nil).leaf = true
+    entry({"admin", "network", "oasis", "disable-tool"}, post("disable_tool"), nil).leaf = true
+    entry({"admin", "network", "oasis", "set-tool-auto"}, post("set_tool_auto"), nil).leaf = true
     entry({"admin", "network", "oasis", "add-remote-mcp-server"}, call("add_remote_mcp_server"), nil).leaf = true
     entry({"admin", "network", "oasis", "remove-remote-mcp-server"}, call("remove_remote_mcp_server"), nil).leaf = true
 	entry({"admin", "network", "oasis", "local-tool-info"}, call("local_tool_info"), nil).leaf = true
@@ -41,91 +52,50 @@ end
 
 function change_tool_enable()
     local tool_name = luci_http.formvalue("name")
+    local server_name = luci_http.formvalue("server")
     local enable = luci_http.formvalue("enable")
 
-    if not tool_name or tool_name == "" then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Missing tool name" })
-        return
-    end
     if enable ~= "0" and enable ~= "1" then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Invalid enable value (must be 0 or 1)" })
+        write_tool_state_result({
+            status = "NG",
+            changed = false,
+            code = "invalid_enable",
+            error = "Invalid enable value (must be 0 or 1)"
+        })
         return
     end
 
-    local found = false
-    uci:foreach("oasis", "tool", function(s)
-        if s["name"] == tool_name then
-            uci:set("oasis", s[".name"], "enable", enable)
-            found = true
-            return false -- break
-        end
-    end)
-    if not found then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "Tool not found" })
-        return
+    local result
+    if server_name and server_name ~= "" then
+        result = tool_state.set_enabled_persistent(
+            uci,
+            server_name,
+            tool_name,
+            enable,
+            { manual_only = true }
+        )
+    else
+        result = tool_state.set_enabled_by_name_persistent(
+            uci,
+            tool_name,
+            enable,
+            { manual_only = true }
+        )
     end
-    uci:commit("oasis")
-    luci_http.prepare_content("application/json")
-    luci_http.write_json({ status = "OK" })
+    write_tool_state_result(result)
 end
 
 local function update_tool_enable(desired)
     local tool_name = luci_http.formvalue("name")
     local server_name = luci_http.formvalue("server")
 
-    if (not tool_name) or tool_name == "" or (not server_name) or server_name == "" then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ status = "NG", error = "Missing params" })
-        return
-    end
-
-    local match_count = 0
-    local target_section = nil
-    local current_enable = nil
-    local conflicted = false
-    local changed = false
-
-    uci:foreach(common.db.uci.cfg, common.db.uci.sect.tool, function(s)
-        if (server_name == s["server"]) and (tool_name == s["name"]) then
-            match_count = match_count + 1
-            target_section = s[".name"]
-            current_enable = s["enable"] or "0"
-            conflicted = (s["conflict"] == "1")
-        end
-    end)
-
-    if match_count == 0 then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ status = "NG", error = "Tool not found" })
-        return
-    end
-
-    if match_count > 1 then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ status = "NG", error = "Duplicate tool sections found" })
-        return
-    end
-
-    if conflicted then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ status = "NG", error = "Tool is conflicted" })
-        return
-    end
-
-    if current_enable ~= desired then
-        uci:set(common.db.uci.cfg, target_section, "enable", desired)
-        uci:commit(common.db.uci.cfg)
-        changed = true
-    end
-
-    luci_http.prepare_content("application/json")
-    luci_http.write_json({
-        status = "OK",
-        changed = changed and "1" or "0"
-    })
+    write_tool_state_result(tool_state.set_enabled_persistent(
+        uci,
+        server_name,
+        tool_name,
+        desired,
+        { manual_only = true }
+    ))
 end
 
 function enable_tool()
@@ -134,6 +104,10 @@ end
 
 function disable_tool()
     update_tool_enable("0")
+end
+
+function set_tool_auto()
+    write_tool_state_result(tool_state.set_auto_mode(uci, luci_http.formvalue("enable")))
 end
 
 function add_remote_mcp_server()
@@ -226,23 +200,11 @@ function load_remote_mcp_server_info()
 end
 
 function local_tool_info()
-
-    local tools = uci:get_all(common.db.uci.cfg)
-
-    -- Delete unnecessary information
-    tools.debug     = nil
-    tools.rpc       = nil
-    tools.storage   = nil
-    tools.role      = nil
-    tools.support   = nil
-    tools.assist    = nil
-    tools.rollback  = nil
-    tools.console   = nil
-
-    for key, tbl in pairs(tools) do
-        if (tbl[".type"] == "service") or ( tbl[".type"] == "chat") then
-            tools[key] = nil
-        end
+    local mode, mode_err = tool_state.get_mode(uci)
+    local snapshot, snapshot_err = tool_state.snapshot(uci)
+    local tools = {}
+    for _, tool in ipairs(snapshot and snapshot.tools or {}) do
+        tools[tool.section] = tool
     end
 
     local server_list = {}
@@ -267,6 +229,17 @@ function local_tool_info()
     end
 
     local info = {}
+    local err = mode_err or snapshot_err
+    info.status = err and "NG" or "OK"
+    info.error = err and err.error or nil
+    -- Keep the switch usable even if the volatile store is damaged, so the
+    -- user can return to Manual mode without modifying manual tool settings.
+    if snapshot then
+        info.auto_mode = snapshot.auto_mode
+    else
+        info.auto_mode = mode and mode.auto_mode or false
+    end
+    info.mode_available = mode ~= nil
     info.tools = tools
     info.server_info = server_info
     info.local_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")

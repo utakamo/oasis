@@ -4,7 +4,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Get tool list",
+      "description": "List local tools with their exact server, name, description, and effective Auto mode enabled state. Use this list to find a tool, then enable it before calling it. Manual settings are separate.",
       "properties": [],
       "download_message": "",
       "name": "get_tool_list",
@@ -16,18 +16,24 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Disable the tool",
+      "description": "Disable one Auto mode tool by its exact server and name. State is shared by all users until reboot and survives Auto OFF/ON within the same boot. Manual UCI tool settings are unchanged. Tool Search control tools cannot be changed through this API.",
       "properties": [
         {
           "type": "string",
+          "name": "server",
+          "description": "Exact Server Name from get_tool_list"
+        },
+        {
+          "type": "string",
           "name": "tool",
-          "description": "Tool Name"
+          "description": "Exact Tool Name from get_tool_list"
         }
       ],
       "download_message": "",
       "name": "set_tool_disabled",
       "additional_properties": false,
       "required": [
+        "server",
         "tool"
       ],
       "timeout": "",
@@ -36,18 +42,24 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Enable the tool",
+      "description": "Enable one Auto mode tool by its exact server and name so it can be called next. State is shared by all users until reboot and survives Auto OFF/ON within the same boot. Manual UCI tool settings are unchanged. Tool Search control tools are managed automatically.",
       "properties": [
         {
           "type": "string",
+          "name": "server",
+          "description": "Exact Server Name from get_tool_list"
+        },
+        {
+          "type": "string",
           "name": "tool",
-          "description": "Tool Name"
+          "description": "Exact Tool Name from get_tool_list"
         }
       ],
       "download_message": "",
       "name": "set_tool_enabled",
       "additional_properties": false,
       "required": [
+        "server",
         "tool"
       ],
       "timeout": "",
