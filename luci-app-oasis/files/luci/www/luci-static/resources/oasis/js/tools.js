@@ -16,6 +16,7 @@
 
   const API_ENABLE = getUrl('enableTool');
   const API_DISABLE = getUrl('disableTool');
+  const API_AUTO = getUrl('setToolAuto');
   const URL_REFRESH_TOOLS = getUrl('refreshTools');
   const URL_LOAD_TOOLS = getUrl('loadTools');
   const URL_LOAD_MANIFEST = getUrl('loadManifest');
@@ -39,6 +40,9 @@
   const confirmApplyBtn = document.getElementById('tools-confirm-apply');
   const confirmCancelBtn = document.getElementById('tools-confirm-cancel');
   let pendingManifests = [];
+  let autoMode = false;
+  let changingMode = false;
+  let loadGeneration = 0;
 
   function showToast(message, type = 'info', timeout = 2000) {
     if (!toastEl) return;
@@ -429,13 +433,14 @@
     let isEnabled = tool.enable === '1';
     btn.className = isEnabled ? 'delete-button' : 'load-button';
     btn.textContent = isEnabled ? t('disableButton', 'Disable') : t('enableButton', 'Enable');
-    if (isConflict) {
+    if (isConflict || autoMode) {
       btn.disabled = true;
-      btn.title = t('conflictTitle', 'Conflict: cannot change state');
+      btn.title = isConflict ? t('conflictTitle', 'Conflict: cannot change state') : t('autoManaged', 'Managed by AI');
     }
+    if (autoMode) btn.textContent = t('autoManaged', 'Managed by AI');
 
     btn.addEventListener('click', () => {
-      if (isConflict) return;
+      if (isConflict || autoMode || changingMode) return;
       if (!tool.name) { showToast(t('missingName', 'Missing tool name'), 'error'); return; }
       const enabling = !isEnabled; // current button action
       const url = enabling ? API_ENABLE : API_DISABLE;
@@ -445,7 +450,7 @@
       fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ name: tool.name, server: tool.server || '' })
+        body: new URLSearchParams({ name: tool.name, server: tool.server || '', token: config.csrfToken || '' })
       })
       .then(r => r.json())
       .then(data => {
@@ -473,10 +478,55 @@
     return cell;
   }
 
+  function createAutoSwitch(available) {
+    const block = document.createElement('div');
+    block.className = 'server-block auto-mode-block';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = autoMode ? 'load-button auto-mode-on' : 'load-button';
+    button.textContent = autoMode ? t('autoOn', 'Auto: ON') : t('autoOff', 'Auto: OFF');
+    button.setAttribute('aria-label', t('autoMode', 'Auto mode'));
+    button.setAttribute('aria-pressed', String(autoMode));
+    button.disabled = !available || changingMode;
+    const description = document.createElement('p');
+    description.className = 'server-description';
+    description.textContent = autoMode
+      ? t('autoDescription', 'AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots.')
+      : t('manualDescription', 'Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled.');
+    block.appendChild(button);
+    block.appendChild(description);
+    button.addEventListener('click', async () => {
+      if (changingMode) return;
+      changingMode = true;
+      button.disabled = true;
+      try {
+        const response = await fetch(API_AUTO, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ enable: autoMode ? '0' : '1', token: config.csrfToken || '' })
+        });
+        const data = await response.json();
+        if (!response.ok || !data || data.status !== 'OK') {
+          throw new Error((data && data.error) || t('updateFailed', 'Failed to update tool state'));
+        }
+      } catch (err) {
+        showErrorModal(err.message || t('updateFailed', 'Failed to update tool state'));
+      } finally {
+        changingMode = false;
+        // Always fetch authoritative state, including after a lost response.
+        button.disabled = true;
+        loadTools();
+      }
+    });
+    return block;
+  }
+
   function loadTools() {
-    fetch(URL_LOAD_TOOLS)
+    const generation = ++loadGeneration;
+    return fetch(URL_LOAD_TOOLS, { cache: 'no-store' })
       .then(response => response.json())
       .then(data => {
+        if (generation !== loadGeneration) return;
         if (data && data.local_tool === false) {
           if (headBar) headBar.style.display = 'none';
           if (container) {
@@ -493,14 +543,18 @@
         if (container) {
           container.innerHTML = '';
         }
+        autoMode = data.auto_mode === true;
+        if (container) container.appendChild(createAutoSwitch(data.mode_available === true));
+        if (data.status === 'NG') {
+          showErrorModal(data.error || t('updateFailed', 'Failed to update tool state'));
+          return;
+        }
         const tools = data.tools || {};
         const serverMap = {};
-        const toolSearchTools = [];
 
         Object.values(tools).forEach(tool => {
           if (tool[".type"] === "tool" && tool.type === "function") {
             if (isToolSearchTool(tool)) {
-              toolSearchTools.push(tool);
               return;
             }
             const server = tool.server || t('unknownServer', 'Unknown Server');
@@ -508,26 +562,6 @@
             serverMap[server].push(tool);
           }
         });
-
-        if (toolSearchTools.length > 0 && container) {
-          const block = createServerBlock(
-            t('toolSearchCategory', 'Tool Search (oasis.tool.manager)'),
-            sortToolsForDisplay(toolSearchTools, true),
-            {
-              serverKey: TOOL_SEARCH_SERVER,
-              blockClassName: 'tool-search-block',
-              headerClassName: 'tool-search-header',
-              descriptionClassName: 'tool-search-description',
-              listClassName: 'tool-search-list',
-              cardClassName: 'tool-search-card',
-              description: t(
-                'toolSearchDescription',
-                'Browse available tools and enable or disable them.'
-              )
-            }
-          );
-          container.appendChild(block);
-        }
 
         Object.keys(serverMap)
           .sort(compareText)
@@ -541,6 +575,7 @@
       })
       .catch(err => {
         console.error('Failed to load server info:', err);
+        showErrorModal(t('updateFailed', 'Failed to update tool state'));
       });
   }
 

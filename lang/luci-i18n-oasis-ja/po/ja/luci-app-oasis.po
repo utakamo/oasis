@@ -3,1397 +3,1431 @@ msgstr ""
 "Project-Id-Version: luci-app-oasis\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-28 23:15+0000\n"
-"PO-Revision-Date: 2026-07-28 23:15+0000\n"
+"PO-Revision-Date: 2026-09-23 00:00+0000\n"
 "Last-Translator: Codex\n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: custom script\n"
-#: files/luci/view/chat.htm:333
+
+#: luci-app-oasis/files/luci/view/chat.htm:225
 msgid "### [User's {config} config]"
 msgstr "### [ユーザーの{config}設定]"
 
-#: files/luci/view/chat.htm:314
+#: luci-app-oasis/files/luci/view/setting-v2.htm:153
+msgid "A key is currently configured."
+msgstr "APIキーは設定済みです。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:195
 msgid "A network error occurred. Please check your network connection and AI service settings."
 msgstr "ネットワークエラーが発生しました。ネットワーク接続とAIサービス設定を確認してください。"
 
-
-#: files/luci/view/chat.htm:313
+#: luci-app-oasis/files/luci/view/chat.htm:194
 msgid "A network error occurred. Please try again later."
 msgstr "ネットワークエラーが発生しました。時間をおいて再度お試しください。"
 
+#: luci-app-oasis/files/luci/view/chat.htm:250
+msgid "A passphrase is already configured and is not displayed."
+msgstr "パスフレーズは設定済みですが表示されません。"
 
-#: files/luci/view/sysmsg.htm:16
-#: files/luci/view/sysmsg.htm:33
+#: luci-app-oasis/files/luci/view/setting-v2.htm:54
+msgid "AI Services"
+msgstr "AIサービス"
+
+#: luci-app-oasis/files/luci/view/tools.htm:26
+#: luci-app-oasis/files/luci/view/tools.htm:88
+msgid "AI Tool Manifest Confirmation"
+msgstr "AIツールのマニフェスト確認"
+
+#: luci-app-oasis/files/luci/view/tools.htm:86
+msgid "AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots."
+msgstr "AIが手動設定とは独立してツールを選択します。Autoでの選択状態は全ユーザーで共有され、再起動まで保持されます。同じ起動中のAutoのOFF／ONでも保持されます。モード自体の設定は再起動後も維持されます。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:112
+msgid "AI-assisted configuration"
+msgstr "AIによる設定支援"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:152
+msgid "API Key Setup"
+msgstr "APIキー設定"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:151
+msgid "API key"
+msgstr "APIキー"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:155
+msgid "API key action"
+msgstr "APIキーの操作"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:172
+msgid "API mode"
+msgstr "APIモード"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:148
+msgid "Active"
+msgstr "使用中"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:178
+msgid "Adaptive"
+msgstr "適応"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:17
+#: luci-app-oasis/files/luci/view/sysmsg.htm:34
 msgid "Add"
 msgstr "追加"
-
-
-#: files/luci/view/sysmsg.htm:85
-msgid "Add failed"
-msgstr "追加に失敗しました"
-
-
-#: files/luci/view/chat.htm:311
-msgid "Additional message"
-msgstr "追加メッセージ"
-
-
-#: files/luci/view/tools.htm:15
-#: files/luci/view/tools.htm:43
-msgid "An error occurred."
-msgstr "エラーが発生しました。"
-
-
-#: files/luci/view/chat.htm:332
-msgid "Applying the settings..."
-msgstr "設定を適用しています..."
-
-
-#: files/luci/view/chat.htm:171
-#: files/luci/view/chat.htm:220
-msgid "Attach UCI info"
-msgstr "UCI情報を添付"
-
-
-#: files/luci/view/chat.htm:234
-#: files/luci/view/chat.htm:243
-#: files/luci/view/chat.htm:253
-#: files/luci/view/chat.htm:322
-#: files/luci/view/icons.htm:36
-msgid "Cancel"
-msgstr "キャンセル"
-
-
-#: files/luci/view/tools.htm:51
-msgid "Conflict: cannot change state"
-msgstr "競合のため状態を変更できません"
-
-
-#: files/luci/view/sysmsg.htm:9
-msgid "Create New System Message"
-msgstr "新しいシステムメッセージを作成"
-
-
-#: files/luci/view/chat.htm:231
-#: files/luci/view/icons.htm:13
-#: files/luci/view/sysmsg.htm:82
-msgid "Delete"
-msgstr "削除"
-
-
-#: files/luci/view/icons.htm:60
-#: files/luci/view/sysmsg.htm:87
-msgid "Delete failed"
-msgstr "削除に失敗しました"
-
-
-#: files/luci/view/icons.htm:19
-msgid "Delete this icon?"
-msgstr "このアイコンを削除しますか？"
-
-
-#: files/luci/view/sysmsg.htm:44
-msgid "Delete this system message?"
-msgstr "このシステムメッセージを削除しますか？"
-
-
-#: files/luci/view/icons.htm:61
-#: files/luci/view/sysmsg.htm:88
-msgid "Deleted"
-msgstr "削除しました"
-
-
-#: files/luci/view/tools.htm:49
-msgid "Disable"
-msgstr "無効化"
-
-
-#: files/luci/view/tools.htm:46
-#: files/luci/view/setting-v2.htm:144
-msgid "Disabled"
-msgstr "無効"
-
-
-#: files/luci/view/icons.htm:55
-#: files/luci/view/sysmsg.htm:81
-msgid "Done"
-msgstr "完了"
-
-
-#: files/luci/view/chat.htm:190
-#: files/luci/view/chat.htm:308
-msgid "Downloading..."
-msgstr "ダウンロード中..."
-
-
-#: files/luci/view/icons.htm:28
-msgid "Drag and Drop Image Upload"
-msgstr "画像をドラッグ＆ドロップしてアップロード"
-
-
-#: files/luci/view/tools.htm:50
-msgid "Enable"
-msgstr "有効化"
-
-
-#: files/luci/view/tools.htm:45
-msgid "Enabled"
-msgstr "有効"
-
-
-#: files/luci/view/chat.htm:318
-msgid "Enter new title"
-msgstr "新しいタイトルを入力"
-
-
-#: files/luci/view/chat.htm:265
-msgid "Executed reboot system!!"
-msgstr "システムの再起動を実行しました!!"
-
-
-#: files/luci/view/chat.htm:307
-msgid "Executing tool..."
-msgstr "ツールを実行中..."
-
-
-#: files/luci/view/chat.htm:233
-msgid "Export"
-msgstr "エクスポート"
-
-
-#: files/luci/view/chat.htm:315
-msgid "Failed to delete chat. Please try again."
-msgstr "チャットの削除に失敗しました。再度お試しください。"
-
-
-#: files/luci/view/chat.htm:317
-msgid "Failed to import chat. Please try again."
-msgstr "チャットのインポートに失敗しました。再度お試しください。"
-
-
-#: files/luci/view/tools.htm:41
-msgid "Failed to refresh services"
-msgstr "サービスの更新に失敗しました"
-
-
-#: files/luci/view/tools.htm:54
-msgid "Failed to update tool state"
-msgstr "ツール状態の更新に失敗しました"
-
-
-#: files/luci/view/chat.htm:273
-#: files/luci/view/chat.htm:327
-msgid "Finalize"
-msgstr "確定"
-
-
-#: files/luci/view/chat.htm:270
-#: files/luci/view/chat.htm:326
-msgid "Finalize this settings?"
-msgstr "この設定を確定しますか？"
-
-
-#: files/luci/view/chat.htm:175
-#: files/luci/view/chat.htm:224
-msgid "History"
-msgstr "履歴"
-
-
-#: files/luci/view/chat.htm:165
-#: files/luci/view/chat.htm:218
-msgid "Import Chat Data +"
-msgstr "インポート +"
-
-
-#: files/luci/view/chat.htm:310
-msgid "Invalid tool response: missing {fields}"
-msgstr "無効なツール応答: {fields} がありません"
-
-
-#: files/luci/view/sysmsg.htm:26
-msgid "Load"
-msgstr "読み込み"
-
-
-#: files/luci/view/sysmsg.htm:20
-msgid "Load Extra System Message"
-msgstr "外部システムメッセージを読み込む"
-
-
-#: files/luci/view/sysmsg.htm:86
-msgid "Loaded"
-msgstr "読み込み完了"
-
-
-#: files/luci/view/icons.htm:53
-#: files/luci/view/rollback-list.htm:43
-#: files/luci/view/sysmsg.htm:79
-#: files/luci/view/tools.htm:53
-msgid "Loading..."
-msgstr "読み込み中..."
-
-
-#: files/luci/view/tools.htm:6
-msgid "Local Tools"
-msgstr "ローカルツール"
-
-
-#: files/luci/view/tools.htm:52
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:85
-msgid "Missing tool name"
-msgstr "ツール名が指定されていません"
-
-
-#: files/luci/view/icons.htm:59
-#: files/luci/view/sysmsg.htm:89
-msgid "Network error"
-msgstr "ネットワークエラー"
-
-
-#: files/luci/view/chat.htm:168
-msgid "New Chat"
-msgstr "新しいチャット"
-
-
-#: files/luci/view/icons.htm:22
-#: files/luci/view/rollback-list.htm:25
-#: files/luci/view/sysmsg.htm:47
-msgid "No"
-msgstr "いいえ"
-
-
-#: files/luci/view/rollback-list.htm:42
-msgid "No Rollback Data"
-msgstr "ロールバックデータがありません"
-
-
-#: files/luci/view/rollback-list.htm:41
-msgid "No UCI commands found."
-msgstr "UCIコマンドが見つかりません。"
-
-
-#: files/luci/view/tools.htm:48
-msgid "No description."
-msgstr "説明がありません。"
-
-
-#: files/luci/view/chat.htm:312
-msgid "No response from AI service. Please check settings."
-msgstr "AIサービスから応答がありません。設定を確認してください。"
-
-
-#: files/luci/view/tools.htm:17
-msgid "OK"
-msgstr "OK"
-
-
-#: files/luci/view/chat.htm:203
-msgid "Open options"
-msgstr "オプションを開く"
-
-
-#: files/luci/view/sysmsg.htm:24
-msgid "Please enter the server's url"
-msgstr "サーバーのURLを入力してください"
-
-
-#: files/luci/view/sysmsg.htm:84
-msgid "Please input system message data"
-msgstr "システムメッセージの内容を入力してください"
-
-
-#: files/luci/view/sysmsg.htm:91
-msgid "Please input system message server url"
-msgstr "システムメッセージサーバーのURLを入力してください"
-
-
-#: files/luci/view/sysmsg.htm:83
-msgid "Please input system message title"
-msgstr "システムメッセージのタイトルを入力してください"
-
-
-#: files/luci/view/tools.htm:55
-msgid "Please install the extension module 'oasis-mod-tool' to enable local tools."
-msgstr "Please install the extension module 'oasis-mod-tool' to enable local tools."
-
-
-#: files/luci/view/icons.htm:56
-msgid "Please select an icon"
-msgstr "アイコンを選択してください"
-
-
-#: files/luci/view/icons.htm:62
-msgid "Please select an image file."
-msgstr "画像ファイルを選択してください。"
-
-
-#: files/luci/view/chat.htm:251
-#: files/luci/view/chat.htm:329
-msgid "Raw(JSON)"
-msgstr "Raw(JSON)"
-
-
-#: files/luci/view/chat.htm:321
-msgid "Reboot"
-msgstr "再起動"
-
-
-#: files/luci/view/chat.htm:303
-msgid "Rebooting..."
-msgstr "再起動中..."
-
-
-#: files/luci/view/tools.htm:8
-#: files/luci/view/tools.htm:42
-msgid "Refresh"
-msgstr "更新"
-
-
-#: files/luci/view/chat.htm:232
-#: files/luci/view/chat.htm:242
-msgid "Rename"
-msgstr "名前を変更"
-
-
-#: files/luci/view/chat.htm:239
-msgid "Rename chat name"
-msgstr "チャット名を変更"
-
-
-#: files/luci/view/chat.htm:325
-msgid "Restart"
-msgstr "再起動"
-
-
-#: files/luci/view/chat.htm:305
-msgid "Restarting service..."
-msgstr "サービスを再起動しています..."
-
-
-#: files/luci/view/chat.htm:274
-#: files/luci/view/chat.htm:328
-#: files/luci/view/rollback-list.htm:40
-#: files/luci/view/setting-v2.htm:109
-msgid "Rollback"
-msgstr "ロールバック"
-
-
-#: files/luci/view/rollback-list.htm:8
-msgid "Rollback has been executed. You can access the UI again once the system has fully restarted"
-msgstr "ロールバックが実行されました。システムの再起動が完了すると再度UIにアクセスできます"
-
-
-#: files/luci/view/rollback-list.htm:44
-msgid "Rollback has been executed. You can access the UI again once the system has fully restarted."
-msgstr "ロールバックが実行されました。システムの再起動が完了すると再度UIにアクセスできます。"
-
-
-#: files/luci/view/tools.htm:40
-msgid "Running..."
-msgstr "実行中..."
-
-
-#: files/luci/view/chat.htm:184
-msgid "Scroll to latest"
-msgstr "最新メッセージへ移動"
-
-
-#: files/luci/view/icons.htm:12
-#: files/luci/view/icons.htm:54
-msgid "Select"
-msgstr "選択"
-
-
-#: files/luci/view/icons.htm:7
-msgid "Select AI Icon"
-msgstr "AIアイコンを選択"
-
-
-#: files/luci/view/chat.htm:249
-msgid "Select Export Type"
-msgstr "エクスポート形式を選択"
-
-
-#: files/luci/view/icons.htm:57
-msgid "Select failed"
-msgstr "選択に失敗しました"
-
-
-#: files/luci/view/icons.htm:58
-msgid "Selected"
-msgstr "選択しました"
-
-
-#: files/luci/view/chat.htm:202
-msgid "Send"
-msgstr "送信"
-
-
-#: files/luci/view/chat.htm:324
-msgid "Service \"{name}\" needs restart. Restart now?"
-msgstr "\"{name}\"サービスの再起動が必要です。再起動しますか？"
-
-
-#: files/luci/view/chat.htm:323
-msgid "Service restart is required. Restart now?"
-msgstr "サービスの再起動が必要です。再起動しますか？"
-
-
-#: files/luci/view/chat.htm:169
-#: files/luci/view/chat.htm:196
-msgid "System Message"
-msgstr "システムメッセージ"
-
-
-#: files/luci/view/sysmsg.htm:38
-msgid "System Message List"
-msgstr "システムメッセージ一覧"
-
-
-#: files/luci/view/chat.htm:320
-msgid "System reboot is required. Reboot now?"
-msgstr "システムの再起動が必要です。今すぐ再起動しますか？"
-
-
-#: files/luci/view/sysmsg.htm:12
-#: files/luci/view/sysmsg.htm:29
-msgid "TITLE:"
-msgstr "タイトル:"
-
-
-#: files/luci/view/chat.htm:252
-#: files/luci/view/chat.htm:330
-msgid "Text"
-msgstr "テキスト"
-
-
-#: files/luci/view/chat.htm:319
-msgid "Thinking..."
-msgstr "考えています..."
-
-
-#: files/luci/view/chat.htm:309
-msgid "Tool used:"
-msgstr "使用したツール:"
-
-
-#: files/luci/view/sysmsg.htm:23
-msgid "URL:"
-msgstr "URL:"
-
-
-#: files/luci/view/chat.htm:316
-msgid "Unexpected data format"
-msgstr "想定外のデータ形式です"
-
-
-#: files/luci/view/tools.htm:44
-msgid "Unknown"
-msgstr "不明"
-
-
-#: files/luci/view/tools.htm:56
-msgid "Unknown Server"
-msgstr "不明なサーバー"
-
-
-#: files/luci/view/sysmsg.htm:80
-msgid "Update"
-msgstr "更新"
-
-
-#: files/luci/view/sysmsg.htm:90
-msgid "Update failed"
-msgstr "更新に失敗しました"
-
-
-#: files/luci/view/icons.htm:35
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:55
-msgid "Upload"
-msgstr "アップロード"
-
-
-#: files/luci/view/icons.htm:26
-msgid "Upload AI Icon"
-msgstr "AIアイコンをアップロード"
-
-
-#: files/luci/view/icons.htm:63
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:89
-msgid "Upload failed"
-msgstr "アップロードに失敗しました"
-
-
-#: files/luci/view/icons.htm:32
-msgid "Upload this image?"
-msgstr "この画像をアップロードしますか？"
-
-
-#: files/luci/view/icons.htm:64
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:87
-msgid "Uploaded"
-msgstr "アップロードしました"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:88
-msgid "Uploaded: {path} ({bytes} bytes)"
-msgstr "アップロードしました: {path} ({bytes} bytes)"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:90
-msgid "Upload failed: {error}"
-msgstr "アップロードに失敗しました: {error}"
-
-
-#: files/luci/view/rollback-list.htm:22
-msgid "Would you like to execute the rollback?"
-msgstr "ロールバックを実行しますか？"
-
-
-#: files/luci/view/icons.htm:21
-#: files/luci/view/rollback-list.htm:24
-#: files/luci/view/sysmsg.htm:46
-msgid "Yes"
-msgstr "はい"
-
-
-#: files/luci/view/sysmsg.htm:7
-msgid "You can register and modify system messages for AI."
-msgstr "AI向けのシステムメッセージを登録・編集できます。"
-
-
-#: files/luci/view/chat.htm:199
-#: files/luci/view/chat.htm:331
-msgid "Your Message (Enter to send, Shift+Enter for newline)"
-msgstr "メッセージ（Enterで送信、Shift+Enterで改行）"
-
-
-#: files/luci/view/tools.htm:47
-msgid "conflict"
-msgstr "競合"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:7
-msgid "Tool Maker"
-msgstr "ツールメーカー"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:12
-msgid "Tool type"
-msgstr "ツール種別"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:19
-msgid "Server script name"
-msgstr "サーバースクリプト名"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:23
-msgid "Tools"
-msgstr "ツール"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:26
-msgid "Add tool"
-msgstr "ツールを追加"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:30
-msgid "Tool name"
-msgstr "ツール名"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:34
-msgid "Tool description"
-msgstr "ツールの説明"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:38
-msgid "Tool arguments"
-msgstr "ツール引数"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:41
-msgid "Arg name"
-msgstr "引数名"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:42
-msgid "Type"
-msgstr "型"
-
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:43
-msgid "Arg description"
-msgstr "引数の説明"
-
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:46
 msgid "Add arg"
 msgstr "引数を追加"
 
+#: luci-app-oasis/files/luci/view/sysmsg.htm:87
+msgid "Add failed"
+msgstr "追加に失敗しました"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:64
+msgid "Add service"
+msgstr "サービスを追加"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:26
+msgid "Add tool"
+msgstr "ツールを追加"
+
+#: luci-app-oasis/files/luci/view/chat.htm:227
+msgid "Add {band} Wi-Fi settings"
+msgstr "{band} Wi-Fi設定を追加"
+
+#: luci-app-oasis/files/luci/view/chat.htm:192
+msgid "Additional message"
+msgstr "追加メッセージ"
+
+#: luci-app-oasis/files/luci/view/tools.htm:16
+#: luci-app-oasis/files/luci/view/tools.htm:61
+msgid "An error occurred."
+msgstr "エラーが発生しました。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:118
+msgid "An external RPC account is configured."
+msgstr "外部RPCアカウントが設定されています。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:220
+#: luci-app-oasis/files/luci/view/tools.htm:33
+#: luci-app-oasis/files/luci/view/tools.htm:90
+msgid "Apply"
+msgstr "適用"
+
+#: luci-app-oasis/files/luci/view/chat.htm:219
+msgid "Applying the settings..."
+msgstr "設定を適用しています..."
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:43
+msgid "Arg description"
+msgstr "引数の説明"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:41
+msgid "Arg name"
+msgstr "引数名"
+
+#: luci-app-oasis/files/luci/view/chat.htm:13
+#: luci-app-oasis/files/luci/view/chat.htm:62
+msgid "Attach UCI info"
+msgstr "UCI情報を添付"
+
+#: luci-app-oasis/files/luci/view/tools.htm:82
+msgid "Auto mode"
+msgstr "Autoモード"
+
+#: luci-app-oasis/files/luci/view/tools.htm:84
+msgid "Auto: OFF"
+msgstr "Auto: OFF"
+
+#: luci-app-oasis/files/luci/view/tools.htm:83
+msgid "Auto: ON"
+msgstr "Auto: ON"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:181
+msgid "Budget Tokens"
+msgstr "推論予算トークン数"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:194
+msgid "Budget Tokens must be at least 1024."
+msgstr "推論予算トークン数は1024以上にしてください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:195
+msgid "Budget Tokens must be less than Max Tokens."
+msgstr "推論予算トークン数は最大トークン数未満にしてください。"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:50
 msgid "Call body (editable)"
 msgstr "実行処理 (編集可)"
 
+#: luci-app-oasis/files/luci/view/chat.htm:138
+#: luci-app-oasis/files/luci/view/chat.htm:208
+#: luci-app-oasis/files/luci/view/chat.htm:76
+#: luci-app-oasis/files/luci/view/chat.htm:85
+#: luci-app-oasis/files/luci/view/chat.htm:95
+#: luci-app-oasis/files/luci/view/icons.htm:37
+#: luci-app-oasis/files/luci/view/tools.htm:32
+#: luci-app-oasis/files/luci/view/tools.htm:91
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:174
+msgid "Chat Completions API"
+msgstr "Chat Completions API"
+
+#: luci-app-oasis/files/luci/view/chat.htm:224
+msgid "Chat data file is too large (max 512KB)."
+msgstr "チャットデータのファイルサイズが大きすぎます（最大512KB）。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:253
+msgid "Check the Wi-Fi settings fields."
+msgstr "Wi-Fi設定の入力項目を確認してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:186
+msgid "Choose Replace with a new key or Clear stored key after changing the provider."
+msgstr "プロバイダーを変更した後は、「新しいキーに置き換える」または「保存済みキーを消去」を選択してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:136
+msgid "Choose a different username."
+msgstr "別のユーザー名を選択してください。"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:77
+msgid "City and country e.g. Bogotá, Colombia"
+msgstr "都市名と国名 例: Bogotá, Colombia"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:158
+msgid "Clear stored key"
+msgstr "保存済みキーを消去"
+
+#: luci-app-oasis/files/luci/view/chat.htm:133
+#: luci-app-oasis/files/luci/view/chat.htm:209
+msgid "Close"
+msgstr "閉じる"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:10
+msgid "Configure Oasis integration, storage, rollback, and AI services."
+msgstr "Oasisの連携、ストレージ、ロールバック、AIサービスを設定します。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:122
+msgid "Confirm password"
+msgstr "パスワードの確認"
+
+#: luci-app-oasis/files/luci/view/tools.htm:69
+msgid "Conflict: cannot change state"
+msgstr "競合のため状態を変更できません"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:166
+msgid "Controls display only; it does not enable model thinking."
+msgstr "表示のみを制御します。モデルの推論機能自体を有効にするものではありません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:117
+msgid "Controls whether external clients can use this account."
+msgstr "外部クライアントがこのアカウントを使用できるかどうかを制御します。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:198
+msgid "Correct the highlighted fields before saving."
+msgstr "保存する前に強調表示された項目を修正してください。"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:10
+msgid "Create New System Message"
+msgstr "新しいシステムメッセージを作成"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:125
+msgid "Create account"
+msgstr "アカウントを作成"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:115
+#: luci-app-oasis/files/luci/view/setting-v2.htm:45
+msgid "Create one restricted rpcd account for an external Oasis client."
+msgstr "外部Oasisクライアント用に、権限を制限したrpcdアカウントを1つ作成します。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:170
+msgid "Custom endpoint"
+msgstr "カスタムエンドポイント"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:171
+msgid "Custom endpoint URL"
+msgstr "カスタムエンドポイントURL"
+
+#: luci-app-oasis/files/luci/view/chat.htm:234
+#: luci-app-oasis/files/luci/view/chat.htm:73
+#: luci-app-oasis/files/luci/view/icons.htm:14
+#: luci-app-oasis/files/luci/view/sysmsg.htm:84
+msgid "Delete"
+msgstr "削除"
+
+#: luci-app-oasis/files/luci/view/chat.htm:228
+msgid "Delete Wi-Fi settings"
+msgstr "Wi-Fi設定を削除"
+
+#: luci-app-oasis/files/luci/view/icons.htm:61
+#: luci-app-oasis/files/luci/view/sysmsg.htm:89
+msgid "Delete failed"
+msgstr "削除に失敗しました"
+
+#: luci-app-oasis/files/luci/view/icons.htm:20
+msgid "Delete this icon?"
+msgstr "このアイコンを削除しますか？"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:45
+msgid "Delete this system message?"
+msgstr "このシステムメッセージを削除しますか？"
+
+#: luci-app-oasis/files/luci/view/icons.htm:62
+#: luci-app-oasis/files/luci/view/sysmsg.htm:90
+msgid "Deleted"
+msgstr "削除しました"
+
+#: luci-app-oasis/files/luci/view/tools.htm:67
+msgid "Disable"
+msgstr "無効化"
+
+#: luci-app-oasis/files/luci/view/chat.htm:183
+msgid "Disable tool"
+msgstr "無効化"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:176
+#: luci-app-oasis/files/luci/view/tools.htm:64
+msgid "Disabled"
+msgstr "無効"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:97
+msgid "Discard"
+msgstr "破棄"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:204
+msgid "Discard unsaved changes and load the latest settings?"
+msgstr "未保存の変更を破棄して最新の設定を読み込みますか？"
+
+#: luci-app-oasis/files/luci/view/icons.htm:56
+#: luci-app-oasis/files/luci/view/sysmsg.htm:83
+msgid "Done"
+msgstr "完了"
+
+#: luci-app-oasis/files/luci/view/chat.htm:178
+#: luci-app-oasis/files/luci/view/chat.htm:32
+msgid "Downloading..."
+msgstr "ダウンロード中..."
+
+#: luci-app-oasis/files/luci/view/icons.htm:29
+msgid "Drag and Drop Image Upload"
+msgstr "画像をドラッグ＆ドロップしてアップロード"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:196
+msgid "Each service identifier must be unique."
+msgstr "サービスの識別子はそれぞれ一意である必要があります。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:68
+msgid "Enable"
+msgstr "有効化"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:163
+msgid "Enable only when the selected provider and model support tool use."
+msgstr "選択したプロバイダーとモデルがツール利用に対応している場合のみ有効にしてください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:182
+msgid "Enable tool"
+msgstr "有効化"
+
+#: luci-app-oasis/files/luci/view/tools.htm:63
+msgid "Enabled"
+msgstr "有効"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:177
+msgid "Enabled with manual budget"
+msgstr "手動予算で有効"
+
+#: luci-app-oasis/files/luci/view/chat.htm:240
+msgid "Encryption"
+msgstr "暗号化方式"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:167
+msgid "Endpoint"
+msgstr "エンドポイント"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:168
+msgid "Endpoint type"
+msgstr "エンドポイント種別"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:134
+msgid "Enter a password containing at least 12 characters."
+msgstr "12文字以上のパスワードを入力してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:180
+#: luci-app-oasis/files/luci/view/setting-v2.htm:191
+msgid "Enter a positive integer."
+msgstr "正の整数を入力してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:133
+msgid "Enter a username using letters, numbers, dots, underscores, or hyphens."
+msgstr "英字、数字、ドット、アンダースコア、ハイフンを使ってユーザー名を入力してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:190
+msgid "Enter a valid HTTP or HTTPS URL."
+msgstr "有効なHTTPまたはHTTPSのURLを入力してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:188
+msgid "Enter an absolute path beginning with a slash."
+msgstr "スラッシュで始まる絶対パスを入力してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:182
+msgid "Enter at least 1024 and less than Max Tokens."
+msgstr "1024以上かつ最大トークン数未満の値を入力してください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:199
+msgid "Enter new title"
+msgstr "新しいタイトルを入力"
+
+#: luci-app-oasis/files/luci/view/chat.htm:107
+msgid "Executed reboot system!!"
+msgstr "システムの再起動を実行しました!!"
+
+#: luci-app-oasis/files/luci/view/chat.htm:177
+msgid "Executing tool..."
+msgstr "ツールを実行中..."
+
+#: luci-app-oasis/files/luci/view/chat.htm:75
+msgid "Export"
+msgstr "エクスポート"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:114
+#: luci-app-oasis/files/luci/view/setting-v2.htm:44
+msgid "External RPC account"
+msgstr "外部RPCアカウント"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:129
+msgid "External RPC account created successfully."
+msgstr "外部RPCアカウントを作成しました。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:131
+msgid "External RPC account removed successfully."
+msgstr "外部RPCアカウントを削除しました。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:116
+msgid "External RPC account settings are unavailable."
+msgstr "外部RPCアカウントの設定は利用できません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:130
+msgid "External RPC account updated successfully."
+msgstr "外部RPCアカウントを更新しました。"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:25
+msgid "External system message URL"
+msgstr "外部システムメッセージのURL"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:32
+msgid "External system message body"
+msgstr "外部システムメッセージの本文"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:31
+msgid "External system message title"
+msgstr "外部システムメッセージのタイトル"
+
+#: luci-app-oasis/files/luci/view/chat.htm:186
+msgid "Failed"
+msgstr "失敗"
+
+#: luci-app-oasis/files/luci/view/chat.htm:232
+msgid "Failed to delete Wi-Fi settings. Try again."
+msgstr "Wi-Fi設定の削除に失敗しました。再試行してください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:196
+msgid "Failed to delete chat. Please try again."
+msgstr "チャットの削除に失敗しました。再度お試しください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:198
+msgid "Failed to import chat. Please try again."
+msgstr "チャットのインポートに失敗しました。再度お試しください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:229
+msgid "Failed to load Wi-Fi settings. Try again."
+msgstr "Wi-Fi設定の読み込みに失敗しました。再試行してください。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:77
+msgid "Failed to load manifest."
+msgstr "マニフェストの読み込みに失敗しました。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:26
+msgid "Failed to load settings."
+msgstr "設定の読み込みに失敗しました。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:203
+msgid "Failed to load settings. Check the settings API and try again."
+msgstr "設定の読み込みに失敗しました。設定APIを確認して再試行してください。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:59
+msgid "Failed to refresh services"
+msgstr "サービスの更新に失敗しました"
+
+#: luci-app-oasis/files/luci/view/chat.htm:230
+msgid "Failed to save Wi-Fi settings. Check the fields and try again."
+msgstr "Wi-Fi設定の保存に失敗しました。入力項目を確認して再試行してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:201
+msgid "Failed to save settings. Check the fields and try again."
+msgstr "設定の保存に失敗しました。入力項目を確認して再試行してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:132
+msgid "Failed to save the external RPC account."
+msgstr "外部RPCアカウントの保存に失敗しました。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:72
+msgid "Failed to update tool state"
+msgstr "ツール状態の更新に失敗しました"
+
+#: luci-app-oasis/files/luci/view/chat.htm:115
+#: luci-app-oasis/files/luci/view/chat.htm:214
+msgid "Finalize"
+msgstr "確定"
+
+#: luci-app-oasis/files/luci/view/chat.htm:112
+#: luci-app-oasis/files/luci/view/chat.htm:213
+msgid "Finalize this settings?"
+msgstr "この設定を確定しますか？"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:164
+msgid "For LM Studio, this uses the OpenAI-compatible /v1/chat/completions endpoint. Enable only with a tool-use capable model."
+msgstr "LM StudioではOpenAI互換の /v1/chat/completions endpointを使用します。ツール利用に対応したmodelでのみ有効にしてください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:162
+msgid "Function Calling"
+msgstr "Function Calling"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:9
+msgid "General Setting"
+msgstr "一般設定"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:34
+msgid "General Settings"
+msgstr "一般設定"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:54
 msgid "Generate"
 msgstr "生成"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:80
+msgid "Generated"
+msgstr "生成しました"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:62
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:61
 msgid "Generated output"
 msgstr "生成結果"
-
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:35
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:76
 msgid "Get current temperature for a given location."
 msgstr "指定した場所の現在の気温を取得します。"
 
+#: luci-app-oasis/files/luci/view/tools.htm:74
+msgid "Hide Manifest"
+msgstr "マニフェストを閉じる"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:77
-msgid "City and country e.g. Bogotá, Colombia"
-msgstr "都市名と国名 例: Bogotá, Colombia"
+#: luci-app-oasis/files/luci/view/chat.htm:17
+#: luci-app-oasis/files/luci/view/chat.htm:66
+msgid "History"
+msgstr "履歴"
 
+#: luci-app-oasis/files/luci/view/chat.htm:60
+#: luci-app-oasis/files/luci/view/chat.htm:7
+msgid "Import Chat Data +"
+msgstr "インポート +"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:78
-msgid "unnamed"
-msgstr "名称未設定"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:111
+msgid "Integration"
+msgstr "連携"
 
+#: luci-app-oasis/files/luci/view/chat.htm:190
+msgid "Invalid tool response."
+msgstr "ツールの応答形式が不正です。"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:79
-msgid "unknown error"
-msgstr "不明なエラー"
+#: luci-app-oasis/files/luci/view/chat.htm:191
+msgid "Invalid tool response: missing {fields}"
+msgstr "無効なツール応答: {fields} がありません"
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:156
+msgid "Keep current key"
+msgstr "現在のキーを保持"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:80
-msgid "Generated"
-msgstr "生成しました"
+#: luci-app-oasis/files/luci/view/chat.htm:247
+msgid "Leave empty to keep the current passphrase."
+msgstr "現在のパスフレーズを保持する場合は空欄のままにしてください。"
 
+#: luci-app-oasis/files/luci/view/chat.htm:181
+msgid "List tools"
+msgstr "一覧取得"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:81
-msgid "Render failed"
-msgstr "生成に失敗しました"
+#: luci-app-oasis/files/luci/view/sysmsg.htm:27
+msgid "Load"
+msgstr "読み込み"
 
+#: luci-app-oasis/files/luci/view/sysmsg.htm:21
+msgid "Load Extra System Message"
+msgstr "外部システムメッセージを読み込む"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:82
-msgid "Render failed: {error}"
-msgstr "生成に失敗しました: {error}"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:88
+msgid "Load latest settings"
+msgstr "最新の設定を読み込む"
 
+#: luci-app-oasis/files/luci/view/sysmsg.htm:88
+msgid "Loaded"
+msgstr "読み込み完了"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:83
-msgid "Missing tool description"
-msgstr "ツールの説明がありません"
+#: luci-app-oasis/files/luci/view/tools.htm:75
+msgid "Loading manifest..."
+msgstr "マニフェストを読み込み中..."
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:19
+msgid "Loading settings..."
+msgstr "設定を読み込んでいます..."
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:84
-msgid "No response"
-msgstr "応答がありません"
+#: luci-app-oasis/files/luci/view/icons.htm:54
+#: luci-app-oasis/files/luci/view/rollback-list.htm:44
+#: luci-app-oasis/files/luci/view/sysmsg.htm:81
+#: luci-app-oasis/files/luci/view/tools.htm:71
+msgid "Loading..."
+msgstr "読み込み中..."
 
+#: luci-app-oasis/files/luci/view/tools.htm:7
+msgid "Local Tools"
+msgstr "ローカルツール"
+
+#: luci-app-oasis/files/luci/view/tools.htm:85
+msgid "Managed by AI"
+msgstr "AIが管理"
+
+#: luci-app-oasis/files/luci/view/tools.htm:73
+msgid "Manifest"
+msgstr "マニフェスト"
+
+#: luci-app-oasis/files/luci/view/tools.htm:92
+msgid "Manifest Path"
+msgstr "マニフェストのパス"
+
+#: luci-app-oasis/files/luci/view/tools.htm:76
+msgid "Manifest not found."
+msgstr "マニフェストが見つかりません。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:87
+msgid "Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled."
+msgstr "手動モードでは保存済みのツール設定を使用します。Autoモードでは、ここで無効のツールもAIが有効にできます。再起動後のAutoモードは、ツールの検索・管理機能のみ有効な状態から開始します。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:179
+msgid "Max Tokens"
+msgstr "最大トークン数"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:140
+msgid "Maximum turns per chat"
+msgstr "チャットごとの最大ターン数"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:86
 msgid "Missing tool definition"
 msgstr "ツール定義がありません"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:83
+msgid "Missing tool description"
+msgstr "ツールの説明がありません"
+
+#: luci-app-oasis/files/luci/view/tools.htm:70
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:85
+msgid "Missing tool name"
+msgstr "ツール名が指定されていません"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:150
+msgid "Model"
+msgstr "モデル"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:144
+msgid "Monitor time"
+msgstr "監視時間"
+
+#: luci-app-oasis/files/luci/view/icons.htm:60
+#: luci-app-oasis/files/luci/view/sysmsg.htm:91
+msgid "Network error"
+msgstr "ネットワークエラー"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:160
+msgid "New API key"
+msgstr "新しいAPIキー"
+
+#: luci-app-oasis/files/luci/view/chat.htm:10
+msgid "New Chat"
+msgstr "新しいチャット"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:123
+msgid "New password (optional)"
+msgstr "新しいパスワード（任意）"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:15
+msgid "New system message body"
+msgstr "新しいシステムメッセージの本文"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:14
+msgid "New system message title"
+msgstr "新しいシステムメッセージのタイトル"
+
+#: luci-app-oasis/files/luci/view/icons.htm:23
+#: luci-app-oasis/files/luci/view/rollback-list.htm:26
+#: luci-app-oasis/files/luci/view/sysmsg.htm:48
+msgid "No"
+msgstr "いいえ"
+
+#: luci-app-oasis/files/luci/view/chat.htm:223
+msgid "No AI Service"
+msgstr "AIサービスがありません"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:73
+msgid "No AI services are configured. Add a service to use Oasis chat."
+msgstr "AIサービスが設定されていません。Oasisチャットを使用するにはサービスを追加してください。"
+
+#: luci-app-oasis/files/luci/view/rollback-list.htm:43
+msgid "No Rollback Data"
+msgstr "ロールバックデータがありません"
+
+#: luci-app-oasis/files/luci/view/rollback-list.htm:42
+msgid "No UCI commands found."
+msgstr "UCIコマンドが見つかりません。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:237
+msgid "No Wi-Fi access point settings were found."
+msgstr "Wi-Fiアクセスポイント設定が見つかりません。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:187
+msgid "No change"
+msgstr "変更なし"
+
+#: luci-app-oasis/files/luci/view/tools.htm:66
+msgid "No description."
+msgstr "説明がありません。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:236
+msgid "No editable Wi-Fi access points were found."
+msgstr "編集可能なWi-Fiアクセスポイント設定が見つかりません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:119
+msgid "No external RPC account is configured."
+msgstr "外部RPCアカウントは設定されていません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:154
+msgid "No key is currently configured."
+msgstr "APIキーは設定されていません。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:238
+msgid "No radio is available for the requested Wi-Fi band."
+msgstr "指定されたWi-Fi帯域に利用可能な無線デバイスがありません。"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:84
+msgid "No response"
+msgstr "応答がありません"
+
+#: luci-app-oasis/files/luci/view/chat.htm:193
+msgid "No response from AI service. Please check settings."
+msgstr "AIサービスから応答がありません。設定を確認してください。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:98
+msgid "None"
+msgstr "なし"
+
+#: luci-app-oasis/files/luci/view/tools.htm:18
+msgid "OK"
+msgstr "OK"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:169
+msgid "Official endpoint"
+msgstr "公式エンドポイント"
+
+#: luci-app-oasis/files/luci/view/chat.htm:241
+msgid "Open (no password)"
+msgstr "オープン（パスワードなし）"
+
+#: luci-app-oasis/files/luci/view/chat.htm:254
+msgid "Open networks do not use a passphrase."
+msgstr "オープンネットワークではパスフレーズを使用しません。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:45
+msgid "Open options"
+msgstr "オプションを開く"
+
+#: luci-app-oasis/files/luci/view/chat.htm:246
+msgid "Passphrase"
+msgstr "パスフレーズ"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:121
+msgid "Password"
+msgstr "パスワード"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:25
+msgid "Please enter the server's url"
+msgstr "サーバーのURLを入力してください"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:86
+msgid "Please input system message data"
+msgstr "システムメッセージの内容を入力してください"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:93
+msgid "Please input system message server url"
+msgstr "システムメッセージサーバーのURLを入力してください"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:85
+msgid "Please input system message title"
+msgstr "システムメッセージのタイトルを入力してください"
+
+#: luci-app-oasis/files/luci/view/tools.htm:80
+msgid "Please install the extension module 'oasis-mod-tool' to enable local tools."
+msgstr "ローカルツールを有効にするには、拡張モジュール「oasis-mod-tool」をインストールしてください。"
+
+#: luci-app-oasis/files/luci/view/icons.htm:57
+msgid "Please select an icon"
+msgstr "アイコンを選択してください"
+
+#: luci-app-oasis/files/luci/view/icons.htm:63
+msgid "Please select an image file."
+msgstr "画像ファイルを選択してください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:176
+msgid "Please wait {seconds}s ({percent}%)"
+msgstr "あと{seconds}秒お待ちください（{percent}%）"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:149
+msgid "Provider"
+msgstr "プロバイダー"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:113
+msgid "RPC access"
+msgstr "RPCアクセス"
+
+#: luci-app-oasis/files/luci/view/chat.htm:251
+msgid "Radio"
+msgstr "無線デバイス"
+
+#: luci-app-oasis/files/luci/view/chat.htm:216
+#: luci-app-oasis/files/luci/view/chat.htm:93
+msgid "Raw(JSON)"
+msgstr "Raw(JSON)"
+
+#: luci-app-oasis/files/luci/view/chat.htm:203
+msgid "Reboot"
+msgstr "再起動"
+
+#: luci-app-oasis/files/luci/view/chat.htm:174
+msgid "Rebooting in {seconds}s ({percent}%)"
+msgstr "再起動まであと{seconds}秒（{percent}%）"
+
+#: luci-app-oasis/files/luci/view/chat.htm:173
+msgid "Rebooting..."
+msgstr "再起動中..."
+
+#: luci-app-oasis/files/luci/view/tools.htm:60
+#: luci-app-oasis/files/luci/view/tools.htm:9
+msgid "Refresh"
+msgstr "更新"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:91
 msgid "Refresh failed"
 msgstr "更新に失敗しました"
 
+#: luci-app-oasis/files/luci/view/chat.htm:221
+msgid "Reloading in {seconds}s ({percent}%)"
+msgstr "再読み込みまであと{seconds}秒（{percent}%）"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:92
-msgid "invalid tools"
-msgstr "不正なツール定義です"
+#: luci-app-oasis/files/luci/view/chat.htm:235
+msgid "Remove Wi-Fi network \"{ssid}\"? This cannot be undone."
+msgstr "Wi-Fiネットワーク「{ssid}」を削除しますか？この操作は取り消せません。"
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:127
+msgid "Remove account"
+msgstr "アカウントを削除"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:93
-msgid "failed to render"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:183
+msgid "Remove service"
+msgstr "サービスを削除"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:128
+msgid "Remove the external RPC account? Existing external sessions will be disconnected."
+msgstr "外部RPCアカウントを削除しますか？既存の外部セッションは切断されます。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:184
+msgid "Remove this AI service from the configuration?"
+msgstr "このAIサービスを設定から削除しますか？"
+
+#: luci-app-oasis/files/luci/view/chat.htm:74
+#: luci-app-oasis/files/luci/view/chat.htm:84
+msgid "Rename"
+msgstr "名前を変更"
+
+#: luci-app-oasis/files/luci/view/chat.htm:81
+msgid "Rename chat name"
+msgstr "チャット名を変更"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:81
+msgid "Render failed"
 msgstr "生成に失敗しました"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:82
+msgid "Render failed: {error}"
+msgstr "生成に失敗しました: {error}"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:94
-msgid "invalid body"
-msgstr "実行処理が不正です"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:157
+msgid "Replace with a new key"
+msgstr "新しいキーに置き換える"
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:173
+msgid "Responses API"
+msgstr "Responses API"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:95
-msgid "empty tools"
-msgstr "ツールが空です"
+#: luci-app-oasis/files/luci/view/chat.htm:212
+msgid "Restart"
+msgstr "再起動"
 
+#: luci-app-oasis/files/luci/view/chat.htm:175
+msgid "Restarting service..."
+msgstr "サービスを再起動しています..."
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:96
-msgid "missing tool description"
-msgstr "ツールの説明がありません"
+#: luci-app-oasis/files/luci/view/chat.htm:188
+msgid "Result received"
+msgstr "結果受信"
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:28
+msgid "Retry"
+msgstr "再試行"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:97
-msgid "missing tool name"
-msgstr "ツール名がありません"
+#: luci-app-oasis/files/luci/view/chat.htm:116
+#: luci-app-oasis/files/luci/view/chat.htm:215
+#: luci-app-oasis/files/luci/view/rollback-list.htm:41
+#: luci-app-oasis/files/luci/view/setting-v2.htm:141
+msgid "Rollback"
+msgstr "ロールバック"
 
+#: luci-app-oasis/files/luci/view/rollback-list.htm:9
+msgid "Rollback has been executed. You can access the UI again once the system has fully restarted"
+msgstr "ロールバックが実行されました。システムの再起動が完了すると再度UIにアクセスできます"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:98
-msgid "missing call body"
-msgstr "実行処理がありません"
+#: luci-app-oasis/files/luci/view/rollback-list.htm:45
+msgid "Rollback has been executed. You can access the UI again once the system has fully restarted."
+msgstr "ロールバックが実行されました。システムの再起動が完了すると再度UIにアクセスできます。"
 
+#: luci-app-oasis/files/luci/view/chat.htm:222
+msgid "Rolling back..."
+msgstr "ロールバック中..."
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:99
-msgid "invalid args"
-msgstr "引数が不正です"
+#: luci-app-oasis/files/luci/view/tools.htm:58
+msgid "Running..."
+msgstr "実行中..."
 
+#: luci-app-oasis/files/luci/view/chat.htm:239
+msgid "SSID"
+msgstr "SSID"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:100
-msgid "args and args_desc mismatch"
-msgstr "引数と引数説明の数が一致しません"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:103
+msgid "Save"
+msgstr "保存"
 
+#: luci-app-oasis/files/luci/view/chat.htm:139
+msgid "Save Wi-Fi settings"
+msgstr "Wi-Fi設定を保存"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:101
-msgid "invalid arg"
-msgstr "不正な引数です"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:199
+msgid "Saving settings..."
+msgstr "設定を保存しています..."
 
+#: luci-app-oasis/files/luci/view/chat.htm:26
+msgid "Scroll to latest"
+msgstr "最新メッセージへ移動"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:102
-msgid "invalid template type"
-msgstr "テンプレート種別が不正です"
+#: luci-app-oasis/files/luci/view/icons.htm:13
+#: luci-app-oasis/files/luci/view/icons.htm:55
+msgid "Select"
+msgstr "選択"
 
+#: luci-app-oasis/files/luci/view/icons.htm:8
+msgid "Select AI Icon"
+msgstr "AIアイコンを選択"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:103
-msgid "template not found"
-msgstr "テンプレートが見つかりません"
+#: luci-app-oasis/files/luci/view/chat.htm:91
+msgid "Select Export Type"
+msgstr "エクスポート形式を選択"
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:192
+msgid "Select a value from 10 to 100 in steps of 10."
+msgstr "10から100までの値を10刻みで選択してください。"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:104
-msgid "lua loader not available"
-msgstr "Luaローダーが利用できません"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:193
+msgid "Select a value from 60 to 600 seconds in steps of 60."
+msgstr "60秒から600秒までの値を60秒刻みで選択してください。"
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:159
+msgid "Select an API key action"
+msgstr "APIキーの操作を選択"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:105
-msgid "ucode syntax error"
-msgstr "ucodeの構文エラーです"
+#: luci-app-oasis/files/luci/view/icons.htm:58
+msgid "Select failed"
+msgstr "選択に失敗しました"
 
+#: luci-app-oasis/files/luci/view/icons.htm:59
+msgid "Selected"
+msgstr "選択しました"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:106
-msgid "failed to write temp file"
-msgstr "一時ファイルの書き込みに失敗しました"
+#: luci-app-oasis/files/luci/view/chat.htm:44
+msgid "Send"
+msgstr "送信"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:19
+msgid "Server script name"
+msgstr "サーバースクリプト名"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:107
-msgid "invalid tool type"
-msgstr "ツール種別が不正です"
+#: luci-app-oasis/files/luci/view/tools.htm:96
+msgid "Servers"
+msgstr "サーバー"
 
+#: luci-app-oasis/files/luci/view/chat.htm:211
+msgid "Service \"{name}\" needs restart. Restart now?"
+msgstr "\"{name}\"サービスの再起動が必要です。再起動しますか？"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:108
-msgid "missing name"
-msgstr "名前がありません"
+#: luci-app-oasis/files/luci/view/chat.htm:210
+msgid "Service restart is required. Restart now?"
+msgstr "サービスの再起動が必要です。再起動しますか？"
 
+#: luci-app-oasis/files/luci/view/setting-v2.htm:200
+msgid "Settings saved successfully."
+msgstr "設定を保存しました。"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:109
-msgid "invalid name"
-msgstr "名前が不正です"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:165
+msgid "Show thinking"
+msgstr "推論内容を表示"
 
+#: luci-app-oasis/files/luci/view/chat.htm:205
+msgid "Shutdown"
+msgstr "シャットダウン"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:110
-msgid "empty content"
-msgstr "内容が空です"
+#: luci-app-oasis/files/luci/view/chat.htm:207
+msgid "Shutting down in {seconds}s ({percent}%)"
+msgstr "シャットダウンまであと{seconds}秒（{percent}%）"
 
+#: luci-app-oasis/files/luci/view/chat.htm:206
+msgid "Shutting down..."
+msgstr "シャットダウン中..."
+
+#: luci-app-oasis/files/luci/view/tools.htm:79
+#: luci-app-oasis/files/luci/view/tools.htm:94
+msgid "Source Path"
+msgstr "ソースのパス"
+
+#: luci-app-oasis/files/luci/view/tools.htm:78
+#: luci-app-oasis/files/luci/view/tools.htm:93
+msgid "Source Type"
+msgstr "ソースの種類"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:137
+msgid "Storage"
+msgstr "ストレージ"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:138
+msgid "Storage path"
+msgstr "保存先パス"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:143
+msgid "Store rollback data"
+msgstr "ロールバックデータを保存"
+
+#: luci-app-oasis/files/luci/view/chat.htm:185
+msgid "Succeeded"
+msgstr "成功"
+
+#: luci-app-oasis/files/luci/view/chat.htm:11
+#: luci-app-oasis/files/luci/view/chat.htm:38
+msgid "System Message"
+msgstr "システムメッセージ"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:39
+msgid "System Message List"
+msgstr "システムメッセージ一覧"
+
+#: luci-app-oasis/files/luci/view/chat.htm:202
+msgid "System reboot is required. Reboot now?"
+msgstr "システムの再起動が必要です。今すぐ再起動しますか？"
+
+#: luci-app-oasis/files/luci/view/chat.htm:204
+msgid "System shutdown is required. Shutdown now?"
+msgstr "システムのシャットダウンが必要です。今すぐシャットダウンしますか？"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:13
+#: luci-app-oasis/files/luci/view/sysmsg.htm:30
+#: luci-app-oasis/files/luci/view/sysmsg.htm:80
+msgid "TITLE:"
+msgstr "タイトル:"
+
+#: luci-app-oasis/files/luci/view/chat.htm:217
+#: luci-app-oasis/files/luci/view/chat.htm:94
+msgid "Text"
+msgstr "テキスト"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:55
+msgid "The first service is active."
+msgstr "先頭のサービスが使用されます。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:28
+#: luci-app-oasis/files/luci/view/tools.htm:89
+msgid "The following AI tool manifests are not yet applied. Applying them will register their tools in Oasis."
+msgstr "次のAIツールのマニフェストはまだ適用されていません。適用すると、記載されたツールがOasisに登録されます。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:161
+msgid "The new key is sent only when you save and is never returned by the server."
+msgstr "新しいキーは保存時にのみ送信され、サーバーから返されることはありません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:135
+msgid "The passwords do not match."
+msgstr "パスワードが一致しません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:185
+msgid "The provider changed. Choose whether to replace or clear the stored API key."
+msgstr "プロバイダーが変更されました。保存済みAPIキーを置き換えるか消去するかを選択してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:142
+msgid "The rollback module is unavailable. Its settings cannot be changed."
+msgstr "ロールバックモジュールを利用できないため、この設定は変更できません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:202
+msgid "The settings changed after this page was loaded. Load the latest settings before saving again."
+msgstr "このページの読み込み後に設定が変更されました。再度保存する前に最新の設定を読み込んでください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:189
+msgid "The storage path must not contain parent directory segments."
+msgstr "保存先パスに親ディレクトリを示す区切りを含めることはできません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:197
+msgid "The value is too long."
+msgstr "入力値が長すぎます。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:201
+msgid "Thinking"
+msgstr "思考"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:175
+msgid "Thinking mode"
+msgstr "推論モード"
+
+#: luci-app-oasis/files/luci/view/chat.htm:200
+msgid "Thinking..."
+msgstr "考えています..."
+
+#: luci-app-oasis/files/luci/view/chat.htm:252
+msgid "This encryption mode is not supported by the Oasis Wi-Fi form. Use Network → Wireless to edit it."
+msgstr "この暗号化方式はOasisのWi-Fi設定画面では対応していません。Network → Wirelessから編集してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:187
+msgid "This field is required."
+msgstr "この項目は必須です。"
+
+#: luci-app-oasis/files/luci/view/tools.htm:95
+msgid "Tool Count"
+msgstr "ツール数"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:7
+msgid "Tool Maker"
+msgstr "ツールメーカー"
+
+#: luci-app-oasis/files/luci/view/chat.htm:180
+msgid "Tool activity"
+msgstr "ツール実行"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:38
+msgid "Tool arguments"
+msgstr "ツール引数"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:34
+msgid "Tool description"
+msgstr "ツールの説明"
+
+#: luci-app-oasis/files/luci/view/chat.htm:184
+msgid "Tool execution"
+msgstr "ツール呼び出し"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:30
+msgid "Tool name"
+msgstr "ツール名"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:12
+msgid "Tool type"
+msgstr "ツール種別"
+
+#: luci-app-oasis/files/luci/view/chat.htm:179
+msgid "Tool used:"
+msgstr "使用したツール:"
+
+#: luci-app-oasis/files/luci/view/tools.htm:97
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:23
+msgid "Tools"
+msgstr "ツール"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:42
+msgid "Type"
+msgstr "型"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:24
+msgid "URL:"
+msgstr "URL:"
+
+#: luci-app-oasis/files/luci/view/chat.htm:197
+msgid "Unexpected data format"
+msgstr "想定外のデータ形式です"
+
+#: luci-app-oasis/files/luci/view/tools.htm:62
+msgid "Unknown"
+msgstr "不明"
+
+#: luci-app-oasis/files/luci/view/tools.htm:81
+msgid "Unknown Server"
+msgstr "不明なサーバー"
+
+#: luci-app-oasis/files/luci/view/chat.htm:189
+msgid "Unknown tool"
+msgstr "不明なツール"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:82
+msgid "Update"
+msgstr "更新"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:126
+msgid "Update account"
+msgstr "アカウントを更新"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:92
+msgid "Update failed"
+msgstr "更新に失敗しました"
+
+#: luci-app-oasis/files/luci/view/icons.htm:36
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:55
+msgid "Upload"
+msgstr "アップロード"
+
+#: luci-app-oasis/files/luci/view/icons.htm:27
+msgid "Upload AI Icon"
+msgstr "AIアイコンをアップロード"
+
+#: luci-app-oasis/files/luci/view/icons.htm:64
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:89
+msgid "Upload failed"
+msgstr "アップロードに失敗しました"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:90
+msgid "Upload failed: {error}"
+msgstr "アップロードに失敗しました: {error}"
+
+#: luci-app-oasis/files/luci/view/icons.htm:33
+msgid "Upload this image?"
+msgstr "この画像をアップロードしますか？"
+
+#: luci-app-oasis/files/luci/view/icons.htm:65
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:87
+msgid "Uploaded"
+msgstr "アップロードしました"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:88
+msgid "Uploaded: {path} ({bytes} bytes)"
+msgstr "アップロードしました: {path} ({bytes} bytes)"
+
+#: luci-app-oasis/files/luci/view/chat.htm:249
+msgid "Use 8–63 characters for WPA3."
+msgstr "WPA3には8～63文字を使用してください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:248
+msgid "Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key."
+msgstr "8～63文字を使用してください。WPA2では64文字の16進数キーも使用できます。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:139
+msgid "Use an absolute directory path."
+msgstr "絶対ディレクトリパスを使用してください。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:124
+msgid "Use at least 12 characters. The password is never displayed after saving."
+msgstr "12文字以上で入力してください。パスワードは保存後に表示されません。"
+
+#: luci-app-oasis/files/luci/view/setting-v2.htm:120
+msgid "Username"
+msgstr "ユーザー名"
+
+#: luci-app-oasis/files/luci/view/chat.htm:242
+msgid "WPA2 Personal"
+msgstr "WPA2 パーソナル"
+
+#: luci-app-oasis/files/luci/view/chat.htm:243
+msgid "WPA2 Personal (CCMP)"
+msgstr "WPA2 パーソナル（CCMP）"
+
+#: luci-app-oasis/files/luci/view/chat.htm:245
+msgid "WPA2/WPA3 Personal"
+msgstr "WPA2/WPA3 パーソナル"
+
+#: luci-app-oasis/files/luci/view/chat.htm:244
+msgid "WPA3 Personal"
+msgstr "WPA3 パーソナル"
+
+#: luci-app-oasis/files/luci/view/chat.htm:131
+msgid "Wi-Fi changes can temporarily interrupt wireless connections. Use a wired connection when possible."
+msgstr "Wi-Fi設定の変更により、無線接続が一時的に切断される場合があります。可能であれば有線接続を使用してください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:130
+#: luci-app-oasis/files/luci/view/chat.htm:226
+msgid "Wi-Fi settings"
+msgstr "Wi-Fi設定"
+
+#: luci-app-oasis/files/luci/view/chat.htm:233
+msgid "Wi-Fi settings deleted. The wireless connection may take a moment to return."
+msgstr "Wi-Fi設定を削除しました。無線接続が復帰するまで少し時間がかかる場合があります。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:231
+msgid "Wi-Fi settings saved. The wireless connection may take a moment to return."
+msgstr "Wi-Fi設定を保存しました。無線接続が復帰するまで少し時間がかかる場合があります。"
+
+#: luci-app-oasis/files/luci/view/rollback-list.htm:23
+msgid "Would you like to execute the rollback?"
+msgstr "ロールバックを実行しますか？"
+
+#: luci-app-oasis/files/luci/view/icons.htm:22
+#: luci-app-oasis/files/luci/view/rollback-list.htm:25
+#: luci-app-oasis/files/luci/view/sysmsg.htm:47
+msgid "Yes"
+msgstr "はい"
+
+#: luci-app-oasis/files/luci/view/sysmsg.htm:8
+msgid "You can register and modify system messages for AI."
+msgstr "AI向けのシステムメッセージを登録・編集できます。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:218
+#: luci-app-oasis/files/luci/view/chat.htm:41
+msgid "Your Message (Enter to send, Shift+Enter for newline)"
+msgstr "メッセージ（Enterで送信、Shift+Enterで改行）"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:111
 msgid "already exists"
 msgstr "既に存在します"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:100
+msgid "args and args_desc mismatch"
+msgstr "引数と引数説明の数が一致しません"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:112
-msgid "failed to write file"
-msgstr "ファイルの書き込みに失敗しました"
+#: luci-app-oasis/files/luci/view/tools.htm:65
+msgid "conflict"
+msgstr "競合"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:110
+msgid "empty content"
+msgstr "内容が空です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:95
+msgid "empty tools"
+msgstr "ツールが空です"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:113
 msgid "failed to chmod"
 msgstr "実行権限の設定に失敗しました"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:93
+msgid "failed to render"
+msgstr "生成に失敗しました"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:114
 msgid "failed to set executable permission"
 msgstr "実行権限の確認に失敗しました"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:112
+msgid "failed to write file"
+msgstr "ファイルの書き込みに失敗しました"
 
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:115
-msgid "marker begin not found"
-msgstr "開始マーカーが見つかりません"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:106
+msgid "failed to write temp file"
+msgstr "一時ファイルの書き込みに失敗しました"
 
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:101
+msgid "invalid arg"
+msgstr "不正な引数です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:99
+msgid "invalid args"
+msgstr "引数が不正です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:94
+msgid "invalid body"
+msgstr "実行処理が不正です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:109
+msgid "invalid name"
+msgstr "名前が不正です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:102
+msgid "invalid template type"
+msgstr "テンプレート種別が不正です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:107
+msgid "invalid tool type"
+msgstr "ツール種別が不正です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:92
+msgid "invalid tools"
+msgstr "不正なツール定義です"
+
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:104
+msgid "lua loader not available"
+msgstr "Luaローダーが利用できません"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:116
 msgid "marker begin line not found"
 msgstr "開始マーカー行が見つかりません"
 
-
-#: oasis-tool-maker/files/luci/view/tool-maker.htm:117
-msgid "marker end not found"
-msgstr "終了マーカーが見つかりません"
-
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:115
+msgid "marker begin not found"
+msgstr "開始マーカーが見つかりません"
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:118
 msgid "marker end line not found"
 msgstr "終了マーカー行が見つかりません"
 
-#: files/luci/view/setting-v2.htm:60
-msgid "AI Services"
-msgstr "AIサービス"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:117
+msgid "marker end not found"
+msgstr "終了マーカーが見つかりません"
 
-#: files/luci/view/setting-v2.htm:103
-msgid "AI-assisted configuration"
-msgstr "AIによる設定支援"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:98
+msgid "missing call body"
+msgstr "実行処理がありません"
 
-#: files/luci/view/setting-v2.htm:121
-msgid "API key"
-msgstr "APIキー"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:108
+msgid "missing name"
+msgstr "名前がありません"
 
-#: files/luci/view/setting-v2.htm:115
-msgid "API Key Setup"
-msgstr "APIキー設定"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:96
+msgid "missing tool description"
+msgstr "ツールの説明がありません"
 
-#: files/luci/view/setting-v2.htm:140
-msgid "API mode"
-msgstr "APIモード"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:97
+msgid "missing tool name"
+msgstr "ツール名がありません"
 
-#: files/luci/view/setting-v2.htm:116
-msgid "Active"
-msgstr "使用中"
-
-#: files/luci/view/setting-v2.htm:149
-msgid "Budget Tokens"
-msgstr "推論予算トークン数"
-
-#: files/luci/view/setting-v2.htm:138
-msgid "Custom endpoint"
-msgstr "カスタムエンドポイント"
-
-#: files/luci/view/setting-v2.htm:135
-msgid "Endpoint"
-msgstr "エンドポイント"
-
-#: files/luci/view/setting-v2.htm:136
-msgid "Endpoint type"
-msgstr "エンドポイント種別"
-
-#: files/luci/view/setting-v2.htm:43
-#: files/luci/view/setting-v2.htm:113
-#: files/luci/view/setting-v2.htm:765
-msgid "External RPC account"
-msgstr "外部RPCアカウント"
-
-#: files/luci/view/setting-v2.htm:44
-#: files/luci/view/setting-v2.htm:114
-msgid "Create one restricted rpcd account for an external Oasis client."
-msgstr "外部Oasisクライアント用に、権限を制限したrpcdアカウントを1つ作成します。"
-
-#: files/luci/view/setting-v2.htm:115
-#: files/luci/view/setting-v2.htm:792
-msgid "External RPC account settings are unavailable."
-msgstr "外部RPCアカウントの設定は利用できません。"
-
-#: files/luci/view/setting-v2.htm:116
-#: files/luci/view/setting-v2.htm:777
-msgid "Controls whether external clients can use this account."
-msgstr "外部クライアントがこのアカウントを使用できるかどうかを制御します。"
-
-#: files/luci/view/setting-v2.htm:117
-#: files/luci/view/setting-v2.htm:806
-msgid "An external RPC account is configured."
-msgstr "外部RPCアカウントが設定されています。"
-
-#: files/luci/view/setting-v2.htm:118
-#: files/luci/view/setting-v2.htm:807
-msgid "No external RPC account is configured."
-msgstr "外部RPCアカウントは設定されていません。"
-
-#: files/luci/view/setting-v2.htm:119
-msgid "Username"
-msgstr "ユーザー名"
-
-#: files/luci/view/setting-v2.htm:120
-msgid "Password"
-msgstr "パスワード"
-
-#: files/luci/view/setting-v2.htm:121
-msgid "Confirm password"
-msgstr "パスワードの確認"
-
-#: files/luci/view/setting-v2.htm:122
-msgid "New password (optional)"
-msgstr "新しいパスワード（任意）"
-
-#: files/luci/view/setting-v2.htm:123
-msgid "Use at least 12 characters. The password is never displayed after saving."
-msgstr "12文字以上で入力してください。パスワードは保存後に表示されません。"
-
-#: files/luci/view/setting-v2.htm:124
-#: files/luci/view/setting-v2.htm:854
-msgid "Create account"
-msgstr "アカウントを作成"
-
-#: files/luci/view/setting-v2.htm:125
-#: files/luci/view/setting-v2.htm:853
-msgid "Update account"
-msgstr "アカウントを更新"
-
-#: files/luci/view/setting-v2.htm:126
-#: files/luci/view/setting-v2.htm:868
-msgid "Remove account"
-msgstr "アカウントを削除"
-
-#: files/luci/view/setting-v2.htm:127
-#: files/luci/view/setting-v2.htm:674
-msgid "Remove the external RPC account? Existing external sessions will be disconnected."
-msgstr "外部RPCアカウントを削除しますか？既存の外部セッションは切断されます。"
-
-#: files/luci/view/setting-v2.htm:128
-#: files/luci/view/setting-v2.htm:738
-msgid "External RPC account created successfully."
-msgstr "外部RPCアカウントを作成しました。"
-
-#: files/luci/view/setting-v2.htm:129
-#: files/luci/view/setting-v2.htm:741
-msgid "External RPC account updated successfully."
-msgstr "外部RPCアカウントを更新しました。"
-
-#: files/luci/view/setting-v2.htm:130
-#: files/luci/view/setting-v2.htm:740
-msgid "External RPC account removed successfully."
-msgstr "外部RPCアカウントを削除しました。"
-
-#: files/luci/view/setting-v2.htm:131
-#: files/luci/view/setting-v2.htm:749
-msgid "Failed to save the external RPC account."
-msgstr "外部RPCアカウントの保存に失敗しました。"
-
-#: files/luci/view/setting-v2.htm:132
-msgid "Enter a username using letters, numbers, dots, underscores, or hyphens."
-msgstr "英字、数字、ドット、アンダースコア、ハイフンを使ってユーザー名を入力してください。"
-
-#: files/luci/view/setting-v2.htm:133
-msgid "Enter a password containing at least 12 characters."
-msgstr "12文字以上のパスワードを入力してください。"
-
-#: files/luci/view/setting-v2.htm:134
-msgid "The passwords do not match."
-msgstr "パスワードが一致しません。"
-
-#: files/luci/view/setting-v2.htm:135
-msgid "Choose a different username."
-msgstr "別のユーザー名を選択してください。"
-
-#: files/luci/view/setting-v2.htm:30
-msgid "Failed to load settings."
-msgstr "設定の読み込みに失敗しました。"
-
-#: files/luci/view/setting-v2.htm:173
-msgid "Failed to load settings. Check the settings API and try again."
-msgstr "設定の読み込みに失敗しました。設定APIを確認して再試行してください。"
-
-#: files/luci/view/setting-v2.htm:131
-msgid "Function Calling"
-msgstr "Function Calling"
-
-#: files/luci/view/setting-v2.htm:163
-msgid "For LM Studio, this uses the OpenAI-compatible /v1/chat/completions endpoint. Enable only with a tool-use capable model."
-msgstr "LM StudioではOpenAI互換の /v1/chat/completions endpointを使用します。ツール利用に対応したmodelでのみ有効にしてください。"
-
-#: files/luci/view/setting-v2.htm:8
-msgid "General Setting"
-msgstr "一般設定"
-
-#: files/luci/view/setting-v2.htm:53
-msgid "General Settings"
-msgstr "一般設定"
-
-#: files/luci/view/setting-v2.htm:102
-msgid "Integration"
-msgstr "連携"
-
-#: files/luci/view/setting-v2.htm:23
-msgid "Loading settings..."
-msgstr "設定を読み込んでいます..."
-
-#: files/luci/view/setting-v2.htm:147
-msgid "Max Tokens"
-msgstr "最大トークン数"
-
-#: files/luci/view/setting-v2.htm:108
-msgid "Maximum turns per chat"
-msgstr "チャットごとの最大ターン数"
-
-#: files/luci/view/setting-v2.htm:118
-msgid "Model"
-msgstr "モデル"
-
-#: files/luci/view/setting-v2.htm:112
-msgid "Monitor time"
-msgstr "監視時間"
-
-#: files/luci/view/setting-v2.htm:117
-msgid "Provider"
-msgstr "プロバイダー"
-
-#: files/luci/view/setting-v2.htm:104
-msgid "RPC access"
-msgstr "RPCアクセス"
-
-#: files/luci/view/setting-v2.htm:32
-msgid "Retry"
-msgstr "再試行"
-
-#: files/luci/view/setting-v2.htm:133
-msgid "Show thinking"
-msgstr "推論内容を表示"
-
-#: files/luci/view/setting-v2.htm:105
-msgid "Storage"
-msgstr "ストレージ"
-
-#: files/luci/view/setting-v2.htm:106
-msgid "Storage path"
-msgstr "保存先パス"
-
-#: files/luci/view/setting-v2.htm:111
-msgid "Store rollback data"
-msgstr "ロールバックデータを保存"
-
-#: files/luci/view/setting-v2.htm:143
-msgid "Thinking mode"
-msgstr "推論モード"
-
-#: files/luci/view/setting-v2.htm:113
+#: luci-app-oasis/files/luci/view/setting-v2.htm:145
 msgid "seconds"
 msgstr "秒"
 
-#: files/luci/view/setting-v2.htm:115
-msgid "services"
-msgstr "サービス"
-
-#: files/luci/view/setting-v2.htm:122
-msgid "A key is currently configured."
-msgstr "APIキーは設定済みです。"
-
-#: files/luci/view/setting-v2.htm:124
-msgid "API key action"
-msgstr "APIキーの操作"
-
-#: files/luci/view/setting-v2.htm:146
-msgid "Adaptive"
-msgstr "適応"
-
-#: files/luci/view/setting-v2.htm:70
-msgid "Add service"
-msgstr "サービスを追加"
-
-#: files/luci/view/setting-v2.htm:164
-msgid "Budget Tokens must be at least 1024."
-msgstr "推論予算トークン数は1024以上にしてください。"
-
-#: files/luci/view/setting-v2.htm:165
-msgid "Budget Tokens must be less than Max Tokens."
-msgstr "推論予算トークン数は最大トークン数未満にしてください。"
-
-#: files/luci/view/setting-v2.htm:142
-msgid "Chat Completions API"
-msgstr "Chat Completions API"
-
-#: files/luci/view/setting-v2.htm:156
-msgid "Choose Replace with a new key or Clear stored key after changing the provider."
-msgstr "プロバイダーを変更した後は、「新しいキーに置き換える」または「保存済みキーを消去」を選択してください。"
-
-#: files/luci/view/setting-v2.htm:127
-msgid "Clear stored key"
-msgstr "保存済みキーを消去"
-
-#: files/luci/view/setting-v2.htm:9
-msgid "Configure Oasis integration, storage, rollback, and AI services."
-msgstr "Oasisの連携、ストレージ、ロールバック、AIサービスを設定します。"
-
-#: files/luci/view/setting-v2.htm:134
-msgid "Controls display only; it does not enable model thinking."
-msgstr "表示のみを制御します。モデルの推論機能自体を有効にするものではありません。"
-
-#: files/luci/view/setting-v2.htm:168
-msgid "Correct the highlighted fields before saving."
-msgstr "保存する前に強調表示された項目を修正してください。"
-
-#: files/luci/view/setting-v2.htm:139
-msgid "Custom endpoint URL"
-msgstr "カスタムエンドポイントURL"
-
-#: files/luci/view/setting-v2.htm:88
-msgid "Discard"
-msgstr "破棄"
-
-#: files/luci/view/setting-v2.htm:174
-msgid "Discard unsaved changes and load the latest settings?"
-msgstr "未保存の変更を破棄して最新の設定を読み込みますか？"
-
-#: files/luci/view/setting-v2.htm:166
-msgid "Each service identifier must be unique."
-msgstr "サービスの識別子はそれぞれ一意である必要があります。"
-
-#: files/luci/view/setting-v2.htm:132
-msgid "Enable only when the selected provider and model support tool use."
-msgstr "選択したプロバイダーとモデルがツール利用に対応している場合のみ有効にしてください。"
-
-#: files/luci/view/setting-v2.htm:145
-msgid "Enabled with manual budget"
-msgstr "手動予算で有効"
-
-#: files/luci/view/setting-v2.htm:148
-#: files/luci/view/setting-v2.htm:161
-msgid "Enter a positive integer."
-msgstr "正の整数を入力してください。"
-
-#: files/luci/view/setting-v2.htm:160
-msgid "Enter a valid HTTP or HTTPS URL."
-msgstr "有効なHTTPまたはHTTPSのURLを入力してください。"
-
-#: files/luci/view/setting-v2.htm:158
-msgid "Enter an absolute path beginning with a slash."
-msgstr "スラッシュで始まる絶対パスを入力してください。"
-
-#: files/luci/view/setting-v2.htm:150
-msgid "Enter at least 1024 and less than Max Tokens."
-msgstr "1024以上かつ最大トークン数未満の値を入力してください。"
-
-#: files/luci/view/setting-v2.htm:171
-msgid "Failed to save settings. Check the fields and try again."
-msgstr "設定の保存に失敗しました。入力項目を確認して再試行してください。"
-
-#: files/luci/view/setting-v2.htm:125
-msgid "Keep current key"
-msgstr "現在のキーを保持"
-
-#: files/luci/view/setting-v2.htm:48
-msgid "Load latest settings"
-msgstr "最新の設定を読み込む"
-
-#: files/luci/view/setting-v2.htm:129
-msgid "New API key"
-msgstr "新しいAPIキー"
-
-#: files/luci/view/setting-v2.htm:79
-msgid "No AI services are configured. Add a service to use Oasis chat."
-msgstr "AIサービスが設定されていません。Oasisチャットを使用するにはサービスを追加してください。"
-
-#: files/luci/view/setting-v2.htm:123
-msgid "No key is currently configured."
-msgstr "APIキーは設定されていません。"
-
-#: files/luci/view/setting-v2.htm:137
-msgid "Official endpoint"
-msgstr "公式エンドポイント"
-
-#: files/luci/view/setting-v2.htm:153
-msgid "Remove service"
-msgstr "サービスを削除"
-
-#: files/luci/view/setting-v2.htm:154
-msgid "Remove this AI service from the configuration?"
-msgstr "このAIサービスを設定から削除しますか？"
-
-#: files/luci/view/setting-v2.htm:126
-msgid "Replace with a new key"
-msgstr "新しいキーに置き換える"
-
-#: files/luci/view/setting-v2.htm:141
-msgid "Responses API"
-msgstr "Responses API"
-
-#: files/luci/view/setting-v2.htm:94
-msgid "Save"
-msgstr "保存"
-
-#: files/luci/view/setting-v2.htm:169
-msgid "Saving settings..."
-msgstr "設定を保存しています..."
-
-#: files/luci/view/setting-v2.htm:162
-msgid "Select a value from 10 to 100 in steps of 10."
-msgstr "10から100までの値を10刻みで選択してください。"
-
-#: files/luci/view/setting-v2.htm:163
-msgid "Select a value from 60 to 600 seconds in steps of 60."
-msgstr "60秒から600秒までの値を60秒刻みで選択してください。"
-
-#: files/luci/view/setting-v2.htm:128
-msgid "Select an API key action"
-msgstr "APIキーの操作を選択"
-
-#: files/luci/view/setting-v2.htm:170
-msgid "Settings saved successfully."
-msgstr "設定を保存しました。"
-
-#: files/luci/view/setting-v2.htm:56
-msgid "The first service is active."
-msgstr "先頭のサービスが使用されます。"
-
-#: files/luci/view/setting-v2.htm:130
-msgid "The new key is sent only when you save and is never returned by the server."
-msgstr "新しいキーは保存時にのみ送信され、サーバーから返されることはありません。"
-
-#: files/luci/view/setting-v2.htm:155
-msgid "The provider changed. Choose whether to replace or clear the stored API key."
-msgstr "プロバイダーが変更されました。保存済みAPIキーを置き換えるか消去するかを選択してください。"
-
-#: files/luci/view/setting-v2.htm:110
-msgid "The rollback module is unavailable. Its settings cannot be changed."
-msgstr "ロールバックモジュールを利用できないため、この設定は変更できません。"
-
-#: files/luci/view/setting-v2.htm:172
-msgid "The settings changed after this page was loaded. Load the latest settings before saving again."
-msgstr "このページの読み込み後に設定が変更されました。再度保存する前に最新の設定を読み込んでください。"
-
-#: files/luci/view/setting-v2.htm:159
-msgid "The storage path must not contain parent directory segments."
-msgstr "保存先パスに親ディレクトリを示す区切りを含めることはできません。"
-
-#: files/luci/view/setting-v2.htm:167
-msgid "The value is too long."
-msgstr "入力値が長すぎます。"
-
-#: files/luci/view/setting-v2.htm:157
-msgid "This field is required."
-msgstr "この項目は必須です。"
-
-#: files/luci/view/setting-v2.htm:107
-msgid "Use an absolute directory path."
-msgstr "絶対ディレクトリパスを使用してください。"
-
-#: files/luci/view/setting-v2.htm:114
+#: luci-app-oasis/files/luci/view/setting-v2.htm:146
 msgid "service"
 msgstr "サービス"
 
-#: files/luci/view/chat.htm
-msgid "Add {band} Wi-Fi settings"
-msgstr "{band} Wi-Fi設定を追加"
+#: luci-app-oasis/files/luci/view/setting-v2.htm:147
+msgid "services"
+msgstr "サービス"
 
-#: files/luci/view/chat.htm
-msgid "A passphrase is already configured and is not displayed."
-msgstr "パスフレーズは設定済みですが表示されません。"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:103
+msgid "template not found"
+msgstr "テンプレートが見つかりません"
 
-#: files/luci/view/chat.htm
-msgid "Check the Wi-Fi settings fields."
-msgstr "Wi-Fi設定の入力項目を確認してください。"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:105
+msgid "ucode syntax error"
+msgstr "ucodeの構文エラーです"
 
-#: files/luci/view/chat.htm
-msgid "Close"
-msgstr "閉じる"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:79
+msgid "unknown error"
+msgstr "不明なエラー"
 
-#: files/luci/view/chat.htm
-msgid "Encryption"
-msgstr "暗号化方式"
-
-#: files/luci/view/chat.htm
-msgid "Failed to load Wi-Fi settings. Try again."
-msgstr "Wi-Fi設定の読み込みに失敗しました。再試行してください。"
-
-#: files/luci/view/chat.htm
-msgid "Failed to save Wi-Fi settings. Check the fields and try again."
-msgstr "Wi-Fi設定の保存に失敗しました。入力項目を確認して再試行してください。"
-
-#: files/luci/view/chat.htm
-msgid "Leave empty to keep the current passphrase."
-msgstr "現在のパスフレーズを保持する場合は空欄のままにしてください。"
-
-#: files/luci/view/chat.htm
-msgid "No editable Wi-Fi access points were found."
-msgstr "編集可能なWi-Fiアクセスポイント設定が見つかりません。"
-
-#: files/luci/view/chat.htm
-msgid "No radio is available for the requested Wi-Fi band."
-msgstr "指定されたWi-Fi帯域に利用可能な無線デバイスがありません。"
-
-#: files/luci/view/chat.htm
-msgid "Open networks do not use a passphrase."
-msgstr "オープンネットワークではパスフレーズを使用しません。"
-
-#: files/luci/view/chat.htm
-msgid "Open (no password)"
-msgstr "オープン（パスワードなし）"
-
-#: files/luci/view/chat.htm
-msgid "Passphrase"
-msgstr "パスフレーズ"
-
-#: files/luci/view/chat.htm
-msgid "Radio"
-msgstr "無線デバイス"
-
-#: files/luci/view/chat.htm
-msgid "Save Wi-Fi settings"
-msgstr "Wi-Fi設定を保存"
-
-#: files/luci/view/chat.htm
-msgid "SSID"
-msgstr "SSID"
-
-#: files/luci/view/chat.htm
-msgid "This encryption mode is not supported by the Oasis Wi-Fi form. Use Network → Wireless to edit it."
-msgstr "この暗号化方式はOasisのWi-Fi設定画面では対応していません。Network → Wirelessから編集してください。"
-
-#: files/luci/view/chat.htm
-msgid "Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key."
-msgstr "8～63文字を使用してください。WPA2では64文字の16進数キーも使用できます。"
-
-#: files/luci/view/chat.htm
-msgid "Use 8–63 characters for WPA3."
-msgstr "WPA3には8～63文字を使用してください。"
-
-#: files/luci/view/chat.htm
-msgid "Wi-Fi changes can temporarily interrupt wireless connections. Use a wired connection when possible."
-msgstr "Wi-Fi設定の変更により、無線接続が一時的に切断される場合があります。可能であれば有線接続を使用してください。"
-
-#: files/luci/view/chat.htm
-msgid "Wi-Fi settings"
-msgstr "Wi-Fi設定"
-
-#: files/luci/view/chat.htm
-msgid "WPA2 Personal"
-msgstr "WPA2 パーソナル"
-
-#: files/luci/view/chat.htm
-msgid "WPA2 Personal (CCMP)"
-msgstr "WPA2 パーソナル（CCMP）"
-
-#: files/luci/view/chat.htm
-msgid "WPA2/WPA3 Personal"
-msgstr "WPA2/WPA3 パーソナル"
-
-#: files/luci/view/chat.htm
-msgid "WPA3 Personal"
-msgstr "WPA3 パーソナル"
-
-#: files/luci/view/chat.htm
-msgid "Wi-Fi settings saved. The wireless connection may take a moment to return."
-msgstr "Wi-Fi設定を保存しました。無線接続が復帰するまで少し時間がかかる場合があります。"
-
-#: files/luci/view/chat.htm
-msgid "Delete Wi-Fi settings"
-msgstr "Wi-Fi設定を削除"
-
-#: files/luci/view/chat.htm
-msgid "Failed to delete Wi-Fi settings. Try again."
-msgstr "Wi-Fi設定の削除に失敗しました。再試行してください。"
-
-#: files/luci/view/chat.htm
-msgid "No Wi-Fi access point settings were found."
-msgstr "Wi-Fiアクセスポイント設定が見つかりません。"
-
-#: files/luci/view/chat.htm
-msgid "Remove Wi-Fi network \"{ssid}\"? This cannot be undone."
-msgstr "Wi-Fiネットワーク「{ssid}」を削除しますか？この操作は取り消せません。"
-
-#: files/luci/view/chat.htm
-msgid "Wi-Fi settings deleted. The wireless connection may take a moment to return."
-msgstr "Wi-Fi設定を削除しました。無線接続が復帰するまで少し時間がかかる場合があります。"
+#: oasis-tool-maker/files/luci/view/tool-maker.htm:78
+msgid "unnamed"
+msgstr "名称未設定"

@@ -21,12 +21,24 @@ h3 {
     margin-top: 22px;
 }
 
-.server-block.tool-search-block {
+.server-block.auto-mode-block {
     background: linear-gradient(180deg, #f6faff 0%, #eef5ff 100%);
     border: 1px solid #cfe0ff;
     border-radius: 18px;
     padding: 16px 18px 18px;
     box-shadow: 0 10px 22px rgba(13, 110, 253, 0.08);
+}
+
+.auto-mode-block button {
+    min-width: 140px;
+    margin-bottom: 12px;
+    background: #db2777;
+    border-color: #db2777;
+}
+
+.auto-mode-block .auto-mode-on {
+    background: #be185d;
+    border-color: #be185d;
 }
 
 /* Head action container */

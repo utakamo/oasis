@@ -12,6 +12,18 @@ return {
         default = true,
     },
     {
+        suite = "portable",
+        module = "oasis.test.spec.tools_cli",
+        description = "CLI Auto mode commands with platform services mocked",
+        default = true,
+    },
+    {
+        suite = "portable",
+        module = "oasis.test.spec.tool_mode_guard",
+        description = "Text-only request isolation and per-request tool mode guards",
+        default = true,
+    },
+    {
         suite = "unit",
         module = "oasis.test.spec.schema",
         description = "Unified chat schema and fail-closed sanitization",
@@ -21,6 +33,42 @@ return {
         suite = "unit",
         module = "oasis.test.spec.chat_error",
         description = "Structured chat error classification and formatting",
+        default = true,
+    },
+    {
+        suite = "unit",
+        module = "oasis.test.spec.auto_prompt",
+        description = "Request-only Auto tool discovery system instruction",
+        default = true,
+    },
+    {
+        suite = "unit",
+        module = "oasis.test.spec.tool_sequence",
+        description = "Bounded Tool Search and normal-tool sequencing",
+        default = true,
+    },
+    {
+        suite = "unit",
+        module = "oasis.test.spec.tool_state",
+        description = "Persistent manual tool state transitions",
+        default = true,
+    },
+    {
+        suite = "unit",
+        module = "oasis.test.spec.tool_auto",
+        description = "Persistent Auto mode and isolated boot-scoped tool selection",
+        default = true,
+    },
+    {
+        suite = "unit",
+        module = "oasis.test.spec.manifest_transaction",
+        description = "Isolated and fail-closed Manifest UCI transactions",
+        default = true,
+    },
+    {
+        suite = "unit",
+        module = "oasis.test.spec.package_initialization",
+        description = "Idempotent package-owned tool initialization",
         default = true,
     },
     {
@@ -39,6 +87,12 @@ return {
         suite = "provider",
         module = "oasis.test.spec.provider_request",
         description = "Provider request construction and title controls",
+        default = true,
+    },
+    {
+        suite = "provider",
+        module = "oasis.test.spec.provider_tool_sequence",
+        description = "Provider Tool Search sequence safety contracts",
         default = true,
     },
     {

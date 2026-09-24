@@ -1,4 +1,5 @@
 <%+header%>
+<% local translate_js = require("luci.oasis.i18n").translate_js %>
 
 <link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/rollback-list.css">
 
@@ -37,11 +38,11 @@ window.OasisRollbackConfig = {
 </script>
 <script>
 window.OasisRollbackStrings = {
-    rollback: '<%:Rollback%>',
-    noCommands: '<%:No UCI commands found.%>',
-    noData: '<%:No Rollback Data%>',
-    loading: '<%:Loading...%>',
-    executed: '<%:Rollback has been executed. You can access the UI again once the system has fully restarted.%>'
+    rollback: <%= translate_js("Rollback") %>,
+    noCommands: <%= translate_js("No UCI commands found.") %>,
+    noData: <%= translate_js("No Rollback Data") %>,
+    loading: <%= translate_js("Loading...") %>,
+    executed: <%= translate_js("Rollback has been executed. You can access the UI again once the system has fully restarted.") %>
 };
 </script>
 <script src="<%= resource %>/oasis/js/rollback.js"></script>
