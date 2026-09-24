@@ -4,6 +4,7 @@ local common = require("oasis.common")
 local console = require("oasis.console")
 local uci = require("luci.model.uci").cursor()
 local main_cmd = arg[1]
+local tool_mode_command = main_cmd == "tools" and arg[2] ~= nil
 
 local unload_targets = {
     { name = "oasis", path = common.flag.unload.oasis },
@@ -87,7 +88,9 @@ local function handle_unloaded_targets()
     return true
 end
 
-if main_cmd ~= "manifest" then
+-- Mode commands only read/update tool settings. Do not prompt for a reboot or
+-- require chat/tool servers to be ready for these non-interactive operations.
+if main_cmd ~= "manifest" and not tool_mode_command then
     if handle_unloaded_targets() then
         return
     end
@@ -171,7 +174,8 @@ local function help()
         " delchat no=<chat-number>",
         " rename no=<chat-number> <title>",
         " list",
-        " tools",
+        " tools                 List tools; edit manual settings when Auto is OFF",
+        " tools on|off|status   Enable, disable, or show the shared Auto mode",
         " manifest build [<script_path>]",
         " manifest apply [--yes|-y] [<manifest_path>]",
     }
@@ -431,8 +435,12 @@ commands.list = function()
     oasis.list()
 end
 
-commands.tools = function()
-    oasis.tools()
+commands.tools = function(args)
+    if args[3] ~= nil then
+        io.stderr:write("Usage: oasis tools [on|off|status]\n")
+        os.exit(2)
+    end
+    os.exit(oasis.tools(args[2]) or 0)
 end
 
 -- TODO: extend manifest subcommands to support:

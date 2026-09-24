@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=26
+PKG_RELEASE:=32
 
 SOURCE_DIR:=./files/luci
 
@@ -26,6 +26,8 @@ define Build/Compile
 endef
 
 define Package/luci-app-oasis/install
+	$(INSTALL_DIR) $(1)$(LUCI_LIBRARYDIR)/oasis
+	$(INSTALL_DATA) $(SOURCE_DIR)/oasis/i18n.lua $(1)$(LUCI_LIBRARYDIR)/oasis/i18n.lua
 	$(INSTALL_DIR) $(1)$(LUCI_VIEWDIR)/oasis
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis
 	$(INSTALL_DIR) $(1)$(LUCI_RESOURCES_DIR)/oasis/css
@@ -45,6 +47,8 @@ define Package/luci-app-oasis/install
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/tools.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-utils.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-tools.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-turn.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/icons.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/rollback.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/setting-v2.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js

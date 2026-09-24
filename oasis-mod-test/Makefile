@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-test
 PKG_VERSION:=1.0.0
-PKG_RELEASE:=2
+PKG_RELEASE:=9
 
 LUA_LIBRARY_DIR = /usr/lib/lua
 
@@ -12,7 +12,8 @@ define Package/oasis-mod-test
     CATEGORY:=utakamo
     SECTION:=utakamo
     TITLE:= Assertion and diagnostic test module for Oasis
-    DEPENDS:=+oasis
+    DEPENDS:=+oasis +oasis-mod-tool
+    EXTRA_DEPENDS:=oasis (>=3.2.6-r22), oasis-mod-tool (>=1.1.1-r11)
     PKGARCH:=all
 endef
 

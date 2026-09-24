@@ -883,6 +883,7 @@ gemini.new = function()
     obj.recv_raw_msg = { role = common.role.unknown, message = "" }
     obj._sysmsg_text = nil
     obj._reboot_required = false
+    obj._tool_sequence_context = nil
     obj._sse_state = response_framer.new_sse(
         MAX_RESPONSE_BYTES, MAX_STREAM_RECORDS)
 
@@ -946,6 +947,7 @@ gemini.new = function()
         self.cfg = datactrl.get_ai_service_cfg(arg, { format = format })
         self.format = format
         self._agent_mode = nil
+        self._tool_sequence_context = nil
         self._reboot_required = false
         self._request_serial = 0
         self._last_provider_content = nil
@@ -955,6 +957,51 @@ gemini.new = function()
         self.recv_raw_msg = { role = common.role.unknown, message = "" }
         self:_clear_tool_cycle()
         self:_reset_response_state()
+    end
+
+    obj.set_tool_sequence_context = function(self, context)
+        if type(context) ~= "table" or context.active ~= true then
+            self._tool_sequence_context = nil
+            return true
+        end
+
+        self._tool_sequence_context = {
+            active = true,
+            allow_followup_tools = context.allow_followup_tools == true,
+            refresh_tool_registry = context.refresh_tool_registry == true,
+            remaining_ai_requests = context.remaining_ai_requests,
+            remaining_tool_rounds = context.remaining_tool_rounds,
+            remaining_tool_calls = context.remaining_tool_calls,
+            authorize_tool_batch = context.authorize_tool_batch,
+        }
+        return true
+    end
+
+    obj.begin_tool_sequence = function(self)
+        -- Discard provider-native Function Call/Response parts from any prior
+        -- interrupted turn before transforming the new user request.
+        self:_clear_tool_cycle()
+        return true
+    end
+
+    obj._tool_sequence_allows_followup = function(self)
+        local context = self._tool_sequence_context
+        if type(context) == "table" and context.active == true then
+            return context.allow_followup_tools == true
+        end
+        return self._agent_mode == true
+    end
+
+    obj._tool_sequence_blocks_current_request = function(self)
+        local context = self._tool_sequence_context
+        return type(context) == "table" and context.active == true
+            and context.allow_followup_tools ~= true
+    end
+
+    obj._tool_sequence_refreshes_registry = function(self)
+        local context = self._tool_sequence_context
+        return type(context) == "table" and context.active == true
+            and context.refresh_tool_registry == true
     end
 
     obj.init_msg_buffer = function(self)
@@ -1191,7 +1238,12 @@ gemini.new = function()
         end
         body = calling.inject_schema(self, body, {
             followup = followup,
-            force_none = followup and not self._agent_mode,
+            disable_tools = not followup
+                and self:_tool_sequence_blocks_current_request(),
+            force_none = followup
+                and not self:_tool_sequence_allows_followup(),
+            refresh_tool_registry = followup
+                and self:_tool_sequence_refreshes_registry(),
         })
 
         local encoded, encode_error =
@@ -1893,7 +1945,7 @@ gemini.new = function()
                 phase = "function_calling",
                 kind = "unsupported_feature",
                 message = "Gemini requested a tool when Function Calling was disabled.",
-                can_continue = false,
+                can_continue = not self._tool_side_effects_committed,
             })
         end
 
@@ -1906,7 +1958,7 @@ gemini.new = function()
                 kind = "tool_error",
                 message = "Failed while executing a Gemini tool call.",
                 detail = tostring(plain),
-                can_continue = false,
+                can_continue = not self._tool_side_effects_committed,
             })
         end
         if process_error then

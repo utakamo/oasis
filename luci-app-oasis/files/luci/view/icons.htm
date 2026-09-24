@@ -1,4 +1,5 @@
 <%+header%>
+<% local translate_js = require("luci.oasis.i18n").translate_js %>
 
 <link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/icons.css">
 
@@ -50,18 +51,18 @@ window.OasisIconsConfig = {
 </script>
 <script>
 window.OasisIconsStrings = {
-    loading: '<%:Loading...%>',
-    select: '<%:Select%>',
-    done: '<%:Done%>',
-    pleaseSelectIcon: '<%:Please select an icon%>',
-    selectFailed: '<%:Select failed%>',
-    selected: '<%:Selected%>',
-    networkError: '<%:Network error%>',
-    deleteFailed: '<%:Delete failed%>',
-    deleted: '<%:Deleted%>',
-    pleaseSelectImage: '<%:Please select an image file.%>',
-    uploadFailed: '<%:Upload failed%>',
-    uploaded: '<%:Uploaded%>'
+    loading: <%= translate_js("Loading...") %>,
+    select: <%= translate_js("Select") %>,
+    done: <%= translate_js("Done") %>,
+    pleaseSelectIcon: <%= translate_js("Please select an icon") %>,
+    selectFailed: <%= translate_js("Select failed") %>,
+    selected: <%= translate_js("Selected") %>,
+    networkError: <%= translate_js("Network error") %>,
+    deleteFailed: <%= translate_js("Delete failed") %>,
+    deleted: <%= translate_js("Deleted") %>,
+    pleaseSelectImage: <%= translate_js("Please select an image file.") %>,
+    uploadFailed: <%= translate_js("Upload failed") %>,
+    uploaded: <%= translate_js("Uploaded") %>
 };
 </script>
 <script src="<%= resource %>/oasis/js/icons.js"></script>

@@ -7,6 +7,7 @@ local misc       = require("oasis.chat.misc")
 local debug      = require("oasis.chat.debug")
 local ous        = require("oasis.unified.chat.schema")
 local calling    = require("oasis.chat.function.calling.openai_responses")
+local policy     = require("oasis.chat.function.calling.policy")
 local chat_error = require("oasis.chat.error")
 
 local MAX_SSE_BUFFER_BYTES = 4 * 1024 * 1024
@@ -43,6 +44,7 @@ openai_responses.new = function()
     obj._completed_response_output = nil
     obj._completed_tool_message = nil
     obj._request_tools_enabled = false
+    obj._tool_sequence_context = nil
 
     obj.initialize = function(self, arg, format)
         self.cfg = datactrl.get_ai_service_cfg(arg, { format = format })
@@ -50,6 +52,7 @@ openai_responses.new = function()
         -- This module is a singleton. A new command/request context must not
         -- inherit transient provider state or a previous agent-mode marker.
         self._agent_mode = nil
+        self._tool_sequence_context = nil
         self.processed_tool_call_ids = {}
         self._processed_tool_results = {}
         self._tool_side_effects_committed = false
@@ -57,6 +60,50 @@ openai_responses.new = function()
         self._request_tools_enabled = false
         self._request_tool_names = {}
         self:_reset_stream_state(true)
+    end
+
+    obj.set_tool_sequence_context = function(self, context)
+        if type(context) ~= "table" or context.active ~= true then
+            self._tool_sequence_context = nil
+            return true
+        end
+
+        self._tool_sequence_context = {
+            active = true,
+            allow_followup_tools = context.allow_followup_tools == true,
+            refresh_tool_registry = context.refresh_tool_registry == true,
+            remaining_ai_requests = context.remaining_ai_requests,
+            remaining_tool_rounds = context.remaining_tool_rounds,
+            remaining_tool_calls = context.remaining_tool_calls,
+            authorize_tool_batch = context.authorize_tool_batch,
+        }
+        return true
+    end
+
+    obj.begin_tool_sequence = function(self)
+        -- Pending Responses API items are valid only for the immediate tool
+        -- continuation in the same top-level turn.
+        self:_reset_stream_state(true)
+        self.processed_tool_call_ids = {}
+        self._processed_tool_results = {}
+        self._tool_side_effects_committed = false
+        self._request_tools_enabled = false
+        self._request_tool_names = {}
+        return true
+    end
+
+    obj._tool_sequence_allows_followup = function(self)
+        local context = self._tool_sequence_context
+        if type(context) == "table" and context.active == true then
+            return context.allow_followup_tools == true
+        end
+        return self._agent_mode == true
+    end
+
+    obj._tool_sequence_blocks_current_request = function(self)
+        local context = self._tool_sequence_context
+        return type(context) == "table" and context.active == true
+            and context.allow_followup_tools ~= true
     end
 
     obj.set_chat_id = function(self, id)
@@ -202,7 +249,9 @@ openai_responses.new = function()
 
         local messages = chat.messages or {}
         local last = messages[#messages]
-        local disable_tools = last and last.role == "tool" and not self._agent_mode
+        local disable_tools = self:_tool_sequence_blocks_current_request()
+            or (last and last.role == "tool"
+                and not self:_tool_sequence_allows_followup())
         body = calling.inject_schema(self, body, disable_tools)
 
         local encoded = jsonc.stringify(body, false)
@@ -567,11 +616,21 @@ openai_responses.new = function()
                 detail = "response.output is not an array",
             })
         end
+        local output_length = policy.dense_array_length(response.output)
+        if output_length == nil then
+            return nil, nil, self.recv_raw_msg, false, chat_error.build(self, {
+                phase = "response_parse", kind = "parse_error",
+                message = "OpenAI returned an invalid completed response.",
+                detail = "response.output is not a dense array",
+                can_continue = not self._tool_side_effects_committed,
+            })
+        end
 
         -- Streaming item events are provisional. Only function calls present in
         -- the authoritative completed output may reach the execution phase.
         local completed_function_calls = {}
-        for index, item in ipairs(response.output) do
+        for index = 1, output_length do
+            local item = response.output[index]
             local completed_call
             if type(item) == "table" and item.type == "function_call" then
                 completed_call = self:_get_function_call(item.id, index - 1)
@@ -793,14 +852,15 @@ openai_responses.new = function()
             self._pending_provider_items = nil
             self.processed_tool_call_ids = {}
             self._processed_tool_results = {}
-            self._tool_side_effects_committed = false
+            -- Keep the side-effect guard through final response persistence.
+            -- begin_tool_sequence() clears it at the next top-level turn.
             return nil
         end
         if not self._request_tools_enabled then
             return nil, nil, nil, false, chat_error.build(self, {
                 phase = "function_calling", kind = "unsupported_feature",
                 message = "OpenAI requested another tool after Function Calling was disabled.",
-                can_continue = false,
+                can_continue = not self._tool_side_effects_committed,
             })
         end
 
@@ -811,7 +871,7 @@ openai_responses.new = function()
                     phase = "function_calling", kind = "parse_error",
                     message = "OpenAI returned an incomplete function call.",
                     detail = "item_id=" .. tostring(call.item_id or ""),
-                    can_continue = false,
+                    can_continue = not self._tool_side_effects_committed,
                 })
             end
         end
@@ -823,7 +883,8 @@ openai_responses.new = function()
             return nil, nil, nil, false, chat_error.build(self, {
                 phase = "tool_execution", kind = "tool_error",
                 message = "Failed while executing an OpenAI tool call.",
-                detail = tostring(plain), can_continue = false,
+                detail = tostring(plain),
+                can_continue = not self._tool_side_effects_committed,
             })
         end
         if err then return nil, nil, nil, false, err end

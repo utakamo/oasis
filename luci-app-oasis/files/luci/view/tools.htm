@@ -1,6 +1,7 @@
 <%+header%>
+<% local translate_js = require("luci.oasis.i18n").translate_js %>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tools.css">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tools.css?v=3.2.6-r32">
 
 <div id="tools-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
 <h2><%:Local Tools%></h2>
@@ -41,7 +42,9 @@
 
 <script>
 window.OasisToolsConfig = {
+    csrfToken: '<%=token%>',
     urls: {
+        setToolAuto: '<%=build_url("admin", "network", "oasis", "set-tool-auto")%>',
         enableTool: '<%=build_url("admin", "network", "oasis", "enable-tool")%>',
         disableTool: '<%=build_url("admin", "network", "oasis", "disable-tool")%>',
         refreshTools: '<%=build_url("admin", "network", "oasis", "refresh-tools")%>',
@@ -52,45 +55,49 @@ window.OasisToolsConfig = {
 </script>
 <script>
 window.OasisToolsStrings = {
-    running: '<%:Running...%>',
-    refreshFailed: '<%:Failed to refresh services%>',
-    refreshLabel: '<%:Refresh%>',
-    errorDefault: '<%:An error occurred.%>',
-    unknownTool: '<%:Unknown%>',
-    enabled: '<%:Enabled%>',
-    disabled: '<%:Disabled%>',
-    conflict: '<%:conflict%>',
-    noDescription: '<%:No description.%>',
-    disableButton: '<%:Disable%>',
-    enableButton: '<%:Enable%>',
-    conflictTitle: '<%:Conflict: cannot change state%>',
-    missingName: '<%:Missing tool name%>',
-    loading: '<%:Loading...%>',
-    updateFailed: '<%:Failed to update tool state%>',
-    manifestButton: '<%:Manifest%>',
-    hideManifestButton: '<%:Hide Manifest%>',
-    loadingManifest: '<%:Loading manifest...%>',
-    manifestNotFound: '<%:Manifest not found.%>',
-    manifestLoadFailed: '<%:Failed to load manifest.%>',
-    manifestSourceType: '<%:Source Type%>',
-    manifestSourcePath: '<%:Source Path%>',
-    installExtensionHint: '<%:Please install the extension module \'oasis-mod-tool\' to enable local tools.%>',
-    unknownServer: '<%:Unknown Server%>',
-    toolSearchCategory: '<%:Tool Search (oasis.tool.manager)%>',
-    toolSearchDescription: '<%:Browse available tools and enable or disable them.%>',
-    confirmRequiredTitle: '<%:AI Tool Manifest Confirmation%>',
-    confirmRequiredMessage: '<%:The following AI tool manifests are not yet applied. Applying them will register their tools in Oasis.%>',
-    confirmApplyButton: '<%:Apply%>',
-    confirmCancelButton: '<%:Cancel%>',
-    confirmPathLabel: '<%:Manifest Path%>',
-    confirmSourceTypeLabel: '<%:Source Type%>',
-    confirmSourcePathLabel: '<%:Source Path%>',
-    confirmToolCountLabel: '<%:Tool Count%>',
-    confirmServersLabel: '<%:Servers%>',
-    confirmToolsLabel: '<%:Tools%>',
-    confirmNoSourcePath: '<%:None%>'
+    running: <%= translate_js("Running...") %>,
+    refreshFailed: <%= translate_js("Failed to refresh services") %>,
+    refreshLabel: <%= translate_js("Refresh") %>,
+    errorDefault: <%= translate_js("An error occurred.") %>,
+    unknownTool: <%= translate_js("Unknown") %>,
+    enabled: <%= translate_js("Enabled") %>,
+    disabled: <%= translate_js("Disabled") %>,
+    conflict: <%= translate_js("conflict") %>,
+    noDescription: <%= translate_js("No description.") %>,
+    disableButton: <%= translate_js("Disable") %>,
+    enableButton: <%= translate_js("Enable") %>,
+    conflictTitle: <%= translate_js("Conflict: cannot change state") %>,
+    missingName: <%= translate_js("Missing tool name") %>,
+    loading: <%= translate_js("Loading...") %>,
+    updateFailed: <%= translate_js("Failed to update tool state") %>,
+    manifestButton: <%= translate_js("Manifest") %>,
+    hideManifestButton: <%= translate_js("Hide Manifest") %>,
+    loadingManifest: <%= translate_js("Loading manifest...") %>,
+    manifestNotFound: <%= translate_js("Manifest not found.") %>,
+    manifestLoadFailed: <%= translate_js("Failed to load manifest.") %>,
+    manifestSourceType: <%= translate_js("Source Type") %>,
+    manifestSourcePath: <%= translate_js("Source Path") %>,
+    installExtensionHint: <%= translate_js("Please install the extension module 'oasis-mod-tool' to enable local tools.") %>,
+    unknownServer: <%= translate_js("Unknown Server") %>,
+    autoMode: <%= translate_js("Auto mode") %>,
+    autoOn: <%= translate_js("Auto: ON") %>,
+    autoOff: <%= translate_js("Auto: OFF") %>,
+    autoManaged: <%= translate_js("Managed by AI") %>,
+    autoDescription: <%= translate_js("AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots.") %>,
+    manualDescription: <%= translate_js("Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled.") %>,
+    confirmRequiredTitle: <%= translate_js("AI Tool Manifest Confirmation") %>,
+    confirmRequiredMessage: <%= translate_js("The following AI tool manifests are not yet applied. Applying them will register their tools in Oasis.") %>,
+    confirmApplyButton: <%= translate_js("Apply") %>,
+    confirmCancelButton: <%= translate_js("Cancel") %>,
+    confirmPathLabel: <%= translate_js("Manifest Path") %>,
+    confirmSourceTypeLabel: <%= translate_js("Source Type") %>,
+    confirmSourcePathLabel: <%= translate_js("Source Path") %>,
+    confirmToolCountLabel: <%= translate_js("Tool Count") %>,
+    confirmServersLabel: <%= translate_js("Servers") %>,
+    confirmToolsLabel: <%= translate_js("Tools") %>,
+    confirmNoSourcePath: <%= translate_js("None") %>
 };
 </script>
-<script src="<%= resource %>/oasis/js/tools.js"></script>
+<script src="<%= resource %>/oasis/js/tools.js?v=3.2.6-r32"></script>
 
 <%+footer%>

@@ -991,31 +991,135 @@ textarea:focus-visible {
     color: #ffffff;
 }
 
-/* Tool-used badge: visually distinguish tool execution notices */
-.message .message-text .tool-notice {
-    display: inline-block;
-    padding: 6px 10px;
-    margin-bottom: 6px;
-    border-radius: 10px;
-    background: linear-gradient(180deg, #fff7eb 0%, #ffe9cc 100%);
-    border: 1px solid #ffd8a8;
-    color: #7a4e00;
-    font-weight: 600;
-}
-.message .message-text .tool-notice::before {
-    content: "🛠 ";
+/* One outer bubble; its text and tool groups are appended in receive order. */
+.turn-text,
+.turn-tools {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
-/* Tool name emphasis */
-.message .message-text .tool-notice .tool-name {
-    display: inline-block;
-    padding: 1px 6px;
-    margin-left: 4px;
-    border-radius: 6px;
-    background: #fffaf3;
+.turn-text > :first-child {
+    margin-top: 0;
+}
+
+.turn-text > :last-child {
+    margin-bottom: 0;
+}
+
+.turn-tools,
+.turn-execution,
+.turn-pending {
+    margin-top: 10px;
+}
+
+.turn-tools:first-child,
+.turn-pending:first-child {
+    margin-top: 0;
+}
+
+.turn-tools + .turn-text,
+.thinking-panel + .turn-text,
+.turn-execution + .turn-text,
+.error-notice + .turn-text {
+    margin-top: 10px;
+}
+
+.turn-execution,
+.turn-pending {
+    color: #667085;
+    font-size: 12px;
+}
+
+.tool-activity-title {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.message .message-text .tool-activity-list {
+    margin: 0;
+    padding-left: 1.5em;
+}
+
+.message .message-text .tool-call {
+    padding: 7px 10px;
+    margin: 0 0 6px;
+    border-radius: 8px;
+    background: #fff7eb;
     border: 1px solid #ffd8a8;
     color: #7a4e00;
+}
+
+.message .message-text .tool-call:last-child {
+    margin-bottom: 0;
+}
+
+.message .message-text .tool-call-management {
+    padding: 7px 10px;
+    background: #fdf2f8;
+    border-color: #fbcfe8;
+    color: #9d174d;
+}
+
+.tool-call-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+
+.tool-call-kind {
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.tool-call-status {
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.tool-call-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tool-call-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.tool-call-name,
+.tool-call-target {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: inherit;
+}
+
+.message .message-text .tool-activity code.tool-call-name {
+    flex: 1 1 10rem;
+    min-width: 0;
+    margin: 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #333333;
+    color: #ffffff;
+}
+
+.tool-call-notice {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #81c784;
+    background: #f1f8f2;
+    color: #233b29;
+    overflow-wrap: anywhere;
 }
 
 /* Error notice badge */

@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-agent
 PKG_VERSION:=1.0.0
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 APP_DIR := /usr/lib/lua/oasis/agent
 
@@ -13,6 +13,7 @@ define Package/oasis-mod-agent
     SECTION:=utakamo
     TITLE:= Agent mode plugin for Oasis
     DEPENDS:=+oasis-mod-tool
+    EXTRA_DEPENDS:=oasis (>=3.2.6-r17), oasis-mod-tool (>=1.1.1-r11)
     PKGARCH:=all
 endef
 

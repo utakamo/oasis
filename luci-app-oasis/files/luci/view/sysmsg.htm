@@ -1,4 +1,5 @@
 <%+header%>
+<% local translate_js = require("luci.oasis.i18n").translate_js %>
 
 <link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/sysmsg.css">
 
@@ -10,8 +11,8 @@
 
 <div class="section">
     <label class="field-row" for="new-sysmsg-title"><%:TITLE:%></label>
-    <input id="new-sysmsg-title" class="input-text" type="text" size="15" aria-label="New system message title">
-    <textarea id="new-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="New system message body"></textarea>
+    <input id="new-sysmsg-title" class="input-text" type="text" size="15" aria-label="<%:New system message title%>">
+    <textarea id="new-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="<%:New system message body%>"></textarea>
     <div class="form-actions">
         <button id="add-button" class="add-button" type="button"><%:Add%></button>
     </div>
@@ -21,14 +22,14 @@
 
 <div class="section">
     <label class="field-row" for="extra-sysmsg-url"><%:URL:%></label>
-    <input id="extra-sysmsg-url" class="input-text" name="extra-sysmsg-url" placeholder="<%:Please enter the server's url%>" type="text" style="width:80%;" aria-label="External system message URL">
+    <input id="extra-sysmsg-url" class="input-text" name="extra-sysmsg-url" placeholder="<%:Please enter the server's url%>" type="text" style="width:80%;" aria-label="<%:External system message URL%>">
     <div class="form-actions">
         <button id="load-button" class="load-button" type="button"><%:Load%></button>
     </div>
     <div id="extra-sysmsg" style="display: none;">
         <label class="field-row" for="extra-sysmsg-title"><%:TITLE:%></label>
-        <input id="extra-sysmsg-title" class="input-text" type="text" size="15" aria-label="External system message title">
-        <textarea id="extra-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="External system message body"></textarea>
+        <input id="extra-sysmsg-title" class="input-text" type="text" size="15" aria-label="<%:External system message title%>">
+        <textarea id="extra-sysmsg-data" class="sysmsg-textarea" rows="10" aria-label="<%:External system message body%>"></textarea>
         <div class="form-actions">
             <button id="extra-add-button" class="add-button" type="button"><%:Add%></button>
         </div>
@@ -76,19 +77,20 @@ window.OasisSysmsgConfig = {
 </script>
 <script>
 window.OasisSysmsgStrings = {
-    loading: '<%:Loading...%>',
-    update: '<%:Update%>',
-    done: '<%:Done%>',
-    delete: '<%:Delete%>',
-    pleaseEnterTitle: '<%:Please input system message title%>',
-    pleaseEnterBody: '<%:Please input system message data%>',
-    addFailed: '<%:Add failed%>',
-    loaded: '<%:Loaded%>',
-    deleteFailed: '<%:Delete failed%>',
-    deleted: '<%:Deleted%>',
-    networkError: '<%:Network error%>',
-    updateFailed: '<%:Update failed%>',
-    missingUrl: '<%:Please input system message server url%>'
+    titleLabel: <%= translate_js("TITLE:") %>,
+    loading: <%= translate_js("Loading...") %>,
+    update: <%= translate_js("Update") %>,
+    done: <%= translate_js("Done") %>,
+    delete: <%= translate_js("Delete") %>,
+    pleaseEnterTitle: <%= translate_js("Please input system message title") %>,
+    pleaseEnterBody: <%= translate_js("Please input system message data") %>,
+    addFailed: <%= translate_js("Add failed") %>,
+    loaded: <%= translate_js("Loaded") %>,
+    deleteFailed: <%= translate_js("Delete failed") %>,
+    deleted: <%= translate_js("Deleted") %>,
+    networkError: <%= translate_js("Network error") %>,
+    updateFailed: <%= translate_js("Update failed") %>,
+    missingUrl: <%= translate_js("Please input system message server url") %>
 };
 </script>
 <script src="<%= resource %>/oasis/js/sysmsg.js"></script>
