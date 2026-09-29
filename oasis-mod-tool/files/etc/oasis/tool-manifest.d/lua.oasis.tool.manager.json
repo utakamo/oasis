@@ -4,7 +4,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "List local tools with their exact server, name, description, and effective Auto mode enabled state. Use this list to find a tool, then enable it before calling it. Manual settings are separate.",
+      "description": "List local tools with their exact server, name, description, and enabled state in Auto mode. Use before choosing or changing a tool; this does not change settings.",
       "properties": [],
       "download_message": "",
       "name": "get_tool_list",
@@ -16,17 +16,17 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Disable one Auto mode tool by its exact server and name. State is shared by all users until reboot and survives Auto OFF/ON within the same boot. Manual UCI tool settings are unchanged. Tool Search control tools cannot be changed through this API.",
+      "description": "Disable an unneeded Auto mode tool by its exact server and name from get_tool_list. Removes it from subsequent callable tools until reboot; manual settings remain unchanged. Tool Search controls are protected.",
       "properties": [
         {
           "type": "string",
           "name": "server",
-          "description": "Exact Server Name from get_tool_list"
+          "description": "Exact server value from get_tool_list"
         },
         {
           "type": "string",
           "name": "tool",
-          "description": "Exact Tool Name from get_tool_list"
+          "description": "Exact name value from get_tool_list"
         }
       ],
       "download_message": "",
@@ -42,17 +42,17 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Enable one Auto mode tool by its exact server and name so it can be called next. State is shared by all users until reboot and survives Auto OFF/ON within the same boot. Manual UCI tool settings are unchanged. Tool Search control tools are managed automatically.",
+      "description": "Enable a disabled Auto mode tool by its exact server and name from get_tool_list. Updates shared selection until reboot; does not execute the tool or change manual settings.",
       "properties": [
         {
           "type": "string",
           "name": "server",
-          "description": "Exact Server Name from get_tool_list"
+          "description": "Exact server value from get_tool_list"
         },
         {
           "type": "string",
           "name": "tool",
-          "description": "Exact Tool Name from get_tool_list"
+          "description": "Exact name value from get_tool_list"
         }
       ],
       "download_message": "",
