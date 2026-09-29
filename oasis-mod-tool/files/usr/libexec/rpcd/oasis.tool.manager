@@ -13,15 +13,15 @@ local function cursor()
 end
 
 server.tool("get_tool_list", {
-    tool_desc = "List local tools and their effective enabled state in Auto mode",
+    tool_desc = "List local tools with their exact server, name, description, and enabled state in Auto mode. Use before choosing or changing a tool; this does not change settings.",
     call = function()
         return response(state.list_effective(cursor()))
     end
 })
 
 server.tool("set_tool_enabled", {
-    tool_desc = "Enable one Auto mode tool until reboot by exact server and name; manual settings are unchanged",
-    args_desc = { "Server Name", "Tool Name" },
+    tool_desc = "Enable a disabled Auto mode tool by its exact server and name from get_tool_list. Updates shared selection until reboot; does not execute the tool or change manual settings.",
+    args_desc = { "Exact server value from get_tool_list", "Exact name value from get_tool_list" },
     args = { server = "a_string", tool = "a_string" },
     call = function(args)
         return response(state.set_auto_enabled(
@@ -30,8 +30,8 @@ server.tool("set_tool_enabled", {
 })
 
 server.tool("set_tool_disabled", {
-    tool_desc = "Disable one Auto mode tool until reboot by exact server and name; manual settings are unchanged",
-    args_desc = { "Server Name", "Tool Name" },
+    tool_desc = "Disable an unneeded Auto mode tool by its exact server and name from get_tool_list. Removes it from subsequent callable tools until reboot; manual settings remain unchanged. Tool Search controls are protected.",
+    args_desc = { "Exact server value from get_tool_list", "Exact name value from get_tool_list" },
     args = { server = "a_string", tool = "a_string" },
     call = function(args)
         return response(state.set_auto_enabled(
