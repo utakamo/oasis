@@ -28,6 +28,21 @@ This document describes the WebUI APIs exposed under LuCI by `module.lua` (shipp
 - **Method**: GET
 - **Description**: AI chat interface
 
+`Attach UCI info` asks for agreement before fetching and sending the first
+selected configuration to the AI service. Agreement is held only in this page's
+memory and is reset on reload, restoration from the browser's back/forward
+cache, or a change of AI service. New chats on the same page retain agreement.
+Desktop and mobile share this behavior. Cancel (including Escape) preserves
+the input and selection and sends nothing. If configuration retrieval fails,
+the message is also preserved and not sent.
+
+Run `node --test dev_tools/tests/test_chat_uci_consent.cjs` from the repository
+root to check this behavior with mocked HTTP endpoints and the actual page
+assets. This requires the `playwright` Node package and its Chromium browser
+(`playwright install chromium`). Set `OASIS_TEST_SCREENSHOTS_DIR` to save the
+desktop English and mobile Japanese confirmation screenshots. This does not
+replace on-device LuCI testing.
+
 #### 1.3 Settings Page
 - **URL**: `/cgi-bin/luci/admin/network/oasis/setting`
 - **Method**: GET

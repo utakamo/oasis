@@ -131,6 +131,9 @@
     let sysmsg_key = "";
     let targetChatId = "";
     let message_outputing = false;
+    // Consent lasts only for this page and is reset when the AI service changes.
+    let uciAttachmentConsent = false;
+    let uciAttachmentConsentVersion = 0;
     let ai_service_list = [];
     let scrollLockEnabled = false;
     let isKeyboardOpen = false;
@@ -1251,6 +1254,7 @@
         } catch (_) {}
 
         li.addEventListener('click', function (event) {
+                    if (activeConversation || message_outputing) return;
                     const systemMessage = document.getElementById("oasis-system");
                     if (systemMessage !== null) {
                         chatMessagesContainer.removeChild(systemMessage);
@@ -2121,7 +2125,37 @@
 
 // removed: showTitlePopup (unused)
 
-    async function send_chat_data(systemMessage, messageInput, messageText) {
+    function resetUciAttachmentConsent() {
+        uciAttachmentConsent = false;
+        uciAttachmentConsentVersion++;
+        const dialog = document.getElementById('uci-share-dialog');
+        if (dialog && dialog.open) dialog.close('cancel');
+    }
+
+    async function confirmUciAttachment(target) {
+        if (uciAttachmentConsent) return true;
+
+        const message = formatString(t('uciShareMessage',
+            'The "{config}" UCI configuration will be included in your chat message and sent to the selected AI service. It may contain router information or credentials. Do you agree to share it?'), { config: target });
+        const dialog = document.getElementById('uci-share-dialog');
+        const version = uciAttachmentConsentVersion;
+        let agreed;
+        if (dialog && typeof dialog.showModal === 'function') {
+            document.getElementById('uci-share-message').textContent = message;
+            dialog.returnValue = 'cancel';
+            agreed = await new Promise(resolve => {
+                dialog.addEventListener('close', () => resolve(dialog.returnValue === 'agree'), { once: true });
+                dialog.showModal();
+            });
+        } else {
+            agreed = window.confirm(message + '\n\n' + t('uciShareRemember',
+                'Your agreement is remembered on this page until you reload it or change the AI service. Cancel keeps your message without sending it.'));
+        }
+        uciAttachmentConsent = agreed && version === uciAttachmentConsentVersion;
+        return uciAttachmentConsent;
+    }
+
+    function send_chat_data(systemMessage, messageInput, messageText, uciInfo) {
 
         const messageContainer = document.createElement('div');
         messageContainer.className = 'message sent';
@@ -2129,7 +2163,7 @@
         const messageTextContainer = document.createElement('div');
         messageTextContainer.className = 'message-text';
         //messageTextContainer.textContent = messageText;
-        messageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(messageText));
+        messageTextContainer.innerHTML = sanitizeHTML(convertMarkdownToHTML(messageText + uciInfo));
 
         messageContainer.appendChild(messageTextContainer);
 
@@ -2195,10 +2229,7 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        let uci_info = await retrieve_uci_show_result(messageTextContainer);
-        messageText += uci_info;
-        //console.log(messageText);
-        send_message(receivedMessageTextContainer, messageText);
+        send_message(receivedMessageTextContainer, messageText + uciInfo);
     }
 
         document.getElementById('smp-send-button').addEventListener('click', function(event) {
@@ -2223,6 +2254,42 @@
 
         message_outputing = true;
 
+        const uciSelect = document.getElementById('uci-config-list');
+        const targetUciConfig = uciSelect.value;
+        const consentVersion = uciAttachmentConsentVersion;
+        let uciInfo = '';
+        if (targetUciConfig !== '---') {
+            try {
+                if (!await confirmUciAttachment(targetUciConfig)) {
+                    message_outputing = false;
+                    messageInput.focus();
+                    return;
+                }
+                const wasReadOnly = messageInput.readOnly;
+                messageInput.readOnly = true;
+                try {
+                    uciInfo = await retrieve_uci_show_result(targetUciConfig);
+                } finally {
+                    messageInput.readOnly = wasReadOnly;
+                }
+                // A service change during the request requires fresh consent.
+                if (consentVersion !== uciAttachmentConsentVersion) {
+                    message_outputing = false;
+                    messageInput.focus();
+                    return;
+                }
+            } catch (error) {
+                message_outputing = false;
+                alert(t('uciAttachmentFailed', 'Could not load the UCI configuration. Your message was not sent. Please try again.'));
+                messageInput.focus();
+                return;
+            }
+            for (const id of ['uci-config-list', 'mb-uci-config-list']) {
+                const select = document.getElementById(id);
+                if (select && select.value === targetUciConfig) select.value = '---';
+            }
+        }
+
         // For new chats, do not show popup; use System Message selected in left column
 
         // Lock System Message selection once the very first message of a new chat is sent
@@ -2235,7 +2302,7 @@
             if (mbSys) mbSys.disabled = true;
         }
 
-        send_chat_data(systemMessage, messageInput, messageText);
+        send_chat_data(systemMessage, messageInput, messageText, uciInfo);
         // Ensure the newly appended messages are visible even when IME is open
         keepLatestMessageVisible();
     });
@@ -2671,47 +2738,19 @@
         return /^\d+$/.test(str);
     }
 
-    async function retrieve_uci_show_result(messageTextContainer) {
-
-        const selectElement = document.getElementById("uci-config-list");
-        let target_uci_config = selectElement.value;
-        //console.log(target_uci_config);
-
-        if (target_uci_config === '---') {
-            return '';
+    async function retrieve_uci_show_result(targetUciConfig) {
+        const response = await fetch(URL_UCI_SHOW, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ target: targetUciConfig })
+        });
+        if (!response.ok) throw new Error('UCI request failed');
+        const data = await response.json();
+        if (!Array.isArray(data) || !data.every(line => typeof line === 'string')) {
+            throw new Error('Invalid UCI response');
         }
-
-        let uci_info = '';
-
-        try {
-            const response = await fetch(URL_UCI_SHOW, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({ target: target_uci_config })
-            });
-
-            const data = await response.json();
-
-            const uciTitle = formatString(t('uciInfoTitle', "### [User's {config} config]"), { config: target_uci_config });
-            uci_info = '\n\n' + uciTitle + '\n';
-            uci_info += '```\n';
-
-            for (let i = 0; i < data.length; i++) {
-                uci_info += data[i] + '\n';
-            }
-
-            uci_info += '```\n';
-            messageTextContainer.innerHTML += sanitizeHTML(convertMarkdownToHTML(uci_info));
-
-        } catch (error) {
-            console.error('Error:', error);
-            return '';
-        }
-
-        selectElement.value = '---';
-        return uci_info;
+        const title = formatString(t('uciInfoTitle', "### [User's {config} config]"), { config: targetUciConfig });
+        return '\n\n' + title + '\n```\n' + data.join('\n') + '\n```\n';
     }
 
 
@@ -2894,7 +2933,7 @@
 
         //console.log("chat id = " + chatId);
 
-        if (activeConversation) {
+        if (activeConversation || message_outputing) {
             return;
         }
 
@@ -3157,6 +3196,7 @@
     });
 
     document.getElementById("ai-service-list").addEventListener("change", function(event) {
+      resetUciAttachmentConsent();
       const selected_service_index = parseInt(event.target.value, 10);
       const current_service = ai_service_list[selected_service_index];
 
@@ -3184,6 +3224,10 @@
           console.error('Error:', error);
         });
       }
+    });
+
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) resetUciAttachmentConsent();
     });
 
 })();

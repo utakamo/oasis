@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: luci-app-oasis\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-28 23:15+0000\n"
-"PO-Revision-Date: 2026-09-23 00:00+0000\n"
+"PO-Revision-Date: 2026-09-30 00:00+0000\n"
 "Last-Translator: Codex\n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
@@ -16,6 +16,26 @@ msgstr ""
 #: luci-app-oasis/files/luci/view/chat.htm:225
 msgid "### [User's {config} config]"
 msgstr "### [ユーザーの{config}設定]"
+
+#: luci-app-oasis/files/luci/view/chat.htm:146
+msgid "Share UCI configuration with AI?"
+msgstr "UCI設定をAIと共有しますか？"
+
+#: luci-app-oasis/files/luci/view/chat.htm:238
+msgid "The \"{config}\" UCI configuration will be included in your chat message and sent to the selected AI service. It may contain router information or credentials. Do you agree to share it?"
+msgstr "UCI設定「{config}」をチャットメッセージに添付し、選択中のAIサービスへ送信します。ルーターの情報や認証情報が含まれる場合があります。共有に同意しますか？"
+
+#: luci-app-oasis/files/luci/view/chat.htm:148 luci-app-oasis/files/luci/view/chat.htm:239
+msgid "Your agreement is remembered on this page until you reload it or change the AI service. Cancel keeps your message without sending it."
+msgstr "このページを再読み込みするか、AIサービスを変更するまで同意を記憶します。キャンセルすると入力を残したまま送信を中止します。"
+
+#: luci-app-oasis/files/luci/view/chat.htm:151
+msgid "Agree and send"
+msgstr "同意して送信"
+
+#: luci-app-oasis/files/luci/view/chat.htm:240
+msgid "Could not load the UCI configuration. Your message was not sent. Please try again."
+msgstr "UCI設定を取得できませんでした。メッセージは送信していません。もう一度お試しください。"
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:153
 msgid "A key is currently configured."

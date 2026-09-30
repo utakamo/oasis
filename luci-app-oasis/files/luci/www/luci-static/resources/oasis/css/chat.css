@@ -1508,6 +1508,52 @@ pre {
 .md-table th[align="right"], .md-table td[align="right"] { text-align: right; }
 /* ===== end styles moved from chat.htm ===== */
 
+.oasis-uci-share-dialog:not([open]) {
+  display: none;
+}
+
+.oasis-uci-share-dialog {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100vh - 32px);
+  box-sizing: border-box;
+  overflow: auto;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #d9e0ea;
+  border-radius: 10px;
+  color: #1f2937;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
+}
+
+.oasis-uci-share-dialog::backdrop {
+  background: rgba(20, 28, 40, 0.48);
+}
+
+.oasis-uci-share-dialog h2 {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+}
+
+.oasis-uci-share-dialog p {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.oasis-uci-share-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.oasis-uci-share-dialog__actions button {
+  min-height: 40px;
+  padding: 8px 16px;
+}
+
 .oasis-wifi-modal[hidden] {
   display: none;
 }
