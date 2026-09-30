@@ -1,7 +1,7 @@
 <%+header%>
 <% local translate_js = require("luci.oasis.i18n").translate_js %>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r32">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r33">
 <div class="oasis-container">
     <div class="chat-list-container">
         <label for="import-chat-data" id="import-button" style="width:100%;"><%:Import Chat Data +%></label>
@@ -141,6 +141,18 @@
         </form>
     </div>
 
+    <dialog id="uci-share-dialog" class="oasis-uci-share-dialog" aria-labelledby="uci-share-title" aria-describedby="uci-share-message uci-share-remember">
+        <form method="dialog">
+            <h2 id="uci-share-title"><%:Share UCI configuration with AI?%></h2>
+            <p id="uci-share-message"></p>
+            <p id="uci-share-remember"><%:Your agreement is remembered on this page until you reload it or change the AI service. Cancel keeps your message without sending it.%></p>
+            <div class="oasis-uci-share-dialog__actions">
+                <button value="cancel" autofocus><%:Cancel%></button>
+                <button value="agree" class="cbi-button cbi-button-apply"><%:Agree and send%></button>
+            </div>
+        </form>
+    </dialog>
+
     <!-- System Message popup removed -->
 </div>
 
@@ -223,6 +235,9 @@ window.OasisChatStrings = {
     noAiService: <%= translate_js("No AI Service") %>,
     importTooLarge: <%= translate_js("Chat data file is too large (max 512KB).") %>,
     uciInfoTitle: <%= translate_js("### [User's {config} config]") %>,
+    uciShareMessage: <%= translate_js("The \"{config}\" UCI configuration will be included in your chat message and sent to the selected AI service. It may contain router information or credentials. Do you agree to share it?") %>,
+    uciShareRemember: <%= translate_js("Your agreement is remembered on this page until you reload it or change the AI service. Cancel keeps your message without sending it.") %>,
+    uciAttachmentFailed: <%= translate_js("Could not load the UCI configuration. Your message was not sent. Please try again.") %>,
     wifiSettings: <%= translate_js("Wi-Fi settings") %>,
     addWifiSettings: <%= translate_js("Add {band} Wi-Fi settings") %>,
     deleteWifiSettings: <%= translate_js("Delete Wi-Fi settings") %>,
@@ -257,6 +272,6 @@ window.OasisChatStrings = {
 <script src="<%= resource %>/oasis/js/chat-utils.js"></script>
 <script src="<%= resource %>/oasis/js/chat-tools.js?v=3.2.6-r32"></script>
 <script src="<%= resource %>/oasis/js/chat-turn.js?v=3.2.6-r32"></script>
-<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r32"></script>
+<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r33"></script>
 
 <%+footer%>
