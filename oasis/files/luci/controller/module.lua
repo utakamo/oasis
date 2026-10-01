@@ -11,6 +11,7 @@ local datactrl      = require("oasis.chat.datactrl")
 local nixio         = require("nixio")
 local nixio_fs      = require("nixio.fs")
 local oasis_ubus    = require("oasis.ubus.util")
+local tool_edge_account = require("oasis.tool_edge.account")
 
 module("luci.controller.oasis.module", package.seeall)
 
@@ -795,7 +796,6 @@ local SETTINGS_ASSIST_FILTER = "/usr/lib/lua/oasis/chat/filter.lua"
 local SETTINGS_ROLLBACK_DAEMON = "/usr/bin/oasisd"
 local SETTINGS_RPCD_CONFIG = "rpcd"
 local SETTINGS_RPCD_CONFIG_PATH = "/etc/config/rpcd"
-local SETTINGS_TOOL_EDGE_LOCK_PATH = "/var/lock/oasis-tool-edge-account.lock"
 local SETTINGS_TOOL_EDGE_ROLE = "oasis-tool-edge"
 local SETTINGS_TOOL_EDGE_MARKER = "oasis_tool_edge"
 local SETTINGS_MAX_PAYLOAD = 524288
@@ -2052,11 +2052,14 @@ local function tool_edge_file_metadata()
     return settings_file_metadata(SETTINGS_RPCD_CONFIG_PATH)
 end
 
-local function tool_edge_revision(public_data, metadata)
+local function tool_edge_revision(public_data, metadata, registered_username)
     if type(public_data) ~= "table" or not metadata then
         return nil
     end
-    return "edge:" .. settings_checksum(settings_canonical(public_data))
+    return "edge:" .. settings_checksum(settings_canonical({
+        state = public_data,
+        registered_username = registered_username
+    }))
         .. ":" .. metadata
 end
 
@@ -2065,26 +2068,7 @@ local function tool_edge_available()
 end
 
 local function tool_edge_find_account()
-    local found = nil
-    local duplicate = false
-    local ok, foreach_error = uci:foreach(SETTINGS_RPCD_CONFIG, "login", function(section)
-        if settings_string_option(section, SETTINGS_TOOL_EDGE_MARKER, "0") == "1" then
-            if found then
-                duplicate = true
-                return false
-            end
-            found = section
-        end
-    end)
-    if not ok and foreach_error
-        and foreach_error ~= "No data"
-        and foreach_error ~= "Entry not found" then
-        return nil, "read_failed"
-    end
-    if duplicate then
-        return nil, "duplicate"
-    end
-    return found, nil
+    return tool_edge_account.find(uci)
 end
 
 local function tool_edge_read_state()
@@ -2104,7 +2088,7 @@ local function tool_edge_read_state()
         return nil, nil
     end
 
-    local account, account_error = tool_edge_find_account()
+    local account, account_error, registered_username = tool_edge_find_account()
     if account_error then
         return nil, nil
     end
@@ -2118,7 +2102,7 @@ local function tool_edge_read_state()
         )
     end
 
-    local revision = tool_edge_revision(public_data, tool_edge_file_metadata())
+    local revision = tool_edge_revision(public_data, tool_edge_file_metadata(), registered_username)
     if not revision then
         return nil, nil
     end
@@ -2137,25 +2121,11 @@ local function tool_edge_snapshot(state, revision)
 end
 
 local function tool_edge_acquire_lock()
-    local lock = nixio.open(SETTINGS_TOOL_EDGE_LOCK_PATH, "a", "0600")
-    if not lock then
-        return nil
-    end
-    lock:seek(0, "set")
-    if not lock:lock("tlock") then
-        lock:close()
-        return nil
-    end
-    return lock
+    return tool_edge_account.acquire_lock()
 end
 
 local function tool_edge_release_lock(lock)
-    if not lock then
-        return
-    end
-    lock:seek(0, "set")
-    lock:lock("ulock")
-    lock:close()
+    tool_edge_account.release_lock(lock)
 end
 
 local function tool_edge_shell_quote(value)
@@ -2270,6 +2240,7 @@ local function tool_edge_apply_update(args, state)
     if find_error then
         return nil, "write_failed", "The external RPC account configuration is invalid."
     end
+    local previous = section
 
     if args.action == "create" then
         if section then
@@ -2324,15 +2295,23 @@ local function tool_edge_apply_update(args, state)
             end
         end
     elseif args.action == "remove" then
+        if not section then return true end
         if section and not uci:delete(SETTINGS_RPCD_CONFIG, section[".name"]) then
             uci:revert(SETTINGS_RPCD_CONFIG)
             return nil, "write_failed", "The external RPC account could not be removed."
         end
     end
 
-    if not uci:commit(SETTINGS_RPCD_CONFIG) then
-        uci:revert(SETTINGS_RPCD_CONFIG)
-        return nil, "write_failed", "The external RPC account could not be saved."
+    local username = args.action ~= "remove" and args.username or nil
+    local saved, save_error, rpcd_attempted = tool_edge_account.save(uci, previous, username)
+    if not saved then
+        if rpcd_attempted and not tool_edge_restart_rpcd() then
+            return nil, "restart_failed", "The account save failed and rpcd could not be restarted. Review RPC account settings."
+        end
+        local message = save_error == "rollback_failed"
+            and "The account update could not be rolled back. Review RPC account settings before retrying."
+            or "The external RPC account and its registry could not be saved."
+        return nil, "write_failed", message
     end
 
     if args.action ~= "create" and not tool_edge_restart_rpcd() then
@@ -2441,6 +2420,7 @@ function update_tool_edge_account()
     if not ok then
         pcall(function()
             uci:revert(SETTINGS_RPCD_CONFIG)
+            uci:revert(SETTINGS_CONFIG)
         end)
         body = settings_error(
             "write_failed", "An unexpected error prevented the account update."
