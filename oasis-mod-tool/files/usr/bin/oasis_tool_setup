@@ -15,8 +15,11 @@ local MIN_TIMEOUT = 60
 -- This marker makes image-build first-boot initialization a one-time migration.
 -- Change the suffix whenever package-owned defaults need to be migrated again.
 local INITIALIZATION_MARKER =
-    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r11"
+    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r12"
+local STANDARD_MANIFEST =
+    "/etc/oasis/tool-manifest.d/ubus_direct.openwrt-core.json"
 local OWNED_MANIFESTS = {
+    STANDARD_MANIFEST,
     "/etc/oasis/tool-manifest.d/lua.oasis.network.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.service.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.system.json",
@@ -24,6 +27,46 @@ local OWNED_MANIFESTS = {
     "/etc/oasis/tool-manifest.d/lua.oasis.wireless.json",
     "/etc/oasis/tool-manifest.d/ucode.oasis_plugin_server.uc.json",
 }
+
+local RETIRED_TOOL_BINDINGS = {
+    { "oasis.system", "get_memory_info", "lua", "lua.oasis.system.json" },
+    { "oasis.network", "get_ifname_list", "lua", "lua.oasis.network.json" },
+    { "oasis.network", "port_link_status", "lua", "lua.oasis.network.json" },
+    { "oasis.network", "get_wan_status", "lua", "lua.oasis.network.json" },
+    { "oasis.os.status", "get_os_info", "ucode", "ucode.oasis_plugin_server.uc.json" },
+    { "oasis.os.status", "get_kernel_info", "ucode", "ucode.oasis_plugin_server.uc.json" },
+}
+
+local function retire_package_tools()
+    return uci_transaction.run({
+        cursor = uci,
+        config = common.db.uci.cfg,
+        label = "Oasis standard ubus tool migration",
+    }, function(apply_uci)
+        local sections = {}
+        local iterated, iter_err = apply_uci:foreach(
+            common.db.uci.cfg, common.db.uci.sect.tool, function(section)
+                for _, binding in ipairs(RETIRED_TOOL_BINDINGS) do
+                    local owner = section.manifest_path or ""
+                    if section.server == binding[1] and section.name == binding[2]
+                        and section.script == binding[3]
+                        and (owner == "" or owner == "/etc/oasis/tool-manifest.d/" .. binding[4]) then
+                        sections[#sections + 1] = section[".name"]
+                        break
+                    end
+                end
+            end)
+        if iterated == false and iter_err then
+            return false, "Failed to read retired package tools: " .. tostring(iter_err)
+        end
+        for _, section in ipairs(sections) do
+            if not apply_uci:delete(common.db.uci.cfg, section) then
+                return false, "Failed to remove a retired package tool"
+            end
+        end
+        return true, { changed = #sections > 0 }
+    end)
+end
 
 local function ensure_min_timeout(
     apply_uci, config, section, option, min_timeout)
@@ -144,8 +187,16 @@ local function refresh_package_manifests(preserve_support)
             return false, "Failed to apply manifest " .. manifest_path
                 .. ": " .. tostring(apply_err or "unknown error")
         end
+        if manifest_path == STANDARD_MANIFEST then
+            -- Register replacements first. Later Manifest applies recalculate
+            -- name conflicts after retirement, including custom tools that
+            -- previously shared a name with a removed legacy binding.
+            local retired, retire_err = retire_package_tools()
+            if not retired then
+                return false, retire_err or "Failed to retire replaced package tools"
+            end
+        end
     end
-
     return true
 end
 

@@ -12,30 +12,6 @@
       "required": [],
       "timeout": "",
       "server": "oasis.hw.status"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Get this OpenWrt OS Information.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_kernel_info",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.os.status"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Get this OpenWrt OS Information.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_os_info",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.os.status"
     }
   ],
   "version": 1,

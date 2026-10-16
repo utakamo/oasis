@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "source_type": "ubus_direct",
+  "source_path": "",
+  "tools": [
+    {
+      "server": "system",
+      "name": "board",
+      "type": "function",
+      "description": "Get the router model, board name, OpenWrt release and kernel version. Use for device identification and basic OS information.",
+      "properties": [],
+      "required": [],
+      "additional_properties": false
+    },
+    {
+      "server": "system",
+      "name": "info",
+      "type": "function",
+      "description": "Get uptime, load and memory usage. Uptime is in seconds; memory sizes are in bytes; divide load values by 65536. Some OpenWrt versions also return root/tmp storage usage in bytes. If storage fields are absent, use get_storage_info.",
+      "properties": [],
+      "required": [],
+      "additional_properties": false
+    },
+    {
+      "server": "network.interface",
+      "name": "dump",
+      "type": "function",
+      "description": "List logical network interfaces with live status, IP addresses, routes and DNS servers. Use for WAN/LAN connectivity and address checks. Interface names vary by configuration; results describe runtime state, not saved UCI settings.",
+      "properties": [],
+      "required": [],
+      "additional_properties": false
+    },
+    {
+      "server": "network.device",
+      "name": "status",
+      "type": "function",
+      "description": "Get network device status, including presence, up state, carrier, speed, MTU and statistics where available. Omit name to list devices managed by netifd, or specify one device. Device state and carrier are distinct; available fields depend on the device.",
+      "properties": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Optional network device name, such as eth0 or br-lan. Omit to list devices."
+        }
+      ],
+      "required": [],
+      "additional_properties": false
+    }
+  ]
+}

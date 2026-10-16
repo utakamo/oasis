@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-tool
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=11
+PKG_RELEASE:=13
 
 USR_BIN_DIR = /usr/bin
 RPCD_ACL_DIR = /usr/share/rpcd/acl.d
