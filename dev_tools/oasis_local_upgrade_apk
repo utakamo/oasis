@@ -37,6 +37,74 @@ die() {
     exit 1
 }
 
+# Keep the managed rpcd login only for the Tool Edge removal in this process.
+# The postrm hook checks this private marker against its live ancestors.
+EDGE_UPGRADE_DIR="/tmp/oasis-tool-edge-upgrade"
+EDGE_UPGRADE_MARKER=""
+
+clear_edge_upgrade_marker() {
+    [ -n "$EDGE_UPGRADE_MARKER" ] || return 0
+    rm -f "$EDGE_UPGRADE_MARKER" || return 1
+    EDGE_UPGRADE_MARKER=""
+}
+
+finish_upgrade() {
+    edge_exit_status=$?
+    trap - 0
+    if ! clear_edge_upgrade_marker; then
+        echo "ERROR: Failed to clear the Tool Edge upgrade marker." >&2
+        [ "$edge_exit_status" -ne 0 ] || edge_exit_status=1
+    fi
+    exit "$edge_exit_status"
+}
+
+trap finish_upgrade 0
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+edge_private_path() {
+    # nixio is an Oasis dependency; stat is optional on OpenWrt.
+    lua - "$1" "$2" "$3" <<'LUA'
+local ok, fs = pcall(require, "nixio.fs")
+if not ok then
+    io.stderr:write("ERROR: Could not load Lua/nixio for Tool Edge marker permissions.\n")
+    os.exit(1)
+end
+local metadata = fs.lstat(arg[1])
+local valid = metadata and metadata.type == arg[2] and metadata.uid == 0
+    and metadata.modedec == tonumber(arg[3])
+os.exit(valid and 0 or 1)
+LUA
+}
+
+create_edge_upgrade_marker() {
+    if [ ! -e "$EDGE_UPGRADE_DIR" ] && [ ! -L "$EDGE_UPGRADE_DIR" ]; then
+        (umask 077; mkdir "$EDGE_UPGRADE_DIR") 2>/dev/null
+    fi
+    edge_private_path "$EDGE_UPGRADE_DIR" dir 700 || return 1
+
+    edge_start_time="$(awk '{ sub(/^.*\) /, ""); print $20 }' "/proc/$$/stat")" ||
+        return 1
+    case "$edge_start_time" in
+        ""|*[!0-9]*) return 1 ;;
+    esac
+    edge_marker_path="$EDGE_UPGRADE_DIR/$$-$edge_start_time"
+    # Refuse existing files and symlinks; never overwrite another marker.
+    (umask 077; set -C; printf '%s %s oasis-tool-edge\n' "$$" "$edge_start_time" > "$edge_marker_path") ||
+        return 1
+    EDGE_UPGRADE_MARKER="$edge_marker_path"
+    edge_private_path "$EDGE_UPGRADE_MARKER" reg 600
+}
+
+remove_edge_for_upgrade() {
+    is_installed oasis-tool-edge || return 0
+    create_edge_upgrade_marker ||
+        die "Failed to create a private Tool Edge upgrade marker."
+    apk del oasis-tool-edge || die "Failed to remove oasis-tool-edge for upgrade."
+    clear_edge_upgrade_marker || die "Failed to clear the Tool Edge upgrade marker."
+}
+
 is_installed() {
     apk info -e "$1" >/dev/null 2>&1
 }
@@ -98,7 +166,7 @@ remove_if_installed oasis-tool-analysis
 remove_if_installed oasis-tool-template
 remove_if_installed oasis-tool-wireguard
 remove_if_installed oasis-tool-test
-remove_if_installed oasis-tool-edge
+remove_edge_for_upgrade
 remove_if_installed oasis-tool-maker
 remove_if_installed luci-app-oasis
 remove_if_installed oasis-mod-test
@@ -117,6 +185,10 @@ done
 if [ "$MODE" = "keep-config" ]; then
     uci -f /tmp/oasis/backup import oasis || die "Failed to restore Oasis UCI configuration."
     cp -r /tmp/oasis/oasis.conf /etc/oasis/oasis.conf || die "Failed to restore oasis.conf."
+
+    # Old backups may predate the explicit RPC account registry.
+    /usr/bin/oasis_tool_edge_account migrate ||
+        die "Failed to migrate the RPC account registry after configuration restore."
 
     # Restoring UCI also restores the old tool schemas, after postinst has
     # already marked initialization complete. Reapply package-owned manifests

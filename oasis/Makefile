@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=22
+PKG_RELEASE:=23
 
 APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
@@ -40,6 +40,7 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/unified/chat
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/security
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/tool_edge
 	$(INSTALL_DIR) $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(UCI_CONFIG_DIR)
 	$(INSTALL_DIR) $(1)$(STORAGE_DIR)
@@ -58,6 +59,7 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(LUCI_CGI_BIN_DIR)
 	$(INSTALL_DATA) ./files/usr/share/rpcd/acl.d/oasis.json $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
+	$(INSTALL_BIN) ./files/usr/bin/oasis_tool_edge_account $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/datactrl.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/main.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/transfer.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
@@ -70,6 +72,7 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/response_framer.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/unified/chat/schema.lua $(1)$(LUA_LIBRARY_DIR)/oasis/unified/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/security/guard.lua $(1)$(LUA_LIBRARY_DIR)/oasis/security
+	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/tool_edge/account.lua $(1)$(LUA_LIBRARY_DIR)/oasis/tool_edge
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/ollama.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/policy.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/function/calling/openai.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
@@ -96,8 +99,11 @@ endef
 
 define Package/oasis/postinst
 	#!/bin/sh
+	[ -n "$${IPKG_INSTROOT}" ] && exit 0
 	mkdir -p /tmp/oasis
 	touch /tmp/oasis/reboot_required_for_oasis
+	/usr/bin/oasis_tool_edge_account migrate || true
+	exit 0
 endef
 
 $(eval $(call BuildPackage,oasis))

@@ -1,0 +1,22 @@
+#!/usr/bin/env lua
+
+if arg[1] ~= "migrate" or arg[2] ~= nil then
+    io.stderr:write("Usage: oasis_tool_edge_account migrate\n")
+    os.exit(1)
+end
+
+local account = require("oasis.tool_edge.account")
+local uci = require("luci.model.uci").cursor()
+local lock = account.acquire_lock()
+if not lock then
+    io.stderr:write("oasis-tool-edge: Could not lock the RPC account registry.\n")
+    os.exit(1)
+end
+local ok, migrated, reason = pcall(account.migrate, uci)
+account.release_lock(lock)
+if not ok or not migrated then
+    -- Reasons are fixed codes; never print raw UCI errors or account values.
+    io.stderr:write("oasis-tool-edge: Could not migrate the RPC account registry ("
+        .. (ok and reason or "unexpected_error") .. ").\n")
+    os.exit(1)
+end
