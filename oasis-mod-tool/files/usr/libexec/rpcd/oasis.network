@@ -39,15 +39,6 @@
 local server = require("oasis.local.tool.server")
 
 
-server.tool("get_lan_ipaddr", {
-    tool_desc = "Get the LAN IP Address of this OpenWrt device.",
-    call = function()
-        local util = require("luci.util")
-        local ip = util.trim(util.exec("uci get network.lan.ipaddr 2>/dev/null"))
-        return server.response({lan_ipaddr = ip ~= "" and ip or nil})
-    end
-})
-
 server.tool("get_connected_clients", {
     tool_desc = "Get connected clients (STAs) on this OpenWrt device.",
     call = function()

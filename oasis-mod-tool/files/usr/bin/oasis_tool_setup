@@ -15,7 +15,7 @@ local MIN_TIMEOUT = 60
 -- This marker makes image-build first-boot initialization a one-time migration.
 -- Change the suffix whenever package-owned defaults need to be migrated again.
 local INITIALIZATION_MARKER =
-    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r12"
+    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r14"
 local STANDARD_MANIFEST =
     "/etc/oasis/tool-manifest.d/ubus_direct.openwrt-core.json"
 local OWNED_MANIFESTS = {
@@ -33,6 +33,7 @@ local RETIRED_TOOL_BINDINGS = {
     { "oasis.network", "get_ifname_list", "lua", "lua.oasis.network.json" },
     { "oasis.network", "port_link_status", "lua", "lua.oasis.network.json" },
     { "oasis.network", "get_wan_status", "lua", "lua.oasis.network.json" },
+    { "oasis.network", "get_lan_ipaddr", "lua", "lua.oasis.network.json" },
     { "oasis.os.status", "get_os_info", "ucode", "ucode.oasis_plugin_server.uc.json" },
     { "oasis.os.status", "get_kernel_info", "ucode", "ucode.oasis_plugin_server.uc.json" },
 }

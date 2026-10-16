@@ -12,18 +12,6 @@
       "required": [],
       "timeout": "",
       "server": "oasis.network"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Get the LAN IP Address of this OpenWrt device.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_lan_ipaddr",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.network"
     }
   ],
   "version": 1,
