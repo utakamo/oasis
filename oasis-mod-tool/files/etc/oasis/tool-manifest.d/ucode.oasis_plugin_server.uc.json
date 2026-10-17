@@ -4,38 +4,14 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Get this device board information.",
+      "description": "Get the device's initial hardware configuration from /etc/board.json, including default LAN/WAN device assignments, switch ports and LED definitions where available. Use board for model and OS identification, and dump or status for live network state.",
       "properties": [],
       "download_message": "",
-      "name": "get_board_info",
+      "name": "get_hardware_defaults",
       "additional_properties": false,
       "required": [],
       "timeout": "",
       "server": "oasis.hw.status"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Get this OpenWrt OS Information.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_kernel_info",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.os.status"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
-      "description": "Get this OpenWrt OS Information.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_os_info",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.os.status"
     }
   ],
   "version": 1,

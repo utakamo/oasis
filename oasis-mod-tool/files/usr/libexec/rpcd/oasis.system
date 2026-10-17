@@ -95,22 +95,6 @@ server.tool("confirm", {
     end
 })
 
-server.tool("get_memory_info", {
-    tool_desc = "Get the system info load (uptime/meminfo) of this OpenWrt device.",
-    call = function()
-        local util = require("luci.util")
-        local uptime_info = util.exec("uptime")
-        local meminfo = util.exec("cat /proc/meminfo")
-        local mem_total = meminfo:match("MemTotal:%s+(%d+)")
-        local mem_free = meminfo:match("MemFree:%s+(%d+)")
-        return server.response({
-            uptime = util.trim(uptime_info),
-            mem_total_kb = tonumber(mem_total),
-            mem_free_kb = tonumber(mem_free)
-        })
-    end
-})
-
 server.tool("get_storage_info", {
     tool_desc = "Get the storage usage of this OpenWrt device.",
     call = function()

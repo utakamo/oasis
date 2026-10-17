@@ -14,11 +14,10 @@
  https://lxr.openwrt.org/source/rpcd/examples/ucode/example-plugin.uc
 */
 
-let ubus = require('ubus').connect();
 let server = require('oasis.local.tool.server');
 
-server.tool("oasis.hw.status", "get_board_info", {
-    tool_desc: "Get this device board information.",
+server.tool("oasis.hw.status", "get_hardware_defaults", {
+    tool_desc: "Get the device's initial hardware configuration from /etc/board.json, including default LAN/WAN device assignments, switch ports and LED definitions where available. Use board for model and OS identification, and dump or status for live network state.",
     call: function() {
         const fs = require('fs');
         const file = fs.open('/etc/board.json', 'r');
@@ -26,42 +25,6 @@ server.tool("oasis.hw.status", "get_board_info", {
         file.close();
         let board_info_tbl = json(output);
         return { result : board_info_tbl };
-    }
-});
-
-server.tool("oasis.os.status", "get_os_info", {
-    tool_desc: "Get this OpenWrt OS Information.",
-    call: function() {
-        const fs = require('fs');
-        const file = fs.open('/etc/os-release', 'r');
-
-        let cnt = 0;
-        let os_info_tbl = {};
-
-        for (let line = file.read("line"); length(line); line = file.read("line"))
-                os_info_tbl[cnt++] = line;
-
-        file.close();
-
-        return { result : os_info_tbl };
-    }
-});
-
-server.tool("oasis.os.status", "get_kernel_info", {
-    tool_desc: "Get this OpenWrt OS Information.",
-    call: function() {
-        const fs = require('fs');
-        const file = fs.open('/proc/version', 'r');
-
-        let cnt = 0;
-        let kernel_info_tbl = {};
-
-        for (let line = file.read("line"); length(line); line = file.read("line"))
-                kernel_info_tbl[cnt++] = line;
-
-        file.close();
-
-        return { result : kernel_info_tbl };
     }
 });
 

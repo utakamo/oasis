@@ -251,6 +251,11 @@ local function scan_lua_server_defs(server_name)
         return {}, nil
     end
 
+    if not is_oasis_tool_server(server_path) then
+        debug:log("oasis.log", "scan_lua_server_defs", "skip non-oasis server file: " .. server_name)
+        return {}, nil
+    end
+
     return scan_lua_script_defs(server_path, server_name)
 end
 
@@ -1310,7 +1315,39 @@ function M.rebuild_manifest_store()
         return false, "failed to create manifest dir"
     end
 
+    -- Only script-backed Manifests can be regenerated. Inspect the entire
+    -- store before removing anything, and protect direct definitions even
+    -- when their filenames match a generated Manifest's destination.
+    local delete_files, preserved_files = {}, {}
     for _, file in ipairs(listup_manifest_candidate(manifest_dir)) do
+        local path = manifest_dir .. file
+        local raw = fs.readfile(path)
+        if not raw then
+            return false, "failed to read existing manifest: " .. path
+        end
+        local parsed, manifest = pcall(jsonc.parse, raw)
+        if not parsed or type(manifest) ~= "table" then
+            return false, "invalid existing manifest json: " .. path
+        end
+        if manifest.source_type == "ubus_direct" then
+            preserved_files[file] = true
+        elseif manifest.source_type == "lua_script"
+            or manifest.source_type == "ucode_script" then
+            delete_files[#delete_files + 1] = file
+        else
+            return false, "invalid existing manifest source_type: " .. path
+        end
+    end
+
+    for _, manifest in ipairs(manifests) do
+        local file = manifest_filename(manifest.source_type, manifest.source_path)
+        if preserved_files[file] then
+            return false, "refusing to overwrite ubus_direct manifest: "
+                .. manifest_dir .. file
+        end
+    end
+
+    for _, file in ipairs(delete_files) do
         if not fs.remove(manifest_dir .. file) then
             return false, "failed to remove old manifest: " .. file
         end

@@ -108,6 +108,14 @@ local function new_fixture(options)
         session_calls = {},
         access_calls = {},
         logs = {},
+        files = deep_copy(options.files or {
+            [manifest_path] = "fixture manifest",
+            [source_path] = 'require("oasis.local.tool.server")',
+        }),
+        removed_files = {},
+        written_files = {},
+        serialized = {},
+        ubus_calls = {},
     }
 
     local function private_session_selected()
@@ -437,15 +445,39 @@ local function new_fixture(options)
             return {
                 parse = function(raw)
                     if raw == "fixture manifest" then
-                        return fixture_manifest()
+                        return deep_copy(options.manifest or fixture_manifest())
+                    end
+                    if raw == "throw parse" then error("injected parse failure") end
+                    if options.documents and options.documents[raw] then
+                        return deep_copy(options.documents[raw])
+                    end
+                    local serial = tostring(raw):match("^serialized (%d+)\n?$")
+                    if serial then return deep_copy(env.serialized[tonumber(serial)]) end
+                    local path = tostring(raw):match("^fixture metadata (.+)$")
+                    if path and options.metadata then
+                        return deep_copy(options.metadata[path])
                     end
                     return nil
                 end,
-                stringify = function() return "{}" end,
+                stringify = function(value)
+                    if options.files then
+                        local token = "serialized " .. tostring(#env.serialized + 1)
+                        env.serialized[#env.serialized + 1] = deep_copy(value)
+                        return token
+                    end
+                    return "{}"
+                end,
             }
         end,
         ["luci.sys"] = function()
-            return { exec = function() return "" end }
+            return { exec = function(command)
+                for path in pairs(options.metadata or {}) do
+                    if command:find(path, 1, true) then
+                        return "fixture metadata " .. path
+                    end
+                end
+                return ""
+            end }
         end,
         ["luci.util"] = function()
             return { ubus = session_ubus }
@@ -453,8 +485,11 @@ local function new_fixture(options)
         ["nixio.fs"] = function()
             return {
                 stat = function(path)
-                    if path == manifest_path or path == source_path then
+                    if env.files[path] then
                         return { type = "reg" }
+                    end
+                    if path == "/etc/oasis/tool-manifest.d/" then
+                        return { type = "dir" }
                     end
                     if path == "/tmp/oasis" then
                         return { type = "dir" }
@@ -462,16 +497,40 @@ local function new_fixture(options)
                     return nil
                 end,
                 readfile = function(path)
-                    if path == manifest_path then
-                        return "fixture manifest"
-                    end
-                    return nil
+                    return env.files[path]
                 end,
                 access = function(path, mode)
-                    return path == source_path and mode == "x"
+                    return env.files[path] ~= nil and mode == "x"
                 end,
                 mkdirr = function() return true end,
+                remove = function(path)
+                    env.removed_files[#env.removed_files + 1] = path
+                    env.files[path] = nil
+                    return true
+                end,
+                writefile = function(path, content)
+                    env.written_files[#env.written_files + 1] = path
+                    env.files[path] = content
+                    return true
+                end,
                 dir = function(path)
+                    if options.files then
+                        local files = {}
+                        for name in pairs(env.files) do
+                            if name:sub(1, #path) == path then
+                                local base = name:sub(#path + 1)
+                                if not base:find("/", 1, true) then
+                                    files[#files + 1] = base
+                                end
+                            end
+                        end
+                        table.sort(files)
+                        local index = 0
+                        return function()
+                            index = index + 1
+                            return files[index]
+                        end
+                    end
                     if path == "/etc/oasis/tool-manifest.d/"
                         and options.list_fixture_manifest then
                         local yielded = false
@@ -514,14 +573,23 @@ local function new_fixture(options)
                     },
                     service = { restart_required = "/tmp/not-present" },
                 },
-                ubus_call = function()
-                    return nil, "unexpected common.ubus_call"
+                ubus_call = function(server, name, data, timeout)
+                    if not options.native_dispatch then
+                        return nil, "unexpected common.ubus_call"
+                    end
+                    env.ubus_calls[#env.ubus_calls + 1] = {
+                        server = server, name = name,
+                        data = deep_copy(data), timeout = timeout,
+                    }
+                    return { server = server, method = name, status = "OK" }
                 end,
             }
         end,
         ["oasis.chat.misc"] = function()
             return {
-                check_file_exist = function() return false end,
+                check_file_exist = function(path)
+                    return options.metadata ~= nil and path == "/usr/bin/ucode"
+                end,
                 check_init_script_exists = function() return false end,
                 touch = function() end,
                 write_file = function() end,
@@ -542,6 +610,9 @@ local function new_fixture(options)
         end,
         ["oasis.local.tool.state"] = function()
             return {
+                snapshot = function()
+                    return { tools = deep_copy(env.base_sections) }
+                end,
                 is_control_tool = function(server, name)
                     return server == "oasis.tool.manager"
                         and (name == "get_tool_list"
@@ -594,7 +665,237 @@ local function find_base_tool(env, name)
     return found
 end
 
+local function bundled_manifest(filename)
+    local source = debug.getinfo(1, "S").source or ""
+    local repository = source:match(
+        "^@(.*)/oasis%-mod%-test/files/usr/lib/lua/oasis/test/spec/manifest_transaction%.lua$")
+    local path = "/etc/oasis/tool-manifest.d/" .. filename
+    if repository then path = repository .. "/oasis-mod-tool/files" .. path end
+    local file = assert(io.open(path, "r"))
+    local raw = file:read("*a")
+    file:close()
+    return assert(require("luci.jsonc").parse(raw))
+end
+
+local function standard_manifest()
+    return bundled_manifest("ubus_direct.openwrt-core.json")
+end
+
+local function stub_dispatch_runtime(t)
+    local saved_nixio = package.loaded["nixio"]
+    package.loaded["nixio"] = { nanosleep = function() end }
+    t:on_cleanup(function() package.loaded["nixio"] = saved_nixio end)
+end
+
 function M.register(harness)
+    harness:test("unit", "hardware defaults rename replaces owned entries and dispatches the new method", function(t)
+        stub_dispatch_runtime(t)
+        local manifest = bundled_manifest("ucode.oasis_plugin_server.uc.json")
+        local client, env = new_fixture({
+            manifest = manifest, native_dispatch = true,
+            base_sections = {
+                { [".name"] = "old_board", server = "oasis.hw.status",
+                    name = "get_board_info", script = "ucode", type = "function",
+                    enable = "1", conflict = "0", manifest_path = manifest_path },
+            },
+            files = {
+                [manifest_path] = "fixture manifest",
+                [manifest.source_path] = 'require("oasis.local.tool.server")',
+            },
+        })
+        local applied, info = client.apply_manifest_file(manifest_path)
+        t:assert_true(applied, tostring(info))
+        t:assert_equal(1, #env.base_sections)
+        t:assert_equal(0, #find_base_tool(env, "get_board_info"))
+        local tool = env.base_sections[1]
+        t:assert_equal("get_hardware_defaults", tool.name)
+        t:assert_equal("ucode", tool.script)
+        t:assert_equal(manifest.source_path, tool.source_path)
+        t:assert_equal("0", tool.enable, "renamed tools must not inherit permission")
+        t:assert_equal(0, #client.get_function_call_schema())
+        tool.enable = "1"
+        local schemas = client.get_function_call_schema()
+        t:assert_equal(1, #schemas)
+        t:assert_equal("get_hardware_defaults", schemas[1].name)
+        t:assert_equal(manifest.tools[1].description, schemas[1].description)
+        local result = client.exec_server_tool("fixture", "get_hardware_defaults", {})
+        t:assert_equal("OK", result.status)
+        t:assert_equal("oasis.hw.status", result.server)
+        t:assert_equal("get_hardware_defaults", result.method)
+        t:assert_equal(1, #env.ubus_calls)
+        result = client.exec_server_tool("fixture", "get_board_info", {})
+        t:assert_equal("tool_not_recognized", result.error)
+        t:assert_equal(1, #env.ubus_calls)
+    end)
+
+    harness:test("unit", "standard ubus Manifest generates schemas and dispatches native methods", function(t)
+        stub_dispatch_runtime(t)
+        local manifest = standard_manifest()
+        local client, env = new_fixture({
+            manifest = manifest, base_sections = {}, native_dispatch = true,
+        })
+        local applied, info = client.apply_manifest_file(manifest_path)
+        t:assert_true(applied, tostring(info))
+        t:assert_equal(4, #env.base_sections)
+        t:assert_equal(0, #client.get_function_call_schema(),
+            "new standard tools must not inherit manual permission")
+        for _, tool in ipairs(env.base_sections) do
+            t:assert_equal("ubus_direct", tool.script)
+            t:assert_equal("ubus_direct", tool.source_type)
+            tool.enable = "1"
+        end
+        local schemas = client.get_function_call_schema()
+        t:assert_equal(4, #schemas)
+        local expected = {
+            board = "system", info = "system",
+            dump = "network.interface", status = "network.device",
+        }
+        for _, schema in ipairs(schemas) do
+            t:assert_not_nil(expected[schema.name])
+            t:assert_deep_equal({}, schema.parameters.required)
+            t:assert_false(schema.parameters.additionalProperties)
+            if schema.name == "status" then
+                t:assert_equal("string", schema.parameters.properties.name.type)
+            else
+                t:assert_deep_equal({}, schema.parameters.properties)
+            end
+            local result = client.exec_server_tool("fixture", schema.name, {})
+            t:assert_equal("OK", result.status)
+            t:assert_equal(expected[schema.name], result.server)
+            t:assert_equal(schema.name, result.method)
+        end
+        local result = client.exec_server_tool("fixture", "status", { name = "br-lan" })
+        t:assert_equal("OK", result.status)
+        t:assert_equal(5, #env.ubus_calls)
+        t:assert_deep_equal({ name = "br-lan" }, env.ubus_calls[5].data)
+    end)
+
+    harness:test("unit", "ambiguous standard method names are neither offered nor dispatched", function(t)
+        stub_dispatch_runtime(t)
+        local client, env = new_fixture({
+            manifest = standard_manifest(), base_sections = {}, native_dispatch = true,
+        })
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        for _, tool in ipairs(env.base_sections) do tool.enable = "1" end
+        env.base_sections[#env.base_sections + 1] = {
+            name = "status", server = "custom.server", enable = "1",
+        }
+        t:assert_equal(3, #client.get_function_call_schema())
+        local result = client.exec_server_tool("fixture", "status", {})
+        t:assert_equal("tool_not_recognized", result.error)
+        t:assert_equal(0, #env.ubus_calls)
+    end)
+
+    harness:test("unit", "Manifest rebuild preserves direct definitions through registry refresh", function(t)
+        local root = "/etc/oasis/tool-manifest.d/"
+        local native = root .. "custom-name.json"
+        local ucode = "/usr/share/rpcd/ucode/fixture.uc"
+        local client, env = new_fixture({
+            base_sections = {},
+            files = {
+                [source_path] = 'require("oasis.local.tool.server")',
+                [ucode] = 'require("oasis.local.tool.server")',
+                [native] = "native manifest",
+                [manifest_path] = "old lua",
+                [root .. "ucode.removed.uc.json"] = "old ucode",
+            },
+            documents = {
+                ["native manifest"] = standard_manifest(),
+                ["old lua"] = { source_type = "lua_script" },
+                ["old ucode"] = { source_type = "ucode_script" },
+            },
+            metadata = {
+                [source_path] = { fixture_tool = { tool_desc = "Lua fixture" } },
+                [ucode] = { ["fixture.ucode"] = { uc_tool = { tool_desc = "ucode fixture" } } },
+            },
+        })
+        local rebuilt, info = client.rebuild_manifest_store()
+        t:assert_true(rebuilt, tostring(info))
+        t:assert_equal(2, info.count)
+        t:assert_equal("native manifest", env.files[native])
+        t:assert_equal(2, #env.removed_files)
+        t:assert_equal(2, #env.written_files)
+        t:assert_nil(env.files[root .. "ucode.removed.uc.json"])
+        t:assert_true(client.update_server_info())
+        t:assert_equal(6, #env.base_sections)
+        for _, name in ipairs({ "board", "info", "dump", "status" }) do
+            t:assert_equal(1, #find_base_tool(env, name))
+        end
+    end)
+
+    harness:test("unit", "Manifest rebuild skips ordinary rpcd scripts alongside Oasis tools", function(t)
+        local root = "/etc/oasis/tool-manifest.d/"
+        local direct = root .. "keep.json"
+        local client, env = new_fixture({
+            files = {
+                [source_path] = 'require("oasis.local.tool.server")',
+                ["/usr/libexec/rpcd/oasis"] = 'local methods = { config = {} }',
+                ["/usr/share/rpcd/ucode/luci.uc"] = 'return { getVersion: {} };',
+                [direct] = "native",
+            },
+            documents = { native = { source_type = "ubus_direct" } },
+            metadata = { [source_path] = { fixture_tool = { tool_desc = "Lua fixture" } } },
+        })
+        local rebuilt, info = client.rebuild_manifest_store()
+        t:assert_true(rebuilt, tostring(info))
+        t:assert_equal(1, info.count)
+        t:assert_equal("native", env.files[direct])
+        t:assert_equal(0, #env.removed_files)
+        t:assert_equal(1, #env.written_files)
+        t:assert_nil(env.files[root .. "lua.oasis.json"])
+        t:assert_nil(env.files[root .. "ucode.luci.uc.json"])
+    end)
+
+    harness:test("unit", "Manifest rebuild preserves a direct-only store", function(t)
+        local path = "/etc/oasis/tool-manifest.d/keep.json"
+        local client, env = new_fixture({
+            files = { [path] = "native" },
+            documents = { native = { source_type = "ubus_direct" } },
+        })
+        local rebuilt, info = client.rebuild_manifest_store()
+        t:assert_true(rebuilt)
+        t:assert_equal(0, info.count)
+        t:assert_equal("native", env.files[path])
+        t:assert_equal(0, #env.removed_files)
+        t:assert_equal(0, #env.written_files)
+    end)
+
+    harness:test("unit", "Manifest rebuild rejects invalid types or JSON before deleting files", function(t)
+        for _, raw in ipairs({ "invalid json", "unknown type", "missing type", "throw parse" }) do
+            local root = "/etc/oasis/tool-manifest.d/"
+            local client, env = new_fixture({
+                files = { [root .. "a.json"] = "old", [root .. "z.json"] = raw },
+                documents = {
+                    old = { source_type = "lua_script" },
+                    ["unknown type"] = { source_type = "other" },
+                    ["missing type"] = {},
+                },
+            })
+            local rebuilt, err = client.rebuild_manifest_store()
+            t:assert_false(rebuilt, raw)
+            t:assert_contains(err, "invalid existing manifest", raw)
+            t:assert_equal(0, #env.removed_files, raw)
+            t:assert_equal(0, #env.written_files, raw)
+        end
+    end)
+
+    harness:test("unit", "Manifest rebuild rejects generated filenames that would overwrite direct definitions", function(t)
+        local client, env = new_fixture({
+            files = {
+                [source_path] = 'require("oasis.local.tool.server")',
+                [manifest_path] = "direct with generated filename",
+            },
+            documents = { ["direct with generated filename"] = { source_type = "ubus_direct" } },
+            metadata = { [source_path] = { fixture_tool = { tool_desc = "Lua fixture" } } },
+        })
+        local rebuilt, err = client.rebuild_manifest_store()
+        t:assert_false(rebuilt)
+        t:assert_contains(err, "refusing to overwrite ubus_direct")
+        t:assert_equal("direct with generated filename", env.files[manifest_path])
+        t:assert_equal(0, #env.removed_files)
+        t:assert_equal(0, #env.written_files)
+    end)
+
     harness:test("unit", "manifest apply commits only an isolated UCI session", function(t)
         local client, env = new_fixture()
         local plan_ok, plan = client.build_manifest_apply_plan(manifest_path)

@@ -24,18 +24,6 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Get the system info load (uptime\/meminfo) of this OpenWrt device.",
-      "properties": [],
-      "download_message": "",
-      "name": "get_memory_info",
-      "additional_properties": false,
-      "required": [],
-      "timeout": "",
-      "server": "oasis.system"
-    },
-    {
-      "execution_message": "",
-      "type": "function",
       "description": "Get the storage usage of this OpenWrt device.",
       "properties": [],
       "download_message": "",
