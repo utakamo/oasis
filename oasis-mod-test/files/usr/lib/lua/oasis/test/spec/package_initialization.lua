@@ -1,7 +1,7 @@
 local M = {}
 
 local INITIALIZATION_MARKER =
-    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r14"
+    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r15"
 local OWNED_MANIFESTS = {
     "/etc/oasis/tool-manifest.d/ubus_direct.openwrt-core.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.network.json",
@@ -139,7 +139,8 @@ local function run_initialize(options)
                 return env.marker_exists
             end
             if path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r11"
-                or path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r12" then
+                or path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r12"
+                or path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r14" then
                 return options.old_marker_exists == true
             end
             return manifest_set[path] == true
@@ -239,8 +240,8 @@ end
 function M.register(harness)
     harness:test("unit", "older package marker does not skip standard ubus migration", function(t)
         local result = run_initialize({ old_marker_exists = true, tool_sections = {
-            { [".name"] = "legacy", server = "oasis.network",
-                name = "get_lan_ipaddr", script = "lua" },
+            { [".name"] = "legacy", server = "oasis.hw.status",
+                name = "get_board_info", script = "ucode" },
         } })
         t:assert_true(result.ok, tostring(result.unexpected_error))
         t:assert_equal(OWNED_MANIFESTS[1], result.env.apply_calls[1])
@@ -265,6 +266,14 @@ function M.register(harness)
                     manifest_path = "/etc/oasis/tool-manifest.d/custom.json" },
                 { [".name"] = "lan_custom_server", server = "custom", name = "get_lan_ipaddr", script = "lua" },
                 { [".name"] = "lan_custom_script", server = "oasis.network", name = "get_lan_ipaddr", script = "ubus_direct" },
+                { [".name"] = "board_legacy", server = "oasis.hw.status", name = "get_board_info", script = "ucode" },
+                { [".name"] = "board_owned", server = "oasis.hw.status", name = "get_board_info", script = "ucode",
+                    manifest_path = "/etc/oasis/tool-manifest.d/ucode.oasis_plugin_server.uc.json" },
+                { [".name"] = "board_custom_owner", server = "oasis.hw.status", name = "get_board_info", script = "ucode",
+                    manifest_path = "/etc/oasis/tool-manifest.d/custom.json" },
+                { [".name"] = "board_custom_server", server = "custom", name = "get_board_info", script = "ucode" },
+                { [".name"] = "board_custom_script", server = "oasis.hw.status", name = "get_board_info", script = "ubus_direct" },
+                { [".name"] = "hardware_defaults", server = "oasis.hw.status", name = "get_hardware_defaults", script = "ucode" },
                 { [".name"] = "custom_owner", server = "oasis.network", name = "get_wan_status", script = "lua",
                     manifest_path = "/etc/oasis/tool-manifest.d/custom.json" },
                 { [".name"] = "custom_server", server = "custom", name = "get_memory_info", script = "lua" },
@@ -273,7 +282,7 @@ function M.register(harness)
             },
         })
         t:assert_true(result.ok, tostring(result.unexpected_error))
-        t:assert_deep_equal({ "legacy", "owned", "lan_legacy", "lan_owned" }, result.env.retired_deleted)
+        t:assert_deep_equal({ "legacy", "owned", "lan_legacy", "lan_owned", "board_legacy", "board_owned" }, result.env.retired_deleted)
         t:assert_equal(0, #result.env.delete_set_calls)
         t:assert_equal(0, #result.env.touch_calls)
     end)

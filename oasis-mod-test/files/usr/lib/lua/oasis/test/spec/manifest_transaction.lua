@@ -665,16 +665,20 @@ local function find_base_tool(env, name)
     return found
 end
 
-local function standard_manifest()
+local function bundled_manifest(filename)
     local source = debug.getinfo(1, "S").source or ""
     local repository = source:match(
         "^@(.*)/oasis%-mod%-test/files/usr/lib/lua/oasis/test/spec/manifest_transaction%.lua$")
-    local path = "/etc/oasis/tool-manifest.d/ubus_direct.openwrt-core.json"
+    local path = "/etc/oasis/tool-manifest.d/" .. filename
     if repository then path = repository .. "/oasis-mod-tool/files" .. path end
     local file = assert(io.open(path, "r"))
     local raw = file:read("*a")
     file:close()
     return assert(require("luci.jsonc").parse(raw))
+end
+
+local function standard_manifest()
+    return bundled_manifest("ubus_direct.openwrt-core.json")
 end
 
 local function stub_dispatch_runtime(t)
@@ -684,6 +688,46 @@ local function stub_dispatch_runtime(t)
 end
 
 function M.register(harness)
+    harness:test("unit", "hardware defaults rename replaces owned entries and dispatches the new method", function(t)
+        stub_dispatch_runtime(t)
+        local manifest = bundled_manifest("ucode.oasis_plugin_server.uc.json")
+        local client, env = new_fixture({
+            manifest = manifest, native_dispatch = true,
+            base_sections = {
+                { [".name"] = "old_board", server = "oasis.hw.status",
+                    name = "get_board_info", script = "ucode", type = "function",
+                    enable = "1", conflict = "0", manifest_path = manifest_path },
+            },
+            files = {
+                [manifest_path] = "fixture manifest",
+                [manifest.source_path] = 'require("oasis.local.tool.server")',
+            },
+        })
+        local applied, info = client.apply_manifest_file(manifest_path)
+        t:assert_true(applied, tostring(info))
+        t:assert_equal(1, #env.base_sections)
+        t:assert_equal(0, #find_base_tool(env, "get_board_info"))
+        local tool = env.base_sections[1]
+        t:assert_equal("get_hardware_defaults", tool.name)
+        t:assert_equal("ucode", tool.script)
+        t:assert_equal(manifest.source_path, tool.source_path)
+        t:assert_equal("0", tool.enable, "renamed tools must not inherit permission")
+        t:assert_equal(0, #client.get_function_call_schema())
+        tool.enable = "1"
+        local schemas = client.get_function_call_schema()
+        t:assert_equal(1, #schemas)
+        t:assert_equal("get_hardware_defaults", schemas[1].name)
+        t:assert_equal(manifest.tools[1].description, schemas[1].description)
+        local result = client.exec_server_tool("fixture", "get_hardware_defaults", {})
+        t:assert_equal("OK", result.status)
+        t:assert_equal("oasis.hw.status", result.server)
+        t:assert_equal("get_hardware_defaults", result.method)
+        t:assert_equal(1, #env.ubus_calls)
+        result = client.exec_server_tool("fixture", "get_board_info", {})
+        t:assert_equal("tool_not_recognized", result.error)
+        t:assert_equal(1, #env.ubus_calls)
+    end)
+
     harness:test("unit", "standard ubus Manifest generates schemas and dispatches native methods", function(t)
         stub_dispatch_runtime(t)
         local manifest = standard_manifest()

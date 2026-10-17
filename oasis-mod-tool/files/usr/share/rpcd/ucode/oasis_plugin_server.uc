@@ -16,8 +16,8 @@
 
 let server = require('oasis.local.tool.server');
 
-server.tool("oasis.hw.status", "get_board_info", {
-    tool_desc: "Get this device board information.",
+server.tool("oasis.hw.status", "get_hardware_defaults", {
+    tool_desc: "Get the device's initial hardware configuration from /etc/board.json, including default LAN/WAN device assignments, switch ports and LED definitions where available. Use board for model and OS identification, and dump or status for live network state.",
     call: function() {
         const fs = require('fs');
         const file = fs.open('/etc/board.json', 'r');
