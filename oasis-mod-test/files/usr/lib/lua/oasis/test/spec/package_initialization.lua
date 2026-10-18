@@ -1,7 +1,7 @@
 local M = {}
 
 local INITIALIZATION_MARKER =
-    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r15"
+    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r16"
 local OWNED_MANIFESTS = {
     "/etc/oasis/tool-manifest.d/ubus_direct.openwrt-core.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.network.json",
@@ -140,7 +140,8 @@ local function run_initialize(options)
             end
             if path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r11"
                 or path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r12"
-                or path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r14" then
+                or path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r14"
+                or path == "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r15" then
                 return options.old_marker_exists == true
             end
             return manifest_set[path] == true
@@ -238,6 +239,30 @@ local function run_initialize(options)
 end
 
 function M.register(harness)
+    harness:test("unit", "native alias migration retires only exact old package bindings", function(t)
+        local result = run_initialize({
+            command = "refresh-package-manifests", marker_exists = true,
+            tool_sections = {
+                { [".name"] = "old_board", server = "system", name = "board", script = "ubus_direct" },
+                { [".name"] = "old_info", server = "system", name = "info", script = "ubus_direct",
+                    manifest_path = OWNED_MANIFESTS[1] },
+                { [".name"] = "old_dump", server = "network.interface", name = "dump", script = "ubus_direct" },
+                { [".name"] = "old_status", server = "network.device", name = "status", script = "ubus_direct" },
+                { [".name"] = "custom_owner", server = "system", name = "board", script = "ubus_direct",
+                    manifest_path = "/etc/oasis/tool-manifest.d/custom.json" },
+                { [".name"] = "custom_script", server = "system", name = "board", script = "lua" },
+                { [".name"] = "alias", server = "system", name = "get_device_info", script = "ubus_direct",
+                    ubus_method = "board", manifest_path = OWNED_MANIFESTS[1] },
+            },
+        })
+        t:assert_true(result.ok, tostring(result.unexpected_error))
+        t:assert_deep_equal({ "old_board", "old_info", "old_dump", "old_status" }, result.env.retired_deleted)
+        for _, options in ipairs(result.env.apply_options) do
+            t:assert_true(options.preserve_local_tool_support)
+        end
+        t:assert_equal(0, #result.env.touch_calls)
+    end)
+
     harness:test("unit", "older package marker does not skip standard ubus migration", function(t)
         local result = run_initialize({ old_marker_exists = true, tool_sections = {
             { [".name"] = "legacy", server = "oasis.hw.status",

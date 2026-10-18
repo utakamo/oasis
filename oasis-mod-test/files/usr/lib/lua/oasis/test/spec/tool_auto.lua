@@ -158,6 +158,63 @@ local function store_fixture(t)
 end
 
 function M.register(harness)
+    harness:test("unit", "direct alias discovery and dispatch follow Manual and Auto permissions", function(t)
+        local env = fixture(t)
+        local tool = env.sections[4]
+        tool.name, tool.server = "get_device_info", "system"
+        tool.source_type, tool.ubus_method = "ubus_direct", "board"
+        local calls = {}
+        replace(t, "luci.model.uci", { cursor = function() return env.cursor end })
+        replace(t, "oasis.local.tool.package.manager", {})
+        replace(t, "oasis.chat.misc", { check_file_exist = function() return false end })
+        replace(t, "luci.sys", {})
+        replace(t, "nixio.fs", {})
+        replace(t, "nixio", {})
+        replace(t, "oasis.chat.debug", { log = function() end })
+        replace(t, "oasis.local.tool.client", nil)
+        local common = require("oasis.common")
+        local original_call = common.ubus_call
+        common.ubus_call = function(server, name)
+            calls[#calls + 1] = server .. ":" .. name
+            return { status = "OK" }
+        end
+        t:on_cleanup(function() common.ubus_call = original_call end)
+        local client = require("oasis.local.tool.client")
+        t:assert_equal("get_device_info", client.get_function_call_schema()[1].name)
+        t:assert_equal("OK", client.exec_server_tool("silent", "get_device_info", {}).status)
+        t:assert_equal("system:board", calls[1])
+        t:assert_equal("OK", state.set_auto_mode(env.cursor, "1").status)
+        t:assert_equal(3, #client.get_function_call_schema())
+        local listed = state.list_effective(env.cursor)
+        local found
+        for _, entry in ipairs(listed.tool) do
+            if entry.name == "get_device_info" then found = entry end
+        end
+        t:assert_not_nil(found)
+        t:assert_equal("board", found.ubus_method)
+        t:assert_false(found.enabled)
+        client.exec_server_tool("silent", "get_device_info", {})
+        t:assert_equal(1, #calls)
+        t:assert_equal("OK", state.set_auto_enabled(env.cursor, "system", "get_device_info", true).status)
+        t:assert_equal(4, #client.get_function_call_schema())
+        t:assert_equal("OK", client.exec_server_tool("silent", "get_device_info", {}).status)
+        t:assert_equal("system:board", calls[2])
+        tool.ubus_method = "info"
+        t:assert_equal(3, #client.get_function_call_schema(), "target changes invalidate Auto permission")
+        client.exec_server_tool("silent", "get_device_info", {})
+        t:assert_equal(2, #calls)
+        t:assert_equal("OK", state.set_auto_enabled(env.cursor, "system", "get_device_info", true).status)
+        client.exec_server_tool("silent", "get_device_info", {})
+        t:assert_equal("system:info", calls[3])
+        t:assert_equal("OK", state.set_auto_enabled(env.cursor, "system", "get_device_info", false).status)
+        client.exec_server_tool("silent", "get_device_info", {})
+        t:assert_equal(3, #calls)
+        tool.ubus_method = "board"
+        t:assert_equal("OK", state.set_auto_mode(env.cursor, "0").status)
+        t:assert_equal("get_device_info", client.get_function_call_schema()[1].name)
+        t:assert_equal("1", tool.enable, "Auto selection must preserve Manual settings")
+    end)
+
     harness:test("unit", "CLI tool management respects Auto mode and preserves manual configuration", function(t)
         local env = fixture(t)
         replace(t, "luci.model.uci", { cursor = function() return env.cursor end })
