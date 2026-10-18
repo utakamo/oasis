@@ -681,6 +681,16 @@ local function standard_manifest()
     return bundled_manifest("ubus_direct.openwrt-core.json")
 end
 
+local function alias_manifest()
+    local manifest = fixture_manifest()
+    manifest.version = 2
+    manifest.source_type = "ubus_direct"
+    manifest.source_path = ""
+    manifest.tools[1].alias = "get_fixture_info"
+    manifest.tools[1].timeout = 75
+    return manifest
+end
+
 local function stub_dispatch_runtime(t)
     local saved_nixio = package.loaded["nixio"]
     package.loaded["nixio"] = { nanosleep = function() end }
@@ -688,6 +698,170 @@ local function stub_dispatch_runtime(t)
 end
 
 function M.register(harness)
+    harness:test("unit", "direct aliases preserve arguments and timeout and reject the original call name", function(t)
+        stub_dispatch_runtime(t)
+        local client, env = new_fixture({
+            manifest = alias_manifest(), base_sections = {}, native_dispatch = true,
+        })
+        local ok, plan = client.build_manifest_apply_plan(manifest_path)
+        t:assert_true(ok)
+        t:assert_contains(table.concat(plan.commands, "\n"), "name='get_fixture_info'")
+        t:assert_contains(table.concat(plan.commands, "\n"), "ubus_method='fixture_tool'")
+        t:assert_true(client.apply_manifest_plan(plan))
+        t:assert_equal("get_fixture_info", env.base_sections[1].name)
+        t:assert_equal("fixture_tool", env.base_sections[1].ubus_method)
+        t:assert_equal(0, #client.get_function_call_schema())
+        client.exec_server_tool("fixture", "get_fixture_info", {})
+        t:assert_equal(0, #env.ubus_calls)
+        env.base_sections[1].enable = "1"
+        t:assert_equal("get_fixture_info", client.get_function_call_schema()[1].name)
+        -- Argument keys cannot override the registered destination.
+        local args = { value = "sample", server = "other", name = "reboot", ubus_method = "reboot" }
+        local result = client.exec_server_tool("fixture", "get_fixture_info", args)
+        t:assert_equal("fixture.server", result.server)
+        t:assert_equal("fixture_tool", result.method)
+        t:assert_equal("75", env.ubus_calls[1].timeout)
+        t:assert_deep_equal(args, env.ubus_calls[1].data)
+        for _, name in ipairs({ "fixture_tool", "unregistered" }) do
+            t:assert_equal("tool_not_recognized", client.exec_server_tool("fixture", name, {}).error)
+        end
+        t:assert_equal(1, #env.ubus_calls)
+    end)
+
+    harness:test("unit", "invalid aliases fail before any registry mutation", function(t)
+        local cases = {
+            { alias = "" }, { alias = false }, { alias = 12 }, { alias = {} },
+            { alias = "bad.name" }, { alias = "bad name" }, { alias = "1name" },
+            { alias = string.rep("a", 65) },
+            { alias = "get_tool_list" }, { alias = "set_tool_enabled" }, { alias = "set_tool_disabled" },
+            { version = 1 }, { version = 3 },
+            { source_type = "lua_script" }, { source_type = "ucode_script" },
+            { server = "oasis.tool.manager", name = "set_tool_enabled" },
+        }
+        for _, case in ipairs(cases) do
+            local manifest = alias_manifest()
+            for key, value in pairs(case) do
+                if key == "version" or key == "source_type" then
+                    manifest[key] = value
+                else
+                    manifest.tools[1][key] = value
+                end
+            end
+            local client, env = new_fixture({ manifest = manifest })
+            local before = deep_copy(env.base_sections)
+            local ok, err = client.apply_manifest_file(manifest_path)
+            t:assert_false(ok)
+            t:assert_type("string", err)
+            t:assert_equal(0, env.mutation_calls)
+            t:assert_deep_equal(before, env.base_sections)
+        end
+        for _, alias in ipairs({ "_device-1", string.rep("a", 64) }) do
+            local manifest = alias_manifest()
+            manifest.tools[1].alias = alias
+            local client = new_fixture({ manifest = manifest })
+            t:assert_true(client.build_manifest_apply_plan(manifest_path))
+        end
+    end)
+
+    harness:test("unit", "alias and method changes revoke Manual permission and invalidate stale previews", function(t)
+        local manifest = alias_manifest()
+        local client, env = new_fixture({ manifest = manifest, base_sections = {}, list_fixture_manifest = true })
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        env.base_sections[1].enable = "1"
+        t:assert_true(client.update_server_info())
+        t:assert_equal("1", env.base_sections[1].enable)
+        local ok, plan = client.build_manifest_apply_plan(manifest_path)
+        t:assert_true(ok)
+        manifest.tools[1].name = "changed_method"
+        local applied, err = client.apply_manifest_plan(plan)
+        t:assert_false(applied)
+        t:assert_contains(err, "plan changed")
+        t:assert_equal("fixture_tool", env.base_sections[1].ubus_method)
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        t:assert_equal("0", env.base_sections[1].enable)
+        t:assert_equal("changed_method", env.base_sections[1].ubus_method)
+        env.base_sections[1].enable = "1"
+        manifest.tools[1].alias = "renamed_alias"
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        t:assert_equal(1, #env.base_sections)
+        t:assert_equal("renamed_alias", env.base_sections[1].name)
+        t:assert_equal("0", env.base_sections[1].enable)
+        env.base_sections[1].enable = "1"
+        manifest.tools[1].alias = nil
+        manifest.version = 1
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        t:assert_equal("changed_method", env.base_sections[1].name)
+        t:assert_nil(env.base_sections[1].ubus_method)
+        t:assert_equal("0", env.base_sections[1].enable)
+        env.base_sections[1].enable = "1"
+        t:assert_true(client.update_server_info())
+        t:assert_equal("1", env.base_sections[1].enable)
+    end)
+
+    harness:test("unit", "legacy direct Manifests retain names and enabled states without aliases", function(t)
+        stub_dispatch_runtime(t)
+        local manifest = alias_manifest()
+        manifest.version, manifest.tools[1].alias = 1, nil
+        local client, env = new_fixture({ manifest = manifest, base_sections = {}, native_dispatch = true })
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        env.base_sections[1].enable = "1"
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        t:assert_equal("1", env.base_sections[1].enable)
+        t:assert_nil(env.base_sections[1].ubus_method)
+        t:assert_equal("fixture_tool", client.get_function_call_schema()[1].name)
+        t:assert_equal("fixture_tool", client.exec_server_tool("fixture", "fixture_tool", {}).method)
+        manifest.version, manifest.tools[1].alias = 2, "get_fixture_info"
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        t:assert_equal(1, #env.base_sections)
+        t:assert_equal("get_fixture_info", env.base_sections[1].name)
+        t:assert_equal("0", env.base_sections[1].enable)
+    end)
+
+    harness:test("unit", "invalid stored alias bindings cannot be exposed or executed", function(t)
+        stub_dispatch_runtime(t)
+        local client, env = new_fixture({ manifest = alias_manifest(), base_sections = {}, native_dispatch = true })
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        local original = deep_copy(env.base_sections[1])
+        for _, change in ipairs({
+            { source_type = "lua_script" }, { ubus_method = "" },
+            { name = "get_tool_list", server = "oasis.tool.manager" },
+            { ubus_method = "set_tool_enabled", server = "oasis.tool.manager" },
+        }) do
+            local tool = deep_copy(original)
+            for key, value in pairs(change) do tool[key] = value end
+            tool.enable = "1"
+            env.base_sections = { tool }
+            t:assert_equal(0, #client.get_function_call_schema())
+            client.exec_server_tool("fixture", tool.name, {})
+            t:assert_equal(0, #env.ubus_calls)
+        end
+    end)
+
+    harness:test("unit", "aliases separate identical methods but conflict with existing tool names", function(t)
+        stub_dispatch_runtime(t)
+        local manifest = alias_manifest()
+        local second = deep_copy(manifest.tools[1])
+        second.server, second.alias = "second.server", "get_second_info"
+        manifest.tools[2] = second
+        local client, env = new_fixture({ manifest = manifest, base_sections = {}, native_dispatch = true })
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        for _, tool in ipairs(env.base_sections) do tool.enable = "1" end
+        t:assert_equal(2, #client.get_function_call_schema())
+        t:assert_equal("second.server", client.exec_server_tool("fixture", "get_second_info", {}).server)
+        t:assert_equal("fixture_tool", env.ubus_calls[1].name)
+        env.base_sections[#env.base_sections + 1] = {
+            [".name"] = "custom", name = "get_fixture_info", server = "custom.server",
+            script = "lua", enable = "1", manifest_path = "custom.json",
+        }
+        t:assert_true(client.apply_manifest_file(manifest_path))
+        for _, tool in ipairs(find_base_tool(env, "get_fixture_info")) do
+            t:assert_equal("1", tool.conflict)
+        end
+        t:assert_equal(1, #client.get_function_call_schema())
+        client.exec_server_tool("fixture", "get_fixture_info", {})
+        t:assert_equal(1, #env.ubus_calls)
+    end)
+
     harness:test("unit", "hardware defaults rename replaces owned entries and dispatches the new method", function(t)
         stub_dispatch_runtime(t)
         local manifest = bundled_manifest("ucode.oasis_plugin_server.uc.json")
@@ -747,24 +921,26 @@ function M.register(harness)
         local schemas = client.get_function_call_schema()
         t:assert_equal(4, #schemas)
         local expected = {
-            board = "system", info = "system",
-            dump = "network.interface", status = "network.device",
+            get_device_info = { "system", "board" },
+            get_system_resource_info = { "system", "info" },
+            get_network_interfaces = { "network.interface", "dump" },
+            get_network_device_status = { "network.device", "status" },
         }
         for _, schema in ipairs(schemas) do
             t:assert_not_nil(expected[schema.name])
             t:assert_deep_equal({}, schema.parameters.required)
             t:assert_false(schema.parameters.additionalProperties)
-            if schema.name == "status" then
+            if schema.name == "get_network_device_status" then
                 t:assert_equal("string", schema.parameters.properties.name.type)
             else
                 t:assert_deep_equal({}, schema.parameters.properties)
             end
             local result = client.exec_server_tool("fixture", schema.name, {})
             t:assert_equal("OK", result.status)
-            t:assert_equal(expected[schema.name], result.server)
-            t:assert_equal(schema.name, result.method)
+            t:assert_equal(expected[schema.name][1], result.server)
+            t:assert_equal(expected[schema.name][2], result.method)
         end
-        local result = client.exec_server_tool("fixture", "status", { name = "br-lan" })
+        local result = client.exec_server_tool("fixture", "get_network_device_status", { name = "br-lan" })
         t:assert_equal("OK", result.status)
         t:assert_equal(5, #env.ubus_calls)
         t:assert_deep_equal({ name = "br-lan" }, env.ubus_calls[5].data)
@@ -778,10 +954,10 @@ function M.register(harness)
         t:assert_true(client.apply_manifest_file(manifest_path))
         for _, tool in ipairs(env.base_sections) do tool.enable = "1" end
         env.base_sections[#env.base_sections + 1] = {
-            name = "status", server = "custom.server", enable = "1",
+            name = "get_network_device_status", server = "custom.server", enable = "1",
         }
         t:assert_equal(3, #client.get_function_call_schema())
-        local result = client.exec_server_tool("fixture", "status", {})
+        local result = client.exec_server_tool("fixture", "get_network_device_status", {})
         t:assert_equal("tool_not_recognized", result.error)
         t:assert_equal(0, #env.ubus_calls)
     end)
@@ -818,8 +994,10 @@ function M.register(harness)
         t:assert_nil(env.files[root .. "ucode.removed.uc.json"])
         t:assert_true(client.update_server_info())
         t:assert_equal(6, #env.base_sections)
-        for _, name in ipairs({ "board", "info", "dump", "status" }) do
-            t:assert_equal(1, #find_base_tool(env, name))
+        for _, tool in ipairs(standard_manifest().tools) do
+            local found = find_base_tool(env, tool.alias)
+            t:assert_equal(1, #found)
+            t:assert_equal(tool.name, found[1].ubus_method)
         end
     end)
 

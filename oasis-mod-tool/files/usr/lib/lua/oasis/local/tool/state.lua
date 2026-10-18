@@ -149,6 +149,7 @@ function M.list(uci)
         result[#result + 1] = {
             server = tool.server,
             name = tool.name,
+            ubus_method = tool.ubus_method,
             description = tool.description,
             enable = tool.enable,
             enabled = tool.enabled,
@@ -493,7 +494,7 @@ local function fingerprint(tool)
     -- Exclude the UCI section ID and mutable enable/conflict flags. Retain all
     -- definition/source fields so a replaced tool does not inherit permission.
     local definition = {}
-    for _, key in ipairs({ "server", "name", "type", "description", "property",
+    for _, key in ipairs({ "server", "name", "ubus_method", "type", "description", "property",
         "required", "additionalProperties", "script", "source_type", "source_path",
         "manifest_path", "timeout", "execution_message", "download_message" }) do
         definition[key] = tool[key]
@@ -548,6 +549,7 @@ function M.list_effective(uci)
     local tools = {}
     for _, tool in ipairs(snapshot.tools) do
         tools[#tools + 1] = { server = tool.server, name = tool.name,
+            ubus_method = tool.ubus_method,
             description = tool.description, enable = tool.enable,
             enabled = tool.enabled, conflict = tool.conflict,
             conflicted = tool.conflicted }

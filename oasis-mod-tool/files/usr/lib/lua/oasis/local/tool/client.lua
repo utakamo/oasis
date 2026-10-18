@@ -19,6 +19,27 @@ local listup_server_candidate
 local check_tool_name_conflict
 local sort_tool_defs
 
+local function valid_tool_alias(alias)
+    return type(alias) == "string" and #alias >= 1 and #alias <= 64
+        and alias:match("^[A-Za-z_][A-Za-z0-9_-]*$") ~= nil
+        and not tool_state.is_control_tool(control_tool_server, alias)
+end
+
+-- UCI name is always the name exposed to the AI. Only direct aliases store
+-- a separate ubus_method; legacy tools continue to call their own name.
+local function resolve_ubus_method(tool)
+    if tool.ubus_method ~= nil then
+        if tool.source_type ~= "ubus_direct"
+            or not valid_tool_alias(tool.name)
+            or type(tool.ubus_method) ~= "string" or tool.ubus_method == ""
+            or tool_state.is_control_tool(tool.server, tool.ubus_method) then
+            return nil
+        end
+        return tool.ubus_method
+    end
+    return tool.name
+end
+
 -- Quote dynamic paths before passing them to shell commands.
 local function shell_quote(s)
     s = tostring(s or "")
@@ -288,6 +309,7 @@ local function normalize_tool_def(def)
     table.sort(property)
     return {
         name = def.name or "",
+        ubus_method = def.ubus_method,
         script = def.script or "",
         server = def.server or "",
         type = def.type or "function",
@@ -305,6 +327,7 @@ end
 local function defs_equal(a, b)
     if not a or not b then return false end
     if a.name ~= b.name then return false end
+    if a.ubus_method ~= b.ubus_method then return false end
     if a.script ~= b.script then return false end
     if a.server ~= b.server then return false end
     if a.type ~= b.type then return false end
@@ -515,7 +538,7 @@ local function manifest_tool_to_def(script_kind, tool)
     local def = build_tool_def(
         script_kind,
         server,
-        name,
+        tool.alias or name,
         description,
         execution_message,
         download_message,
@@ -524,6 +547,9 @@ local function manifest_tool_to_def(script_kind, tool)
         property_list
     )
     def.type = type_name
+    if tool.alias ~= nil then
+        def.ubus_method = name
+    end
     def.additionalProperties = (additional_properties == true) and "1" or "0"
 
     return def, nil
@@ -540,7 +566,7 @@ local function load_manifest_file(path, opts)
         return nil, nil, "invalid manifest json: " .. path
     end
 
-    if manifest.version ~= 1 then
+    if manifest.version ~= 1 and manifest.version ~= 2 then
         return nil, nil, "unsupported manifest version: " .. path
     end
     if manifest.source_type ~= "lua_script" and manifest.source_type ~= "ucode_script" and manifest.source_type ~= "ubus_direct" then
@@ -548,6 +574,26 @@ local function load_manifest_file(path, opts)
     end
     if type(manifest.tools) ~= "table" then
         return nil, nil, "invalid manifest tools: " .. path
+    end
+
+    -- Check aliases before skipping stale script Manifests so unsupported
+    -- source types never silently accept this field.
+    for i, tool in ipairs(manifest.tools) do
+        if type(tool) == "table" and tool.alias ~= nil then
+            local err
+            if manifest.source_type ~= "ubus_direct" then
+                err = "alias is supported only for ubus_direct"
+            elseif manifest.version ~= 2 then
+                err = "alias requires manifest version 2"
+            elseif tool_state.is_control_tool(tool.server, tool.name) then
+                err = "Tool Search management methods cannot be aliased"
+            elseif not valid_tool_alias(tool.alias) then
+                err = "invalid or reserved alias (use 1-64 ASCII letters, digits, underscores or hyphens; start with a letter or underscore)"
+            end
+            if err then
+                return nil, nil, string.format("invalid manifest tool (%s #%d): %s", path, i, err)
+            end
+        end
     end
 
     local source_path = manifest.source_path
@@ -705,6 +751,11 @@ local function add_tool_section(uci, def, enable)
         end
     end
 
+    if def.ubus_method ~= nil then
+        local ok, err = set_option("ubus_method", def.ubus_method)
+        if not ok then return false, err end
+    end
+
     if def.required and #def.required > 0 then
         local ok, err = uci:set_list(
             common.db.uci.cfg, s, "required", def.required)
@@ -816,6 +867,9 @@ local function render_manifest_apply_commands(plan)
         local def = item.def
         commands[#commands + 1] = string.format("uci add %s %s", common.db.uci.cfg, common.db.uci.sect.tool)
         add_set("name", def.name or "")
+        if def.ubus_method ~= nil then
+            add_set("ubus_method", def.ubus_method)
+        end
         add_set("script", def.script or "")
         add_set("server", def.server or "")
         add_set("enable", item.enable or "0")
@@ -1544,7 +1598,8 @@ function M.get_function_call_schema()
         local valid_control_binding = not reserved_control_name
             or tool_state.is_control_tool(s.server, s.name)
         if s.enable == "1" and s.conflict ~= "1"
-            and name_counts[s.name] == 1 and valid_control_binding then
+            and name_counts[s.name] == 1 and valid_control_binding
+            and resolve_ubus_method(s) then
             local required = s.required or {}
             if type(required) == "string" then
                 required = {required}
@@ -1669,11 +1724,12 @@ function M.exec_server_tool(format, tool, data, expected_mode_token)
     -- Function Calling identifies a tool by name only. Resolve exactly one
     -- immutable snapshot, then execute at most that one target.
     local s = (#matches == 1) and matches[1] or nil
+    local method = s and resolve_ubus_method(s)
     local reserved_control_name =
         tool_state.is_control_tool(control_tool_server, tool)
     local valid_control_binding = not reserved_control_name
         or (s and tool_state.is_control_tool(s.server, s.name))
-    if s and valid_control_binding
+    if s and method and valid_control_binding
         and s.enable == "1" and s.conflict ~= "1" then
             handle_option_message(s.execution_message, "execution", format)
             handle_option_message(s.download_message,  "download",  format)
@@ -1683,7 +1739,7 @@ function M.exec_server_tool(format, tool, data, expected_mode_token)
             -- Never write those values to the shared Oasis debug log.
             debug:log("oasis.log", "exec_server_tool",
                 "request payload = " .. jsonc.stringify(redact_debug_value(data), false))
-            result = ubus_call(s.server, s.name, data, s.timeout)
+            result = ubus_call(s.server, method, data, s.timeout)
             result = merge_parsed_result(result)
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
 

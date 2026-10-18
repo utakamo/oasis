@@ -273,7 +273,12 @@ local function build_manifest_summary(path, manifest)
                 servers[#servers + 1] = server
             end
             if server ~= "" and name ~= "" then
-                tools[#tools + 1] = server .. "." .. name
+                local target = server .. "." .. name
+                if manifest.source_type == "ubus_direct"
+                    and type(tool.alias) == "string" and tool.alias ~= "" then
+                    target = tool.alias .. " -> " .. target
+                end
+                tools[#tools + 1] = target
             end
         end
     end
