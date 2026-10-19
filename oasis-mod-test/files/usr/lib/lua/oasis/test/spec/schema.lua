@@ -47,6 +47,38 @@ function M.register(harness)
         t:assert_equal("nested", result.nested.user_only)
     end)
 
+    harness:test("unit", "ui_action is removed from direct and rpcd wrapped output without mutating UI data", function(t)
+        local payload = { status = "input_required", request = "Wait for user input.",
+            ui_action = { version = 1, type = "fixture", fields = { { label = SENTINEL } } },
+            user_only = SENTINEL }
+        local raw = jsonc.stringify(payload, false)
+        local source = { result = raw, ui_action = payload.ui_action, user_only = SENTINEL }
+        local cleaned, encoded = sanitize(t, source, "wrapped form")
+        t:assert_equal(raw, source.result)
+        t:assert_type("table", source.ui_action)
+        t:assert_nil(cleaned.ui_action)
+        t:assert_nil(cleaned.user_only)
+        t:assert_not_contains(encoded, SENTINEL)
+        t:assert_not_contains(encoded, "ui_action")
+        t:assert_not_contains(encoded, "user_only")
+        local inner = parse_object(t, cleaned.result, "inner result")
+        t:assert_equal("input_required", inner.status)
+        for _, value in ipairs({ raw, payload, { result = payload },
+            { result = jsonc.stringify({ result = raw }, false) } }) do
+            local _, text = sanitize(t, value, "form representation")
+            t:assert_not_contains(text, SENTINEL)
+            t:assert_not_contains(text, "ui_action")
+        end
+    end)
+
+    harness:test("unit", "ui_action is reserved regardless of its JSON value", function(t)
+        for _, raw in ipairs({ '{"ui_action":null}', '{"ui_action":false}',
+            '{"ui_action":"private"}', '{"ui_action":[]}' }) do
+            local result = sanitize(t, raw, "reserved ui_action")
+            t:assert_nil(result.ui_action)
+        end
+    end)
+
     harness:test("unit", "table input is sanitized without mutation", function(t)
         local source = {
             result = "ok",

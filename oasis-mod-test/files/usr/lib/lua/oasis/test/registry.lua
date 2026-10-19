@@ -1,5 +1,23 @@
 return {
     {
+        suite = "unit",
+        module = "oasis.test.spec.ui_actions",
+        description = "Registered CLI forms and execution boundaries",
+        default = true,
+    },
+    {
+        suite = "unit",
+        module = "oasis.test.spec.wifi_config",
+        description = "Shared Wi-Fi backend and CLI form steps with platform I/O mocked",
+        default = true,
+    },
+    {
+        suite = "portable",
+        module = "oasis.test.spec.ui_forms",
+        description = "Generic CLI form definitions, input and cancellation",
+        default = true,
+    },
+    {
         suite = "portable",
         module = "oasis.test.spec.response_framer",
         description = "Pure Lua response framing and size limits",

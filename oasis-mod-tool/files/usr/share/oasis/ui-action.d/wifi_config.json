@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "type": "wifi_config",
+  "handler": "oasis.local.tool.ui.wifi_config",
+  "accept_legacy": true,
+  "bindings": [
+    { "server": "oasis.wireless", "method": "add_wifi_config", "operation": "add" },
+    { "server": "oasis.wireless", "method": "update_wifi_config", "operation": "update" },
+    { "server": "oasis.wireless", "method": "delete_wifi_config", "operation": "delete" }
+  ]
+}

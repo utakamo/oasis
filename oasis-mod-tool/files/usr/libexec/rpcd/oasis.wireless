@@ -255,13 +255,15 @@ server.tool("get_wifi_config", {
 
 local function open_wifi_form(operation, band)
     return server.response({
+        status = "input_required",
         ui_action = {
+            version = 1,
             type = "wifi_config",
             operation = operation,
             band = band
         },
-        user_only = "Open the Wi-Fi settings form to continue.",
-        request = "The Oasis WebUI has opened a Wi-Fi settings form. Wait for the user to finish it; do not ask for credentials in chat."
+        user_only = "Wi-Fi settings require your input and confirmation in Oasis.",
+        request = "Oasis will collect user input and confirmation through its UI. No settings have been changed. Do not ask for credentials in chat."
     })
 end
 
@@ -306,21 +308,21 @@ local function configured_wifi_bands()
 end
 
 server.tool("update_wifi_config", {
-    tool_desc = "Open the Oasis WebUI form to edit existing Wi-Fi access point settings. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+    tool_desc = "Request an Oasis form to edit existing Wi-Fi access points in the WebUI or interactive CLI. Takes no arguments; changes require user input and confirmation.",
     call = function()
         return open_wifi_form("update")
     end
 })
 
 server.tool("delete_wifi_config", {
-    tool_desc = "Open the Oasis WebUI form to remove an existing Wi-Fi access point configuration. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+    tool_desc = "Request an Oasis form to remove an existing Wi-Fi access point in the WebUI or interactive CLI. Takes no arguments; deletion requires user confirmation.",
     call = function()
         return open_wifi_form("delete")
     end
 })
 
 server.tool("add_wifi_config", {
-    tool_desc = "Open the Oasis WebUI form to add a Wi-Fi access point configuration. The band argument must be exactly 2G or 5G. The tool returns an error if no radio for the requested band is configured. This tool does not modify Wi-Fi settings directly.",
+    tool_desc = "Request an Oasis form to add a Wi-Fi access point in the WebUI or interactive CLI. Band must be 2G or 5G with a configured radio; changes require user input and confirmation.",
     args_desc = {
         "Wi-Fi band: exactly 2G for 2.4 GHz or 5G for 5 GHz."
     },

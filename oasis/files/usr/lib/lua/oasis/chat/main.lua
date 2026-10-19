@@ -1348,6 +1348,18 @@ local function restore_chat_state(chat, snapshot)
 end
 
 -- Process message and communicate with AI
+local function run_cli_sequence(service, chat)
+    local ui_runner = require("oasis.ui.runner")
+    ui_runner.begin()
+    local result = tool_sequence.run(service, chat)
+    local ok, code = pcall(ui_runner.finish, result)
+    if not ok then
+        console.print("[ui_action:failed] The input request could not be processed.")
+        code = 1
+    end
+    return result, code
+end
+
 local function process_message(service, chat, message)
 
     -- Per-chat turn limit: block when user message count reached chat_max
@@ -1376,7 +1388,7 @@ local function process_message(service, chat, message)
 
     datactrl.record_chat_data(service, chat)
 
-    local result = tool_sequence.run(service, chat)
+    local result, ui_code = run_cli_sequence(service, chat)
 
     if not result.ok then
         local err = result.error or chat_error.build(service, {
@@ -1398,6 +1410,9 @@ local function process_message(service, chat, message)
         string.format("tool sequence: requests=%d rounds=%d calls=%d",
             result.turns or 0, result.tool_rounds or 0, result.tool_calls or 0))
 
+    if ui_code == 2 then
+        return false, "Interactive input is required.", false, 2
+    end
     return true
 end
 
@@ -1414,11 +1429,11 @@ local function chat_loop(service, chat)
             break
         end
 
-        local ok, err, can_continue = process_message(service, chat, message)
+        local ok, err, can_continue, exit_code = process_message(service, chat, message)
         if not ok then
             console.print("\27[31mError: " .. (err or "Failed to process message") .. "\27[0m")
             if can_continue == false then
-                break
+                return exit_code
             end
         end
     end
@@ -1474,7 +1489,7 @@ function M.chat(arg)
 
     local chat = datactrl.load_chat_data(service)
     display_chat_history(chat)
-    chat_loop(service, chat)
+    return chat_loop(service, chat)
 end
 
 -- Delete chat data by chat number.
@@ -1537,8 +1552,9 @@ function M.prompt(arg)
         return false
     end
 
-    local result = tool_sequence.run(service, prompt)
+    local result, ui_code = run_cli_sequence(service, prompt)
     console.print()
+    if ui_code == 2 then return 2 end
 
     -- A tool may have created a confirmation flag before a later AI
     -- continuation failed. Preserve the prompt command's historical behavior
@@ -1555,6 +1571,8 @@ function M.prompt(arg)
     debug:log("oasis.log", "prompt",
         string.format("tool sequence: requests=%d rounds=%d calls=%d",
             result.turns or 0, result.tool_rounds or 0, result.tool_calls or 0))
+
+    return ui_code
 
 end
 

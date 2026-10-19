@@ -1741,6 +1741,9 @@ function M.exec_server_tool(format, tool, data, expected_mode_token)
                 "request payload = " .. jsonc.stringify(redact_debug_value(data), false))
             result = ubus_call(s.server, method, data, s.timeout)
             result = merge_parsed_result(result)
+            if format == common.ai.format.chat or format == common.ai.format.prompt then
+                require("oasis.ui.runner").capture(s, method, result, effective.token, data)
+            end
             debug:log("oasis.log", "exec_server_tool", string.format("Result for tool '%s' (response) = %s", s.name, tostring(jsonc.stringify(result, false))))
 
             -- [Control install package]
