@@ -91,7 +91,7 @@ function M.normalize_arguments(args)
 end
 
 -- Produce the representation of a tool result that may be sent to an AI
--- provider. `user_only` is intentionally kept in the original tool event for
+-- provider. UI-only fields are intentionally kept in the original tool event for
 -- the UI, but it must never enter chat history or a provider continuation.
 --
 -- Local tool results are JSON objects. Reject malformed or non-object values
@@ -120,9 +120,36 @@ function M.sanitize_tool_output_for_ai(output)
         return nil, "tool output is not valid JSON"
     end
 
-    -- Remove the reserved field regardless of whether its value is a string,
-    -- empty string, boolean, table, or another JSON value.
-    value.user_only = nil
+    -- Lua rpcd tools wrap their object in a JSON-encoded `result`. The local
+    -- client also exposes its fields at the top level, retaining the wrapper.
+    -- Strip both copies without traversing unrelated application data.
+    local function strip_ui_fields(object, depth)
+        if depth > 8 then
+            return false
+        end
+        object.user_only = nil
+        object.ui_action = nil
+        local nested = object.result
+        if type(nested) == "string" and nested:match("^%s*{") then
+            local ok, decoded = pcall(jsonc.parse, nested)
+            if not ok or type(decoded) ~= "table" then
+                return false
+            end
+            if not strip_ui_fields(decoded, depth + 1) then
+                return false
+            end
+            object.result = jsonc.stringify(decoded, false)
+        elseif type(nested) == "table" then
+            if not strip_ui_fields(nested, depth + 1) then
+                return false
+            end
+        end
+        return true
+    end
+    local stripped_ok, stripped = pcall(strip_ui_fields, value, 1)
+    if not stripped_ok or not stripped then
+        return nil, "tool result wrapper could not be sanitized"
+    end
 
     local stringify_ok, sanitized = pcall(jsonc.stringify, value, false)
     if not stringify_ok or type(sanitized) ~= "string" then
@@ -256,7 +283,7 @@ function M.setup_msg(service, chat, speaker)
     debug:log("oasis.log", "setup_msg", string.format("setup_msg called"))
     debug:log("oasis.log", "setup_msg", string.format("speaker.role = %s", tostring(speaker and speaker.role or "nil")))
     debug:log("oasis.log", "setup_msg", string.format("speaker.message = %s", tostring(speaker and speaker.message or "nil")))
-    debug:log("oasis.log", "setup_msg", string.format("speaker.content = %s", tostring(speaker and speaker.content or "nil")))
+    debug:log("oasis.log", "setup_msg", string.format("speaker.content present = %s", tostring(speaker and speaker.content ~= nil)))
     debug:log("oasis.log", "setup_msg", string.format("speaker.tool_calls = %s", tostring((speaker and (speaker.tool_calls ~= nil)) and "true" or "nil")))
 
     -- Tool output has a UI-only channel. Keep the caller's raw event intact,

@@ -3,7 +3,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Open the Oasis WebUI form to add a Wi-Fi access point configuration. The band argument must be exactly 2G or 5G. The tool returns an error if no radio for the requested band is configured. This tool does not modify Wi-Fi settings directly.",
+      "description": "Request an Oasis form to add a Wi-Fi access point in the WebUI or interactive CLI. Band must be 2G or 5G with a configured radio; changes require user input and confirmation.",
       "properties": [
         {
           "type": "string",
@@ -23,7 +23,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Open the Oasis WebUI form to remove an existing Wi-Fi access point configuration. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+      "description": "Request an Oasis form to remove an existing Wi-Fi access point in the WebUI or interactive CLI. Takes no arguments; deletion requires user confirmation.",
       "properties": [],
       "download_message": "",
       "name": "delete_wifi_config",
@@ -59,7 +59,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Open the Oasis WebUI form to edit existing Wi-Fi access point settings. This tool takes no arguments and does not modify Wi-Fi settings directly.",
+      "description": "Request an Oasis form to edit existing Wi-Fi access points in the WebUI or interactive CLI. Takes no arguments; changes require user input and confirmation.",
       "properties": [],
       "download_message": "",
       "name": "update_wifi_config",

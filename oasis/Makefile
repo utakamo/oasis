@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=23
+PKG_RELEASE:=24
 
 APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
@@ -35,6 +35,10 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_DIR) $(1)$(APP_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/ui
+	$(INSTALL_DIR) $(1)/usr/libexec
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/ui/*.lua $(1)$(LUA_LIBRARY_DIR)/oasis/ui/
+	$(INSTALL_BIN) ./files/usr/libexec/oasis-read-secret $(1)/usr/libexec/
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/ubus
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat/function/calling
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service

@@ -9,10 +9,13 @@ local function disable_debug_logging()
 end
 
 local function raw_output()
+    local private = jsonc.stringify({ result = "ok", user_only = SENTINEL,
+        ui_action = { type = "fixture", fields = { { label = SENTINEL } } } }, false)
     return jsonc.stringify({
-        result = "ok",
+        result = private,
         request = "shown",
         user_only = SENTINEL,
+        ui_action = { type = "fixture", label = SENTINEL },
     }, false)
 end
 
@@ -44,7 +47,12 @@ local function assert_ai_output(t, output, label)
     local parsed = jsonc.parse(output)
     t:assert_type("table", parsed, label)
     t:assert_nil(parsed.user_only, label .. ": reserved field remained")
-    t:assert_equal("ok", parsed.result, label)
+    t:assert_nil(parsed.ui_action, label .. ": UI action remained")
+    t:assert_not_contains(output, "ui_action", label)
+    local inner = jsonc.parse(parsed.result)
+    t:assert_equal("ok", inner.result, label)
+    t:assert_nil(inner.ui_action, label)
+    t:assert_nil(inner.user_only, label)
     t:assert_equal("shown", parsed.request, label)
 end
 

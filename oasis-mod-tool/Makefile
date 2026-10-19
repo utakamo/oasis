@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-tool
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=16
+PKG_RELEASE:=17
 
 USR_BIN_DIR = /usr/bin
 RPCD_ACL_DIR = /usr/share/rpcd/acl.d
@@ -21,7 +21,7 @@ define Package/oasis-mod-tool
     SECTION:=utakamo
     TITLE:= Remote MCP and Local Tool Plugin Module for oasis
     DEPENDS:=+oasis
-    EXTRA_DEPENDS:=oasis (>=3.2.6-r17)
+    EXTRA_DEPENDS:=oasis (>=3.2.6-r24)
     PKGARCH:=all
 endef
 
@@ -36,6 +36,11 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_DIR) $(1)$(UCODE_UBUS_SERVER_APP_DIR)
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/remote/mcp/service
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool
+	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/ui
+	$(INSTALL_DIR) $(1)/usr/share/oasis/ui-action.d
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/local/tool/wifi_config.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/local/tool/ui/*.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/ui/
+	$(INSTALL_DATA) ./files/usr/share/oasis/ui-action.d/*.json $(1)/usr/share/oasis/ui-action.d/
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/package
 	$(INSTALL_DIR) $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/system
 	$(INSTALL_DIR) $(1)$(UCODE_LIBRARY_DIR)/oasis/local/tool

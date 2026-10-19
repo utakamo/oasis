@@ -376,7 +376,8 @@ end
 
 commands.chat = function(args)
     local no = extract_no(args[2])
-    oasis.chat({ no = no })
+    local code = oasis.chat({ no = no })
+    if type(code) == "number" and code ~= 0 then os.exit(code) end
 end
 
 commands.delchat = function(args)
@@ -391,7 +392,8 @@ end
 commands.prompt = function(args)
     if args[2] then
         local message = table.concat(args, " ", 2)
-        oasis.prompt({ message = message })
+        local code = oasis.prompt({ message = message })
+        if type(code) == "number" and code ~= 0 then os.exit(code) end
     else
         help()
     end
