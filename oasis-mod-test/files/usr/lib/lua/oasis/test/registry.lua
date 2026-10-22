@@ -1,6 +1,12 @@
 return {
     {
         suite = "unit",
+        module = "oasis.test.spec.chat_history",
+        description = "Durable tool history, checkpoints, imports and provider isolation",
+        default = true,
+    },
+    {
+        suite = "unit",
         module = "oasis.test.spec.ui_actions",
         description = "Registered CLI forms and execution boundaries",
         default = true,

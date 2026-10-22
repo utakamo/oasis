@@ -1035,15 +1035,16 @@ function M.run(service, chat, opts)
     end)
     runner:_clear_context()
 
+    local recorder = require("oasis.chat.recorder")
     if ok then
-        return result
+        return recorder.finish(service, result)
     end
-    return runner:_fail(build_error(
+    return recorder.finish(service, runner:_fail(build_error(
         service,
         "The tool sequence failed unexpectedly.",
         result,
         "internal_error"
-    ))
+    )))
 end
 
 M.MAX_AI_REQUESTS = HARD_MAX_AI_REQUESTS

@@ -14,11 +14,12 @@
         return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
     }
 
-    // One instance per user turn. Display data is never added to AI messages
-    // or persisted in chat history. Only explicitly user-facing output is shown.
+    // One instance per user turn. Rendering never changes saved data or AI
+    // messages. Only explicitly user-facing output is shown.
     function create(options) {
         const t = options.t;
         const seen = new Map();
+        const savedIds = new Set();
         let list = null;
         let container = null;
         let count = 0;
@@ -54,11 +55,11 @@
             return ['received', t('toolResultReceived', 'Result received')];
         }
 
-        function appendCall(call, output) {
+        function appendCall(call, output, savedStatus) {
             const name = typeof call.name === 'string' && call.name.length ? call.name : t('unknownTool', 'Unknown tool');
             const management = Object.prototype.hasOwnProperty.call(MANAGEMENT_LABELS, name);
             const label = management ? MANAGEMENT_LABELS[name] : ['toolExecute', 'Tool execution'];
-            const status = statusOf(output, management);
+            const status = savedStatus || statusOf(output, management);
             const card = element('li', 'tool-call' + (management ? ' tool-call-management' : ''));
             const header = element('div', 'tool-call-header');
             header.appendChild(element('code', 'tool-call-name', name));
@@ -120,7 +121,28 @@
             return result;
         }
 
-        return { consume, get count() { return count; } };
+        // Render saved calls directly, without returning UI actions to the live
+        // event dispatcher. Provider IDs may repeat across saved requests.
+        function appendSaved(call) {
+            if (!call || typeof call !== 'object' || Array.isArray(call)) return;
+            if (call.id && savedIds.has(call.id)) return;
+            const result = objectValue(call.result);
+            const output = result && objectValue(result.original_json);
+            let status = statusOf(output, Object.prototype.hasOwnProperty.call(MANAGEMENT_LABELS, call.name));
+            if (call.status === 'failed' || (result && (result.status === 'error' || result.error))) {
+                status = ['failed', t('toolFailed', 'Failed')];
+            } else if (call.status === 'pending') {
+                status = ['pending', t('toolNotExecuted', 'Not executed')];
+            } else if (call.status === 'running' || !result) {
+                status = ['unconfirmed', t('toolResultUnconfirmed', 'Result unconfirmed')];
+            } else if (result.status === 'success' && status[0] === 'received') {
+                status = ['success', t('toolSucceeded', 'Succeeded')];
+            }
+            appendCall({ name: call.name, arguments: call.arguments_json }, output, status);
+            if (call.id) savedIds.add(call.id);
+        }
+
+        return { consume, appendSaved, get count() { return count; } };
     }
 
     global.OasisChatTools = { create };

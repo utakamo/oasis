@@ -144,6 +144,172 @@ function fixture(options = {}) {
     return env;
 }
 
+function savedCall(id, status = 'completed', result = status === 'completed' ? { status: 'success', original_json: '{"status":"OK"}' } : undefined) {
+    return { id, provider_id: 'reused-provider-id', name: 'inspect', arguments_json: '{}', status, result };
+}
+
+function savedRequest(text, calls = []) {
+    return { assistant_text: text, calls, tools: { state: 'provided', definitions_json: '[{"name":"inspect"}]' } };
+}
+
+function restore(env, requests, { content = 'Final answer', status = 'completed' } = {}) {
+    const savedTurn = { requests, status };
+    env.context.window.OasisChatTurn.renderSaved({
+        container: env.answer, t: env.context.t, sanitizeHTML: env.context.sanitizeHTML,
+        convertMarkdownToHTML: env.context.convertMarkdownToHTML
+    }, { content, savedTurn });
+}
+
+test('saved responses share live cards and interleave text without duplicating the final answer', () => {
+    const env = fixture();
+    const requests = [savedRequest('Checking', [savedCall('one')]),
+        savedRequest('Checking', [savedCall('two')]), savedRequest('Final answer')];
+    const before = JSON.stringify(requests);
+    restore(env, requests);
+    assert.deepEqual(env.answer.children.map(node => node.className), ['turn-text', 'turn-tools', 'turn-text', 'turn-tools', 'turn-text']);
+    assert.deepEqual(byClass(env.root, 'turn-text').map(node => node.innerHTML), ['Checking', 'Checking', 'Final answer']);
+    assert.deepEqual(env.names(), ['inspect', 'inspect']);
+    assert.deepEqual(byClass(env.root, 'tool-activity-list').map(node => node.start), [1, 2]);
+    assert.equal(byClass(env.root, 'turn-pending').length, 0);
+    assert.equal(env.pendingTimers(), 0);
+    assert.equal(env.answer.attributes['aria-busy'], 'false');
+    assert.equal(JSON.stringify(requests), before);
+});
+
+test('LuCI empty-object call lists retain tool activity and the final assistant reply', () => {
+    const env = fixture();
+    const requests = [savedRequest('Checking', [savedCall('one')]), savedRequest('Final answer', {})];
+    const before = JSON.stringify(requests);
+    restore(env, requests);
+    assert.deepEqual(byClass(env.root, 'turn-text').map(node => node.innerHTML), ['Checking', 'Final answer']);
+    assert.deepEqual(env.names(), ['inspect']);
+    assert.equal(env.pendingTimers(), 0);
+    assert.equal(JSON.stringify(requests), before);
+});
+
+test('LuCI empty-object call lists also restore plain replies and uncommitted final text', () => {
+    for (const content of ['Final answer', '']) {
+        const env = fixture();
+        restore(env, [savedRequest('Final answer', {})], { content, status: content ? 'completed' : 'incomplete' });
+        assert.equal(env.text(), 'Final answer');
+        assert.equal(env.cards().length, 0);
+        assert.equal(byClass(env.root, 'turn-pending').length, 0);
+    }
+});
+
+test('LuCI empty-object requests and turns preserve conversation text and interrupted notices', () => {
+    const env = fixture();
+    const messages = [{ role: 'user', content: 'Question' }, { role: 'assistant', content: 'Answer' }];
+    const legacy = env.context.window.OasisChatTurn.savedMessages({ format_version: 2, messages, turns: {} });
+    assert.equal(legacy.length, 2);
+    assert.equal(legacy[1].content, 'Answer');
+    for (const status of ['completed', 'incomplete', 'failed']) {
+        const doc = { format_version: 2, messages: status === 'completed' ? messages : messages.slice(0, 1),
+            turns: [{ user_message: 1, status, requests: {} }] };
+        const before = JSON.stringify(doc);
+        const restored = env.context.window.OasisChatTurn.savedMessages(doc);
+        assert.equal(restored.length, 2);
+        if (status === 'completed') {
+            assert.equal(restored[1].content, 'Answer');
+            assert.equal(restored[1].savedTurn, null);
+        } else {
+            restore(env, restored[1].savedTurn.requests, { content: '', status });
+            assert.equal(byClass(env.root, 'error-notice').length, 1);
+            assert.equal(env.cards().length, 0);
+        }
+        assert.equal(JSON.stringify(doc), before);
+    }
+});
+
+test('saved cards distinguish pending, uncertain outcomes, exceptions, and returned results', () => {
+    const env = fixture();
+    restore(env, [savedRequest('', [
+        savedCall('pending', 'pending', undefined), savedCall('running', 'running', undefined),
+        savedCall('exception', 'failed', { status: 'error', error: 'execution failed' }),
+        savedCall('unknown', 'completed', { status: 'unknown', original_json: '"plain result"' }),
+        savedCall('nested', 'completed', { status: 'success', original_json: '{"result":{"status":"OK"}}' }),
+        savedCall('ng', 'completed', { status: 'unknown', original_json: '{"status":"NG"}' }),
+        savedCall('failed', 'failed', { status: 'error', original_json: '{"status":"OK"}' })
+    ])], { content: '', status: 'incomplete' });
+    assert.deepEqual(env.statuses(), ['Not executed', 'Result unconfirmed', 'Failed', 'Result received', 'Succeeded', 'Failed', 'Failed']);
+    assert.deepEqual(byClass(env.root, 'error-notice').map(node => node.textContent), ['This response was not completed.']);
+});
+
+test('restoring saved output sanitizes notices and never dispatches saved actions', () => {
+    const env = fixture();
+    const output = { status: 'OK', user_only: '<img src=x onerror=alert(1)>', ui_action: { type: 'wifi_config', operation: 'update' },
+        reboot: true, shutdown: true, prepare_service_restart: 'network', secret: 'PRIVATE_OUTPUT' };
+    const call = { ...savedCall('one'), name: 'set_tool_enabled', arguments_json: '{"tool":"inspect","server":"fixture","password":"PRIVATE_ARGUMENT"}',
+        result: { status: 'success', original_json: JSON.stringify(output), ai_json: '{"status":"OK"}' } };
+    const requests = [savedRequest('Checking', [call])];
+    const before = JSON.stringify(requests);
+    restore(env, requests);
+    assert.equal(byClass(env.root, 'tool-call-management').length, 1);
+    assert.equal(byClass(env.root, 'tool-call-target')[0].textContent, '→ fixture / inspect');
+    assert.equal(byClass(env.root, 'oasis-user-only-body')[0].innerHTML, '&lt;img src=x onerror=alert(1)&gt;');
+    assert.doesNotMatch(env.displayed(), /PRIVATE_OUTPUT|PRIVATE_ARGUMENT/);
+    assert.deepEqual(env.actions, []);
+    assert.deepEqual(env.popups, []);
+    assert.equal(JSON.stringify(requests), before);
+});
+
+test('saved final checkpoint remains visible when the final message was not committed', () => {
+    const env = fixture();
+    restore(env, [savedRequest('Checking', [savedCall('one')]), savedRequest('Recovered final answer')], { content: '', status: 'incomplete' });
+    assert.deepEqual(byClass(env.root, 'turn-text').map(node => node.innerHTML), ['Checking', 'Recovered final answer']);
+    assert.equal(env.cards().length, 1);
+});
+
+test('tool definitions alone do not create activity cards and authoritative final text is shown once', () => {
+    const env = fixture();
+    restore(env, [savedRequest('Final answer')]);
+    assert.equal(env.cards().length, 0);
+    assert.equal(byClass(env.root, 'tool-activity').length, 0);
+    assert.equal(env.text(), 'Final answer');
+});
+
+test('saved failure text is inert and failed responses without a request still have a notice', () => {
+    const env = fixture();
+    restore(env, [{ ...savedRequest('', [savedCall('one')]), error: '<img src=x> failed' }], { content: '', status: 'failed' });
+    assert.deepEqual(byClass(env.root, 'error-notice').map(node => node.textContent), ['<img src=x> failed']);
+    assert.equal(byClass(env.root, 'error-notice')[0].innerHTML, '');
+    restore(env, [], { content: '', status: 'failed' });
+    assert.deepEqual(byClass(env.root, 'error-notice').map(node => node.textContent), ['This response failed.']);
+});
+
+test('a saved error after the final response keeps its position after the authoritative text', () => {
+    const env = fixture();
+    restore(env, [{ ...savedRequest('Final answer'), error: 'Later failure' }], { status: 'failed' });
+    assert.deepEqual(env.answer.children.map(node => node.className), ['turn-text', 'error-notice']);
+    assert.equal(env.text(), 'Final answer');
+    assert.equal(byClass(env.root, 'error-notice')[0].textContent, 'Later failure');
+});
+
+test('saved turn associations use one-based message indices and never cross the next user turn', () => {
+    const env = fixture();
+    const doc = { format_version: 2, messages: [
+        { role: 'system', content: 'system' }, { role: 'user', content: 'Failed question' },
+        { role: 'user', content: 'Next question' }, { role: 'assistant', content: 'Next answer' },
+        { role: 'assistant', content: 'Additional imported answer' }, { role: 'user', content: 'Interrupted question' }
+    ], turns: [
+        { user_message: 2, status: 'failed', requests: [savedRequest('', [savedCall('one')])] },
+        { user_message: 3, status: 'completed', requests: [savedRequest('Next answer')] },
+        { user_message: 6, status: 'incomplete', requests: [] }
+    ] };
+    const before = JSON.stringify(doc);
+    const messages = env.context.window.OasisChatTurn.savedMessages(doc);
+    assert.deepEqual(Array.from(messages, item => item.role), ['user', 'assistant', 'user', 'assistant', 'assistant', 'user', 'assistant']);
+    assert.deepEqual(Array.from(messages, item => item.content), ['Failed question', '', 'Next question', 'Next answer', 'Additional imported answer', 'Interrupted question', '']);
+    assert.equal(messages[1].savedTurn, doc.turns[0]);
+    assert.equal(messages[3].savedTurn, doc.turns[1]);
+    assert.equal(messages[4].savedTurn, null);
+    assert.equal(messages[6].savedTurn, doc.turns[2]);
+    assert.equal(JSON.stringify(doc), before);
+    const legacy = env.context.window.OasisChatTurn.savedMessages({ messages: doc.messages });
+    assert.equal(legacy.length, 5);
+    assert.ok(legacy.every(item => !item.savedTurn));
+});
+
 test('three Auto stages have individual ordered cards inside one assistant bubble', () => {
     const env = fixture();
     const calls = [tool('get_tool_list', 'list'),
@@ -330,7 +496,7 @@ test('package installs and loads the renderer before chat.js with matching cache
     assert.match(makefile, /INSTALL_DATA.*\/js\/chat-turn\.js/);
     assert.ok(template.indexOf('/js/chat-tools.js') < template.indexOf('/js/chat.js'));
     assert.ok(template.indexOf('/js/chat-turn.js') < template.indexOf('/js/chat.js'));
-    for (const asset of ['js/chat-tools.js', 'js/chat-turn.js', 'js/chat.js', 'css/chat.css']) {
+    for (const asset of ['js/chat-utils.js', 'js/chat-tools.js', 'js/chat-turn.js', 'js/chat.js', 'css/chat.css']) {
         assert.ok(template.includes(asset + '?v=' + version), asset);
     }
 });

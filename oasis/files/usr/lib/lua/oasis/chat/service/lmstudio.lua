@@ -345,6 +345,7 @@ lmstudio.new = function()
         end
 
         obj.convert_schema = function(self, chat)
+            chat = require("oasis.chat.history").ai_input(chat)
             local system_prompt, input_text = self:_build_input_transcript(chat)
             local body = {
                 model = tostring(chat.model or (self.cfg and self.cfg.model) or ""),

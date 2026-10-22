@@ -1,7 +1,7 @@
 <%+header%>
 <% local translate_js = require("luci.oasis.i18n").translate_js %>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r33">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r36">
 <div class="oasis-container">
     <div class="chat-list-container">
         <label for="import-chat-data" id="import-button" style="width:100%;"><%:Import Chat Data +%></label>
@@ -198,6 +198,10 @@ window.OasisChatStrings = {
     toolFailed: <%= translate_js("Failed") %>,
     toolUnchanged: <%= translate_js("No change") %>,
     toolResultReceived: <%= translate_js("Result received") %>,
+    toolNotExecuted: <%= translate_js("Not executed") %>,
+    toolResultUnconfirmed: <%= translate_js("Result unconfirmed") %>,
+    savedResponseIncomplete: <%= translate_js("This response was not completed.") %>,
+    savedResponseFailed: <%= translate_js("This response failed.") %>,
     unknownTool: <%= translate_js("Unknown tool") %>,
     invalidToolEvent: <%= translate_js("Invalid tool response.") %>,
     invalidToolResponse: <%= translate_js("Invalid tool response: missing {fields}") %>,
@@ -269,9 +273,9 @@ window.OasisChatStrings = {
     wifiOpenNetwork: <%= translate_js("Open networks do not use a passphrase.") %>
 };
 </script>
-<script src="<%= resource %>/oasis/js/chat-utils.js"></script>
-<script src="<%= resource %>/oasis/js/chat-tools.js?v=3.2.6-r32"></script>
-<script src="<%= resource %>/oasis/js/chat-turn.js?v=3.2.6-r32"></script>
-<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r33"></script>
+<script src="<%= resource %>/oasis/js/chat-utils.js?v=3.2.6-r36"></script>
+<script src="<%= resource %>/oasis/js/chat-tools.js?v=3.2.6-r36"></script>
+<script src="<%= resource %>/oasis/js/chat-turn.js?v=3.2.6-r36"></script>
+<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r36"></script>
 
 <%+footer%>

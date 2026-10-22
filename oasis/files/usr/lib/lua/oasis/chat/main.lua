@@ -1386,8 +1386,6 @@ local function process_message(service, chat, message)
         return false, "setup message error"
     end
 
-    datactrl.record_chat_data(service, chat)
-
     local result, ui_code = run_cli_sequence(service, chat)
 
     if not result.ok then
@@ -1547,7 +1545,7 @@ function M.prompt(arg)
     -- In the case of the prompt command, the load_chat_data function is used to return template-structured data conforming to the Oasis unified chat schema.
     local prompt = datactrl.load_chat_data(service)
 
-    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
+    -- The shared sequence checkpoints the user turn before sending it.
     if not ous.setup_msg(service, prompt, {role = common.role.user, message = arg.message}) then
         return false
     end
@@ -1711,7 +1709,7 @@ local function process_output_message(service, chat_ctx, message)
 
     local result = tool_sequence.run(service, chat_ctx)
     if not result.ok then
-        return nil, nil, result.error
+        return result.new_chat_info, nil, result.error
     end
 
     return result.new_chat_info, result.message, nil
@@ -1745,7 +1743,7 @@ function M.output(arg)
     local new_chat_info, plain_text_ai_message, err = process_output_message(service, chat_ctx, arg.message)
     if err then
         debug:log("oasis.log", "output", chat_error.format(err))
-        return nil, nil, err
+        return new_chat_info, nil, err
     end
     -- Log returned values for diagnostics
     debug:log("oasis.log", "output", "returned new_chat_info_len=" .. tostring((new_chat_info and #new_chat_info) or 0)
@@ -1806,14 +1804,11 @@ function M.rpc_output(arg)
     local tool_info = nil
     local shutdown = false
 
-    -- Once the message to be sent to the AI is prepared, write it to storage and then send it.
+    -- The shared sequence checkpoints the user turn before sending it.
     if ous.setup_msg(service, chat_ctx, { role = common.role.user, message = arg.message}) then
-        datactrl.record_chat_data(service, chat_ctx)
-        debug:log("oasis.log", "rpc_output", "[main.lua][rpc_output] record_chat_data done ...")
-
         local result = tool_sequence.run(service, chat_ctx)
         if not result.ok then
-            return chat_error.to_status(result.error), nil, nil
+            return chat_error.to_status(result.error), result.new_chat_info, nil
         end
         tool_info = result.tool_info
         new_chat_info, message = result.new_chat_info, result.message

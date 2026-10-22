@@ -2814,6 +2814,11 @@
                 if (!evt || typeof evt !== 'object' || Array.isArray(evt)) return;
                 collectActions(evt);
                 if (evt.error) {
+                    if (evt.error.chat_id && isNumeric(evt.error.chat_id)
+                        && !(chatList && Array.isArray(chatList.item)
+                            && chatList.item.some(item => String(item.id) === String(evt.error.chat_id)))) {
+                        show_chat_popup({id: evt.error.chat_id, title: '--'});
+                    }
                     await hideDownloadOverlayAndWait();
                     turn.appendError(formatChatError(evt.error));
                     return;
@@ -2960,7 +2965,7 @@
             }
 
             if (data.messages && Array.isArray(data.messages)) {
-                data.messages.forEach(message => {
+                window.OasisChatTurn.savedMessages(data).forEach(message => {
                     const messageDiv = document.createElement('div');
                     const messageTextDiv = document.createElement('div');
 
@@ -2979,9 +2984,13 @@
 
                     if (message.role === 'user' || message.role === 'assistant') {
                         messageTextDiv.className = 'message-text';
-                        message.content = sanitizeHTML(convertMarkdownToHTML(message.content));
-                        messageTextDiv.innerHTML = message.content;
-                        //messageTextDiv.textContent = message.content;
+                        if (message.savedTurn) {
+                            window.OasisChatTurn.renderSaved({
+                                container: messageTextDiv, t, sanitizeHTML, convertMarkdownToHTML
+                            }, message);
+                        } else {
+                            messageTextDiv.innerHTML = sanitizeHTML(convertMarkdownToHTML(message.content));
+                        }
 
                         messageDiv.appendChild(messageTextDiv);
 

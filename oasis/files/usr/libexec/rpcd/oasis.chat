@@ -167,192 +167,57 @@ local methods = {
     },
 
     create = {
-        args = { role1 = "a_string", content1 = "a_string", role2 = "a_string", content2 = "a_string", role3 = "a_string", content3 = "a_string" },
-
+        args = { role1="a_string", content1="a_string", role2="a_string", content2="a_string",
+            role3="a_string", content3="a_string", data="a_string", id="a_string", operation_id="a_string" },
         call = function(args)
-            local uci           = require("luci.model.uci").cursor()
-            local datactrl      = require("oasis.chat.datactrl")
-            local misc          = require("oasis.chat.misc")
-            local common        = require("oasis.common")
-            -- debug:log("oasis.log", "\n--- [oasis.chat][create] ---")
-
-            local r = {}
-
-            local id = common.generate_chat_id()
-
-            if #id == 0 then
-                -- debug:log("oasis.log", "status = " .. common.status.error)
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
-            -- debug:log("oasis.log", "config path = " .. conf.path)
-            local file_name = conf.prefix .. id
-            -- debug:log("oasis.log", "file name = " .. file_name)
-            local full_file_path = misc.normalize_path(conf.path) .. file_name
-            -- debug:log("oasis.log", "full file path = " .. full_file_path)
-            local chat_json_tbl = {}
-            chat_json_tbl.messages = {}
-            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role1, content = args.content1}
-            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role2, content = args.content2}
-            chat_json_tbl.messages[#chat_json_tbl.messages + 1] = {role = args.role3, content = args.content3}
-
-            local chat_json_str = jsonc.stringify(chat_json_tbl, false)
-            if type(chat_json_str) ~= "string" then
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            local write_ok = misc.write_file_atomic(full_file_path, chat_json_str)
-            if not write_ok then
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            local add_ok, unnamed_section = pcall(function()
-                return uci:add(common.db.uci.cfg, common.db.uci.sect.chat)
-            end)
-            if not add_ok or not unnamed_section then
-                os.remove(full_file_path)
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            local registration_ok = false
-            local operation_ok = pcall(function()
-                local set_ok = uci:set(
-                    common.db.uci.cfg, unnamed_section, "id", id)
-                if not set_ok then
-                    return
+            local storage = require("oasis.chat.storage")
+            local history = require("oasis.chat.history")
+            local doc, err
+            if args.data then
+                doc, err = history.decode(args.data)
+                if not doc then return {result=jsonc.stringify({status="ERROR",desc=err})} end
+                if not args.id or not args.operation_id then
+                    return {result=jsonc.stringify({status="ERROR",desc="Structured create requires id and operation_id."})}
                 end
-                local commit_ok = uci:commit(common.db.uci.cfg)
-                if commit_ok then
-                    registration_ok = true
+            else
+                doc = {messages={}}
+                for index=1,3 do
+                    local role, content = args["role" .. index], args["content" .. index]
+                    if role and role ~= "" then
+                        doc.messages[#doc.messages+1] = {role=role, content=content}
+                    end
                 end
-            end)
-            if not operation_ok or not registration_ok then
-                pcall(function()
-                    uci:delete(common.db.uci.cfg, unnamed_section)
-                    uci:commit(common.db.uci.cfg)
-                end)
-                os.remove(full_file_path)
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
+                local valid, invalid = history.validate(doc)
+                if not valid then return {result=jsonc.stringify({status="ERROR",desc=invalid})} end
+                doc = history.upgrade(doc)
             end
-
-            r.result = jsonc.stringify({ status = common.status.ok , id = id})
-            return r
+            local ok, result = pcall(storage.create, doc, args.id, args.operation_id)
+            return {result=jsonc.stringify(ok and result or {status="ERROR",desc=tostring(result)})}
         end
     },
-
     append = {
-        args = {
-            id = "a_string",
-            role1 = "a_string", content1 = "a_string",
-            role2 = "a_string", content2 = "a_string"
-        },
-
+        args = {id="a_string", role1="a_string", content1="a_string", role2="a_string", content2="a_string",
+            data="a_string", operation_id="a_string"},
         call = function(args)
-            local datactrl      = require("oasis.chat.datactrl")
-            local misc          = require("oasis.chat.misc")
-            local common        = require("oasis.common")
-
-            -- debug:log("oasis.log", "\n--- [oasis.chat][append] ---")
-            local r = {}
-            local is_same_id = common.search_chat_id(args.id)
-
-            if not is_same_id then
-                -- debug:log("oasis.log", common.status.not_found)
-                r.result = jsonc.stringify({ status = common.status.not_found })
-                return r
+            local storage = require("oasis.chat.storage")
+            local history = require("oasis.chat.history")
+            local ok, result
+            if args.data then
+                local doc, err = history.decode(args.data)
+                if not doc then return {result=jsonc.stringify({status="ERROR",desc=err})} end
+                ok, result = pcall(storage.save, args.id, doc, args.operation_id, false)
+            else
+                ok, result = pcall(storage.legacy_append, args.id, {
+                    {role=args.role1, content=args.content1}, {role=args.role2, content=args.content2}}, args.operation_id)
             end
-
-            local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
-            local file_name = conf.prefix .. args.id
-            local full_file_path = misc.normalize_path(conf.path) .. file_name
-
-            -- debug:log("oasis.log", "file path = " .. full_file_path)
-
-            local chat_data = misc.read_file(full_file_path)
-            if type(chat_data) ~= "string" then
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            -- debug:log("oasis.log", "chat data = " .. chat_data)
-
-            local parse_ok, chat_data_tbl = pcall(jsonc.parse, chat_data)
-            if not parse_ok or type(chat_data_tbl) ~= "table"
-                or type(chat_data_tbl.messages) ~= "table" then
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-            chat_data_tbl.messages[#chat_data_tbl.messages + 1] = {role = args.role1, content = args.content1}
-            chat_data_tbl.messages[#chat_data_tbl.messages + 1] = {role = args.role2, content = args.content2}
-
-            local added_chat_data = jsonc.stringify(chat_data_tbl, false)
-            if type(added_chat_data) ~= "string" then
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            -- debug:log("oasis.log", "Added chat data = " .. added_chat_data)
-
-            local write_ok = misc.write_file_atomic(
-                full_file_path, added_chat_data)
-            if not write_ok then
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            r.result = jsonc.stringify({ status = common.status.ok })
-            return r
+            return {result=jsonc.stringify(ok and result or {status="ERROR",desc=tostring(result)})}
         end
     },
-
     delete = {
-        args = { id = "a_string" },
-
+        args = {id="a_string"},
         call = function(args)
-            local uci           = require("luci.model.uci").cursor()
-            local datactrl      = require("oasis.chat.datactrl")
-            local misc          = require("oasis.chat.misc")
-            local common        = require("oasis.common")
-
-            -- debug:log("oasis.log", "\n--- [oasis.chat][delete] ---")
-
-            local r = {}
-            local unnamed_section = ""
-
-            uci:foreach(common.db.uci.cfg, common.db.uci.sect.chat, function(info)
-                if args.id == info.id then
-                    unnamed_section = info[".name"]
-                end
-            end)
-
-            if #unnamed_section == 0 then
-                r.result = jsonc.stringify({ status = common.status.not_found })
-                return r
-            end
-
-            local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
-            local file_name = conf.prefix .. args.id
-            local full_file_path = misc.normalize_path(conf.path) .. file_name
-            local result = os.remove(full_file_path)
-
-            -- debug:log("oasis.log", "file path = " .. full_file_path)
-
-            if not result then
-                r.result = jsonc.stringify({ status = common.status.error })
-                return r
-            end
-
-            uci:delete(common.db.uci.cfg, unnamed_section)
-            uci:commit(common.db.uci.cfg)
-
-            r.result = jsonc.stringify({ status = common.status.ok })
-            return r
+            local ok, result = pcall(require("oasis.chat.storage").delete, args.id)
+            return {result=jsonc.stringify(ok and result or {status="ERROR",desc=tostring(result)})}
         end
     },
 }

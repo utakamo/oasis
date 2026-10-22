@@ -125,5 +125,69 @@
         };
     }
 
-    global.OasisChatTurn = { create };
+    // LuCI's Lua/ucode HTTP bridge can turn empty lists into {}. Normalize
+    // collections only for display; leave the saved/exported document intact.
+    function savedList(value) {
+        return Array.isArray(value) ? value : [];
+    }
+
+    // Associate review data with the first assistant reply after its user
+    // message. A failed turn without a reply gets its own assistant bubble,
+    // before the next user message. Never modify the source document.
+    function savedMessages(data) {
+        const turns = new Map();
+        if (data.format_version === 2) {
+            savedList(data.turns).forEach(turn => turns.set(turn.user_message, turn));
+        }
+        const messages = [];
+        let pending = null;
+        function flush() {
+            if (pending) messages.push({ role: 'assistant', content: '', savedTurn: pending });
+            pending = null;
+        }
+        savedList(data.messages).forEach((message, index) => {
+            if (message.role === 'user') {
+                flush();
+                messages.push({ role: message.role, content: message.content });
+                const turn = turns.get(index + 1);
+                if (turn && (savedList(turn.requests).length || turn.status !== 'completed')) pending = turn;
+            } else if (message.role === 'assistant') {
+                messages.push({ role: message.role, content: message.content, savedTurn: pending });
+                pending = null;
+            }
+        });
+        flush();
+        return messages;
+    }
+
+    function renderSaved(options, message) {
+        const turn = create(options);
+        const activity = global.OasisChatTools.create({ ...options, getContainer: turn.toolContainer });
+        const saved = message.savedTurn;
+        const requests = savedList(saved.requests);
+        let finalTextShown = false;
+        requests.forEach((request, index) => {
+            const calls = savedList(request.calls);
+            // The final text-only response is also in messages. Prefer that
+            // authoritative copy, but retain the checkpoint if final save failed.
+            const finalText = index === requests.length - 1 && !calls.length && message.content;
+            if (finalText) {
+                turn.appendText(message.content);
+                finalTextShown = true;
+            } else {
+                turn.appendText(request.assistant_text);
+            }
+            calls.forEach(activity.appendSaved);
+            if (request.error) turn.appendError(request.error);
+        });
+        if (!finalTextShown) turn.appendText(message.content);
+        if (saved.status === 'incomplete') {
+            turn.appendError(options.t('savedResponseIncomplete', 'This response was not completed.'));
+        } else if (saved.status === 'failed' && !requests.some(request => request.error)) {
+            turn.appendError(options.t('savedResponseFailed', 'This response failed.'));
+        }
+        turn.finish();
+    }
+
+    global.OasisChatTurn = { create, savedMessages, renderSaved };
 })(window);

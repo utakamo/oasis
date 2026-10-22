@@ -491,6 +491,7 @@ ollama.new = function()
         end
 
         obj.convert_schema = function(self, user_msg)
+            user_msg = require("oasis.chat.history").ai_input(user_msg)
             local is_use_tool = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "local_tool")
             local format = self:get_format()
             local use_function_calling = is_use_tool

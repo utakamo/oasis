@@ -178,6 +178,7 @@ function M.process(self, calls)
             name = name,
             args = args,
             normalized_args = normalized_args,
+            original_arguments_json = call.arguments,
             signature = signature,
             cached = previous_signature and cached or nil,
         }
@@ -192,6 +193,8 @@ function M.process(self, calls)
         })
     end
 
+    require("oasis.chat.recorder").calls(self, prepared, self._answer_delta_buffer)
+
     local authorized, authorization_error =
         policy.authorize_tool_batch(self, prepared)
     if not authorized then
@@ -204,6 +207,7 @@ function M.process(self, calls)
         local output
         if call.cached then
             output = call.cached.output
+                require("oasis.chat.recorder").cached(self, call, output)
             reboot = reboot or call.cached.reboot == true
             shutdown = shutdown or call.cached.shutdown == true
             debug:log("oasis.log", "openai_responses.process",
@@ -212,7 +216,10 @@ function M.process(self, calls)
             -- A local tool may commit an external side effect before it
             -- returns or raises, so retry safety ends immediately before exec.
             self._tool_side_effects_committed = true
-            local result = client.exec_server_tool(self:get_format(), call.name, call.args, self._tool_mode_token)
+            local result = require("oasis.chat.recorder").execute(self, call, function()
+                    return client.exec_server_tool(
+                        self:get_format(), call.name, call.args, self._tool_mode_token)
+                end)
             output = jsonc.stringify(result, false)
             if type(output) ~= "string" then
                 output = "null"

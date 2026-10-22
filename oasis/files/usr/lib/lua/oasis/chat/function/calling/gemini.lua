@@ -629,6 +629,9 @@ function M.process(self, calls)
         prepared[#prepared + 1] = {
             id = call_id,
             provider_id = provider_id,
+            provider_id_absent = provider_id == nil,
+            original_arguments_json = call.provider_part_json and require("oasis.chat.history").json_field(
+                require("oasis.chat.history").json_field(call.provider_part_json, "functionCall") or "{}", "args"),
             name = name,
             args = args,
             normalized_args = normalized_args,
@@ -636,6 +639,8 @@ function M.process(self, calls)
             cached = previous_signature and cached or nil,
         }
     end
+
+    require("oasis.chat.recorder").calls(self, prepared, self._answer_text or self._message_delta_buffer)
 
     local authorized, authorization_error =
         policy.authorize_tool_batch(self, prepared)
@@ -660,6 +665,7 @@ function M.process(self, calls)
         local output
         if call.cached then
             output = call.cached.output
+                require("oasis.chat.recorder").cached(self, call, output)
             reboot = reboot or call.cached.reboot == true
             shutdown = shutdown or call.cached.shutdown == true
             cached_count = cached_count + 1
@@ -667,8 +673,10 @@ function M.process(self, calls)
             -- Local tools can commit an external side effect before returning
             -- or raising, so retries become unsafe immediately before exec.
             self._tool_side_effects_committed = true
-            local result = client.exec_server_tool(
-                self:get_format(), call.name, call.args, self._tool_mode_token)
+            local result = require("oasis.chat.recorder").execute(self, call, function()
+                    return client.exec_server_tool(
+                        self:get_format(), call.name, call.args, self._tool_mode_token)
+                end)
             local ok, encoded = pcall(jsonc.stringify, result, false)
             output = (ok and type(encoded) == "string") and encoded or "null"
 

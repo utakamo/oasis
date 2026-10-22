@@ -12,8 +12,11 @@
 
     // Basic sanitizer with strict allowlist for tags/attributes and safe URLs only
     function sanitizeHTML(dirtyHtml) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = dirtyHtml || '';
+        // Template contents are inert while parsing: even a removed image must
+        // not fetch its URL or run an error handler before sanitization ends.
+        const template = document.createElement('template');
+        template.innerHTML = dirtyHtml || '';
+        const tmp = template.content;
 
         const allowedTags = new Set([
             'b','strong','i','em','code','pre','p','br','ul','ol','li','table','thead','tbody','tr','th','td',
@@ -57,7 +60,7 @@
             }
         }
         toRemove.forEach(n => { if (n && n.parentNode) n.parentNode.removeChild(n); });
-        return tmp.innerHTML;
+        return template.innerHTML;
     }
 
     function convertMarkdownToHTML(input) {

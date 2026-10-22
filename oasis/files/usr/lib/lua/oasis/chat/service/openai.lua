@@ -243,6 +243,7 @@ openai.new = function()
         end
 
         obj.convert_schema = function(self, user_msg)
+            user_msg = require("oasis.chat.history").ai_input(user_msg)
 
             -- When role:tool is present, it indicates that results are sent to AI
             -- Here we don't include the tools field (it's okay to include it, in which case tool execution can be done for failures)

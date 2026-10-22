@@ -27,6 +27,7 @@ local kind_label = {
     title_error = "title generation error",
     internal_error = "internal error",
     empty_response = "empty response",
+    storage_error = "conversation storage error",
     limit_reached = "tool sequence limit",
 }
 
@@ -148,6 +149,8 @@ function M.format(err)
     if err.detail and #tostring(err.detail) > 0 then
         lines[#lines + 1] = "Detail: " .. tostring(err.detail)
     end
+
+    if err.chat_id then lines[#lines + 1] = "Conversation ID: " .. tostring(err.chat_id) end
 
     lines[#lines + 1] = "Chat can continue: " .. ((err.can_continue ~= false) and "yes" or "no")
 
