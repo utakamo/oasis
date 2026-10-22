@@ -1223,6 +1223,7 @@ gemini.new = function()
     end
 
     obj.convert_schema = function(self, chat)
+            chat = require("oasis.chat.history").ai_input(chat)
         local followup = type(self._pending_provider_contents) == "table"
             and #self._pending_provider_contents > 0
         if not followup then

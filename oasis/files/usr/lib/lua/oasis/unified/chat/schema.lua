@@ -328,57 +328,7 @@ function M.setup_msg(service, chat, speaker)
 end
 
 function M.append_chat_data(service, chat)
-
-    local cfg = service:get_config()
-    local msgs = chat.messages or {}
-    local count = #msgs
-
-    if count < 2 then
-        return false, "Chat history did not contain a user/assistant pair."
-    end
-
-    -- Find the last assistant message that does not have tool_calls (if any)
-    local ai_idx = nil
-    for i = count, 1, -1 do
-        local m = msgs[i]
-        if m and (m.role == common.role.assistant) and (m.tool_calls == nil) then
-            ai_idx = i
-            break
-        end
-    end
-
-    -- Find the most recent user message before that assistant message (if present); this usually excludes tool messages
-    local user_idx = nil
-    if ai_idx then
-        for i = ai_idx - 1, 1, -1 do
-            local m = msgs[i]
-            if m and (m.role == common.role.user) then
-                user_idx = i
-                break
-            end
-        end
-    end
-
-    -- Pair selection: if not found, fall back to the last two messages
-    local role1, content1, role2, content2
-    if user_idx and ai_idx then
-        role1, content1 = msgs[user_idx].role, msgs[user_idx].content
-        role2, content2 = msgs[ai_idx].role,  msgs[ai_idx].content
-    else
-        role1, content1 = msgs[count - 1].role, msgs[count - 1].content
-        role2, content2 = msgs[count].role,     msgs[count].content
-    end
-
-    local message = {
-        id = cfg.id,
-        role1 = role1, content1 = content1,
-        role2 = role2, content2 = content2
-    }
-    local result = util.ubus("oasis.chat", "append", message)
-    if type(result) ~= "table" or result.status ~= common.status.ok then
-        return false, "oasis.chat append failed."
-    end
-    return true, nil
+    return require("oasis.chat.datactrl").record_chat_data(service, chat)
 end
 
 return M

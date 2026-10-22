@@ -145,6 +145,7 @@ function M.process(self, message)
 			name = name,
 			args = args,
 			normalized_args = normalized_args,
+			original_arguments_json = type(tc["function"].arguments)=="string" and tc["function"].arguments or nil,
 			signature = signature,
 			cached = previous_signature and cached or nil,
 		}
@@ -154,6 +155,8 @@ function M.process(self, message)
 		return nil, nil, nil, false, build_error(self, "parse_error",
 			"OpenAI reported Function Calling without any calls.")
 	end
+
+	require("oasis.chat.recorder").calls(self, prepared, message.content)
 
 	local authorized, authorization_error =
 		policy.authorize_tool_batch(self, prepared)
@@ -172,12 +175,15 @@ function M.process(self, message)
 		local output
 		if call.cached then
 			output = call.cached.output
+			require("oasis.chat.recorder").cached(self, call, output)
 			reboot = reboot or call.cached.reboot == true
 			shutdown = shutdown or call.cached.shutdown == true
 		else
 			self._tool_side_effects_committed = true
-			local result = client.exec_server_tool(
-				self:get_format(), call.name, call.args, self._tool_mode_token)
+			local result = require("oasis.chat.recorder").execute(self, call, function()
+				return client.exec_server_tool(
+					self:get_format(), call.name, call.args, self._tool_mode_token)
+			end)
 			debug:log("oasis.log", "process",
 				"tool exec result (pretty) = " .. tostring(jsonc.stringify(result, true)))
 			output = jsonc.stringify(result, false)

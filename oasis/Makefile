@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=24
+PKG_RELEASE:=25
 
 APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
@@ -67,6 +67,9 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/datactrl.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/main.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/transfer.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/chat/history.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/chat/storage.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/chat/recorder.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/apply.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/misc.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/markdown.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat

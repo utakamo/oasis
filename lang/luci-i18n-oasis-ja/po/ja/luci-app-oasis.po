@@ -1451,3 +1451,15 @@ msgstr "不明なエラー"
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:78
 msgid "unnamed"
 msgstr "名称未設定"
+
+msgid "Not executed"
+msgstr "未実行"
+
+msgid "Result unconfirmed"
+msgstr "結果未確認"
+
+msgid "This response was not completed."
+msgstr "この応答は完了していません。"
+
+msgid "This response failed."
+msgstr "この応答は失敗しました。"

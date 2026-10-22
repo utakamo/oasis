@@ -233,6 +233,7 @@ openai_responses.new = function()
     end
 
     obj.convert_schema = function(self, chat)
+            chat = require("oasis.chat.history").ai_input(chat)
         local use_provider_items = type(self._pending_provider_items) == "table"
             and #self._pending_provider_items > 0
         local input = self:_convert_messages(chat, use_provider_items)

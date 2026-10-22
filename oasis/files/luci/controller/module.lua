@@ -210,46 +210,22 @@ function import_chat_data()
         return
     end
 
-    local decoded_chat_data = nixio.bin.b64decode(chat_data)
-
-    local chat_tbl = jsonc.parse(decoded_chat_data)
-
-    if common.check_chat_format(chat_tbl) == false then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "import format error"})
-        return
-    end
-
-    local id = common.generate_chat_id()
-
-    local conf = datactrl.get_ai_service_cfg(nil, {with_storage = true})
-    local file_name = conf.prefix .. id
-    local full_file_path = misc.normalize_path(conf.path) .. file_name
-    misc.touch(full_file_path)
-
-    local file = io.open(full_file_path, "wb")
-
-    if file then
-        file:write(decoded_chat_data)
-        file:close()
-    else
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({ error = "import error"})
-        return
-    end
-
-    local result = {}
-    result.id = id
-    result.title = "--"
-
-    local unnamed_section = uci:add(common.db.uci.cfg, common.db.uci.sect.chat)
-
-    uci:set(common.db.uci.cfg, unnamed_section, "id", result.id)
-    uci:set(common.db.uci.cfg, unnamed_section, "title", result.title)
-    uci:commit(common.db.uci.cfg)
-
     luci_http.prepare_content("application/json")
-    luci_http.write_json(result)
+    if #chat_data > 4 * math.ceil(512 * 1024 / 3) then
+        luci_http.write_json({error="Chat data file is too large (max 512KB)."})
+        return
+    end
+    local decoded_chat_data = nixio.bin.b64decode(chat_data)
+    if type(decoded_chat_data) ~= "string" or #decoded_chat_data > 512 * 1024 then
+        luci_http.write_json({error="Invalid or oversized chat data."})
+        return
+    end
+    local ok, result = pcall(require("oasis.chat.storage").import, decoded_chat_data)
+    if not ok or result.status ~= common.status.ok then
+        luci_http.write_json({error=ok and result.desc or "Chat import failed."})
+        return
+    end
+    luci_http.write_json({id=result.id, title="--"})
 end
 
 function delete_chat_data()

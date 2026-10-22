@@ -453,26 +453,7 @@ function M.generate_service_id(method)
 end
 
 function M.check_chat_format(chat)
-
-    if type(chat) ~= "table" then
-        return false
-    end
-
-    if type(chat.messages) ~= "table" then
-        return false
-    end
-
-    for _, msg in ipairs(chat.messages) do
-        if type(msg) ~= "table" then
-            return false
-        end
-
-        if type(msg.content) ~= "string" or type(msg.role) ~= "string" then
-            return false
-        end
-    end
-
-    return true
+    return require("oasis.chat.history").validate(chat) == true
 end
 
 function M.ubus_call(object, method, data, timeout)

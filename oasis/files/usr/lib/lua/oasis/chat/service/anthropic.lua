@@ -287,6 +287,7 @@ anthropic.new = function()
     -- tool-cycle messages live only in this service and replace the synthetic
     -- unified tool messages during the immediate continuation.
     obj.convert_schema = function(self, chat)
+            chat = require("oasis.chat.history").ai_input(chat)
         if self.cfg and self.cfg.anthropic_config_error then
             error(tostring(self.cfg.anthropic_config_error))
         end

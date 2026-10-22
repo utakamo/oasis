@@ -231,6 +231,12 @@ function M.load_chat_data(service)
         chat = util.ubus("oasis.chat", "load", {id = cfg.id})
     end
 
+    local history = require("oasis.chat.history")
+    if cfg.id and cfg.id ~= "" then
+        local valid, err = history.validate(chat)
+        if not valid then error(err or "Could not load conversation.") end
+        chat = history.upgrade(chat)
+    end
     chat.model = cfg.model
 
     -- New Chat - initialize
@@ -242,43 +248,12 @@ function M.load_chat_data(service)
 end
 
 function M.create_chat_file(service, chat)
-    -- Robust creation even if tool calls caused system/user/assistant counts to vary
-    local count = (chat.messages and #chat.messages) or 0
-    local get = function(idx)
-        if idx >= 1 and idx <= count then return chat.messages[idx].role, chat.messages[idx].content end
-        return "", ""
-    end
-    local message = {}
-    if (service.sysmsg_key) and (#service.sysmsg_key > 0) and (service.sysmsg_key == sysmsg_info.fix_key.casual) then
-        local r2, c2 = get(count-1)
-        local r3, c3 = get(count)
-        message.role1, message.content1 = r2, c2
-        message.role2, message.content2 = r3, c3
-        message.role3, message.content3 = "", ""
-    else
-        local r1, c1 = get(count-2)
-        local r2, c2 = get(count-1)
-        local r3, c3 = get(count)
-        message.role1, message.content1 = r1, c1
-        message.role2, message.content2 = r2, c2
-        message.role3, message.content3 = r3, c3
-    end
-
-    -- os.execute("echo " .. message.role1 .. " >> /tmp/oasis-message.log")
-    -- os.execute("echo \"" .. message.content1 .. "\" >> /tmp/oasis-message.log")
-    -- os.execute("echo " .. message.role2 .. " >> /tmp/oasis-message.log")
-    -- os.execute("echo \"" .. message.content2 .. "\" >> /tmp/oasis-message.log")
-    -- os.execute("echo " .. message.role3 .. " >> /tmp/oasis-message.log")
-    -- os.execute("echo \"" .. message.content3 .. "\" >> /tmp/oasis-message.log")
-
-    local result = util.ubus("oasis.chat", "create", message)
-    if type(result) ~= "table"
-        or result.status ~= common.status.ok
-        or #tostring(result.id or "") == 0 then
-        return nil, "oasis.chat create did not return a valid chat ID."
-    end
-    service.id = result.id
-    return result.id, nil
+    local history = require("oasis.chat.history")
+    local result = require("oasis.chat.storage").create(history.document(chat))
+    if result.status ~= common.status.ok then return nil, result.desc end
+    service:set_chat_id(result.id)
+    chat.revision = result.revision
+    return result.id
 end
 
 function M.set_chat_title(service, chat_id)
@@ -319,38 +294,17 @@ function M.set_chat_title(service, chat_id)
 end
 
 function M.record_chat_data(service, chat)
-
-    -- print("#chat.messages = " .. #chat.messages)
-
-    -- First Conversation (#chat.messages == 3)
-    -- chat.messages[1] ... system message
-    -- chat.messages[2] ... user message
-    -- chat.messages[3] ... ai message <---- Save chat data
-
-    -- Conversation after the second (#chat.messages >= 5) and ((#chat.messages % 2) == 1)
-    -- chat.messages[4] ... user message
-    -- chat.messages[5] ... ai message <---- Save chat data
-    -- chat.messages[6] ... user message
-    -- chat.messages[7] ... ai message <---- Save chat data
-
-    -- debug:log("oasis.log", "record_chat_data", "\n--- [datactrl.lua][record_chat_data] ---")
-    -- debug:log("oasis.log", "record_chat_data", tostring(#chat.messages))
-    -- debug:dump("oasis.log", chat)
-
-    -- First Conversation
-    if #chat.messages == 3 then
-        local chat_id, create_error = M.create_chat_file(service, chat)
-        if not chat_id then
-            return false, create_error
-        end
-        M.set_chat_title(service, chat_id)
-        return true, nil
-    -- Conversation after the second
-    elseif (#chat.messages >= 5) and ((#chat.messages % 2) == 1) then
-        -- debug:dump("oasis.log", chat)
-        return ous.append_chat_data(service, chat)
+    local cfg = service:get_config()
+    if not cfg.id or cfg.id == "" then
+        local id, err = M.create_chat_file(service, chat)
+        return id ~= nil, err
     end
-    return true, nil
+    local history = require("oasis.chat.history")
+    local storage = require("oasis.chat.storage")
+    local result = storage.save(cfg.id, history.document(chat), storage.new_id(), false)
+    if result.status ~= common.status.ok then return false, result.desc end
+    chat.revision = result.revision
+    return true
 end
 
 return M
