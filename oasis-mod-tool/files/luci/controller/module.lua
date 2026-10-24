@@ -26,6 +26,13 @@ local function write_tool_state_result(result)
     luci_http.write_json(result)
 end
 
+local function update_manual_tool(callback)
+    local result, err = require("oasis.mode_lock").with_lock(callback)
+    write_tool_state_result(result or {
+        status = "NG", changed = false, code = "mode_lock_failed", error = err
+    })
+end
+
 function index()
 
     local is_webui_support = uci:get_bool(common.db.uci.cfg, common.db.uci.sect.support, "webui")
@@ -64,37 +71,23 @@ function change_tool_enable()
         return
     end
 
-    local result
-    if server_name and server_name ~= "" then
-        result = tool_state.set_enabled_persistent(
-            uci,
-            server_name,
-            tool_name,
-            enable,
-            { manual_only = true }
-        )
-    else
-        result = tool_state.set_enabled_by_name_persistent(
-            uci,
-            tool_name,
-            enable,
-            { manual_only = true }
-        )
-    end
-    write_tool_state_result(result)
+    update_manual_tool(function()
+        local options = { manual_only = true, require_function_calling = true }
+        if server_name and server_name ~= "" then
+            return tool_state.set_enabled_persistent(uci, server_name, tool_name, enable, options)
+        end
+        return tool_state.set_enabled_by_name_persistent(uci, tool_name, enable, options)
+    end)
 end
 
 local function update_tool_enable(desired)
     local tool_name = luci_http.formvalue("name")
     local server_name = luci_http.formvalue("server")
 
-    write_tool_state_result(tool_state.set_enabled_persistent(
-        uci,
-        server_name,
-        tool_name,
-        desired,
-        { manual_only = true }
-    ))
+    update_manual_tool(function()
+        return tool_state.set_enabled_persistent(uci, server_name, tool_name, desired,
+            { manual_only = true, require_function_calling = true })
+    end)
 end
 
 function enable_tool()
@@ -106,7 +99,8 @@ function disable_tool()
 end
 
 function set_tool_auto()
-    write_tool_state_result(tool_state.set_auto_mode(uci, luci_http.formvalue("enable")))
+    write_tool_state_result(tool_state.set_auto_mode(uci, luci_http.formvalue("enable"),
+        { require_function_calling = true }))
 end
 
 function add_remote_mcp_server()
@@ -234,6 +228,7 @@ function local_tool_info()
     info.status = err and "NG" or "OK"
     info.error = err and err.error or nil
     info.selection_mode = "manual"
+    info.can_enable = require("oasis.mode").function_calling_enabled(uci)
     -- Retain mode metadata for older clients; it does not gate manual editing.
     info.auto_mode = mode and mode.auto_mode or false
     info.mode_available = mode ~= nil

@@ -4,8 +4,13 @@ local M = {}
 local function fixture(t)
     local env = require("oasis.test.spec.tool_auto").fixture(t)
     env.params = {server="fixture.tools", name="weather"}
+    env.function_calling = "1"
+    function env.cursor:get_first() return "active" end
+    function env.cursor:get() return env.function_calling end
     local modules = {
         ["oasis.local.tool.state"] = state,
+        ["oasis.mode"] = require("oasis.mode"),
+        ["oasis.mode_lock"] = require("oasis.mode_lock"),
         ["luci.model.uci"] = {cursor=function() return env.cursor end},
         ["luci.http"] = {prepare_content=function() end,
             write_json=function(value) env.response=value end,
@@ -26,6 +31,45 @@ local function fixture(t)
 end
 
 function M.register(harness)
+    harness:test("unit", "Tools APIs require active Function Calling only for enabling", function(t)
+        for _,route in ipairs({"enable_tool", "change_tool_enable", "set_tool_auto"}) do
+            local env = fixture(t)
+            env.function_calling = "0"
+            env.params.enable = "1"
+            env.controller.local_tool_info()
+            t:assert_false(env.response.can_enable)
+            env.controller[route]()
+            t:assert_equal("function_calling_disabled", env.response.code)
+            t:assert_equal(0, env.writes)
+            env.params.enable = "0"
+            if route == "enable_tool" then
+                env.controller.disable_tool()
+            else
+                env.controller[route]()
+            end
+            t:assert_equal("OK", env.response.status)
+        end
+    end)
+    harness:test("unit", "legacy name-only enable checks Function Calling in the private transaction", function(t)
+        local env = fixture(t)
+        env.params.server, env.params.enable = nil, "1"
+        local transaction = require("oasis.uci_transaction")
+        local run = transaction.run
+        transaction.run = function(options, callback)
+            env.function_calling = "0"
+            return run(options, callback)
+        end
+        env.controller.change_tool_enable()
+        t:assert_equal("function_calling_disabled", env.response.code)
+        t:assert_equal(0, env.writes)
+    end)
+    harness:test("unit", "Tools updates share the service lock and preserve selections when it is busy", function(t)
+        local env = fixture(t)
+        env.lock_busy = true
+        env.controller.disable_tool()
+        t:assert_equal("mode_lock_failed", env.response.code)
+        t:assert_equal(0, env.writes)
+    end)
     harness:test("unit", "Tools API returns editable manual settings without reading Agent state", function(t)
         for _,mode in ipairs({"0", "1", "invalid"}) do
             local env = fixture(t)

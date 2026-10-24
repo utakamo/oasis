@@ -41,6 +41,7 @@
   let pendingManifests = [];
   let changingState = false;
   let stateKnown = false;
+  let canEnableTools = false;
   let pendingSwitchKey = null;
   let switches = [];
   let loadGeneration = 0;
@@ -504,10 +505,12 @@
       JSON.stringify([tool.server || '', tool.name || '']),
       (tool.server ? tool.server + ' / ' : '') + (tool.name || t('unknownTool', 'Unknown')),
       isEnabled, isEnabled ? t('enabled', 'Enabled') : t('disabled', 'Disabled'),
-      !isConflict, false
+      !isConflict && (isEnabled || canEnableTools), false
     );
     if (isConflict) {
       control.button.title = t('conflictTitle', 'Conflict: cannot change state');
+    } else if (!isEnabled && !canEnableTools) {
+      control.button.title = t('functionCallingRequired', 'Enable Function Calling for the selected AI service in General Setting to enable tools.');
     }
     const purpose = document.createElement('span');
     purpose.className = 'tools-switch-note';
@@ -529,6 +532,8 @@
 
   function loadTools() {
     const generation = ++loadGeneration;
+    stateKnown = false;
+    syncSwitches();
     return fetch(URL_LOAD_TOOLS, { cache: 'no-store' })
       .then(response => {
         if (!response.ok) throw new Error(t('updateFailed', 'Failed to update tool state'));
@@ -538,10 +543,12 @@
         if (generation !== loadGeneration) return;
         if (!data || typeof data !== 'object' || Array.isArray(data)
             || (data.local_tool !== false && (data.selection_mode !== 'manual'
+              || typeof data.can_enable !== 'boolean'
               || (data.status !== 'OK' && data.status !== 'NG')))) {
           throw new Error(t('updateFailed', 'Failed to update tool state'));
         }
         stateKnown = true;
+        canEnableTools = data.can_enable === true;
         switches = [];
         if (data && data.local_tool === false) {
           if (headBar) headBar.style.display = 'none';
@@ -562,8 +569,15 @@
         if (container) {
           const note = document.createElement('p');
           note.className = 'server-description';
-          note.textContent = t('manualSelectionNotice', 'These settings apply when Agent mode is OFF. You can edit them at any time; they do not affect tool selection while Agent mode is ON.');
+          note.textContent = t('manualSelectionNotice', 'These settings apply when Agent mode is OFF. They do not affect tool selection while Agent mode is ON.');
           container.appendChild(note);
+          if (!canEnableTools) {
+            const notice = document.createElement('p');
+            notice.className = 'server-description';
+            notice.setAttribute('role', 'status');
+            notice.textContent = t('functionCallingRequired', 'Enable Function Calling for the selected AI service in General Setting to enable tools.');
+            container.appendChild(notice);
+          }
         }
         if (data.status === 'NG') {
           showErrorModal(data.error || t('updateFailed', 'Failed to update tool state'));
@@ -603,4 +617,6 @@
   }
 
   loadTools();
+  window.addEventListener('focus', () => { if (!changingState) loadTools(); });
+  window.addEventListener('pageshow', event => { if (event.persisted && !changingState) loadTools(); });
 })();

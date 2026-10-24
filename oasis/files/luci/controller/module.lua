@@ -12,6 +12,8 @@ local nixio         = require("nixio")
 local nixio_fs      = require("nixio.fs")
 local oasis_ubus    = require("oasis.ubus.util")
 local tool_edge_account = require("oasis.tool_edge.account")
+local tool_mode     = require("oasis.mode")
+local mode_lock     = require("oasis.mode_lock")
 
 module("luci.controller.oasis.module", package.seeall)
 
@@ -617,55 +619,34 @@ function load_extra_sysmsg()
 end
 
 function select_ai_service()
-
-    -- debug:log("oasis.log", "\n--- [module.lua][select_ai_service] ---")
-
     local identifier    = luci_http.formvalue("identifier")
     local name          = luci_http.formvalue("name")
     local model         = luci_http.formvalue("model")
-
-    -- debug:log("oasis.log", "identifier = " .. identifier)
-    -- debug:log("oasis.log", "name = " .. name)
-    -- debug:log("oasis.log", "model = " .. model)
-
-    local target_uid = ""
-    local data = uci:get_all(common.db.uci.cfg);
-
-    if not data then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({error = "Failed to load config"})
-        return
-    end
-
-    for _, tbl in pairs(data) do
-        for key, value in pairs(tbl) do
-            if (key == ".type") and (value == "service") then
-                local uid = tbl[".name"]
-                if (data[uid].identifier == identifier) and (data[uid].name == name) and (data[uid].model == model) then
-                    target_uid = uid
-                    break
+    local result, lock_err = mode_lock.with_lock(function()
+        local _, value, code = require("oasis.uci_transaction").run({
+            cursor = uci, config = "oasis", label = "Oasis AI service",
+        }, function(private_uci)
+            local target_uid
+            local loaded = private_uci:foreach("oasis", "service", function(service)
+                if service.identifier == identifier and service.name == name and service.model == model then
+                    target_uid = service[".name"]
+                    return false
                 end
+            end)
+            if not loaded or not target_uid then
+                return false, { status = "NG", error = "AI service not found." }
             end
-        end
-
-        if target_uid ~= "" then
-            break
-        end
-    end
-
-    -- debug:log("oasis.log", "target_uid = " .. target_uid)
-
-    if target_uid == "" then
-        luci_http.prepare_content("application/json")
-        luci_http.write_json({error = "Not Found"})
-        return
-    end
-
-    uci:reorder(common.db.uci.cfg, target_uid, 1)
-    uci:commit(common.db.uci.cfg)
-
+            if not private_uci:reorder("oasis", target_uid, 1) then
+                return false, { status = "NG", error = "Failed to select the AI service." }
+            end
+            local updated = tool_mode.reconcile_function_calling(private_uci)
+            return updated.status == "OK", updated, updated.code
+        end)
+        return type(value) == "table" and value
+            or { status = "NG", code = code, error = tostring(value or "Failed to select the AI service.") }
+    end)
     luci_http.prepare_content("application/json")
-    luci_http.write_json({status = "OK"})
+    luci_http.write_json(result or { status = "NG", code = "mode_lock_failed", error = lock_err })
 end
 
 function base_info()
@@ -1990,6 +1971,11 @@ local function settings_apply_update(normalized, state)
         return false
     end
 
+    if tool_mode.reconcile_function_calling(uci).status ~= "OK" then
+        uci:revert(SETTINGS_CONFIG)
+        return false
+    end
+
     if not uci:commit(SETTINGS_CONFIG) then
         uci:revert(SETTINGS_CONFIG)
         return false
@@ -2560,9 +2546,16 @@ function update_settings()
         return
     end
 
-    local ok, body, status, status_message = pcall(
-        settings_update_locked, args
-    )
+    local ok, result, lock_err = pcall(mode_lock.with_lock, function()
+        return { pcall(settings_update_locked, args) }
+    end)
+    local body, status, status_message
+    if ok and result then
+        ok, body, status, status_message = unpack(result)
+    elseif ok then
+        body = settings_error("write_failed", lock_err)
+        status, status_message = 503, "Service Unavailable"
+    end
     if not ok then
         pcall(function()
             uci:revert(SETTINGS_CONFIG)
@@ -2579,23 +2572,14 @@ end
 
 
 function get_mode()
-    local result = require("oasis.mode").get_status(uci)
-    if result.status == "OK" then
-        local section = uci:get_first("oasis", "service")
-        local enabled = section and uci:get("oasis", section, "function_calling") == "1"
-        if not enabled then
-            result.service_reason_code = "function_calling_disabled"
-        elseif uci:get("oasis", section, "name") == "LM Studio" then
-            result.service_reason_code = "service_unsupported"
-        end
-    end
+    local result = tool_mode.get_status(uci, { require_function_calling = true })
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
 end
 
 function set_mode()
-    local result = require("oasis.mode").set_mode(luci_http.formvalue("mode"), uci,
-        luci_http.formvalue("generation"))
+    local result = tool_mode.set_mode(luci_http.formvalue("mode"), uci,
+        luci_http.formvalue("generation"), nil, { require_function_calling = true })
     luci_http.prepare_content("application/json")
     luci_http.write_json(result)
 end

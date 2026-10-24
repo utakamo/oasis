@@ -1488,8 +1488,11 @@ msgstr "入力待ちのため、この応答を停止しました。"
 msgid "This turn stopped for user confirmation."
 msgstr "確認待ちのため、この応答を停止しました。"
 
-msgid "These settings apply when Agent mode is OFF. You can edit them at any time; they do not affect tool selection while Agent mode is ON."
-msgstr "ここではAgentモードOFF時に使用するツールを設定します。いつでも変更できますが、AgentモードON時のツール選択には影響しません。"
+msgid "These settings apply when Agent mode is OFF. They do not affect tool selection while Agent mode is ON."
+msgstr "ここではAgentモードOFF時に使用するツールを設定します。AgentモードON時のツール選択には影響しません。"
+
+msgid "Enable Function Calling for the selected AI service in General Setting to enable tools."
+msgstr "ツールを有効にするには、General Settingで選択中のAIサービスのFunction Callingを有効にしてください。"
 
 msgid "Use in Normal mode"
 msgstr "通常モードで使用"

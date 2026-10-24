@@ -8,7 +8,7 @@ const source = fs.readFileSync(path.join(__dirname,
     '../../luci-app-oasis/files/luci/www/luci-static/resources/oasis/js/chat-mode.js'), 'utf8');
 const settle = async () => { for (let i=0;i<4;i++) await new Promise(setImmediate); };
 function fixture(options={}) {
-    const env = {enabled:false, available:true, generation:0, calls:[], ...options};
+    const env = {enabled:false, available:true, functionCalling:true, generation:0, calls:[], ...options};
     const events = {}, nodes = {};
     for (const id of ['agent-mode-switch','agent-mode-label','agent-mode-notice']) {
         nodes[id] = {attributes:{}, listeners:{}, disabled:true, textContent:'', hidden:false,
@@ -18,9 +18,10 @@ function fixture(options={}) {
     }
     const window = {OasisChatStrings:env.strings||{}, OasisChatConfig:{csrfToken:'csrf',urls:{getMode:'/get',setMode:'/set'}},
         addEventListener(name,fn) { events[name]=fn; }};
-    const snapshot = () => ({status:'OK', enabled:env.enabled, can_enable:env.available,
+    const snapshot = () => ({status:'OK', enabled:env.enabled, can_enable:env.available && env.functionCalling,
         can_disable:true, token:(env.enabled?'1':'0')+':'+env.generation,
-        reason_code:!env.available?'agent_unavailable':env.reasonCode});
+        reason_code:!env.available?'agent_unavailable':env.reasonCode,
+        service_reason_code:!env.functionCalling?'function_calling_disabled':undefined});
     vm.runInNewContext(source, {window, URLSearchParams,
         document:{getElementById:id=>nodes[id], addEventListener(name,fn) { events[name]=fn; }},
         fetch:async (url, init={}) => {
@@ -62,6 +63,17 @@ test('Agent absence blocks ON while a saved ON setting can always be turned OFF'
         assert.match(env.notice.textContent,/oasis-mod-agent/);
         if (enabled) {await env.button.click(); assert.equal(env.enabled,false);}
     }
+});
+test('Function Calling OFF blocks Agent ON and refreshes automatic OFF after a service change',async()=>{
+    const env=fixture({functionCalling:false}); await settle();
+    assert.equal(env.button.disabled,true);
+    assert.match(env.notice.textContent,/Function Calling disabled/);
+    await env.button.click(); assert.equal(env.calls.length,1);
+    env.functionCalling=true; env.events.focus(); await settle();
+    await env.button.click(); assert.equal(env.enabled,true);
+    env.functionCalling=false; env.enabled=false; env.generation++;
+    env.events.focus(); await settle();
+    assert.equal(env.button.disabled,true); assert.equal(env.label.textContent,'Agent: OFF');
 });
 test('busy conversations lock the mode control and refresh when finished',async()=>{
     const env=fixture(); await settle(); env.mode.setBusy(true);

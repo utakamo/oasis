@@ -195,6 +195,10 @@ local function set_enabled_internal(
     end
 
     local desired_enable = normalized_enable(desired)
+    if desired_enable == "1" and options.require_function_calling then
+        local allowed, err = require("oasis.mode").check_function_calling(uci)
+        if not allowed then return err end
+    end
     local tools, err = collect_tools(uci)
     if not tools then
         err.server = server_name
@@ -487,11 +491,11 @@ M.collect = collect_tools
 M.fingerprint = fingerprint
 M.tool_key = tool_key
 M.get_mode = function(uci) return require("oasis.mode").read(uci) end
-M.set_auto_mode = function(uci, desired)
+M.set_auto_mode = function(uci, desired, options)
     if desired ~= "0" and desired ~= "1" then
         return failure("invalid_enable", "Agent mode must be 0 or 1.")
     end
-    return require("oasis.mode").set_mode(desired == "1" and "agent" or "normal", uci)
+    return require("oasis.mode").set_mode(desired == "1" and "agent" or "normal", uci, nil, nil, options)
 end
 
 function M.snapshot(uci, expected_token)

@@ -52,7 +52,7 @@ const settle = async () => {
 function fixture(options = {}) {
   const env = {
     auto: options.auto === true, manual: true, selected: false,
-    localTool: true, calls: [], corrupt: false, modeAvailable: true, loads: 0,
+    localTool: true, calls: [], corrupt: false, modeAvailable: true, loads: 0, functionCalling: true,
     ...options
   };
   const ids = new Map();
@@ -72,15 +72,18 @@ function fixture(options = {}) {
     }
     return { status: env.corrupt ? 'NG' : 'OK', error: env.corrupt ? 'Registry unavailable' : undefined,
       selection_mode: env.effectiveResponse ? 'effective' : 'manual',
-      mode_available: env.modeAvailable, auto_mode: env.auto, local_tool: env.localTool, tools };
+      mode_available: env.modeAvailable, auto_mode: env.auto, local_tool: env.localTool,
+      can_enable: env.functionCalling, tools };
   };
   document.getElementById = get;
   document.createElement = tag => new Element(tag, document);
+  const events = {};
+  env.events = events;
   const context = {
     window: { OasisToolsStrings: env.strings || {}, OasisToolsConfig: { csrfToken: 'fixture-token', urls: {
       enableTool: '/enable', disableTool: '/disable',
       refreshTools: '/refresh', loadTools: '/tools', loadManifest: '/manifest'
-    } } },
+    } }, addEventListener(name, fn) { events[name] = fn; } },
     document,
     console: { warn() {}, error() {} }, URLSearchParams,
     setTimeout() {}, location: { reload() {} },
@@ -100,6 +103,9 @@ function fixture(options = {}) {
       assert.equal(init.body.get('name'), 'weather');
       assert.equal(init.body.get('server'), 'fixture.weather');
       if (env.toolError) return { ok: true, json: async () => ({ status: 'NG', error: 'Tool save failed' }) };
+      if (url === '/enable' && !env.functionCalling) {
+        return { ok: true, json: async () => ({ status: 'NG', error: 'Function Calling disabled' }) };
+      }
       env.manual = url === '/enable';
       if (env.loseToolResponse) throw new Error('Connection lost after commit');
       return { ok: true, json: async () => ({ status: 'OK' }) };
@@ -178,6 +184,38 @@ test('unavailable Agent mode does not prevent editing manual selection', async (
   assert.equal(env.switch('fixture.weather / weather').disabled, false);
   await env.switch('fixture.weather / weather').click();
   assert.equal(env.manual, false);
+});
+
+test('Function Calling OFF blocks enabling tools but permits disabling saved selections', async () => {
+  for (const manual of [false, true]) {
+    const env = fixture({ functionCalling: false, manual }); await settle();
+    const toggle = env.switch('fixture.weather / weather');
+    assert.equal(toggle.disabled, !manual);
+    assert.ok(env.nodes().some(node => node.attributes.role === 'status'
+      && /Enable Function Calling/.test(node.textContent)));
+    await toggle.click();
+    assert.equal(env.manual, false);
+    assert.equal(env.switch('fixture.weather / weather').disabled, true);
+    assert.equal(env.calls.filter(call => call.init.method === 'POST').length, manual ? 1 : 0);
+  }
+});
+
+test('focus and restored pages reload Function Calling permissions', async () => {
+  const env = fixture({ manual: false, functionCalling: false }); await settle();
+  assert.equal(env.switch('fixture.weather / weather').disabled, true);
+  env.functionCalling = true; env.events.focus(); await settle();
+  assert.equal(env.switch('fixture.weather / weather').disabled, false);
+  env.functionCalling = false; env.events.pageshow({ persisted: true }); await settle();
+  assert.equal(env.switch('fixture.weather / weather').disabled, true);
+});
+
+test('a service changed after loading cannot enable a tool through a stale switch', async () => {
+  const env = fixture({ manual: false }); await settle();
+  env.functionCalling = false;
+  await env.switch('fixture.weather / weather').click();
+  assert.equal(env.manual, false);
+  assert.equal(env.get('tools-error-message').textContent, 'Function Calling disabled');
+  assert.equal(env.switch('fixture.weather / weather').disabled, true);
 });
 
 test('old effective-selection responses cannot be mistaken for manual settings', async () => {

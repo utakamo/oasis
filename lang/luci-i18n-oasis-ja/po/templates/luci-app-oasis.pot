@@ -31,7 +31,7 @@ msgid "AI Services"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/tools.htm:26
-#: luci-app-oasis/files/luci/view/tools.htm:83
+#: luci-app-oasis/files/luci/view/tools.htm:84
 msgid "AI Tool Manifest Confirmation"
 msgstr ""
 
@@ -109,7 +109,7 @@ msgid "Agree and send"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/tools.htm:16
-#: luci-app-oasis/files/luci/view/tools.htm:62
+#: luci-app-oasis/files/luci/view/tools.htm:63
 msgid "An error occurred."
 msgstr ""
 
@@ -119,7 +119,7 @@ msgstr ""
 
 #: luci-app-oasis/files/luci/view/chat.htm:261
 #: luci-app-oasis/files/luci/view/tools.htm:33
-#: luci-app-oasis/files/luci/view/tools.htm:85
+#: luci-app-oasis/files/luci/view/tools.htm:86
 msgid "Apply"
 msgstr ""
 
@@ -164,7 +164,7 @@ msgstr ""
 #: luci-app-oasis/files/luci/view/chat.htm:93
 #: luci-app-oasis/files/luci/view/icons.htm:37
 #: luci-app-oasis/files/luci/view/tools.htm:32
-#: luci-app-oasis/files/luci/view/tools.htm:86
+#: luci-app-oasis/files/luci/view/tools.htm:87
 msgid "Cancel"
 msgstr ""
 
@@ -209,7 +209,7 @@ msgstr ""
 msgid "Confirm password"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:70
+#: luci-app-oasis/files/luci/view/tools.htm:71
 msgid "Conflict: cannot change state"
 msgstr ""
 
@@ -287,7 +287,7 @@ msgstr ""
 msgid "Deleted"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:68
+#: luci-app-oasis/files/luci/view/tools.htm:69
 msgid "Disable"
 msgstr ""
 
@@ -296,7 +296,7 @@ msgid "Disable tool"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:176
-#: luci-app-oasis/files/luci/view/tools.htm:65
+#: luci-app-oasis/files/luci/view/tools.htm:66
 msgid "Disabled"
 msgstr ""
 
@@ -326,8 +326,12 @@ msgstr ""
 msgid "Each service identifier must be unique."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:69
+#: luci-app-oasis/files/luci/view/tools.htm:70
 msgid "Enable"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/tools.htm:58
+msgid "Enable Function Calling for the selected AI service in General Setting to enable tools."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/chat.htm:201
@@ -342,7 +346,7 @@ msgstr ""
 msgid "Enable tool"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:64
+#: luci-app-oasis/files/luci/view/tools.htm:65
 msgid "Enabled"
 msgstr ""
 
@@ -456,7 +460,7 @@ msgstr ""
 msgid "Failed to load Wi-Fi settings. Try again."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:78
+#: luci-app-oasis/files/luci/view/tools.htm:79
 msgid "Failed to load manifest."
 msgstr ""
 
@@ -468,7 +472,7 @@ msgstr ""
 msgid "Failed to load settings. Check the settings API and try again."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:60
+#: luci-app-oasis/files/luci/view/tools.htm:61
 msgid "Failed to refresh services"
 msgstr ""
 
@@ -484,7 +488,7 @@ msgstr ""
 msgid "Failed to save the external RPC account."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:73
+#: luci-app-oasis/files/luci/view/tools.htm:74
 msgid "Failed to update tool state"
 msgstr ""
 
@@ -531,7 +535,7 @@ msgstr ""
 msgid "Get current temperature for a given location."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:75
+#: luci-app-oasis/files/luci/view/tools.htm:76
 msgid "Hide Manifest"
 msgstr ""
 
@@ -593,7 +597,7 @@ msgstr ""
 msgid "Loaded"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:76
+#: luci-app-oasis/files/luci/view/tools.htm:77
 msgid "Loading manifest..."
 msgstr ""
 
@@ -606,7 +610,7 @@ msgstr ""
 #: luci-app-oasis/files/luci/view/icons.htm:54
 #: luci-app-oasis/files/luci/view/rollback-list.htm:44
 #: luci-app-oasis/files/luci/view/sysmsg.htm:81
-#: luci-app-oasis/files/luci/view/tools.htm:72
+#: luci-app-oasis/files/luci/view/tools.htm:73
 msgid "Loading..."
 msgstr ""
 
@@ -614,15 +618,15 @@ msgstr ""
 msgid "Local Tools"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:74
+#: luci-app-oasis/files/luci/view/tools.htm:75
 msgid "Manifest"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:87
+#: luci-app-oasis/files/luci/view/tools.htm:88
 msgid "Manifest Path"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:77
+#: luci-app-oasis/files/luci/view/tools.htm:78
 msgid "Manifest not found."
 msgstr ""
 
@@ -642,7 +646,7 @@ msgstr ""
 msgid "Missing tool description"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:71
+#: luci-app-oasis/files/luci/view/tools.htm:72
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:85
 msgid "Missing tool name"
 msgstr ""
@@ -714,7 +718,7 @@ msgstr ""
 msgid "No change"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:67
+#: luci-app-oasis/files/luci/view/tools.htm:68
 msgid "No description."
 msgstr ""
 
@@ -742,7 +746,7 @@ msgstr ""
 msgid "No response from AI service. Please check settings."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:93
+#: luci-app-oasis/files/luci/view/tools.htm:94
 msgid "None"
 msgstr ""
 
@@ -794,7 +798,7 @@ msgstr ""
 msgid "Please input system message title"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:81
+#: luci-app-oasis/files/luci/view/tools.htm:82
 msgid "Please install the extension module 'oasis-mod-tool' to enable local tools."
 msgstr ""
 
@@ -839,7 +843,7 @@ msgstr ""
 msgid "Rebooting..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:61
+#: luci-app-oasis/files/luci/view/tools.htm:62
 #: luci-app-oasis/files/luci/view/tools.htm:9
 msgid "Refresh"
 msgstr ""
@@ -940,7 +944,7 @@ msgstr ""
 msgid "Rolling back..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:59
+#: luci-app-oasis/files/luci/view/tools.htm:60
 msgid "Running..."
 msgstr ""
 
@@ -1005,7 +1009,7 @@ msgstr ""
 msgid "Server script name"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:91
+#: luci-app-oasis/files/luci/view/tools.htm:92
 msgid "Servers"
 msgstr ""
 
@@ -1045,13 +1049,13 @@ msgstr ""
 msgid "Shutting down..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:80
-#: luci-app-oasis/files/luci/view/tools.htm:89
+#: luci-app-oasis/files/luci/view/tools.htm:81
+#: luci-app-oasis/files/luci/view/tools.htm:90
 msgid "Source Path"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:79
-#: luci-app-oasis/files/luci/view/tools.htm:88
+#: luci-app-oasis/files/luci/view/tools.htm:80
+#: luci-app-oasis/files/luci/view/tools.htm:89
 msgid "Source Type"
 msgstr ""
 
@@ -1108,7 +1112,7 @@ msgid "The first service is active."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/tools.htm:28
-#: luci-app-oasis/files/luci/view/tools.htm:84
+#: luci-app-oasis/files/luci/view/tools.htm:85
 msgid "The following AI tool manifests are not yet applied. Applying them will register their tools in Oasis."
 msgstr ""
 
@@ -1149,7 +1153,7 @@ msgid "The value is too long."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/tools.htm:57
-msgid "These settings apply when Agent mode is OFF. You can edit them at any time; they do not affect tool selection while Agent mode is ON."
+msgid "These settings apply when Agent mode is OFF. They do not affect tool selection while Agent mode is ON."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/chat.htm:242
@@ -1188,7 +1192,7 @@ msgstr ""
 msgid "This turn stopped for user input."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:90
+#: luci-app-oasis/files/luci/view/tools.htm:91
 msgid "Tool Count"
 msgstr ""
 
@@ -1224,7 +1228,7 @@ msgstr ""
 msgid "Tool used:"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:92
+#: luci-app-oasis/files/luci/view/tools.htm:93
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:23
 msgid "Tools"
 msgstr ""
@@ -1241,11 +1245,11 @@ msgstr ""
 msgid "Unexpected data format"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:63
+#: luci-app-oasis/files/luci/view/tools.htm:64
 msgid "Unknown"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:82
+#: luci-app-oasis/files/luci/view/tools.htm:83
 msgid "Unknown Server"
 msgstr ""
 
@@ -1316,7 +1320,7 @@ msgstr ""
 msgid "Use at least 12 characters. The password is never displayed after saving."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:58
+#: luci-app-oasis/files/luci/view/tools.htm:59
 msgid "Use in Normal mode"
 msgstr ""
 
@@ -1389,7 +1393,7 @@ msgstr ""
 msgid "args and args_desc mismatch"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:66
+#: luci-app-oasis/files/luci/view/tools.htm:67
 msgid "conflict"
 msgstr ""
 
