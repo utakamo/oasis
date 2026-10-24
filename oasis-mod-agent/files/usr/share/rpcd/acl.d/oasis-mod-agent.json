@@ -1,0 +1,20 @@
+{
+    "oasis": {
+        "description": "Access Oasis Agent Tool Search",
+        "read": {
+            "ubus": {
+                "oasis.tool.manager": [
+                    "get_tool_list"
+                ]
+            }
+        },
+        "write": {
+            "ubus": {
+                "oasis.tool.manager": [
+                    "set_tool_enabled",
+                    "set_tool_disabled"
+                ]
+            }
+        }
+    }
+}

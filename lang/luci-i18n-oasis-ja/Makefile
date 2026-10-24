@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=1.0.0
-PKG_RELEASE:=14
+PKG_RELEASE:=16
 PKG_BUILD_DEPENDS:=po2lmo/host
 
 PO2LMO:=$(STAGING_DIR_HOSTPKG)/bin/po2lmo

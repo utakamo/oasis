@@ -141,7 +141,7 @@ end
 
 function M.register(harness)
     harness:test("unit", "tool state list is normalized and deterministic", function(t)
-        t:assert_equal(2, state.TOOL_SEARCH_ABI)
+        t:assert_equal(3, state.TOOL_SEARCH_ABI)
         local uci = new_uci({
             tool("third", "zeta", "beta", true, false, "third"),
             tool("second", "alpha", "zeta", "0", "1", "second"),
@@ -417,8 +417,8 @@ function M.register(harness)
         })
         local calls = 0
         local saved_transaction = package.loaded[
-            "oasis.local.tool.uci_transaction"]
-        package.loaded["oasis.local.tool.uci_transaction"] = {
+            "oasis.uci_transaction"]
+        package.loaded["oasis.uci_transaction"] = {
             run = function(options, callback)
                 calls = calls + 1
                 t:assert_equal(original, options.cursor)
@@ -437,7 +437,7 @@ function M.register(harness)
             "scan",
             true
         )
-        package.loaded["oasis.local.tool.uci_transaction"] =
+        package.loaded["oasis.uci_transaction"] =
             saved_transaction
 
         t:assert_true(called, tostring(result_or_err))
@@ -467,7 +467,7 @@ function M.register(harness)
             tool("private", "server-a", "scan", "1", "0"),
         })
         local calls = 0
-        local module_name = "oasis.local.tool.uci_transaction"
+        local module_name = "oasis.uci_transaction"
         local saved_transaction = package.loaded[module_name]
         t:on_cleanup(function()
             package.loaded[module_name] = saved_transaction
@@ -508,7 +508,7 @@ function M.register(harness)
             tool("two", "server-b", "scan", "0", "0"),
         })
         local calls = 0
-        local module_name = "oasis.local.tool.uci_transaction"
+        local module_name = "oasis.uci_transaction"
         local saved_transaction = package.loaded[module_name]
         t:on_cleanup(function()
             package.loaded[module_name] = saved_transaction
@@ -546,7 +546,7 @@ function M.register(harness)
         local original = new_uci({
             tool("original", "server-a", "scan", "0", "0"),
         })
-        local module_name = "oasis.local.tool.uci_transaction"
+        local module_name = "oasis.uci_transaction"
         local saved_transaction = package.loaded[module_name]
         t:on_cleanup(function()
             package.loaded[module_name] = saved_transaction

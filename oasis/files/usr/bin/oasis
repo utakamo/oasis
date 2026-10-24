@@ -4,10 +4,29 @@ local common = require("oasis.common")
 local console = require("oasis.console")
 local uci = require("luci.model.uci").cursor()
 local main_cmd = arg[1]
-local tool_mode_command = main_cmd == "tools" and arg[2] ~= nil
+-- Mode management must also work without chat services or the Agent package.
+if main_cmd == "mode" or (main_cmd == "tools" and arg[2] ~= nil) then
+    local command = arg[2]
+    if main_cmd == "tools" then
+        command = ({ on = "agent", off = "normal", status = "status" })[command]
+        if not command then
+            io.stderr:write("Usage: oasis tools [on|off|status]\n")
+            os.exit(2)
+        end
+    end
+    if arg[3] ~= nil then
+        io.stderr:write("Usage: oasis mode [agent|normal|status]\n")
+        os.exit(2)
+    end
+    os.exit(require("oasis.mode").command(command))
+elseif main_cmd == "agent" then
+    io.stderr:write("Use 'oasis mode agent', then 'oasis chat' or 'oasis prompt <message>'.\n")
+    os.exit(2)
+end
 
 local unload_targets = {
     { name = "oasis", path = common.flag.unload.oasis },
+    { name = "oasis-mod-agent", path = common.flag.unload.oasis_mod_agent },
     { name = "oasis-mod-tool", path = common.flag.unload.oasis_mod_tool },
     { name = "oasis-mod-spring", path = common.flag.unload.oasis_mod_spring },
 }
@@ -55,7 +74,7 @@ local function handle_unloaded_targets()
         print("\27[31mOasis has been installed. A reboot or rpcd restart is required to use it.\27[0m")
     end
 
-    if common.check_unloaded_plugin("oasis-mod-tool") or common.check_unloaded_plugin("oasis-mod-spring") then
+    if common.check_unloaded_plugin("oasis-mod-agent") or common.check_unloaded_plugin("oasis-mod-tool") or common.check_unloaded_plugin("oasis-mod-spring") then
         print("\27[31mInstalled plugin modules have been detected.\27[0m")
         print("\27[31mA reboot or rpcd restart is required to use them.\27[0m")
     end
@@ -88,9 +107,8 @@ local function handle_unloaded_targets()
     return true
 end
 
--- Mode commands only read/update tool settings. Do not prompt for a reboot or
--- require chat/tool servers to be ready for these non-interactive operations.
-if main_cmd ~= "manifest" and not tool_mode_command then
+-- Mode commands return above, before chat preparation and reboot prompts.
+if main_cmd ~= "manifest" then
     if handle_unloaded_targets() then
         return
     end
@@ -169,13 +187,13 @@ local function help()
         " delete no=<service-number>",
         " chat [no=<chat-number>]",
         " prompt <message>",
-        " agent [-t <turns>] <goal>",
+        " mode [agent|normal|status]  Set or show the shared conversation mode",
         " sysmsg [chat|prompt <option> <value>]",
         " delchat no=<chat-number>",
         " rename no=<chat-number> <title>",
         " list",
-        " tools                 List tools; edit manual settings when Auto is OFF",
-        " tools on|off|status   Enable, disable, or show the shared Auto mode",
+        " tools                 List tools; edit manual settings in Normal mode",
+        " tools on|off|status   Compatibility aliases for mode agent|normal|status",
         " manifest build [<script_path>]",
         " manifest apply [--yes|-y] [<manifest_path>]",
     }
@@ -397,16 +415,6 @@ commands.prompt = function(args)
     else
         help()
     end
-end
-
-commands.agent = function(args)
-    local ok, agent = pcall(require, "oasis.agent.main")
-    if not ok or (type(agent) ~= "table") or (not agent.run) then
-        print("This command requires oasis-mod-agent. Please install oasis-mod-agent first.")
-        return
-    end
-
-    agent.run(args)
 end
 
 commands.sysmsg = function(args)

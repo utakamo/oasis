@@ -1,0 +1,63 @@
+#!/usr/bin/env lua
+local mode = require("oasis.mode")
+local fs = require("nixio.fs")
+local uci = require("luci.model.uci").cursor()
+local manifest = "/etc/oasis/tool-manifest.d/lua.oasis.tool.manager.json"
+local marker = "/etc/oasis/.oasis-mod-agent-initialized-1.1.0-r1"
+
+local function remove()
+    local result = mode.set_mode("normal", uci)
+    if result.status ~= "OK" then return nil, result.error end
+    local ok, err = require("oasis.uci_transaction").run({
+        cursor=uci, config="oasis", label="Oasis Agent removal",
+    }, function(private)
+        local sections = {}
+        local read, read_err = private:foreach("oasis", "tool", function(section)
+            local owned = section.manifest_path == manifest
+            local legacy = (section.manifest_path or "") == ""
+                and section.server == "oasis.tool.manager"
+                and ({get_tool_list=true, set_tool_enabled=true, set_tool_disabled=true})[section.name]
+            if owned or legacy then sections[#sections+1] = section[".name"] end
+        end)
+        if read == false and read_err then return false, read_err end
+        for _, section in ipairs(sections) do
+            if private:delete("oasis", section) ~= true then return false, "Failed to remove Agent registration." end
+        end
+        return true, {changed=#sections > 0}
+    end)
+    if not ok then return nil, err end
+    local stored, store_err = require("oasis.mode_lock").with_lock(function()
+        return require("oasis.agent.store").write({version=1, enabled={}})
+    end)
+    if not stored then return nil, store_err end
+    if fs.stat(marker) and not fs.unlink(marker) then return nil, "Failed to remove Agent initialization marker." end
+    return true
+end
+
+local function refresh()
+    local ok, err = require("oasis.local.tool.client").apply_manifest_file(manifest,
+        {preserve_local_tool_support=true})
+    if not ok then return nil, err end
+    local invalidated = mode.invalidate(uci, arg[2])
+    if invalidated.status ~= "OK" then return nil, invalidated.error end
+    if not fs.writefile(marker, "1\n") then return nil, "Failed to save Agent initialization marker." end
+    return true
+end
+
+local command = arg[1]
+local ok, err
+if command == "remove" then
+    ok, err = remove()
+elseif command == "refresh" or command == "initialize-package" then
+    ok, err = refresh()
+elseif command == "init" then
+    if fs.stat(marker) then os.exit(0) end
+    ok, err = refresh()
+else
+    io.stderr:write("Usage: oasis_agent_setup init|initialize-package|refresh|remove\n")
+    os.exit(2)
+end
+if not ok then
+    io.stderr:write(tostring(err or "Agent setup failed.") .. "\n")
+    os.exit(1)
+end

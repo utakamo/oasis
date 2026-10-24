@@ -4,7 +4,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "List local tools with their exact server, name, description, and enabled state in Auto mode. Use before choosing or changing a tool; this does not change settings.",
+      "description": "List local tools with their exact server, name, description, and enabled state in Agent mode. Use before choosing or changing a tool; this does not change settings.",
       "properties": [],
       "download_message": "",
       "name": "get_tool_list",
@@ -16,7 +16,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Disable an unneeded Auto mode tool by its exact server and name from get_tool_list. Removes it from subsequent callable tools until reboot; manual settings remain unchanged. Tool Search controls are protected.",
+      "description": "Disable an unneeded Agent mode tool by its exact server and name from get_tool_list. Removes it from subsequent callable tools until reboot; manual settings remain unchanged. Tool Search controls are protected.",
       "properties": [
         {
           "type": "string",
@@ -42,7 +42,7 @@
     {
       "execution_message": "",
       "type": "function",
-      "description": "Enable a disabled Auto mode tool by its exact server and name from get_tool_list. Updates shared selection until reboot; does not execute the tool or change manual settings.",
+      "description": "Enable a disabled Agent mode tool by its exact server and name from get_tool_list. Updates shared selection until reboot; does not execute the tool or change manual settings.",
       "properties": [
         {
           "type": "string",

@@ -62,10 +62,6 @@ msgstr "AIサービス"
 msgid "AI Tool Manifest Confirmation"
 msgstr "AIツールのマニフェスト確認"
 
-#: luci-app-oasis/files/luci/view/tools.htm:86
-msgid "AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots."
-msgstr "AIが手動設定とは独立してツールを選択します。Autoでの選択状態は全ユーザーで共有され、再起動まで保持されます。同じ起動中のAutoのOFF／ONでも保持されます。モード自体の設定は再起動後も維持されます。"
-
 #: luci-app-oasis/files/luci/view/setting-v2.htm:112
 msgid "AI-assisted configuration"
 msgstr "AIによる設定支援"
@@ -154,18 +150,6 @@ msgstr "引数名"
 #: luci-app-oasis/files/luci/view/chat.htm:62
 msgid "Attach UCI info"
 msgstr "UCI情報を添付"
-
-#: luci-app-oasis/files/luci/view/tools.htm:82
-msgid "Auto mode"
-msgstr "Autoモード"
-
-#: luci-app-oasis/files/luci/view/tools.htm:84
-msgid "Auto: OFF"
-msgstr "Auto: OFF"
-
-#: luci-app-oasis/files/luci/view/tools.htm:83
-msgid "Auto: ON"
-msgstr "Auto: ON"
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:181
 msgid "Budget Tokens"
@@ -614,10 +598,6 @@ msgstr "読み込み中..."
 msgid "Local Tools"
 msgstr "ローカルツール"
 
-#: luci-app-oasis/files/luci/view/tools.htm:85
-msgid "Managed by AI"
-msgstr "AIが管理"
-
 #: luci-app-oasis/files/luci/view/tools.htm:73
 msgid "Manifest"
 msgstr "マニフェスト"
@@ -629,10 +609,6 @@ msgstr "マニフェストのパス"
 #: luci-app-oasis/files/luci/view/tools.htm:76
 msgid "Manifest not found."
 msgstr "マニフェストが見つかりません。"
-
-#: luci-app-oasis/files/luci/view/tools.htm:87
-msgid "Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled."
-msgstr "手動モードでは保存済みのツール設定を使用します。Autoモードでは、ここで無効のツールもAIが有効にできます。再起動後のAutoモードは、ツールの検索・管理機能のみ有効な状態から開始します。"
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:179
 msgid "Max Tokens"
@@ -1463,3 +1439,57 @@ msgstr "この応答は完了していません。"
 
 msgid "This response failed."
 msgstr "この応答は失敗しました。"
+
+msgid "Agent mode"
+msgstr "Agentモード"
+
+msgid "Shared by all chats, users and CLI sessions. The mode is saved across reboots."
+msgstr "すべての会話・ユーザー・CLIで共通の設定です。再起動後も保持されます。"
+
+msgid "Agent: ON"
+msgstr "Agent：ON"
+
+msgid "Agent: OFF"
+msgstr "Agent：OFF"
+
+msgid "Install or repair oasis-mod-agent to use Agent mode."
+msgstr "Agentモードを使うには、oasis-mod-agentをインストールするか修復してください。"
+
+msgid "Update oasis-mod-agent to use Agent mode."
+msgstr "Agentモードを使うには、oasis-mod-agentを更新してください。"
+
+msgid "Install a compatible oasis-mod-tool package."
+msgstr "対応するバージョンのoasis-mod-toolをインストールしてください。"
+
+msgid "Enable Local Tool support to use Agent mode."
+msgstr "Agentモードを使うには、Local Toolを有効にしてください。"
+
+msgid "Refresh Agent tool registrations before enabling Agent mode."
+msgstr "Agentモードを有効にする前に、Agentのツール登録を更新してください。"
+
+msgid "The selected AI service has Function Calling disabled."
+msgstr "選択中のAIサービスではFunction Callingが無効です。"
+
+msgid "The selected AI service does not support Agent tools."
+msgstr "選択中のAIサービスはAgentのツールに対応していません。"
+
+msgid "Mode status unavailable"
+msgstr "モードを確認できません"
+
+msgid "Could not load the conversation mode."
+msgstr "会話モードを取得できませんでした。"
+
+msgid "Could not change the conversation mode."
+msgstr "会話モードを変更できませんでした。"
+
+msgid "This turn stopped for user input."
+msgstr "入力待ちのため、この応答を停止しました。"
+
+msgid "This turn stopped for user confirmation."
+msgstr "確認待ちのため、この応答を停止しました。"
+
+msgid "These settings apply when Agent mode is OFF. You can edit them at any time; they do not affect tool selection while Agent mode is ON."
+msgstr "ここではAgentモードOFF時に使用するツールを設定します。いつでも変更できますが、AgentモードON時のツール選択には影響しません。"
+
+msgid "Use in Normal mode"
+msgstr "通常モードで使用"

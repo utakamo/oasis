@@ -367,17 +367,21 @@ function M.register(harness)
             service.format=package.loaded["oasis.common"].ai.format[format]
             local common=package.loaded["oasis.common"]
             common.ubus_call=function() return {status="OK",title="Fixture"} end
-            env.replace("oasis.local.tool.state",{
-                TOOL_SEARCH_ABI=2,
-                set_auto_enabled=function() end,
-                is_control_tool=function(server,name) return server=="oasis.tool.manager" and name=="set_tool_enabled" end,
-                list_effective=function() return {status="OK",tool={{server="oasis.tool.manager",name="set_tool_enabled",enabled=true,conflicted=false}}} end,
+            -- History tests use a small continuation policy; Agent contract and
+            -- registry validation are covered in tool_sequence/tool_auto.
+            env.replace("oasis.mode", {
+                read=function() return {token="0:0"} end,
+                decorate_request=function(_,value) return value end,
+                resolve_execution=function() return {token="0:0", policy={
+                    max_ai_requests=6,max_tool_rounds=4,max_tool_calls=8,
+                    validate_batch=function(_,calls) return true,calls[1].name=="set_tool_enabled" end,
+                    validate_result=function() end,
+                }} end,
             })
             env.schema={{name="set_tool_enabled",description="Enable tool",parameters={type="object",properties={}}}}
             env.replace("oasis.console",{write=function() end,flush=function() end})
             local schema=history.copy(require("oasis.unified.chat.schema"))
             schema.setup_system_msg=function() end
-            schema.with_auto_tool_search_prompt=function(_,value) return value end
             env.replace("oasis.unified.chat.schema",schema)
             env.replace("oasis.chat.transfer",nil)
             env.replace("oasis.chat.tool_sequence",nil)
@@ -438,6 +442,27 @@ function M.register(harness)
             t:assert_equal("failed",failed.turns[1].requests[3].status)
         end)
     end
+    harness:test("unit","history preserves input and confirmation pauses without replaying provider tool messages",function(t)
+        for _,state in ipairs({"NEED_INPUT","NEED_CONFIRMATION"}) do
+            local env=fixture(t)
+            local service=env:service("openai")
+            local live=chat()
+            recorder.start(service,live)
+            recorder.request(service,service:convert_schema(live))
+            invoke("openai",service,1)
+            local result=recorder.finish(service,{ok=true,state=state,pause_from_tool=true,message="Waiting for the user"})
+            t:assert_true(result.ok)
+            local saved=env:load(service.cfg.id)
+            t:assert_equal(state=="NEED_INPUT" and "waiting_input" or "waiting_confirmation",saved.turns[1].status)
+            t:assert_equal("Waiting for the user",saved.messages[#saved.messages].content)
+            t:assert_equal(1,#saved.turns[1].requests[1].calls)
+            for _,message in ipairs(live.messages) do
+                t:assert_true(message.role~="tool")
+                t:assert_nil(message.tool_calls)
+            end
+        end
+    end)
+
 end
 
 return M

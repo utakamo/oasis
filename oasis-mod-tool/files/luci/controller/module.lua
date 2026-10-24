@@ -199,10 +199,12 @@ function load_remote_mcp_server_info()
 end
 
 function local_tool_info()
-    local mode, mode_err = tool_state.get_mode(uci)
-    local snapshot, snapshot_err = tool_state.snapshot(uci)
+    -- Tools edits saved manual selection, independently of Agent availability
+    -- and its volatile selection. Runtime callers still use snapshot().
+    local registered, registry_err = tool_state.collect(uci)
+    local mode = tool_state.get_mode(uci)
     local tools = {}
-    for _, tool in ipairs(snapshot and snapshot.tools or {}) do
+    for _, tool in ipairs(registered or {}) do
         tools[tool.section] = tool
     end
 
@@ -228,16 +230,12 @@ function local_tool_info()
     end
 
     local info = {}
-    local err = mode_err or snapshot_err
+    local err = registry_err
     info.status = err and "NG" or "OK"
     info.error = err and err.error or nil
-    -- Keep the switch usable even if the volatile store is damaged, so the
-    -- user can return to Manual mode without modifying manual tool settings.
-    if snapshot then
-        info.auto_mode = snapshot.auto_mode
-    else
-        info.auto_mode = mode and mode.auto_mode or false
-    end
+    info.selection_mode = "manual"
+    -- Retain mode metadata for older clients; it does not gate manual editing.
+    info.auto_mode = mode and mode.auto_mode or false
     info.mode_available = mode ~= nil
     info.tools = tools
     info.server_info = server_info

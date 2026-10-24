@@ -97,6 +97,34 @@ function M.register(harness)
         end
     end)
 
+    harness:test("unit", "Agent forms ignore saved manual selection changes before and during input", function(t)
+        for _,timing in ipairs({"before", "during"}) do
+            local env = fixture(t)
+            env.tool.manual_enable = "1"
+            local output = env.capture()
+            if timing == "before" then env.tool.manual_enable = "0"
+            else env.on_read = function() env.tool.manual_enable = "0" end end
+            t:assert_equal(0, env.finish({ output }))
+            t:assert_equal(1, env.applied)
+        end
+    end)
+
+    harness:test("unit", "manual edits cannot mask revoked effective permission or changed tool definitions", function(t)
+        for _,change in ipairs({"permission", "definition", "generation"}) do
+            local env = fixture(t)
+            env.tool.manual_enable = "1"
+            local output = env.capture()
+            env.on_read = function()
+                env.tool.manual_enable = "0"
+                if change == "permission" then env.enabled = false
+                elseif change == "definition" then env.tool.description = "Changed definition"
+                else env.mode_changed = true end
+            end
+            t:assert_equal(1, env.finish({ output }))
+            t:assert_equal(0, env.applied)
+        end
+    end)
+
     harness:test("unit", "UI actions reject unknown handlers, versions and forged operation bindings", function(t)
         for _, mode in ipairs({ "type", "version", "operation", "result" }) do
             local env = fixture(t)

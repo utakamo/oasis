@@ -6,13 +6,23 @@ local pending
 
 function M.begin() pending = {} end
 
+local function tool_identity(tool)
+    local identity = {}
+    for key, value in pairs(tool) do
+        -- Saved manual selection is not the effective permission in Agent
+        -- mode. Keep effective enable/conflict and all definition fields.
+        if key ~= "manual_enable" then identity[key] = value end
+    end
+    return policy.canonical_object(identity)
+end
+
 -- Called only at the actual local ubus execution boundary. These records are
 -- process-local and cannot be supplied by an AI or a returned JSON field.
 function M.capture(tool, method, output, token, arguments)
     if not pending or type(output) ~= "table" or output.ui_action == nil then return end
     local encoded = jsonc.stringify(output, false)
     local copy = jsonc.parse(encoded)
-    local fingerprint = assert(policy.canonical_object(tool), "Invalid UI tool identity")
+    local fingerprint = assert(tool_identity(tool), "Invalid UI tool identity")
     local signature = assert(policy.canonical_object(copy), "Invalid UI tool result")
     pending[#pending + 1] = {
         name = tool.name, server = tool.server, method = method,
@@ -31,7 +41,7 @@ local function still_authorized(request)
     for _, tool in ipairs(snapshot.tools) do
         if tool.name == request.name then
             found = found + 1
-            if not tool.enabled or policy.canonical_object(tool) ~= request.fingerprint then return false end
+            if not tool.enabled or tool_identity(tool) ~= request.fingerprint then return false end
         end
     end
     return found == 1

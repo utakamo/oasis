@@ -52,7 +52,7 @@ const settle = async () => {
 function fixture(options = {}) {
   const env = {
     auto: options.auto === true, manual: true, selected: false,
-    localTool: true, calls: [], modeError: false, corrupt: false, modeAvailable: true, loads: 0,
+    localTool: true, calls: [], corrupt: false, modeAvailable: true, loads: 0,
     ...options
   };
   const ids = new Map();
@@ -68,16 +68,17 @@ function fixture(options = {}) {
       tools[name] = { '.type': 'tool', type: 'function', name,
         server: name === 'weather' ? 'fixture.weather' : 'oasis.tool.manager',
         conflict: name === 'weather' && env.conflict ? '1' : '0',
-        enable: name === 'weather' ? ((env.auto ? env.selected : env.manual) ? '1' : '0') : (env.auto ? '1' : '0') };
+        enable: name === 'weather' ? (env.manual ? '1' : '0') : (env.auto ? '1' : '0') };
     }
-    return { status: env.corrupt ? 'NG' : 'OK', error: env.corrupt ? 'Invalid Auto state' : undefined,
+    return { status: env.corrupt ? 'NG' : 'OK', error: env.corrupt ? 'Registry unavailable' : undefined,
+      selection_mode: env.effectiveResponse ? 'effective' : 'manual',
       mode_available: env.modeAvailable, auto_mode: env.auto, local_tool: env.localTool, tools };
   };
   document.getElementById = get;
   document.createElement = tag => new Element(tag, document);
   const context = {
     window: { OasisToolsStrings: env.strings || {}, OasisToolsConfig: { csrfToken: 'fixture-token', urls: {
-      enableTool: '/enable', disableTool: '/disable', setToolAuto: '/auto',
+      enableTool: '/enable', disableTool: '/disable',
       refreshTools: '/refresh', loadTools: '/tools', loadManifest: '/manifest'
     } } },
     document,
@@ -95,19 +96,12 @@ function fixture(options = {}) {
       assert.equal(init.body.get('token'), 'fixture-token');
       if (env.postGate) await env.postGate;
       if (env.httpError) return { ok: false, json: async () => ({ status: 'OK' }) };
-      if (url === '/auto') {
-        if (env.modeError) return { ok: true, json: async () => ({ status: 'NG', error: 'Mode save failed' }) };
-        env.auto = init.body.get('enable') === '1';
-        if (env.loseModeResponse) throw new Error('Connection lost after commit');
-      } else {
-        assert.ok(['/enable', '/disable'].includes(url));
-        assert.equal(env.auto, false, 'Manual mutation attempted while Auto was active');
-        assert.equal(init.body.get('name'), 'weather');
-        assert.equal(init.body.get('server'), 'fixture.weather');
-        if (env.toolError) return { ok: true, json: async () => ({ status: 'NG', error: 'Tool save failed' }) };
-        env.manual = url === '/enable';
-        if (env.loseToolResponse) throw new Error('Connection lost after commit');
-      }
+      assert.ok(['/enable', '/disable'].includes(url));
+      assert.equal(init.body.get('name'), 'weather');
+      assert.equal(init.body.get('server'), 'fixture.weather');
+      if (env.toolError) return { ok: true, json: async () => ({ status: 'NG', error: 'Tool save failed' }) };
+      env.manual = url === '/enable';
+      if (env.loseToolResponse) throw new Error('Connection lost after commit');
       return { ok: true, json: async () => ({ status: 'OK' }) };
     }
   };
@@ -125,64 +119,13 @@ function fixture(options = {}) {
 
 test('Manual mode hides manager cards and retains per-tool controls', async () => {
   const env = fixture(); await settle();
-  assert.equal(env.button('Auto: OFF').attributes['aria-checked'], 'false');
+  assert.equal(env.button('Auto: OFF'), undefined);
   assert.equal(env.nodes().filter(node => node.className === 'cell').length, 1);
   assert.ok(!env.nodes().some(node => node.textContent === 'get_tool_list'));
   await env.button('Enabled').click(); await settle();
   assert.equal(env.manual, false);
   assert.ok(env.button('Disabled'));
   assert.equal(env.switch('fixture.weather / weather').attributes['aria-checked'], 'false');
-});
-
-test('Auto toggle uses POST and CSRF and shows AI-managed cards', async () => {
-  const env = fixture(); await settle();
-  await env.button('Auto: OFF').click(); await settle();
-  assert.equal(env.auto, true);
-  assert.equal(env.button('Auto: ON').attributes['aria-checked'], 'true');
-  assert.equal(env.button('Disabled').disabled, true);
-  assert.ok(env.nodes().some(node => node.className === 'tools-switch-note' && node.textContent === 'Managed by AI'));
-  assert.ok(env.nodes().some(node => node.className === 'status-pill' && node.textContent === 'Disabled'));
-  const count = env.calls.length;
-  await env.button('Disabled').click(); await settle();
-  assert.equal(env.calls.length, count);
-  assert.equal(env.manual, true);
-});
-
-test('OFF ON preserves each selection and page load honors persisted Auto', async () => {
-  const env = fixture({ auto: true, selected: true, manual: false }); await settle();
-  assert.ok(env.button('Auto: ON'));
-  await env.button('Auto: ON').click(); await settle();
-  assert.ok(env.button('Disabled'));
-  await env.button('Auto: OFF').click(); await settle();
-  assert.equal(env.selected, true);
-  assert.equal(env.manual, false);
-  assert.ok(env.nodes().some(node => node.className === 'status-pill enabled'));
-});
-
-test('failed mode save restores authoritative UI and reports the failure', async () => {
-  const env = fixture({ modeError: true }); await settle();
-  await env.button('Auto: OFF').click(); await settle();
-  assert.equal(env.auto, false);
-  assert.equal(env.button('Auto: OFF').disabled, false);
-  assert.equal(env.get('tools-error-message').textContent, 'Mode save failed');
-});
-
-test('a lost POST response reloads the committed mode instead of guessing', async () => {
-  const env = fixture({ loseModeResponse: true }); await settle();
-  await env.button('Auto: OFF').click(); await settle();
-  assert.equal(env.auto, true);
-  assert.ok(env.button('Auto: ON'));
-  assert.equal(env.switch('fixture.weather / weather').disabled, true);
-});
-
-test('damaged Auto state leaves the OFF switch available', async () => {
-  const env = fixture({ auto: true, corrupt: true }); await settle();
-  assert.equal(env.button('Auto: ON').disabled, false);
-  assert.equal(env.nodes().filter(node => node.className === 'cell').length, 0);
-  assert.equal(env.get('tools-error-message').textContent, 'Invalid Auto state');
-  env.corrupt = false;
-  await env.button('Auto: ON').click(); await settle();
-  assert.ok(env.button('Enabled'));
 });
 
 test('the existing local-tool master switch still hides tool controls', async () => {
@@ -209,30 +152,51 @@ test('switches expose stable names, native keyboard activation, and current stat
   assert.equal(env.switch('fixture.weather / weather').attributes['aria-checked'], 'true');
 });
 
-for (const selected of [false, true]) {
-  test('Auto tool switches are read-only and show the effective state: ' + selected, async () => {
-    const env = fixture({ auto: true, selected, manual: !selected }); await settle();
+for (const auto of [false, true]) for (const manual of [false, true]) for (const selected of [false, true]) {
+  test(`manual switches remain editable independently of Agent: mode=${auto}, manual=${manual}, selected=${selected}`, async () => {
+    const env = fixture({ auto, selected, manual }); await settle();
     const toggle = env.switch('fixture.weather / weather');
-    assert.equal(toggle.attributes['aria-checked'], String(selected));
-    assert.equal(toggle.disabled, true);
-    assert.equal(toggle.title, 'Managed by AI');
-    const before = env.calls.length;
+    assert.equal(toggle.attributes['aria-checked'], String(manual));
+    assert.equal(toggle.disabled, false);
+    assert.ok(env.nodes().some(node => node.className === 'status-pill' + (manual ? ' enabled' : '')
+      && node.textContent === (manual ? 'Enabled' : 'Disabled')));
+    assert.ok(env.nodes().some(node => node.className === 'tools-switch-note' && node.textContent === 'Use in Normal mode'));
     await toggle.click();
-    assert.equal(env.calls.length, before);
+    assert.equal(env.manual, !manual);
+    assert.equal(env.selected, selected, 'Manual saving must not change Agent selection');
+    assert.equal(env.auto, auto, 'Manual saving must not change mode');
+    assert.equal(env.switch('fixture.weather / weather').attributes['aria-checked'], String(!manual));
+    await env.switch('fixture.weather / weather').click();
+    assert.equal(env.manual, manual);
+    assert.equal(env.selected, selected);
+    assert.equal(env.calls.filter(call => call.init.method === 'POST').length, 2);
   });
 }
 
-test('conflicted tools and unavailable Auto mode cannot be changed', async () => {
-  const env = fixture({ conflict: true, modeAvailable: false }); await settle();
-  assert.equal(env.switch('Auto mode').disabled, true);
+test('unavailable Agent mode does not prevent editing manual selection', async () => {
+  const env = fixture({ auto: true, modeAvailable: false }); await settle();
+  assert.equal(env.switch('fixture.weather / weather').disabled, false);
+  await env.switch('fixture.weather / weather').click();
+  assert.equal(env.manual, false);
+});
+
+test('old effective-selection responses cannot be mistaken for manual settings', async () => {
+  const env = fixture({ effectiveResponse: true }); await settle();
+  assert.equal(env.switch('fixture.weather / weather'), undefined);
+  assert.equal(env.get('tools-error-message').textContent, 'Failed to update tool state');
+  assert.equal(env.calls.length, 1);
+});
+
+test('conflicted tools remain protected in Agent mode', async () => {
+  const env = fixture({ conflict: true, auto: true }); await settle();
+  assert.equal(env.switch('Auto mode'), undefined);
   assert.equal(env.switch('fixture.weather / weather').disabled, true);
   assert.equal(env.switch('fixture.weather / weather').title, 'Conflict: cannot change state');
-  await env.switch('Auto mode').click();
   await env.switch('fixture.weather / weather').click();
   assert.equal(env.calls.length, 1);
 });
 
-for (const name of ['Auto mode', 'fixture.weather / weather']) {
+for (const name of ['fixture.weather / weather']) {
   test('state saves lock all switches through POST and snapshot reload: ' + name, async () => {
     const env = fixture(); await settle();
     let releasePost, releaseLoad;
@@ -256,7 +220,7 @@ for (const name of ['Auto mode', 'fixture.weather / weather']) {
     releaseLoad(); await pending;
     assert.equal(env.switch(name).attributes['aria-busy'], 'false');
     assert.equal(env.switch(name).attributes['aria-checked'], String(previous !== 'true'));
-    assert.equal(env.switch('Auto mode').disabled, false);
+    assert.equal(env.switch('Auto mode'), undefined);
     // Even a stale detached control must not issue another POST.
     await toggle.listeners.click[0]();
     assert.equal(env.calls.filter(call => call.init.method === 'POST').length, 1);
@@ -293,7 +257,7 @@ test('a lost tool save response uses the committed state, not the previous state
   assert.equal(env.get('tools-error-message').textContent, 'Connection lost after commit');
 });
 
-for (const name of ['Auto mode', 'fixture.weather / weather']) {
+for (const name of ['fixture.weather / weather']) {
   test('an HTTP error is not treated as a successful save: ' + name, async () => {
     const env = fixture({ httpError: true }); await settle();
     const previous = env.switch(name).attributes['aria-checked'];
@@ -308,8 +272,8 @@ for (const failure of ['loadError', 'loadHttpError', 'badSnapshot']) {
   test('unavailable saved state locks switches instead of guessing: ' + failure, async () => {
     const env = fixture(); await settle();
     env[failure] = true;
-    await env.switch('Auto mode').click();
-    assert.equal(env.auto, true, 'The server saved the mode, but its snapshot was not received');
+    await env.switch('fixture.weather / weather').click();
+    assert.equal(env.manual, false, 'The server saved the tool, but its snapshot was not received');
     for (const toggle of env.nodes().filter(node => node.attributes.role === 'switch')) {
       assert.equal(toggle.disabled, true);
       assert.equal(toggle.attributes['aria-busy'], 'false');
@@ -320,15 +284,17 @@ for (const failure of ['loadError', 'loadHttpError', 'badSnapshot']) {
   });
 }
 
-test('switch status and AI management notes use existing localized strings', async () => {
-  const strings = { autoMode: '自動モード', autoOn: '自動: ON', autoOff: '自動: OFF',
-    enabled: '有効', disabled: '無効', autoManaged: 'AIが管理' };
-  const env = fixture({ strings }); await settle();
-  assert.equal(env.switch('自動モード').textContent, '自動: OFF');
-  assert.equal(env.switch('fixture.weather / weather').textContent, '有効');
-  await env.switch('自動モード').click();
-  assert.equal(env.switch('fixture.weather / weather').textContent, '無効');
-  assert.ok(env.nodes().some(node => node.className === 'tools-switch-note' && node.textContent === 'AIが管理'));
+test('manual-selection purpose, status and explanation use localized strings in either mode', async () => {
+  const strings = { normalModeUse: '通常モードで使用', manualSelectionNotice: 'Agentモードの選択には影響しません。',
+    enabled: '有効', disabled: '無効' };
+  for (const auto of [false, true]) {
+    const env = fixture({ strings, auto }); await settle();
+    assert.equal(env.switch('fixture.weather / weather').textContent, '有効');
+    assert.ok(env.nodes().some(node => node.className === 'tools-switch-note' && node.textContent === '通常モードで使用'));
+    assert.ok(env.nodes().some(node => node.className === 'server-description' && node.textContent === strings.manualSelectionNotice));
+    await env.switch('fixture.weather / weather').click();
+    assert.equal(env.switch('fixture.weather / weather').textContent, '無効');
+  }
 });
 
 test('switch styling and packaged assets retain colors, focus, and cache versions', () => {

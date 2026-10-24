@@ -173,6 +173,22 @@ end
 function M.finish(service, result)
     local ctx=service._history
     if not ctx then return result end
+    local waiting = result.ok and (result.state == "NEED_INPUT" or result.state == "NEED_CONFIRMATION")
+    if waiting then
+        ctx.turn.status = result.state == "NEED_INPUT" and "waiting_input" or "waiting_confirmation"
+        if result.pause_from_tool then
+            ctx.doc.messages[#ctx.doc.messages + 1] = {role="assistant", content=result.message}
+        end
+        local saved = pcall(flush, service)
+        if not saved then
+            result.ok, result.state = false, "FAILED"
+            result.error = service._history_error
+            result.message = result.error and result.error.message or "Failed to save the waiting turn."
+        else
+            ctx.chat.messages = history.copy(ctx.doc.messages)
+            result.new_chat_info = jsonc.stringify({id=ctx.id, title="--"}, false)
+        end
+    end
     if not result.ok then
         if not service._history_error then
             ctx.turn.status="failed"

@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=36
+PKG_RELEASE:=38
 
 SOURCE_DIR:=./files/luci
 
@@ -19,6 +19,7 @@ define Package/luci-app-oasis
     SECTION:=utakamo
     TITLE:= AI Support Application
     DEPENDS:=+oasis +luci-compat
+    EXTRA_DEPENDS:=oasis (>=3.2.6-r27)
     PKGARCH:=all
 endef
 
@@ -46,6 +47,7 @@ define Package/luci-app-oasis/install
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/sysmsg.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/css/tools.css $(1)$(LUCI_RESOURCES_DIR)/oasis/css
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
+	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-mode.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-utils.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-tools.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js
 	$(INSTALL_DATA) $(SOURCE_DIR)$(LUCI_RESOURCES_DIR)/oasis/js/chat-turn.js $(1)$(LUCI_RESOURCES_DIR)/oasis/js

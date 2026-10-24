@@ -4,7 +4,7 @@
 local common        = require("oasis.common")
 local misc          = require("oasis.chat.misc")
 local olt_client    = require("oasis.local.tool.client")
-local uci_transaction = require("oasis.local.tool.uci_transaction")
+local uci_transaction = require("oasis.uci_transaction")
 local uci           = require("luci.model.uci").cursor()
 
 -- Some Oasis-managed tools may exceed the default 30-second timeout.
@@ -15,7 +15,7 @@ local MIN_TIMEOUT = 60
 -- This marker makes image-build first-boot initialization a one-time migration.
 -- Change the suffix whenever package-owned defaults need to be migrated again.
 local INITIALIZATION_MARKER =
-    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r16"
+    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r18"
 local STANDARD_MANIFEST =
     "/etc/oasis/tool-manifest.d/ubus_direct.openwrt-core.json"
 local OWNED_MANIFESTS = {
@@ -23,7 +23,6 @@ local OWNED_MANIFESTS = {
     "/etc/oasis/tool-manifest.d/lua.oasis.network.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.service.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.system.json",
-    "/etc/oasis/tool-manifest.d/lua.oasis.tool.manager.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.wireless.json",
     "/etc/oasis/tool-manifest.d/ucode.oasis_plugin_server.uc.json",
 }

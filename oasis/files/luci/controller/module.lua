@@ -38,6 +38,8 @@ function index()
     entry({"admin", "network", "oasis", "load-tool-edge-account"}, call("load_tool_edge_account"), nil).leaf = true
     local update_tool_edge_entry = entry({"admin", "network", "oasis", "update-tool-edge-account"}, post("update_tool_edge_account"), nil)
     update_tool_edge_entry.leaf = true
+    entry({"admin", "network", "oasis", "get-mode"}, call("get_mode"), nil).leaf = true
+    entry({"admin", "network", "oasis", "set-mode"}, post("set_mode"), nil).leaf = true
     entry({"admin", "network", "oasis", "chat"}, template("oasis/chat"), "Chat with AI", 10).dependent=false
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "import-chat-data"}, call("import_chat_data"), nil).leaf = true
@@ -2573,4 +2575,27 @@ function update_settings()
     end
     settings_release_lock(lock)
     settings_write_json(body, status, status_message)
+end
+
+
+function get_mode()
+    local result = require("oasis.mode").get_status(uci)
+    if result.status == "OK" then
+        local section = uci:get_first("oasis", "service")
+        local enabled = section and uci:get("oasis", section, "function_calling") == "1"
+        if not enabled then
+            result.service_reason_code = "function_calling_disabled"
+        elseif uci:get("oasis", section, "name") == "LM Studio" then
+            result.service_reason_code = "service_unsupported"
+        end
+    end
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
+end
+
+function set_mode()
+    local result = require("oasis.mode").set_mode(luci_http.formvalue("mode"), uci,
+        luci_http.formvalue("generation"))
+    luci_http.prepare_content("application/json")
+    luci_http.write_json(result)
 end

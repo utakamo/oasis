@@ -1,4 +1,12 @@
 return {
+    { suite = "portable", module = "oasis.test.spec.common_id",
+      description = "Random chat and service IDs without shell pipelines", default = true },
+    { suite = "unit", module = "oasis.test.spec.tools_manual_api",
+      description = "Tools HTTP manual selection independent of Agent", default = true },
+    { suite = "unit", module = "oasis.test.spec.agent_setup",
+      description = "Agent install, restore and removal lifecycle", default = true },
+    { suite = "portable", module = "oasis.test.spec.mode_cli",
+      description = "Shared mode CLI, availability and recovery", default = true },
     {
         suite = "unit",
         module = "oasis.test.spec.chat_history",

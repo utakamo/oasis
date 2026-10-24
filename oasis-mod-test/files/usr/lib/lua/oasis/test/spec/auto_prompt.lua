@@ -5,7 +5,10 @@ local INSTRUCTION = "For router-related requests, proactively use `get_tool_list
     .. "Enable a needed disabled tool with `set_tool_enabled` using its exact server and name. "
     .. "After success, Oasis adds its callable definition to the next model request in the same user turn; "
     .. "then call it directly. Enabling does not execute the tool. "
-    .. "Make each Tool Search management call separately and wait for its result."
+    .. "Make each Tool Search management call separately and wait for its result. "
+    .. "Continue using tools as needed until the user request is complete. "
+    .. "If required information is missing, reply with NEED_INPUT: followed by a question and wait for the user. "
+    .. "Stop for user input or confirmation; do not claim an operation succeeded without a successful tool result."
 
 local function replace(t, name, value)
     local previous = package.loaded[name]
@@ -33,6 +36,7 @@ local function fixture(t)
         get_config = function(self) return self.cfg end,
         get_format = function(self) return self.format end,
     }
+    env.service._oasis_execution = {runtime=require("oasis.agent.runtime")}
     local previous_loader = common.load_conf_file
     env.conf = { default = { chat = "Default chat", prompt = "Default prompt", call = "Default call" },
         custom = { chat = "Selected system message", prompt = "Selected prompt" },
@@ -59,14 +63,14 @@ function M.register(harness)
             env.schema.setup_system_msg(env.service, source)
             local selected = source.messages[1].content
             local before = jsonc.stringify(source)
-            local outbound = env.schema.with_auto_tool_search_prompt(env.service, source)
+            local outbound = require("oasis.mode").decorate_request(env.service, source)
             t:assert_equal(selected .. "\n\n" .. INSTRUCTION, outbound.messages[1].content, format)
             t:assert_equal(before, jsonc.stringify(source), "history was changed")
             t:assert_equal("Selected system message", env.conf.custom.chat)
             t:assert_equal("Selected prompt", env.conf.custom.prompt)
-            local second = env.schema.with_auto_tool_search_prompt(env.service, source)
+            local second = require("oasis.mode").decorate_request(env.service, source)
             t:assert_equal(outbound.messages[1].content, second.messages[1].content)
-            local repeated = env.schema.with_auto_tool_search_prompt(env.service, outbound)
+            local repeated = require("oasis.mode").decorate_request(env.service, outbound)
             t:assert_equal(outbound.messages[1].content, repeated.messages[1].content)
         end
     end)
@@ -77,23 +81,24 @@ function M.register(harness)
         env.service.cfg.id = "existing-chat"
         env.schema.setup_system_msg(env.service, source)
         t:assert_equal(2, #source.messages)
-        t:assert_contains(env.schema.with_auto_tool_search_prompt(env.service, source).messages[1].content, INSTRUCTION)
-        env.auto = "0"
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
-        env.auto = nil
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
-        env.auto, env.local_tools = "1", false
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
+        t:assert_contains(require("oasis.mode").decorate_request(env.service, source).messages[1].content, INSTRUCTION)
+        env.service._oasis_execution = nil
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
+        env.service._oasis_execution = nil
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
+        env.service._oasis_execution = {runtime=require("oasis.agent.runtime")}
+        env.local_tools = false
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
         env.local_tools, env.service.cfg.function_calling = true, "0"
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
         env.service.cfg.function_calling, env.service.format = "1", common.ai.format.title
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
         env.service.format = common.ai.format.output
         env.service._tool_sequence_context = { active = true, allow_followup_tools = false }
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
         env.service._tool_sequence_context.allow_followup_tools = true
         t:assert_equal("Selected system message\n\n" .. INSTRUCTION,
-            env.schema.with_auto_tool_search_prompt(env.service, source).messages[1].content)
+            require("oasis.mode").decorate_request(env.service, source).messages[1].content)
     end)
 
     harness:test("unit", "Auto prompt survives management continuations but is absent from the final request", function(t)
@@ -102,25 +107,25 @@ function M.register(harness)
         source.messages[#source.messages + 1] = { role = "tool", content = '{"status":"OK"}' }
         env.schema.setup_system_msg(env.service, source)
         local before = jsonc.stringify(source)
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
         env.service._tool_sequence_context = { active = true, allow_followup_tools = true }
         t:assert_equal("Selected system message\n\n" .. INSTRUCTION,
-            env.schema.with_auto_tool_search_prompt(env.service, source).messages[1].content)
+            require("oasis.mode").decorate_request(env.service, source).messages[1].content)
         env.service._tool_sequence_context.allow_followup_tools = false
-        t:assert_equal(source, env.schema.with_auto_tool_search_prompt(env.service, source))
+        t:assert_equal(source, require("oasis.mode").decorate_request(env.service, source))
         t:assert_equal(before, jsonc.stringify(source))
     end)
 
     harness:test("unit", "Auto prompt handles empty and multiple system messages without altering other messages", function(t)
         local env = fixture(t)
         local empty = { messages = { { role = "user", content = "Router" } } }
-        local outbound = env.schema.with_auto_tool_search_prompt(env.service, empty)
+        local outbound = require("oasis.mode").decorate_request(env.service, empty)
         t:assert_equal(INSTRUCTION, outbound.messages[1].content)
         t:assert_equal("system", outbound.messages[1].role)
         t:assert_equal(1, #empty.messages)
         local multiple = chat()
         table.insert(multiple.messages, 2, { role = "system", content = "Additional instructions" })
-        outbound = env.schema.with_auto_tool_search_prompt(env.service, multiple)
+        outbound = require("oasis.mode").decorate_request(env.service, multiple)
         t:assert_equal("Selected system message", outbound.messages[1].content)
         t:assert_equal("Additional instructions\n\n" .. INSTRUCTION, outbound.messages[2].content)
         t:assert_equal("Check the router", outbound.messages[3].content)
@@ -142,7 +147,7 @@ function M.register(harness)
         t:assert_nil(err)
         t:assert_equal("Selected system message\n\n" .. INSTRUCTION, sent.messages[1].content)
         t:assert_equal("Selected system message", source.messages[1].content)
-        env.auto = "0"
+        env.service._oasis_execution = nil
         local _, _, _, off_err = transfer.send_user_msg(env.service, source)
         t:assert_nil(off_err)
         t:assert_equal("Selected system message", sent.messages[1].content)
@@ -160,9 +165,10 @@ function M.register(harness)
             local service = require("oasis.chat.service." .. provider)
             service.cfg = { service = provider, model = "fixture", function_calling = "1", max_tokens = 1024 }
             service.format = common.ai.format.output
+            service._oasis_execution = {runtime=require("oasis.agent.runtime")}
             service._tool_sequence_context = { active = true, allow_followup_tools = true }
             local source = chat()
-            local request = env.schema.with_auto_tool_search_prompt(service, source)
+            local request = require("oasis.mode").decorate_request(service, source)
             local body = jsonc.parse(service:convert_schema(request))
             local text
             if provider == "anthropic" then text = body.system
@@ -173,7 +179,7 @@ function M.register(harness)
             t:assert_equal("Selected system message", source.messages[1].content, provider .. " history")
             t:assert_true(service._request_tool_names.get_tool_list, provider .. " missing discovery tool")
             service._tool_sequence_context.allow_followup_tools = false
-            local final_body = service:convert_schema(env.schema.with_auto_tool_search_prompt(service, source))
+            local final_body = service:convert_schema(require("oasis.mode").decorate_request(service, source))
             t:assert_not_contains(final_body, INSTRUCTION, provider .. " final request")
         end
     end)

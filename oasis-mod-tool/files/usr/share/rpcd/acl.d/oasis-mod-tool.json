@@ -1,17 +1,12 @@
 {
-        "oasis": {
-                "description": "Access Oasis Local Tool",
-                "write": {
-                        "ubus": {
-                                "oasis.tool.manager": [ "set_tool_enabled", "set_tool_disabled" ],
-                                "oasis.system": ["confirm"]
-                        }
-                },
-
-                "read": {
-                        "ubus": {
-                            "oasis.tool.manager": [ "get_tool_list" ]
-                        }
-                }
+    "oasis": {
+        "description": "Access Oasis Local Tool",
+        "write": {
+            "ubus": {
+                "oasis.system": [
+                    "confirm"
+                ]
+            }
         }
+    }
 }

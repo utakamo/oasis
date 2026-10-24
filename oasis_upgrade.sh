@@ -5,6 +5,7 @@ RELEASE_TAG="${RELEASE_TAG:-}"
 OASIS_VER="${OASIS_VER:-}"
 LUCI_VER="${LUCI_VER:-}"
 TOOL_VER="${TOOL_VER:-}"
+AGENT_VER="${AGENT_VER:-}"
 REBOOT="${REBOOT:-}"
 
 API_URL="https://api.github.com/repos/utakamo/oasis/releases/latest"
@@ -41,6 +42,7 @@ get_latest_info_from_github() {
   OASIS_VER="${OASIS_VER:-$(grep -o 'oasis_[0-9][^_]*_all.ipk' "$tmp_json" | head -n1 | sed -E 's/oasis_([^_]+)_all.ipk/\1/')}"
   LUCI_VER="${LUCI_VER:-$(grep -o 'luci-app-oasis_[0-9][^_]*_all.ipk' "$tmp_json" | head -n1 | sed -E 's/luci-app-oasis_([^_]+)_all.ipk/\1/')}"
   TOOL_VER="${TOOL_VER:-$(grep -o 'oasis-mod-tool_[0-9][^_]*_all.ipk' "$tmp_json" | head -n1 | sed -E 's/oasis-mod-tool_([^_]+)_all.ipk/\1/')}"
+  AGENT_VER="${AGENT_VER:-$(grep -o 'oasis-mod-agent_[0-9][^_]*_all.ipk' "$tmp_json" | head -n1 | sed -E 's/oasis-mod-agent_([^_]+)_all.ipk/\1/')}"
 }
 
 #------------------------------------------------------------
@@ -70,7 +72,7 @@ backup_cfg() {
   fi
 
   mkdir -p "$(dirname "$BACKUP_FILE")"
-  uci export oasis > "$BACKUP_FILE" 2>/dev/null || true
+  uci export oasis > "$BACKUP_FILE"
 }
 
 restore_cfg() {
@@ -81,7 +83,7 @@ restore_cfg() {
     echo "Warning: /tmp/oasis/oasis.conf not found, skipping file restore" >&2
   fi
 
-  [ -f "$BACKUP_FILE" ] && uci -f "$BACKUP_FILE" import oasis || true
+  uci -f "$BACKUP_FILE" import oasis
 }
 
 #------------------------------------------------------------
@@ -129,20 +131,26 @@ main() {
 
   opkg update
 
-  if [ -z "$RELEASE_TAG" ] || [ -z "$OASIS_VER" ] || [ -z "$LUCI_VER" ] || [ -z "$TOOL_VER" ]; then
+  if [ -z "$RELEASE_TAG" ] || [ -z "$OASIS_VER" ] || [ -z "$LUCI_VER" ] || [ -z "$TOOL_VER" ] || [ -z "$AGENT_VER" ]; then
     echo "Fetching latest release info from GitHub..."
     if ! get_latest_info_from_github; then
-      echo "Failed to fetch GitHub info. Ensure RELEASE_TAG,OASIS_VER,LUCI_VER,TOOL_VER are set."
+      echo "Failed to fetch GitHub info. Ensure RELEASE_TAG,OASIS_VER,LUCI_VER,TOOL_VER,AGENT_VER are set."
       exit 1
     fi
   fi
 
-  echo "Latest: tag=$RELEASE_TAG oasis=$OASIS_VER luci=$LUCI_VER tool=$TOOL_VER"
+  if [ -z "$RELEASE_TAG" ] || [ -z "$OASIS_VER" ] || [ -z "$LUCI_VER" ] || [ -z "$TOOL_VER" ] || [ -z "$AGENT_VER" ]; then
+    echo "The release must include core, WebUI, Tool and Agent IPK packages." >&2
+    exit 1
+  fi
+
+  echo "Latest: tag=$RELEASE_TAG oasis=$OASIS_VER luci=$LUCI_VER tool=$TOOL_VER agent=$AGENT_VER"
 
   cur_oasis="$(get_installed_ver oasis || true)"
   cur_luci="$(get_installed_ver luci-app-oasis || true)"
   cur_tool="$(get_installed_ver oasis-mod-tool || true)"
-  echo "Current: oasis=${cur_oasis:-<not installed>} luci=${cur_luci:-<not installed>} tool=${cur_tool:-<not installed>}"
+  cur_agent="$(get_installed_ver oasis-mod-agent || true)"
+  echo "Current: oasis=${cur_oasis:-<not installed>} luci=${cur_luci:-<not installed>} tool=${cur_tool:-<not installed>} agent=${cur_agent:-<not installed>}"
 
   need_upgrade=0
 
@@ -150,12 +158,14 @@ main() {
   [ -z "$cur_oasis" ] && need_upgrade=1
   [ -z "$cur_luci" ] && need_upgrade=1
   [ -z "$cur_tool" ] && need_upgrade=1
+  [ -z "$cur_agent" ] && need_upgrade=1
 
   # Upgrade when existing versions are older
   if [ $need_upgrade -eq 0 ]; then
     if compare_lt "$cur_oasis" "$OASIS_VER"; then need_upgrade=1; fi
     if compare_lt "$cur_luci" "$LUCI_VER"; then need_upgrade=1; fi
     if compare_lt "$cur_tool" "$TOOL_VER"; then need_upgrade=1; fi
+    if compare_lt "$cur_agent" "$AGENT_VER"; then need_upgrade=1; fi
   fi
 
   if [ $need_upgrade -eq 0 ]; then
@@ -169,30 +179,41 @@ main() {
   OASIS_IPK="oasis_${OASIS_VER}_all.ipk"
   LUCI_IPK="luci-app-oasis_${LUCI_VER}_all.ipk"
   TOOL_IPK="oasis-mod-tool_${TOOL_VER}_all.ipk"
+  AGENT_IPK="oasis-mod-agent_${AGENT_VER}_all.ipk"
 
   echo "Backing up configuration..."
   backup_cfg
-
-  echo "Removing old packages..."
-  opkg remove luci-app-oasis || true
-  opkg remove oasis-mod-tool || true
-  opkg remove oasis || true
 
   echo "Downloading packages..."
   dl "${TMP_DIR}/${OASIS_IPK}" "${BASE_URL}/${OASIS_IPK}"
   dl "${TMP_DIR}/${LUCI_IPK}" "${BASE_URL}/${LUCI_IPK}"
   dl "${TMP_DIR}/${TOOL_IPK}" "${BASE_URL}/${TOOL_IPK}"
+  dl "${TMP_DIR}/${AGENT_IPK}" "${BASE_URL}/${AGENT_IPK}"
+  for artifact in "$OASIS_IPK" "$LUCI_IPK" "$TOOL_IPK" "$AGENT_IPK"; do
+    [ -s "${TMP_DIR}/${artifact}" ] || { echo "Missing package: $artifact" >&2; exit 1; }
+  done
+
+  echo "Removing old packages..."
+  opkg remove luci-app-oasis
+  if [ -n "$cur_agent" ]; then opkg remove oasis-mod-agent; fi
+  opkg remove oasis-mod-tool
+  opkg remove oasis
 
   echo "Installing new packages..."
   opkg install "${TMP_DIR}/${OASIS_IPK}"
-  opkg install "${TMP_DIR}/${LUCI_IPK}"
   opkg install "${TMP_DIR}/${TOOL_IPK}"
+  opkg install "${TMP_DIR}/${AGENT_IPK}"
+  opkg install "${TMP_DIR}/${LUCI_IPK}"
 
   echo "Restoring configuration..."
+  mode_generation="$(uci -q get oasis.support.tool_auto_generation || printf '0')"
   restore_cfg
+  /usr/bin/oasis_tool_edge_account migrate
+  /usr/bin/oasis_tool_setup refresh-package-manifests
+  /usr/bin/oasis_agent_setup refresh "$mode_generation"
 
   echo "Cleaning up..."
-  rm -f "${TMP_DIR}/${OASIS_IPK}" "${TMP_DIR}/${LUCI_IPK}" "${TMP_DIR}/${TOOL_IPK}"
+  rm -f "${TMP_DIR}/${OASIS_IPK}" "${TMP_DIR}/${LUCI_IPK}" "${TMP_DIR}/${TOOL_IPK}" "${TMP_DIR}/${AGENT_IPK}"
 
   echo "Restarting services..."
   restart_services

@@ -1,7 +1,7 @@
 <%+header%>
 <% local translate_js = require("luci.oasis.i18n").translate_js %>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r36">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r38">
 <div class="oasis-container">
     <div class="chat-list-container">
         <label for="import-chat-data" id="import-button" style="width:100%;"><%:Import Chat Data +%></label>
@@ -34,6 +34,14 @@
         </div>
         <div class="chat-input">
             <div class="chat-input-fields">
+                <div class="agent-mode-control">
+                    <button type="button" id="agent-mode-switch" role="switch" aria-checked="false"
+                        aria-label="<%:Agent mode%>" aria-describedby="agent-mode-scope agent-mode-notice" disabled>
+                        <span id="agent-mode-label"><%:Loading...%></span>
+                    </button>
+                    <span id="agent-mode-scope"><%:Shared by all chats, users and CLI sessions. The mode is saved across reboots.%></span>
+                    <span id="agent-mode-notice" role="status" hidden></span>
+                </div>
                 <div class="inline-sysmsg-field">
                     <div class="sidebar-label"><%:System Message%></div>
                     <select id="inline-sysmsg-select" name="inline-sysmsg-select"></select>
@@ -161,6 +169,8 @@ window.OasisChatConfig = {
     resourcePath: '<%= resource %>',
     csrfToken: '<%=token%>',
     urls: {
+        getMode: '<%=build_url("admin", "network", "oasis", "get-mode")%>',
+        setMode: '<%=build_url("admin", "network", "oasis", "set-mode")%>',
         confirm: '<%=build_url("admin", "network", "oasis", "confirm")%>',
         finalize: '<%=build_url("admin", "network", "oasis", "finalize")%>',
         rollback: '<%=build_url("admin", "network", "oasis", "rollback")%>',
@@ -182,6 +192,21 @@ window.OasisChatConfig = {
 </script>
 <script>
 window.OasisChatStrings = {
+    loading: <%= translate_js("Loading...") %>,
+    agentOn: <%= translate_js("Agent: ON") %>,
+    agentOff: <%= translate_js("Agent: OFF") %>,
+    agentUnavailable: <%= translate_js("Install or repair oasis-mod-agent to use Agent mode.") %>,
+    agentIncompatible: <%= translate_js("Update oasis-mod-agent to use Agent mode.") %>,
+    toolIncompatible: <%= translate_js("Install a compatible oasis-mod-tool package.") %>,
+    localToolsDisabled: <%= translate_js("Enable Local Tool support to use Agent mode.") %>,
+    controlToolsUnavailable: <%= translate_js("Refresh Agent tool registrations before enabling Agent mode.") %>,
+    functionCallingDisabled: <%= translate_js("The selected AI service has Function Calling disabled.") %>,
+    serviceUnsupported: <%= translate_js("The selected AI service does not support Agent tools.") %>,
+    modeUnknown: <%= translate_js("Mode status unavailable") %>,
+    modeLoadFailed: <%= translate_js("Could not load the conversation mode.") %>,
+    modeSaveFailed: <%= translate_js("Could not change the conversation mode.") %>,
+    savedWaitingInput: <%= translate_js("This turn stopped for user input.") %>,
+    savedWaitingConfirmation: <%= translate_js("This turn stopped for user confirmation.") %>,
     rebooting: <%= translate_js("Rebooting...") %>,
     rebootCountdown: <%= translate_js("Rebooting in {seconds}s ({percent}%)") %>,
     restartService: <%= translate_js("Restarting service...") %>,
@@ -273,9 +298,10 @@ window.OasisChatStrings = {
     wifiOpenNetwork: <%= translate_js("Open networks do not use a passphrase.") %>
 };
 </script>
-<script src="<%= resource %>/oasis/js/chat-utils.js?v=3.2.6-r36"></script>
-<script src="<%= resource %>/oasis/js/chat-tools.js?v=3.2.6-r36"></script>
-<script src="<%= resource %>/oasis/js/chat-turn.js?v=3.2.6-r36"></script>
-<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r36"></script>
+<script src="<%= resource %>/oasis/js/chat-utils.js?v=3.2.6-r38"></script>
+<script src="<%= resource %>/oasis/js/chat-tools.js?v=3.2.6-r38"></script>
+<script src="<%= resource %>/oasis/js/chat-turn.js?v=3.2.6-r38"></script>
+<script src="<%= resource %>/oasis/js/chat-mode.js?v=3.2.6-r38"></script>
+<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r38"></script>
 
 <%+footer%>

@@ -1783,3 +1783,12 @@ pre {
     flex-wrap: wrap;
   }
 }
+
+/* A single shared control remains visible above the composer on all screens. */
+.agent-mode-control { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; padding:4px 0 8px; font-size:12px; }
+#agent-mode-switch { border:1px solid #64748b; border-radius:16px; padding:5px 12px; background:#475569; color:#fff; cursor:pointer; white-space:nowrap; }
+#agent-mode-switch[aria-checked="true"] { background:#be185d; border-color:#be185d; }
+#agent-mode-switch:disabled { opacity:.6; cursor:default; }
+#agent-mode-switch:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
+#agent-mode-scope { flex:1 1 180px; }
+#agent-mode-notice { flex-basis:100%; color:#b45309; }
