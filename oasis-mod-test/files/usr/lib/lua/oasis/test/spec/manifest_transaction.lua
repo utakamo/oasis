@@ -625,7 +625,7 @@ local function new_fixture(options)
 
     local module_names = {
         "oasis.local.tool.client",
-        "oasis.local.tool.uci_transaction",
+        "oasis.uci_transaction",
     }
     for name in pairs(stubs) do
         module_names[#module_names + 1] = name

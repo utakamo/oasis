@@ -1197,6 +1197,12 @@ local function initialize_chat_service(arg)
     if cfg.service == common.ai.service.openai.name then
         console.print(string.format("%-14s :\27[33m %s \27[0m", "API Mode", cfg.openai_api_mode))
     end
+    local agent_loaded, agent_runtime = pcall(require, "oasis.agent.runtime")
+    if agent_loaded and type(agent_runtime) == "table" then
+        local mode = require("oasis.mode").read()
+        local status = mode and (mode.auto_mode and "ON" or "OFF") or "UNKNOWN"
+        console.print(string.format("%-14s :\27[33m %s \27[0m", "Agent Mode", status))
+    end
     console.print("-----------------------------------")
 
     return service
@@ -1207,6 +1213,8 @@ local function judge_system_reboot()
     if not misc.check_file_exist(common.file.console.reboot_required) then
         return
     end
+
+    if not console.is_interactive() then return end
 
     console.write("\nSystem Reboot [Y/N]: ")
     console.flush()
@@ -1230,6 +1238,8 @@ local function judge_system_shutdown()
     if not misc.check_file_exist(common.file.console.shutdown_required) then
         return
     end
+
+    if not console.is_interactive() then return end
 
     console.write("\nSystem Shutdown [Y/N]: ")
     console.flush()
@@ -1269,6 +1279,8 @@ local function judge_service_restart()
 		os.remove(path)
 		return
 	end
+
+    if not console.is_interactive() then return end
 
     console.write("\nRestart Service (" .. svc .. ") [Y/N]: ")
     console.flush()
@@ -1356,6 +1368,10 @@ local function run_cli_sequence(service, chat)
     if not ok then
         console.print("[ui_action:failed] The input request could not be processed.")
         code = 1
+    end
+    if result.ok and (result.state == "NEED_INPUT" or result.state == "NEED_CONFIRMATION") then
+        console.print(result.message or "User input is required.")
+        if not console.is_interactive() then code = 2 end
     end
     return result, code
 end
@@ -1563,7 +1579,7 @@ function M.prompt(arg)
 
     if not result.ok then
         console.print("\27[31m" .. chat_error.format(result.error) .. "\27[0m")
-        return
+        return 1
     end
 
     debug:log("oasis.log", "prompt",
@@ -1810,6 +1826,11 @@ function M.rpc_output(arg)
         if not result.ok then
             return chat_error.to_status(result.error), result.new_chat_info, nil
         end
+        status_tbl.state = result.state
+        status_tbl.stop_reason = result.stop_reason
+        status_tbl.turns = result.turns
+        status_tbl.tool_rounds = result.tool_rounds
+        status_tbl.tool_calls = result.tool_calls
         tool_info = result.tool_info
         new_chat_info, message = result.new_chat_info, result.message
 
@@ -1887,7 +1908,7 @@ local function print_tool_auto_mode(auto_mode)
     local status = auto_mode and "ON" or "OFF"
     local color = auto_mode and "\27[32m" or "\27[33m"
     local description = auto_mode and "managed by AI" or "manual settings"
-    print(string.format("Auto mode: %s%s\27[0m (%s)", color, status, description))
+    print(string.format("Agent mode: %s%s\27[0m (%s)", color, status, description))
     print()
 end
 
@@ -1906,29 +1927,11 @@ function M.tools(command)
         return 1
 	end
 
-    local loaded, tool_state = pcall(require, "oasis.local.tool.state")
-    if not loaded or type(tool_state) ~= "table"
-        or type(tool_state.get_mode) ~= "function"
-        or type(tool_state.set_auto_mode) ~= "function" then
-        io.stderr:write("Auto mode support is unavailable. Install or update oasis-mod-tool.\n")
-        return 1
-    end
     if command ~= nil then
-        local result, err
-        if command == "status" then
-            -- Status is a read-only mode query, not a volatile tool-state read.
-            result, err = tool_state.get_mode(uci)
-        else
-            result = tool_state.set_auto_mode(uci, command == "on" and "1" or "0")
-            if result.status ~= "OK" then err, result = result, nil end
-        end
-        if not result then
-            io.stderr:write((err and err.error or "Failed to read or update Auto mode.") .. "\n")
-            return 1
-        end
-        print_tool_auto_mode(result.auto_mode)
-        return 0
+        return require("oasis.mode").command(({on="agent", off="normal", status="status"})[command])
     end
+    local loaded, tool_state = pcall(require, "oasis.local.tool.state")
+    if not loaded then return 1 end
 
 	local snapshot, state_err = tool_state.snapshot(uci)
 	if not snapshot then
@@ -1979,7 +1982,7 @@ function M.tools(command)
 		return
 	end
 	if snapshot.auto_mode then
-		print("Run 'oasis tools off' or turn Auto mode OFF on the Tools page to edit manual tool settings.")
+		print("Run 'oasis mode normal' or turn Agent mode OFF in Chat With AI to edit manual tool settings.")
 		return
 	end
 

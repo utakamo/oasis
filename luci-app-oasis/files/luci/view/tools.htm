@@ -1,7 +1,7 @@
 <%+header%>
 <% local translate_js = require("luci.oasis.i18n").translate_js %>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tools.css?v=3.2.6-r32">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/tools.css?v=3.2.6-r38">
 
 <div id="tools-toast" role="status" aria-live="polite" class="toast" aria-atomic="true"></div>
 <h2><%:Local Tools%></h2>
@@ -44,7 +44,6 @@
 window.OasisToolsConfig = {
     csrfToken: '<%=token%>',
     urls: {
-        setToolAuto: '<%=build_url("admin", "network", "oasis", "set-tool-auto")%>',
         enableTool: '<%=build_url("admin", "network", "oasis", "enable-tool")%>',
         disableTool: '<%=build_url("admin", "network", "oasis", "disable-tool")%>',
         refreshTools: '<%=build_url("admin", "network", "oasis", "refresh-tools")%>',
@@ -55,6 +54,9 @@ window.OasisToolsConfig = {
 </script>
 <script>
 window.OasisToolsStrings = {
+    manualSelectionNotice: <%= translate_js("These settings apply when Agent mode is OFF. They do not affect tool selection while Agent mode is ON.") %>,
+    functionCallingRequired: <%= translate_js("Enable Function Calling for the selected AI service in General Setting to enable tools.") %>,
+    normalModeUse: <%= translate_js("Use in Normal mode") %>,
     running: <%= translate_js("Running...") %>,
     refreshFailed: <%= translate_js("Failed to refresh services") %>,
     refreshLabel: <%= translate_js("Refresh") %>,
@@ -79,12 +81,6 @@ window.OasisToolsStrings = {
     manifestSourcePath: <%= translate_js("Source Path") %>,
     installExtensionHint: <%= translate_js("Please install the extension module 'oasis-mod-tool' to enable local tools.") %>,
     unknownServer: <%= translate_js("Unknown Server") %>,
-    autoMode: <%= translate_js("Auto mode") %>,
-    autoOn: <%= translate_js("Auto: ON") %>,
-    autoOff: <%= translate_js("Auto: OFF") %>,
-    autoManaged: <%= translate_js("Managed by AI") %>,
-    autoDescription: <%= translate_js("AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots.") %>,
-    manualDescription: <%= translate_js("Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled.") %>,
     confirmRequiredTitle: <%= translate_js("AI Tool Manifest Confirmation") %>,
     confirmRequiredMessage: <%= translate_js("The following AI tool manifests are not yet applied. Applying them will register their tools in Oasis.") %>,
     confirmApplyButton: <%= translate_js("Apply") %>,
@@ -98,6 +94,6 @@ window.OasisToolsStrings = {
     confirmNoSourcePath: <%= translate_js("None") %>
 };
 </script>
-<script src="<%= resource %>/oasis/js/tools.js?v=3.2.6-r32"></script>
+<script src="<%= resource %>/oasis/js/tools.js?v=3.2.6-r38"></script>
 
 <%+footer%>

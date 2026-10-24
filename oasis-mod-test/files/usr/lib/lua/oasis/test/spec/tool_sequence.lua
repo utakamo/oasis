@@ -5,6 +5,14 @@ local tool_sequence = require("oasis.chat.tool_sequence")
 
 local M = {}
 
+-- Tests select the actual shared mode; no per-command Agent override exists.
+local function run_sequence(service, chat, options)
+    if options and options.agent then
+        require("luci.model.uci").cursor():get_all("oasis", "support").tool_auto = "1"
+    end
+    return tool_sequence.run(service, chat, options)
+end
+
 local function encode(value)
     return jsonc.stringify(value, false)
 end
@@ -145,7 +153,7 @@ local function install_manager_registry(t, steps)
     local needs_registry = false
     for _, step in ipairs(steps or {}) do
         for _, descriptor in ipairs(step.calls or {}) do
-            if tool_sequence.MANAGER_TOOLS[descriptor.name] then
+            if require("oasis.agent.policy").MANAGER_TOOLS[descriptor.name] then
                 needs_registry = true
                 if step.registry_sections ~= nil then
                     sections = step.registry_sections
@@ -179,9 +187,9 @@ local function install_manager_registry(t, steps)
 
     local module_name = "luci.model.uci"
     local original = package.loaded[module_name]
-    local original_store = package.loaded["oasis.local.tool.auto_store"]
+    local original_store = package.loaded["oasis.agent.store"]
     local support = { local_tool = "1", tool_auto = needs_registry and "1" or "0" }
-    package.loaded["oasis.local.tool.auto_store"] = {
+    package.loaded["oasis.agent.store"] = {
         read = function() return { version = 1, enabled = {} } end,
     }
     package.loaded[module_name] = {
@@ -200,13 +208,13 @@ local function install_manager_registry(t, steps)
     }
     t:on_cleanup(function()
         package.loaded[module_name] = original
-        package.loaded["oasis.local.tool.auto_store"] = original_store
+        package.loaded["oasis.agent.store"] = original_store
     end)
-    return support
+    return support, sections
 end
 
 local function install_script(t, steps)
-    local support = install_manager_registry(t, steps)
+    local support, sections = install_manager_registry(t, steps)
     local original = transfer.chat_with_ai
     local trace = {
         requests = 0,
@@ -230,6 +238,7 @@ local function install_script(t, steps)
         if not step then
             error("fixture script exhausted at request " .. trace.requests)
         end
+        if step.registry_revision then sections[1].description = step.registry_revision end
         if step.mode_generation then
             support.tool_auto_generation = step.mode_generation
         end
@@ -284,7 +293,7 @@ function M.register(harness)
             { kind = "tool", calls = { tool_list_call() } },
             { kind = "tool", calls = { enable_call() }, mode_generation = "2" },
         })
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_false(result.ok)
         t:assert_contains(result.error.message, "Tool mode changed")
         t:assert_false(result.error.can_continue)
@@ -295,7 +304,7 @@ function M.register(harness)
         local first_trace = install_script(t, {
             { kind = "tool", calls = { normal_call() }, mode_generation = "1" },
         })
-        local first_result = tool_sequence.run(first, { messages = {} })
+        local first_result = run_sequence(first, { messages = {} })
         t:assert_false(first_result.ok)
         t:assert_true(first_result.error.can_continue)
         t:assert_equal(0, first_trace.side_effects)
@@ -307,7 +316,7 @@ function M.register(harness)
             { kind = "tool", calls = { normal_call({ status = "NG",
                 code = "tool_mode_changed", error = "Start a new request." }) } },
         })
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_false(result.ok)
         t:assert_contains(result.error.message, "Tool mode changed")
         t:assert_equal(1, trace.requests)
@@ -324,7 +333,7 @@ function M.register(harness)
             },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_true(result.ok)
         t:assert_equal("DONE", result.state)
         t:assert_equal("direct answer", result.message)
@@ -348,7 +357,7 @@ function M.register(harness)
             { kind = "final", message = "Tokyo is 28 C" },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_true(result.ok)
         t:assert_equal("Tokyo is 28 C", result.message)
         t:assert_equal(2, result.turns)
@@ -380,10 +389,10 @@ function M.register(harness)
             { kind = "final", message = "Tokyo is 28 C and Osaka is 31 C" },
         })
 
-        local result = tool_sequence.run(
+        local result = run_sequence(
             service,
             { messages = {} },
-            { allow_normal_tool_chaining = true }
+            { agent = true }
         )
         t:assert_true(result.ok)
         t:assert_equal("DONE", result.state)
@@ -415,11 +424,11 @@ function M.register(harness)
             },
         })
 
-        local result = tool_sequence.run(service, { messages = {} }, {
-            allow_normal_tool_chaining = true,
+        local result = run_sequence(service, { messages = {} }, {
+            agent = true,
             detect_need_input = true,
         })
-        t:assert_false(result.ok)
+        t:assert_true(result.ok)
         t:assert_equal("NEED_INPUT", result.state)
         t:assert_equal("Which weather station should I use?", result.message)
         t:assert_nil(result.error)
@@ -444,8 +453,8 @@ function M.register(harness)
             { kind = "tool", calls = { second_call } },
         })
 
-        local result = tool_sequence.run(service, { messages = {} }, {
-            allow_normal_tool_chaining = true,
+        local result = run_sequence(service, { messages = {} }, {
+            agent = true,
             max_tool_rounds = 1,
         })
         assert_failed(t, result)
@@ -473,7 +482,7 @@ function M.register(harness)
                 { kind = "final", message = "The tool has not been enabled yet.",
                     new_chat_info = '{"id":"limited-chat"}' },
             })
-            local result = tool_sequence.run(service, { messages = {} }, limits)
+            local result = run_sequence(service, { messages = {} }, limits)
             assert_failed(t, result)
             t:assert_equal("STUCK", result.state)
             t:assert_true(result.limit_reached)
@@ -501,13 +510,13 @@ function M.register(harness)
             { kind = "tool", calls = { normal_call() } },
             { kind = "final", message = "Tokyo is 28 C" },
         })
-        local result = tool_sequence.run(service, { messages = {} }, {
+        local result = run_sequence(service, { messages = {} }, {
             max_tool_rounds = 1, max_tool_calls = 1, max_ai_requests = 2,
         })
         t:assert_true(result.ok)
         t:assert_equal("DONE", result.state)
         t:assert_nil(result.limit_reached)
-        t:assert_nil(result.stop_reason)
+        t:assert_equal("completed", result.stop_reason)
         t:assert_equal(2, trace.requests)
         t:assert_equal(1, trace.side_effects)
     end)
@@ -520,7 +529,7 @@ function M.register(harness)
             { kind = "tool", calls = { descriptor } },
             { kind = "final", message = "done" },
         })
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_true(result.ok)
         t:assert_equal(1, trace.side_effects)
         t:assert_equal(descriptor.arguments, decode(result.tool_info).tool_outputs[1].arguments)
@@ -533,7 +542,7 @@ function M.register(harness)
             { kind = "final", message = "final after a dispatched tool" },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_true(result.ok)
         t:assert_equal("DONE", result.state)
         t:assert_equal("final after a dispatched tool", result.message)
@@ -553,7 +562,7 @@ function M.register(harness)
             { kind = "final", message = "The enabled weather tool reports 28 C" },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_true(result.ok)
         t:assert_equal(4, result.turns)
         t:assert_equal(3, result.tool_rounds)
@@ -563,8 +572,8 @@ function M.register(harness)
         t:assert_true(trace.contexts[2].allow_followup_tools)
         t:assert_true(trace.contexts[2].refresh_tool_registry)
         t:assert_true(trace.contexts[3].refresh_tool_registry)
-        t:assert_false(trace.contexts[4].allow_followup_tools)
-        t:assert_false(trace.contexts[4].refresh_tool_registry)
+        t:assert_true(trace.contexts[4].allow_followup_tools)
+        t:assert_true(trace.contexts[4].refresh_tool_registry)
         t:assert_equal(3, #service.handled_outputs)
 
         local aggregate = decode(result.tool_info)
@@ -588,7 +597,7 @@ function M.register(harness)
             { kind = "tool", calls = { failed_call } },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         assert_failed(t, result)
         t:assert_contains(result.error.message, "management operation")
         t:assert_equal(1, result.turns)
@@ -607,7 +616,7 @@ function M.register(harness)
             },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_false(result.ok)
         t:assert_type("table", result.error)
         t:assert_true(result.error.can_continue)
@@ -627,7 +636,7 @@ function M.register(harness)
                 calls = { tool_list_call(), enable_call() },
             },
         })
-        local batch_result = tool_sequence.run(
+        local batch_result = run_sequence(
             batch_service, { messages = {} })
         t:assert_false(batch_result.ok)
         t:assert_true(batch_result.error.can_continue)
@@ -659,7 +668,7 @@ function M.register(harness)
             local trace = install_script(t, {
                 { kind = "tool", calls = { invalid_call } },
             })
-            local result = tool_sequence.run(service, { messages = {} })
+            local result = run_sequence(service, { messages = {} })
             t:assert_false(result.ok)
             t:assert_true(result.error.can_continue)
             t:assert_contains(result.error.message, "invalid arguments")
@@ -685,11 +694,11 @@ function M.register(harness)
         local trace = install_script(t, {
             { kind = "tool", calls = { tool_list_call() } },
         })
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_false(result.ok)
         t:assert_true(result.error.can_continue)
         t:assert_contains(result.error.message, "compatible oasis-mod-tool")
-        t:assert_contains(result.error.detail, "r11")
+        t:assert_equal("tool_incompatible", result.error.detail)
         t:assert_equal(0, trace.side_effects)
         t:assert_equal(0, result.tool_calls)
     end)
@@ -712,10 +721,10 @@ function M.register(harness)
             },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_false(result.ok)
         t:assert_true(result.error.can_continue)
-        t:assert_contains(result.error.detail, "uniquely bound")
+        t:assert_equal("control_tools_unavailable", result.error.detail)
         t:assert_equal(0, trace.side_effects)
         t:assert_equal(0, result.tool_calls)
     end)
@@ -727,7 +736,7 @@ function M.register(harness)
             { kind = "tool", calls = { tool_list_call() } },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         assert_failed(t, result)
         t:assert_contains(result.error.message, "repeated")
         t:assert_equal(2, trace.authorizations)
@@ -746,7 +755,7 @@ function M.register(harness)
             { kind = "tool", calls = { omitted } },
             { kind = "tool", calls = { explicit } },
         })
-        local canonical_result = tool_sequence.run(
+        local canonical_result = run_sequence(
             canonical_service, { messages = {} })
         assert_failed(t, canonical_result)
         t:assert_contains(canonical_result.error.message, "repeated")
@@ -760,7 +769,7 @@ function M.register(harness)
             { kind = "tool", calls = { tool_list_call() } },
             { kind = "tool", calls = { enable_call() } },
         })
-        local round_result = tool_sequence.run(
+        local round_result = run_sequence(
             round_service,
             { messages = {} },
             { max_tool_rounds = 1 }
@@ -776,7 +785,7 @@ function M.register(harness)
                 calls = { tool_list_call(), enable_call() },
             },
         })
-        local call_result = tool_sequence.run(
+        local call_result = run_sequence(
             call_service,
             { messages = {} },
             { max_tool_calls = 1 }
@@ -792,7 +801,7 @@ function M.register(harness)
         local ai_trace = install_script(t, {
             { kind = "tool", calls = { normal_call() } },
         })
-        local ai_result = tool_sequence.run(
+        local ai_result = run_sequence(
             ai_service,
             { messages = {} },
             { max_ai_requests = 1 }
@@ -818,7 +827,7 @@ function M.register(harness)
             { kind = "error", error = provider_error },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         assert_failed(t, result)
         t:assert_equal(provider_error, result.error)
         t:assert_false(provider_error.can_continue)
@@ -834,7 +843,7 @@ function M.register(harness)
         install_script(t, {
             { kind = "error", error = initial_error },
         })
-        local initial_result = tool_sequence.run(
+        local initial_result = run_sequence(
             initial_service, { messages = {} })
         t:assert_false(initial_result.ok)
         t:assert_true(initial_result.error.can_continue)
@@ -850,7 +859,7 @@ function M.register(harness)
             { kind = "throw", message = "provider crashed" },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_false(result.ok)
         t:assert_type("table", result.error)
         t:assert_true(result.error.can_continue)
@@ -876,7 +885,7 @@ function M.register(harness)
             },
             { kind = "final", message = "The restart is ready for confirmation." },
         })
-        local core_result = tool_sequence.run(
+        local core_result = run_sequence(
             core_service, { messages = {} })
         t:assert_true(core_result.ok)
         t:assert_equal(2, core_result.turns)
@@ -892,15 +901,15 @@ function M.register(harness)
                 reboot = true,
             },
         })
-        local agent_result = tool_sequence.run(
+        local agent_result = run_sequence(
             agent_service,
             { messages = {} },
-            { stop_on_confirmation = true }
+            { agent = true }
         )
-        assert_failed(t, agent_result)
+        t:assert_true(agent_result.ok)
         t:assert_equal("NEED_CONFIRMATION", agent_result.state)
         t:assert_true(agent_result.confirmation.reboot)
-        t:assert_equal("Restart the router?", agent_result.message)
+        t:assert_equal("User confirmation is required.", agent_result.message)
         t:assert_equal(1, agent_trace.requests)
     end)
 
@@ -917,7 +926,7 @@ function M.register(harness)
             { kind = "final", message = "The weather station is unavailable." },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         t:assert_true(result.ok)
         t:assert_equal(2, trace.requests)
         t:assert_equal(1, trace.side_effects)
@@ -941,7 +950,7 @@ function M.register(harness)
             },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         assert_failed(t, result)
         t:assert_contains(result.error.message, "did not match")
         t:assert_equal(1, trace.authorizations)
@@ -957,7 +966,7 @@ function M.register(harness)
                 skip_authorization = true,
             },
         })
-        local unauthorized = tool_sequence.run(
+        local unauthorized = run_sequence(
             unauthorized_service, { messages = {} })
         assert_failed(t, unauthorized)
         t:assert_contains(unauthorized.error.message, "without sequence authorization")
@@ -973,7 +982,7 @@ function M.register(harness)
             { kind = "tool", calls = { missing_status } },
         })
 
-        local result = tool_sequence.run(service, { messages = {} })
+        local result = run_sequence(service, { messages = {} })
         assert_failed(t, result)
         t:assert_contains(result.error.message, "management operation")
         t:assert_equal(1, result.tool_rounds)
@@ -986,7 +995,7 @@ function M.register(harness)
         local context_trace = install_script(t, {
             { kind = "final", message = "must not run" },
         })
-        local context_result = tool_sequence.run(
+        local context_result = run_sequence(
             context_service, { messages = {} })
         t:assert_false(context_result.ok)
         t:assert_true(context_result.error.can_continue)
@@ -998,13 +1007,63 @@ function M.register(harness)
         local begin_trace = install_script(t, {
             { kind = "final", message = "must not run" },
         })
-        local begin_result = tool_sequence.run(begin_service, { messages = {} })
+        local begin_result = run_sequence(begin_service, { messages = {} })
         t:assert_false(begin_result.ok)
         t:assert_true(begin_result.error.can_continue)
         t:assert_contains(begin_result.error.message, "initialize")
         t:assert_equal(1, begin_service.begin_calls)
         t:assert_equal(0, begin_trace.requests)
     end)
+    harness:test("unit", "Agent continues through multiple normal tool rounds after discovery", function(t)
+        local service = new_service()
+        local second = normal_call(); second.tool_call_id="call-weather-2"
+        local trace = install_script(t, {
+            {kind="tool",calls={tool_list_call()}},
+            {kind="tool",calls={enable_call()}},
+            {kind="tool",calls={normal_call()}},
+            {kind="tool",calls={second}},
+            {kind="final",message="Both checks completed"},
+        })
+        local result=run_sequence(service,{messages={}})
+        t:assert_true(result.ok,result.message)
+        t:assert_equal(5,result.turns)
+        t:assert_equal(4,result.tool_calls)
+        t:assert_true(trace.contexts[4].allow_followup_tools)
+        t:assert_true(trace.contexts[4].refresh_tool_registry)
+        t:assert_nil(service._oasis_execution)
+    end)
+    harness:test("unit", "Agent permits rediscovery after registry definitions change", function(t)
+        local service=new_service()
+        local trace=install_script(t,{
+            {kind="tool",calls={tool_list_call()}},
+            {kind="tool",calls={tool_list_call()},registry_revision="new registered definition"},
+            {kind="final",message="Updated registry checked"},
+        })
+        local result=run_sequence(service,{messages={}})
+        t:assert_true(result.ok,result.message)
+        t:assert_equal(2,trace.side_effects)
+    end)
+    harness:test("unit", "Agent form handoff stops after the tool result without another AI request", function(t)
+        local service=new_service()
+        local trace=install_script(t,{{kind="tool",calls={normal_call({status="OK",ui_action={type="fixture"}})}}})
+        local result=run_sequence(service,{messages={}},{agent=true})
+        t:assert_true(result.ok,result.message)
+        t:assert_equal("NEED_INPUT",result.state)
+        t:assert_equal("input_required",result.stop_reason)
+        t:assert_equal(1,trace.requests)
+        t:assert_equal(1,result.tool_calls)
+    end)
+    harness:test("unit", "Agent stops on explicit domain failure without retrying or asking the model", function(t)
+        local service=new_service()
+        local trace=install_script(t,{{kind="tool",calls={normal_call({status="NG",error="Device refused change"})}}})
+        local result=run_sequence(service,{messages={}},{agent=true})
+        t:assert_false(result.ok)
+        t:assert_false(result.error.can_continue)
+        t:assert_equal("tool_error",result.stop_reason)
+        t:assert_equal(1,trace.requests)
+        t:assert_equal(1,trace.side_effects)
+    end)
+
 end
 
 return M

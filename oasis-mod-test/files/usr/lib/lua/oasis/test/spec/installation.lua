@@ -16,8 +16,11 @@ function M.register(harness)
             "oasis.chat.service.ollama",
             "oasis.chat.service.lmstudio",
             "oasis.local.tool.state",
-            "oasis.local.tool.auto_store",
-            "oasis.local.tool.uci_transaction",
+            "oasis.mode",
+            "oasis.agent.runtime",
+            "oasis.agent.policy",
+            "oasis.agent.store",
+            "oasis.uci_transaction",
         }
         for _, module_name in ipairs(modules) do
             local ok, value = pcall(require, module_name)
@@ -36,7 +39,13 @@ function M.register(harness)
             "/usr/bin/oasis_tool_setup",
             "/etc/init.d/olt_tool",
             "/usr/lib/lua/oasis/local/tool/uci_transaction.lua",
-            "/usr/lib/lua/oasis/local/tool/auto_store.lua",
+            "/usr/lib/lua/oasis/agent/store.lua",
+            "/usr/lib/lua/oasis/mode.lua",
+            "/usr/lib/lua/oasis/mode_lock.lua",
+            "/usr/lib/lua/oasis/uci_transaction.lua",
+            "/usr/bin/oasis_agent_setup",
+            "/etc/init.d/oasis_agent",
+            "/usr/share/rpcd/acl.d/oasis-mod-agent.json",
             "/usr/share/rpcd/acl.d/oasis.json",
             "/usr/share/rpcd/acl.d/oasis-mod-tool.json",
             "/etc/config/oasis",

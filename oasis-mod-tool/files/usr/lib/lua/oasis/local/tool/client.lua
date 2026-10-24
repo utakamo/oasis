@@ -7,7 +7,7 @@ local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
 local tool_state = require("oasis.local.tool.state")
-local uci_transaction = require("oasis.local.tool.uci_transaction")
+local uci_transaction = require("oasis.uci_transaction")
 
 local M = {}
 

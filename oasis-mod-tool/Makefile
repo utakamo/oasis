@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-tool
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=17
+PKG_RELEASE:=19
 
 USR_BIN_DIR = /usr/bin
 RPCD_ACL_DIR = /usr/share/rpcd/acl.d
@@ -21,7 +21,7 @@ define Package/oasis-mod-tool
     SECTION:=utakamo
     TITLE:= Remote MCP and Local Tool Plugin Module for oasis
     DEPENDS:=+oasis
-    EXTRA_DEPENDS:=oasis (>=3.2.6-r24)
+    EXTRA_DEPENDS:=oasis (>=3.2.6-r27)
     PKGARCH:=all
 endef
 
@@ -53,12 +53,10 @@ define Package/oasis-mod-tool/install
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.wireless $(1)$(LUA_UBUS_SERVER_APP_DIR)/oasis.wireless
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.system $(1)$(LUA_UBUS_SERVER_APP_DIR)/oasis.system
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.service $(1)$(LUA_UBUS_SERVER_APP_DIR)/oasis.service
-	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.tool.manager $(1)$(LUA_UBUS_SERVER_APP_DIR)/oasis.tool.manager
 	$(INSTALL_DATA) ./files/usr/share/rpcd/ucode/oasis_plugin_server.uc $(1)$(UCODE_UBUS_SERVER_APP_DIR)/oasis_plugin_server.uc
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/client.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/client.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/server.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/server.lua
 	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/local/tool/state.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/state.lua
-	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/local/tool/auto_store.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/auto_store.lua
 	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/local/tool/uci_transaction.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/uci_transaction.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/package/manager.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/package/manager.lua
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/local/tool/system/command.lua $(1)$(LUA_LIBRARY_DIR)/oasis/local/tool/system/command.lua

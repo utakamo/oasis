@@ -10,12 +10,6 @@ local chat_error = require("oasis.chat.error")
 
 local M = {}
 
-local CONTROL_TOOLS = {
-    get_tool_list = true,
-    set_tool_enabled = true,
-    set_tool_disabled = true,
-}
-
 local function dense_array_length(value)
     if type(value) ~= "table" then
         return nil
@@ -181,25 +175,15 @@ function M.authorize_tool_batch(self, prepared)
     end
 
     local descriptors = {}
-    local has_control = false
-    local has_normal = false
     for _, call in ipairs(prepared or {}) do
         local name = tostring(call.name or "")
         local call_id = call.id or call.call_id
-        has_control = has_control or CONTROL_TOOLS[name] == true
-        has_normal = has_normal or CONTROL_TOOLS[name] ~= true
         descriptors[#descriptors + 1] = {
             id = call_id,
             tool_call_id = call_id,
             name = name,
             arguments = call.normalized_args,
         }
-    end
-
-    if has_control and has_normal then
-        return nil, sequence_error(self,
-            "Tool Search management tools cannot be mixed with normal tools.",
-            "Submit management and normal tool calls in separate rounds.")
     end
 
     local remaining = tonumber(context.remaining_tool_calls)

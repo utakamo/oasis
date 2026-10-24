@@ -30,7 +30,7 @@ command = Path(sys.argv[0]).name
 args = sys.argv[1:]
 action = args[0] if args else ""
 if command == "uci":
-    action = "export" if args[0] == "export" else "import"
+    action = "export" if args[0] == "export" else "get" if args[:2] == ["-q", "get"] else "import"
 elif command == "cp":
     action = "backup" if args[-1] == str(root / "tmp/oasis/oasis.conf") else "restore"
 elif command in ("opkg", "apk") and action in ("remove", "del"):
@@ -91,6 +91,8 @@ elif command == "lua":
 elif command == "uci":
     if action == "export":
         print("old schema")
+    elif action == "get":
+        print("9")
     else:
         assert args == ["-f", str(root / "tmp/oasis/backup"), "import", "oasis"]
         (root / "registry").write_text(Path(args[1]).read_text().strip())
@@ -115,6 +117,9 @@ elif command == "oasis_tool_setup":
     assert (root / "initialized").exists()
     assert (root / "registry").read_text() == "old schema"
     (root / "registry").write_text("new schema")
+elif command == "oasis_agent_setup":
+    assert args == ["refresh", "9"]
+    assert (root / "registry").read_text() == "new schema"
 elif command == "rpcd":
     assert args == ["restart"]
     assert (root / "registry").read_text() == "new schema"
@@ -134,7 +139,7 @@ class UpgradeTests(unittest.TestCase):
             (root / "tmp").mkdir()
             (root / "etc/oasis").mkdir(parents=True)
             (root / "etc/oasis/oasis.conf").write_text("fixture settings\n")
-            for name in ("opkg", "apk", "uci", "cp", "rpcd", "oasis_tool_setup", "stat", "lua", "oasis_tool_edge_account"):
+            for name in ("opkg", "apk", "uci", "cp", "rpcd", "oasis_tool_setup", "oasis_agent_setup", "stat", "lua", "oasis_tool_edge_account"):
                 mock = fake_bin / name
                 mock.write_text("#!" + sys.executable + "\n" + MOCK_COMMAND)
                 mock.chmod(0o700)
@@ -145,6 +150,7 @@ class UpgradeTests(unittest.TestCase):
                 "/tmp/oasis-tool-edge-upgrade": root / "tmp/oasis-tool-edge-upgrade",
                 "/tmp/oasis": root / "tmp/oasis",
                 "/etc/oasis": root / "etc/oasis",
+                "/usr/bin/oasis_agent_setup": fake_bin / "oasis_agent_setup",
                 "/usr/bin/oasis_tool_setup": fake_bin / "oasis_tool_setup",
                 "/usr/bin/oasis_tool_edge_account": fake_bin / "oasis_tool_edge_account",
                 "/etc/init.d/rpcd": fake_bin / "rpcd",
@@ -195,6 +201,8 @@ class UpgradeTests(unittest.TestCase):
                 self.assertLess(events.index(migrate), events.index(refresh))
                 self.assertLess(events.index(refresh), events.index("rpcd:restart"))
                 self.assertEqual(1, events.count(refresh))
+                self.assertLess(events.index(refresh), events.index("oasis_agent_setup:refresh"))
+                self.assertLess(events.index("oasis_agent_setup:refresh"), events.index("rpcd:restart"))
                 self.assertEqual("new schema", registry)
 
     def test_normal_install_does_not_run_restore_reconciliation(self):
@@ -235,6 +243,14 @@ class UpgradeTests(unittest.TestCase):
                 self.assertIn("configuration restore", result.stderr)
                 self.assertNotIn("rpcd:restart", events)
                 self.assertEqual("old schema", registry)
+
+    def test_agent_refresh_failure_stops_before_rpcd(self):
+        for package_format in ("ipk", "apk"):
+            with self.subTest(format=package_format):
+                result, events, _ = self.run_helper(package_format, fail="oasis_agent_setup:refresh")
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("Agent tool definitions", result.stderr)
+                self.assertNotIn("rpcd:restart", events)
 
     def test_install_failure_stops_before_restore(self):
         for package_format in ("ipk", "apk"):

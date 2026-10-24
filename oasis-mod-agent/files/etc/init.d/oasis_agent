@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+START=21
+
+start() {
+    ubus -t 10 wait_for session || return 1
+    /usr/bin/oasis_agent_setup init
+}
+
+stop() {
+    :
+}

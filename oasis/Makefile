@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=25
+PKG_RELEASE:=27
 
 APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
@@ -94,6 +94,9 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/service/lmstudio.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat/service
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/console.lua $(1)$(LUA_LIBRARY_DIR)/oasis
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/common.lua $(1)$(LUA_LIBRARY_DIR)/oasis
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/mode.lua $(1)$(LUA_LIBRARY_DIR)/oasis/
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/mode_lock.lua $(1)$(LUA_LIBRARY_DIR)/oasis/
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/uci_transaction.lua $(1)$(LUA_LIBRARY_DIR)/oasis/
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/ubus/util.lua $(1)$(LUA_LIBRARY_DIR)/oasis/ubus
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis $(1)$(UBUS_SERVER_APP_DIR)
 	$(INSTALL_BIN) ./files/usr/libexec/rpcd/oasis.chat $(1)$(UBUS_SERVER_APP_DIR)

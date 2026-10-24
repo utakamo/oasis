@@ -181,7 +181,11 @@
             if (request.error) turn.appendError(request.error);
         });
         if (!finalTextShown) turn.appendText(message.content);
-        if (saved.status === 'incomplete') {
+        if (saved.status === 'waiting_input') {
+            turn.appendText(options.t('savedWaitingInput', 'This turn stopped for user input.'));
+        } else if (saved.status === 'waiting_confirmation') {
+            turn.appendText(options.t('savedWaitingConfirmation', 'This turn stopped for user confirmation.'));
+        } else if (saved.status === 'incomplete') {
             turn.appendError(options.t('savedResponseIncomplete', 'This response was not completed.'));
         } else if (saved.status === 'failed' && !requests.some(request => request.error)) {
             turn.appendError(options.t('savedResponseFailed', 'This response failed.'));

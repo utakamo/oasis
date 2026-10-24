@@ -183,6 +183,7 @@ done
 
 # Restore configuration if keep-config mode is enabled
 if [ "$MODE" = "keep-config" ]; then
+    mode_generation="$(uci -q get oasis.support.tool_auto_generation || printf '0')"
     uci -f /tmp/oasis/backup import oasis || die "Failed to restore Oasis UCI configuration."
     cp -r /tmp/oasis/oasis.conf /etc/oasis/oasis.conf || die "Failed to restore oasis.conf."
 
@@ -195,6 +196,8 @@ if [ "$MODE" = "keep-config" ]; then
     # explicitly; a normal init would skip this migration because of its marker.
     /usr/bin/oasis_tool_setup refresh-package-manifests ||
         die "Failed to update package-owned tool definitions after configuration restore."
+    /usr/bin/oasis_agent_setup refresh "$mode_generation" ||
+        die "Failed to update Agent tool definitions after configuration restore."
 fi
 
 # Reload RPC objects only after configuration and tool definitions are ready.

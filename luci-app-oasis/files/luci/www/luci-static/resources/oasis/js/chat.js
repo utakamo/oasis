@@ -130,6 +130,9 @@
     let sysmsg_list = null;
     let sysmsg_key = "";
     let targetChatId = "";
+    function syncModeBusy() {
+        if (window.OasisChatMode) window.OasisChatMode.setBusy(message_outputing || activeConversation);
+    }
     let message_outputing = false;
     // Consent lasts only for this page and is reset when the AI service changes.
     let uciAttachmentConsent = false;
@@ -2239,6 +2242,7 @@
 
         // Send button
     document.getElementById('send-button').addEventListener('click', async function() {
+        if (window.OasisChatMode && window.OasisChatMode.isSaving()) return;
 
         const systemMessage = document.getElementById("oasis-system");
         const messageInput = document.getElementById('message-input');
@@ -2254,6 +2258,8 @@
 
         message_outputing = true;
 
+        syncModeBusy();
+
         const uciSelect = document.getElementById('uci-config-list');
         const targetUciConfig = uciSelect.value;
         const consentVersion = uciAttachmentConsentVersion;
@@ -2262,6 +2268,7 @@
             try {
                 if (!await confirmUciAttachment(targetUciConfig)) {
                     message_outputing = false;
+                    syncModeBusy();
                     messageInput.focus();
                     return;
                 }
@@ -2275,11 +2282,13 @@
                 // A service change during the request requires fresh consent.
                 if (consentVersion !== uciAttachmentConsentVersion) {
                     message_outputing = false;
+                    syncModeBusy();
                     messageInput.focus();
                     return;
                 }
             } catch (error) {
                 message_outputing = false;
+                syncModeBusy();
                 alert(t('uciAttachmentFailed', 'Could not load the UCI configuration. Your message was not sent. Please try again.'));
                 messageInput.focus();
                 return;
@@ -2309,6 +2318,7 @@
 
     function show_chat_popup(jsonResponse) {
         message_outputing = false;
+        syncModeBusy();
         targetChatId = jsonResponse.id;
         //console.log("targetChatId = " + targetChatId);
         // removed: showTitlePopup(jsonResponse.title);
@@ -2756,6 +2766,7 @@
 
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
+        syncModeBusy();
         const baseUrl = window.location.origin || `${window.location.protocol}//${window.location.host}`;
         let is_notify = false;
         let rebootRequired = false;
@@ -2929,7 +2940,9 @@
             if (turn) turn.finish();
             clearTypingIndicator();
             message_outputing = false;
+            syncModeBusy();
             activeConversation = false;
+            syncModeBusy();
             setChatScrollLock(false);
         }
     }
@@ -3228,6 +3241,7 @@
           return response.json();
         })
         .then(data => {
+          if (data.status === "OK" && window.OasisChatMode) window.OasisChatMode.reload();
         })
         .catch(error => {
           console.error('Error:', error);

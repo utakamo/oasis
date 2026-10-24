@@ -77,7 +77,8 @@ function fixture(options = {}) {
         window: { location: { origin: 'http://fixture.invalid' }, innerWidth: options.mobile ? 375 : 1200 },
         document: { querySelector: () => root, createElement: tag => new Element(tag) },
         console: { error: (...args) => env.errors.push(args.map(String).join(' ')) },
-        TextDecoder, activeConversation: false, message_outputing: false, targetChatId: '',
+        TextDecoder, activeConversation: false,
+        syncModeBusy() {}, message_outputing: false, targetChatId: '',
         sysmsg_key: '', resourcePath: '/resources', icon_name: 'fixture.png',
         currentAssistantMessageDiv: assistant, isKeyboardOpen: false,
         t: (key, fallback) => (options.strings || {})[key] || fallback,
@@ -218,6 +219,21 @@ test('LuCI empty-object requests and turns preserve conversation text and interr
             assert.equal(env.cards().length, 0);
         }
         assert.equal(JSON.stringify(doc), before);
+    }
+});
+
+test('saved input and confirmation pauses remain successful handoffs', () => {
+    for (const [status, message] of [
+        ['waiting_input', 'This turn stopped for user input.'],
+        ['waiting_confirmation', 'This turn stopped for user confirmation.']
+    ]) {
+        const env = fixture();
+        restore(env, [savedRequest('', [savedCall('input', 'completed', {
+            status: 'ok', original_json: JSON.stringify({ status: 'OK', ui_action: { type: 'fixture' } })
+        })])], { content: 'Waiting for the user', status });
+        assert.equal(byClass(env.root, 'error-notice').length, 0);
+        assert.ok(env.text().includes(message));
+        assert.equal(env.cards().length, 1);
     }
 });
 

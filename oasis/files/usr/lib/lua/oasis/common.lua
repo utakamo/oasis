@@ -121,6 +121,7 @@ flag.apply.complete = "/tmp/oasis/apply/complete"
 flag.apply.rollback = "/tmp/oasis/apply/rollback"
 flag.unload = {}
 flag.unload.oasis               = "/tmp/oasis/reboot_required_for_oasis"
+flag.unload.oasis_mod_agent     = "/tmp/oasis/reboot_required_for_oasis-mod-agent"
 flag.unload.oasis_mod_tool      = "/tmp/oasis/reboot_required_for_oasis-mod-tool"
 flag.unload.oasis_mod_spring    = "/tmp/oasis/reboot_required_for_oasis-mod-spring"
 
@@ -161,8 +162,20 @@ local function generate_random_id(method)
     local id = ""
 
     if method == "urandom" then
-        id = sys.exec("tr -dc '0-9' < /dev/urandom | head -c 10 > /tmp/random_number && cat /tmp/random_number")
-        id = id:gsub("\n", "")
+        local random_file = io.open("/dev/urandom", "rb")
+        if not random_file then return "" end
+
+        -- Read directly so an early-exiting head cannot cause tr to report EPIPE.
+        while #id < 10 do
+            local bytes = random_file:read(256)
+            if not bytes or #bytes == 0 then
+                random_file:close()
+                return ""
+            end
+            id = id .. bytes:gsub("[^0-9]", "")
+        end
+        random_file:close()
+        id = id:sub(1, 10)
     elseif method == "seed" then
         math.randomseed(os.time() + os.clock() * 1000000)
         -- math.randomseed(os.time() + tonumber(tostring({}):sub(8), 16))
@@ -511,6 +524,8 @@ end
 function M.check_unloaded_plugin(target)
     if target == "oasis" then
         return misc.check_file_exist(flag.unload.oasis)
+    elseif target == "oasis-mod-agent" then
+        return misc.check_file_exist(flag.unload.oasis_mod_agent)
     elseif target == "oasis-mod-tool" then
         return misc.check_file_exist(flag.unload.oasis_mod_tool)
     elseif target == "oasis-mod-spring" then
@@ -518,6 +533,7 @@ function M.check_unloaded_plugin(target)
     end
 
     return misc.check_file_exist(flag.unload.oasis)
+        or misc.check_file_exist(flag.unload.oasis_mod_agent)
         or misc.check_file_exist(flag.unload.oasis_mod_tool)
         or misc.check_file_exist(flag.unload.oasis_mod_spring)
 end

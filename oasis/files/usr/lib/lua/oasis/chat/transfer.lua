@@ -331,7 +331,7 @@ function M.send_user_msg(service, chat)
     local tool_used = false
 
     local convert_ok, usr_msg_json = pcall(function()
-        local request_chat = ous.with_auto_tool_search_prompt(service, history.ai_input(chat))
+        local request_chat = require("oasis.mode").decorate_request(service, history.ai_input(chat))
         return service:convert_schema(request_chat)
     end)
 

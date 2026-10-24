@@ -2,10 +2,8 @@
 
 -- Bounded orchestration for AI tool calls.
 --
--- Ordinary chat turns may use one normal tool batch and then must produce a
--- final answer with tools disabled.  The Tool Search management tools are the
--- only tools which may keep the sequence open so that a newly-enabled tool can
--- be selected and used in the same user turn.
+-- Normal turns use one tool batch. Optional execution policies decide whether
+-- subsequent tool requests are permitted; authorization and accounting stay here.
 
 local jsonc      = require("luci.jsonc")
 local chat_error = require("oasis.chat.error")
@@ -18,99 +16,6 @@ local M = {}
 local HARD_MAX_AI_REQUESTS = 6
 local HARD_MAX_TOOL_ROUNDS = 4
 local HARD_MAX_TOOL_CALLS = 8
-local REQUIRED_TOOL_SEARCH_ABI = 2
-
-local MANAGER_TOOLS = {
-    get_tool_list = true,
-    set_tool_enabled = true,
-    set_tool_disabled = true,
-}
-
-local function validate_tool_search_abi(manager_name)
-    local ok, state = pcall(require, "oasis.local.tool.state")
-    if not ok or type(state) ~= "table" then
-        return nil, "oasis-mod-tool state module is unavailable"
-    end
-    if state.TOOL_SEARCH_ABI ~= REQUIRED_TOOL_SEARCH_ABI
-        or type(state.list_effective) ~= "function"
-        or type(state.set_auto_enabled) ~= "function"
-        or type(state.is_control_tool) ~= "function" then
-        return nil, "incompatible oasis-mod-tool Tool Search ABI"
-    end
-
-    local uci_ok, uci_module = pcall(require, "luci.model.uci")
-    if not uci_ok or type(uci_module) ~= "table"
-        or type(uci_module.cursor) ~= "function" then
-        return nil, "oasis-mod-tool UCI registry is unavailable"
-    end
-    local cursor_ok, cursor = pcall(uci_module.cursor)
-    if not cursor_ok or type(cursor) ~= "table" then
-        return nil, "oasis-mod-tool UCI cursor is unavailable"
-    end
-    local list_ok, registry = pcall(state.list_effective, cursor)
-    if not list_ok or type(registry) ~= "table"
-        or registry.status ~= "OK"
-        or tool_policy.dense_array_length(registry.tool) == nil then
-        return nil, "oasis-mod-tool control registry could not be verified"
-    end
-
-    local matches = 0
-    local valid_binding = false
-    for _, entry in ipairs(registry.tool) do
-        if type(entry) == "table" and entry.name == manager_name then
-            matches = matches + 1
-            local binding_ok, is_control = pcall(
-                state.is_control_tool, entry.server, entry.name)
-            valid_binding = binding_ok and is_control == true
-                and entry.enabled == true
-                and entry.conflicted == false
-        end
-    end
-    if matches ~= 1 or not valid_binding then
-        return nil, "Tool Search control name is not uniquely bound to oasis.tool.manager"
-    end
-    return true
-end
-
-local function has_exact_keys(value, expected)
-    local count = 0
-    for key in pairs(value or {}) do
-        if expected[key] ~= true then
-            return false
-        end
-        count = count + 1
-    end
-    local expected_count = 0
-    for _ in pairs(expected) do
-        expected_count = expected_count + 1
-    end
-    return count == expected_count
-end
-
-local function validate_manager_arguments(call)
-    if call.name == "get_tool_list" then
-        if not has_exact_keys(call.arguments, {}) then
-            return nil, "get_tool_list arguments must be an empty object"
-        end
-        return true
-    end
-
-    local expected = { server = true, tool = true }
-    if not has_exact_keys(call.arguments, expected) then
-        return nil, call.name
-            .. " arguments must contain exactly server and tool"
-    end
-    if type(call.arguments.server) ~= "string"
-        or not call.arguments.server:match("%S") then
-        return nil, call.name .. " server must be a non-empty string"
-    end
-    if type(call.arguments.tool) ~= "string"
-        or not call.arguments.tool:match("%S") then
-        return nil, call.name .. " tool must be a non-empty string"
-    end
-    return true
-end
-
 local function has_committed_tool_side_effects(service)
     if type(service) ~= "table"
         or type(service.get_tool_side_effects_committed) ~= "function" then
@@ -230,36 +135,9 @@ local function normalize_call_descriptor(call)
         return nil, "tool arguments are not a JSON object"
     end
 
-    local signature
-    if has_arguments then
-        local canonical, canonical_error =
-            tool_policy.canonical_object(arguments)
-        if not canonical then
-            return nil, "tool arguments are invalid JSON: "
-                .. tostring(canonical_error)
-        end
-        signature = name .. "\0" .. canonical
-    else
-        -- Some legacy provider adapters do not expose arguments in tool_info.
-        -- Include the call ID so distinct calls are not incorrectly classified
-        -- as the same operation. Updated adapters should always include args.
-        signature = name .. "\0<missing>\0"
-            .. tostring(call.tool_call_id or call.id or "")
-    end
-
-    -- Management operations have strict object contracts checked during
-    -- preflight. Give them canonical argument identity even when a provider
-    -- omits the optional empty object for get_tool_list; post-execution
-    -- tool_info must derive the same signature as authorization did.
-    if MANAGER_TOOLS[name] then
-        local canonical, canonical_error =
-            tool_policy.canonical_object(arguments)
-        if not canonical then
-            return nil, "tool arguments are invalid JSON: "
-                .. tostring(canonical_error)
-        end
-        signature = name .. "\0" .. canonical
-    end
+    local canonical, canonical_error = tool_policy.canonical_object(arguments)
+    if not canonical then return nil, "tool arguments are invalid JSON: " .. tostring(canonical_error) end
+    local signature = name .. "\0" .. canonical
 
     local raw_id = call.tool_call_id
     if raw_id == nil then
@@ -271,7 +149,6 @@ local function normalize_call_descriptor(call)
         name = name,
         arguments = arguments,
         signature = signature,
-        manager = MANAGER_TOOLS[name] == true,
     }
 end
 
@@ -299,13 +176,6 @@ local function result_field(payload, key)
     end
     local nested = nested_result(payload)
     return nested and nested[key] or nil
-end
-
-local function has_error_value(value)
-    if value == nil or value == false then
-        return false
-    end
-    return type(value) ~= "string" or value:match("%S") ~= nil
 end
 
 local function confirmation_from(parsed_info, calls)
@@ -366,12 +236,8 @@ function Runner:_check_tool_mode()
     -- Use the capability captured before sending this request, not current
     -- switches: changing them during a response must not bypass its mode guard.
     if not self.request_uses_local_tools then return true end
-    local loaded, state = pcall(require, "oasis.local.tool.state")
-    -- Core-only installations can chat without oasis-mod-tool. An old module
-    -- is still rejected by the manager ABI check if a manager is requested.
-    if not loaded or type(state) ~= "table" or type(state.get_mode) ~= "function" then return true end
     local cursor = require("luci.model.uci").cursor()
-    local mode, err = state.get_mode(cursor)
+    local mode, err = require("oasis.mode").read(cursor)
     if not mode then
         return nil, build_error(self.service, "Failed to read the tool mode.", err.error)
     end
@@ -424,100 +290,21 @@ function Runner:_preflight(descriptors, request_allows_tools)
     end
 
     local calls = {}
-    local has_manager = false
-    local has_normal = false
     for _, descriptor in ipairs(descriptors) do
         local call, why = normalize_call_descriptor(descriptor)
         if not call then
-            return nil, build_error(
-                self.service,
-                "The AI returned malformed tool call data.",
-                why,
-                "parse_error"
-            )
+            return nil, build_error(self.service, "The AI returned malformed tool call data.", why, "parse_error")
         end
         calls[#calls + 1] = call
-        has_manager = has_manager or call.manager
-        has_normal = has_normal or not call.manager
     end
-
-    if has_manager and has_normal then
-        return nil, build_error(
-            self.service,
-            "Tool Search management tools cannot be mixed with normal tools.",
-            "Submit management and normal tool calls in separate rounds."
-        )
+    local refresh_registry = false
+    if self.policy then
+        local allowed, result = self.policy:validate_batch(calls)
+        if not allowed then return nil, result end
+        refresh_registry = result == true
     end
+    return { calls = calls, refresh_registry = refresh_registry, count = #calls }
 
-    if has_manager then
-        -- Each manager mutation changes runtime state independently. Authorize only one
-        -- management call per response so a later failure cannot leave a
-        -- partially-applied multi-call batch.
-        if #calls ~= 1 then
-            return nil, build_error(
-                self.service,
-                "Tool Search management batches must contain exactly one call.",
-                "Submit each management operation in a separate round."
-            )
-        end
-
-        local arguments_ok, arguments_error =
-            validate_manager_arguments(calls[1])
-        if not arguments_ok then
-            return nil, build_error(
-                self.service,
-                "The Tool Search management call has invalid arguments.",
-                arguments_error,
-                "parse_error"
-            )
-        end
-
-        -- Management arguments have now passed their exact object contract.
-        -- Canonicalize even an omitted get_tool_list argument as `{}` so a
-        -- new provider call ID cannot evade the repeated-operation guard.
-        local canonical_arguments, canonical_error =
-            tool_policy.canonical_object(calls[1].arguments)
-        if not canonical_arguments then
-            return nil, build_error(
-                self.service,
-                "The Tool Search management call has invalid arguments.",
-                canonical_error,
-                "parse_error"
-            )
-        end
-        calls[1].signature = calls[1].name .. "\0" .. canonical_arguments
-
-        -- Never dispatch the volatile Auto contract into an older persistent
-        -- manager implementation. The r11 state module
-        -- publishes the ABI marker and functions checked here.
-        local abi_ok, abi_error = validate_tool_search_abi(calls[1].name)
-        if not abi_ok then
-            return nil, build_error(
-                self.service,
-                "Tool Search requires a compatible oasis-mod-tool package.",
-                abi_error .. "; install oasis-mod-tool r11 or newer",
-                "internal_error"
-            )
-        end
-
-        local in_batch = {}
-        for _, call in ipairs(calls) do
-            if self.manager_signatures[call.signature] or in_batch[call.signature] then
-                return nil, build_error(
-                    self.service,
-                    "The Tool Search sequence repeated the same management operation.",
-                    "tool=" .. call.name
-                )
-            end
-            in_batch[call.signature] = true
-        end
-    end
-
-    return {
-        calls = calls,
-        manager = has_manager,
-        count = #calls,
-    }
 end
 
 function Runner:_authorize_tool_batch(descriptors)
@@ -614,6 +401,7 @@ function Runner:_clear_context()
     self.service._tool_sequence_context = self.original_context
     self.service._agent_mode = self.original_agent_mode
     self.service._tool_mode_token = self.original_mode_token
+    self.service._oasis_execution = self.original_execution
 end
 
 function Runner:_parse_tool_info(raw)
@@ -685,7 +473,7 @@ function Runner:_parse_tool_info(raw)
 
     local batch = {
         calls = calls,
-        manager = authorized.manager,
+        refresh_registry = authorized.refresh_registry,
         count = authorized.count,
     }
     self.authorized_batch = nil
@@ -715,23 +503,9 @@ function Runner:_parse_tool_info(raw)
                 "Tool mode changed during this request. Start a new request.",
                 "Further tool execution was stopped; completed operations were not rolled back.")
         end
-        if batch.calls[index].manager and (has_error_value(error_value)
-            or status ~= "OK") then
-            return batch, build_error(
-                self.service,
-                "A Tool Search management operation reported a failure.",
-                "tool=" .. batch.calls[index].name
-                    .. ", status=" .. tostring(status or error_value)
-            )
-        end
-        if batch.calls[index].name == "get_tool_list"
-            and dense_array_length(result_field(output, "tool")) == nil then
-            return batch, build_error(
-                self.service,
-                "Tool Search returned a malformed tool list.",
-                "tool=get_tool_list",
-                "parse_error"
-            )
+        if self.policy then
+            local policy_error = self.policy:validate_result(batch.calls[index], result_field, dense_array_length)
+            if policy_error then return batch, policy_error end
         end
     end
 
@@ -772,6 +546,8 @@ function Runner:_result(fields)
     fields.tool_calls = self.tool_calls
     fields.last_tool_names = self.last_tool_names
     fields.tool_info = fields.tool_info or self:_tool_info_json()
+    fields.stop_reason = fields.stop_reason or (fields.error and fields.error.stop_reason)
+        or (fields.ok and "completed" or "execution_error")
     if self.limit_kind then
         fields.limit_reached = true
         fields.stop_reason = "limit_reached"
@@ -800,6 +576,22 @@ function Runner:_fail(err, state, fields)
 end
 
 function Runner:_run()
+    if self.max_ai_requests > 1 and self:_local_tools_enabled() then
+        local execution, err = require("oasis.mode").resolve_execution(self.service)
+        if not execution then
+            return self:_fail(build_error(self.service, err.error, err.code, "unsupported_feature"))
+        end
+        self.service._oasis_execution = execution
+        self.mode_token = execution.token
+        self.policy = execution.policy
+        if self.policy then
+            self.max_ai_requests = bounded_limit(self.opts.max_ai_requests, self.policy.max_ai_requests, self.policy.max_ai_requests)
+            self.max_tool_rounds = bounded_limit(self.opts.max_tool_rounds, self.policy.max_tool_rounds, self.policy.max_tool_rounds)
+            self.max_tool_calls = bounded_limit(self.opts.max_tool_calls, self.policy.max_tool_calls, self.policy.max_tool_calls)
+            self.detect_need_input = self.policy.stop_on_input
+            self.stop_on_confirmation = self.policy.stop_on_confirmation
+        end
+    end
     if type(self.service.begin_tool_sequence) == "function" then
         local begin_ok, begun, begin_error = pcall(function()
             return self.service:begin_tool_sequence()
@@ -884,8 +676,9 @@ function Runner:_run()
                 local requested = message:gsub("^%s+", ""):match("^NEED_INPUT:%s*(.*)$")
                 if requested then
                     return self:_result({
-                        ok = false,
+                        ok = true,
                         state = "NEED_INPUT",
+                        stop_reason = "input_required",
                         message = requested,
                         new_chat_info = first,
                     })
@@ -925,9 +718,6 @@ function Runner:_run()
         self.last_tool_names = {}
         for _, call in ipairs(batch.calls) do
             self.last_tool_names[#self.last_tool_names + 1] = call.name
-            if call.manager then
-                self.manager_signatures[call.signature] = true
-            end
         end
         self:_merge_tool_info(batch.parsed_info)
 
@@ -954,27 +744,28 @@ function Runner:_run()
 
         local confirmation = confirmation_from(batch.parsed_info, batch.calls)
         if confirmation and self.stop_on_confirmation then
-            local confirmation_err = build_error(
-                self.service,
-                "A tool operation requires user confirmation.",
-                first_tool_message(batch.calls)
-            )
-            confirmation_err.confirmation = confirmation
-            local confirmation_message = first_tool_message(batch.calls)
-            if confirmation_message == "" then
-                confirmation_message = "Confirmation required"
-            end
-            return self:_fail(confirmation_err, "NEED_CONFIRMATION", {
-                confirmation = confirmation,
-                message = confirmation_message,
+            return self:_result({
+                ok = true, state = "NEED_CONFIRMATION", stop_reason = "confirmation_required",
+                confirmation = confirmation, pause_from_tool = true,
+                message = "User confirmation is required.",
             })
         end
 
-        if batch.manager then
+        if self.policy and self.policy.stop_on_input then
+            for _, call in ipairs(batch.calls) do
+                if result_field(call.output, "ui_action") ~= nil then
+                    return self:_result({ok=true, state="NEED_INPUT", stop_reason="input_required",
+                        pause_from_tool=true, message="User input is required."})
+                end
+            end
+        end
+
+        if batch.refresh_registry then
             allow_tools = true
             refresh_registry = true
         else
-            allow_tools = self.allow_normal_tool_chaining
+            allow_tools = self.policy and self.policy.continue_tools == true or false
+            refresh_registry = allow_tools
         end
     end
 
@@ -1009,20 +800,20 @@ function M.run(service, chat, opts)
     local runner = setmetatable({
         service = service,
         chat = chat,
+        opts = opts,
+        original_execution = service._oasis_execution,
         max_ai_requests = bounded_limit(
             opts.max_ai_requests, HARD_MAX_AI_REQUESTS, HARD_MAX_AI_REQUESTS),
         max_tool_rounds = bounded_limit(
             opts.max_tool_rounds, HARD_MAX_TOOL_ROUNDS, HARD_MAX_TOOL_ROUNDS),
         max_tool_calls = bounded_limit(
             opts.max_tool_calls, HARD_MAX_TOOL_CALLS, HARD_MAX_TOOL_CALLS),
-        allow_normal_tool_chaining = opts.allow_normal_tool_chaining == true,
-        detect_need_input = opts.detect_need_input == true,
-        stop_on_confirmation = opts.stop_on_confirmation == true,
+        detect_need_input = false,
+        stop_on_confirmation = false,
         ai_requests = 0,
         tool_rounds = 0,
         tool_calls = 0,
         last_tool_names = {},
-        manager_signatures = {},
         original_context = service._tool_sequence_context,
         original_agent_mode = service._agent_mode,
         original_mode_token = service._tool_mode_token,
@@ -1050,7 +841,5 @@ end
 M.MAX_AI_REQUESTS = HARD_MAX_AI_REQUESTS
 M.MAX_TOOL_ROUNDS = HARD_MAX_TOOL_ROUNDS
 M.MAX_TOOL_CALLS = HARD_MAX_TOOL_CALLS
-M.MANAGER_TOOLS = MANAGER_TOOLS
-M.REQUIRED_TOOL_SEARCH_ABI = REQUIRED_TOOL_SEARCH_ABI
 
 return M

@@ -46,7 +46,7 @@ local function fixture(t)
     end
     env.cursor = cursor
     function cursor:get_bool() return true end
-    replace(t, "oasis.local.tool.auto_store", {
+    replace(t, "oasis.agent.store", {
         read = function()
             if env.corrupt then return nil, "Invalid Auto tool state." end
             return copy(env.runtime)
@@ -61,7 +61,11 @@ local function fixture(t)
             return callback()
         end,
     })
-    replace(t, "oasis.local.tool.uci_transaction", {
+    replace(t, "oasis.mode_lock", {with_lock = function(callback)
+        if env.lock_busy then return nil, "Auto lock busy." end
+        return callback()
+    end})
+    replace(t, "oasis.uci_transaction", {
         run = function(options, callback)
             t:assert_equal(cursor, options.cursor)
             local support, sections = copy(env.support), copy(env.sections)
@@ -151,11 +155,14 @@ local function store_fixture(t)
     }
     replace(t, "nixio.fs", fs)
     replace(t, "nixio", nixio)
-    replace(t, "oasis.local.tool.auto_store", nil)
-    env.store = require("oasis.local.tool.auto_store")
+    replace(t, "oasis.mode_lock", nil)
+    replace(t, "oasis.agent.store", nil)
+    env.store = require("oasis.agent.store")
     env.stat = stat
     return env
 end
+
+M.fixture = fixture
 
 function M.register(harness)
     harness:test("unit", "direct alias discovery and dispatch follow Manual and Auto permissions", function(t)
@@ -196,9 +203,12 @@ function M.register(harness)
         client.exec_server_tool("silent", "get_device_info", {})
         t:assert_equal(1, #calls)
         t:assert_equal("OK", state.set_auto_enabled(env.cursor, "system", "get_device_info", true).status)
+        t:assert_equal("OK", state.set_enabled_persistent(env.cursor, "system", "get_device_info", false, {manual_only=true}).status)
+        t:assert_equal("0", tool.enable)
         t:assert_equal(4, #client.get_function_call_schema())
         t:assert_equal("OK", client.exec_server_tool("silent", "get_device_info", {}).status)
         t:assert_equal("system:board", calls[2])
+        t:assert_equal("OK", state.set_enabled_persistent(env.cursor, "system", "get_device_info", true, {manual_only=true}).status)
         tool.ubus_method = "info"
         t:assert_equal(3, #client.get_function_call_schema(), "target changes invalidate Auto permission")
         client.exec_server_tool("silent", "get_device_info", {})
@@ -243,8 +253,8 @@ function M.register(harness)
         main.tools()
         t:assert_equal(0, reads, "Auto mode must not prompt for manual changes")
         t:assert_equal(before, env.writes)
-        t:assert_contains(table.concat(output), "Auto mode: \27[32mON\27[0m (managed by AI)")
-        t:assert_contains(table.concat(output), "OFF on the Tools page")
+        t:assert_contains(table.concat(output), "Agent mode: \27[32mON\27[0m (managed by AI)")
+        t:assert_contains(table.concat(output), "OFF in Chat With AI")
         t:assert_equal("1", env.sections[5].enable)
     end)
 
@@ -271,7 +281,7 @@ function M.register(harness)
         t:assert_equal("0", env.sections[5].enable)
     end)
 
-    harness:test("unit", "Auto managers ignore legacy flags and protect controls and manual settings", function(t)
+    harness:test("unit", "Auto managers ignore legacy flags and protect controls while manual selection stays editable", function(t)
         local env = fixture(t)
         for index = 1, 3 do env.sections[index].enable = "0" end
         t:assert_equal("auto_mode_disabled", state.set_auto_enabled(env.cursor, "fixture.tools", "scan", true).code)
@@ -283,15 +293,41 @@ function M.register(harness)
                     state.set_auto_enabled(env.cursor, "oasis.tool.manager", name, desired).code)
             end
         end
-        t:assert_equal("auto_mode_active", state.set_enabled_persistent(env.cursor,
-            "fixture.tools", "scan", true, { manual_only = true }).code)
-        t:assert_equal("0", env.sections[5].enable)
+        t:assert_equal("OK", state.set_enabled_persistent(env.cursor,
+            "fixture.tools", "scan", true, { manual_only = true }).status)
+        t:assert_equal("1", env.sections[5].enable)
+        t:assert_equal(CONTROLS, enabled(t, env))
         state.set_auto_mode(env.cursor, "0")
         t:assert_equal("protected_control_tool", state.set_enabled_persistent(env.cursor,
             "oasis.tool.manager", "get_tool_list", true, { manual_only = true }).code)
         t:assert_equal("OK", state.set_enabled_persistent(env.cursor,
             "fixture.tools", "scan", true, { manual_only = true }).status)
         t:assert_equal("scan,weather", enabled(t, env))
+    end)
+
+    harness:test("unit", "manual saves do not change Agent selections, fingerprints or mode generation", function(t)
+        for _,selected in ipairs({false,true}) do
+            for _,manual in ipairs({false,true}) do
+                local env = fixture(t)
+                state.set_auto_mode(env.cursor, "1")
+                state.set_auto_enabled(env.cursor, "fixture.tools", "scan", selected)
+                local before_runtime = jsonc.stringify(env.runtime)
+                local before_mode = state.get_mode(env.cursor).token
+                local before_effective = enabled(t, env)
+                local before_definition = state.fingerprint(env.sections[5])
+                local result = state.set_enabled_persistent(env.cursor, "fixture.tools", "scan", manual, {manual_only=true})
+                t:assert_equal("OK", result.status)
+                t:assert_equal(manual and "1" or "0", env.sections[5].enable)
+                t:assert_equal(before_runtime, jsonc.stringify(env.runtime))
+                t:assert_equal(before_mode, state.get_mode(env.cursor).token)
+                t:assert_equal(before_definition, state.fingerprint(env.sections[5]))
+                t:assert_equal(before_effective, enabled(t, env))
+                state.set_auto_mode(env.cursor, "0")
+                t:assert_equal(manual and "scan,weather" or "weather", enabled(t, env))
+                state.set_auto_mode(env.cursor, "1")
+                t:assert_equal(before_effective, enabled(t, env))
+            end
+        end
     end)
 
     harness:test("unit", "Auto state is bound to exact tool identity and current definition", function(t)
@@ -326,7 +362,7 @@ function M.register(harness)
         t:assert_equal("uci_set_failed", state.set_auto_mode(env.cursor, "1").code)
         env.set_fails = false
         env.lock_busy = true
-        t:assert_equal("auto_state_failed", state.set_auto_mode(env.cursor, "1").code)
+        t:assert_equal("mode_lock_failed", state.set_auto_mode(env.cursor, "1").code)
         env.lock_busy = false
         t:assert_equal("invalid_enable", state.set_auto_mode(env.cursor, "yes").code)
         state.set_auto_mode(env.cursor, "1")

@@ -55,22 +55,8 @@ end
 
 -- The same lock serializes volatile mutations and persistent mode changes.
 -- Readers see either complete file through atomic rename; no partial JSON.
-function M.with_lock(callback)
-    if not directory(true)
-        or not private_path(DIRECTORY .. "/lock", "reg", true) then
-        return nil, "Unsafe Auto tool lock path or permissions."
-    end
-    local lock = nixio.open(DIRECTORY .. "/lock", "a", "0600")
-    if not lock then return nil, "Failed to open Auto tool lock." end
-    if not lock:lock("tlock") then
-        lock:close()
-        return nil, "Another Auto tool update is in progress."
-    end
-    local ok, result, err = pcall(callback)
-    lock:lock("ulock")
-    lock:close()
-    if not ok then return nil, "Auto tool update failed." end
-    return result, err
+M.with_lock = function(callback)
+    return require("oasis.mode_lock").with_lock(callback)
 end
 
 -- Called only while holding with_lock(). Exclusive creation and the private

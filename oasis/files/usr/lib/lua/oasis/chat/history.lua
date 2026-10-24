@@ -93,7 +93,7 @@ function M.validate(doc)
             or not doc.messages[turn.user_message]
             or doc.messages[turn.user_message].role ~= "user"
             or users[turn.user_message] or not array(turn.requests, 128)
-            or not ({incomplete=true, completed=true, failed=true})[turn.status] then
+            or not ({incomplete=true, completed=true, failed=true, waiting_input=true, waiting_confirmation=true})[turn.status] then
             return nil, "Invalid turn or user-message association."
         end
         users[turn.user_message], last_user = true, turn.user_message

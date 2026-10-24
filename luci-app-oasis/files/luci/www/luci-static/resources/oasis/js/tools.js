@@ -16,7 +16,6 @@
 
   const API_ENABLE = getUrl('enableTool');
   const API_DISABLE = getUrl('disableTool');
-  const API_AUTO = getUrl('setToolAuto');
   const URL_REFRESH_TOOLS = getUrl('refreshTools');
   const URL_LOAD_TOOLS = getUrl('loadTools');
   const URL_LOAD_MANIFEST = getUrl('loadManifest');
@@ -40,9 +39,9 @@
   const confirmApplyBtn = document.getElementById('tools-confirm-apply');
   const confirmCancelBtn = document.getElementById('tools-confirm-cancel');
   let pendingManifests = [];
-  let autoMode = false;
   let changingState = false;
   let stateKnown = false;
+  let canEnableTools = false;
   let pendingSwitchKey = null;
   let switches = [];
   let loadGeneration = 0;
@@ -506,17 +505,17 @@
       JSON.stringify([tool.server || '', tool.name || '']),
       (tool.server ? tool.server + ' / ' : '') + (tool.name || t('unknownTool', 'Unknown')),
       isEnabled, isEnabled ? t('enabled', 'Enabled') : t('disabled', 'Disabled'),
-      !isConflict && !autoMode, false
+      !isConflict && (isEnabled || canEnableTools), false
     );
-    if (isConflict || autoMode) {
-      control.button.title = isConflict ? t('conflictTitle', 'Conflict: cannot change state') : t('autoManaged', 'Managed by AI');
+    if (isConflict) {
+      control.button.title = t('conflictTitle', 'Conflict: cannot change state');
+    } else if (!isEnabled && !canEnableTools) {
+      control.button.title = t('functionCallingRequired', 'Enable Function Calling for the selected AI service in General Setting to enable tools.');
     }
-    if (autoMode) {
-      const managed = document.createElement('span');
-      managed.className = 'tools-switch-note';
-      managed.textContent = t('autoManaged', 'Managed by AI');
-      footer.appendChild(managed);
-    }
+    const purpose = document.createElement('span');
+    purpose.className = 'tools-switch-note';
+    purpose.textContent = t('normalModeUse', 'Use in Normal mode');
+    footer.appendChild(purpose);
     control.button.addEventListener('click', () => {
       if (!tool.name) { showToast(t('missingName', 'Missing tool name'), 'error'); return; }
       return saveSwitch(control, isEnabled ? API_DISABLE : API_ENABLE,
@@ -531,25 +530,10 @@
     return cell;
   }
 
-  function createAutoSwitch(available) {
-    const block = document.createElement('div');
-    block.className = 'server-block auto-mode-block';
-    const control = createStateSwitch('auto', t('autoMode', 'Auto mode'), autoMode,
-      autoMode ? t('autoOn', 'Auto: ON') : t('autoOff', 'Auto: OFF'), available, true);
-    const description = document.createElement('p');
-    description.className = 'server-description';
-    description.textContent = autoMode
-      ? t('autoDescription', 'AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots.')
-      : t('manualDescription', 'Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled.');
-    block.appendChild(control.button);
-    block.appendChild(description);
-    control.button.addEventListener('click', () =>
-      saveSwitch(control, API_AUTO, { enable: autoMode ? '0' : '1' }));
-    return block;
-  }
-
   function loadTools() {
     const generation = ++loadGeneration;
+    stateKnown = false;
+    syncSwitches();
     return fetch(URL_LOAD_TOOLS, { cache: 'no-store' })
       .then(response => {
         if (!response.ok) throw new Error(t('updateFailed', 'Failed to update tool state'));
@@ -558,12 +542,13 @@
       .then(data => {
         if (generation !== loadGeneration) return;
         if (!data || typeof data !== 'object' || Array.isArray(data)
-            || (data.local_tool !== false && (typeof data.auto_mode !== 'boolean'
-              || typeof data.mode_available !== 'boolean'
+            || (data.local_tool !== false && (data.selection_mode !== 'manual'
+              || typeof data.can_enable !== 'boolean'
               || (data.status !== 'OK' && data.status !== 'NG')))) {
           throw new Error(t('updateFailed', 'Failed to update tool state'));
         }
         stateKnown = true;
+        canEnableTools = data.can_enable === true;
         switches = [];
         if (data && data.local_tool === false) {
           if (headBar) headBar.style.display = 'none';
@@ -581,8 +566,19 @@
         if (container) {
           container.innerHTML = '';
         }
-        autoMode = data.auto_mode === true;
-        if (container) container.appendChild(createAutoSwitch(data.mode_available === true));
+        if (container) {
+          const note = document.createElement('p');
+          note.className = 'server-description';
+          note.textContent = t('manualSelectionNotice', 'These settings apply when Agent mode is OFF. They do not affect tool selection while Agent mode is ON.');
+          container.appendChild(note);
+          if (!canEnableTools) {
+            const notice = document.createElement('p');
+            notice.className = 'server-description';
+            notice.setAttribute('role', 'status');
+            notice.textContent = t('functionCallingRequired', 'Enable Function Calling for the selected AI service in General Setting to enable tools.');
+            container.appendChild(notice);
+          }
+        }
         if (data.status === 'NG') {
           showErrorModal(data.error || t('updateFailed', 'Failed to update tool state'));
           return;
@@ -621,4 +617,6 @@
   }
 
   loadTools();
+  window.addEventListener('focus', () => { if (!changingState) loadTools(); });
+  window.addEventListener('pageshow', event => { if (event.persisted && !changingState) loadTools(); });
 })();

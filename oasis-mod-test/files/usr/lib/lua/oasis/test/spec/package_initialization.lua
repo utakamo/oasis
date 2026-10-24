@@ -1,13 +1,12 @@
 local M = {}
 
 local INITIALIZATION_MARKER =
-    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r16"
+    "/etc/oasis/.oasis-mod-tool-initialized-1.1.1-r18"
 local OWNED_MANIFESTS = {
     "/etc/oasis/tool-manifest.d/ubus_direct.openwrt-core.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.network.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.service.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.system.json",
-    "/etc/oasis/tool-manifest.d/lua.oasis.tool.manager.json",
     "/etc/oasis/tool-manifest.d/lua.oasis.wireless.json",
     "/etc/oasis/tool-manifest.d/ucode.oasis_plugin_server.uc.json",
 }
@@ -75,7 +74,7 @@ local function run_initialize(options)
         "oasis.common",
         "oasis.chat.misc",
         "oasis.local.tool.client",
-        "oasis.local.tool.uci_transaction",
+        "oasis.uci_transaction",
     }
     local saved_modules = {}
     for _, name in ipairs(module_names) do
@@ -178,7 +177,7 @@ local function run_initialize(options)
             return true, { manifest_path = path }
         end,
     }
-    package.loaded["oasis.local.tool.uci_transaction"] = {
+    package.loaded["oasis.uci_transaction"] = {
         run = function(_, callback)
             if options.transaction_fails then
                 return false, "injected transaction failure",

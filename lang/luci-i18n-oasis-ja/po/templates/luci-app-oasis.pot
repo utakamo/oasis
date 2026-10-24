@@ -6,7 +6,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: luci-app-oasis/files/luci/view/chat.htm:241
+#: luci-app-oasis/files/luci/view/chat.htm:266
 msgid "### [User's {config} config]"
 msgstr ""
 
@@ -14,15 +14,15 @@ msgstr ""
 msgid "A key is currently configured."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:211
+#: luci-app-oasis/files/luci/view/chat.htm:236
 msgid "A network error occurred. Please check your network connection and AI service settings."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:210
+#: luci-app-oasis/files/luci/view/chat.htm:235
 msgid "A network error occurred. Please try again later."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:269
+#: luci-app-oasis/files/luci/view/chat.htm:294
 msgid "A passphrase is already configured and is not displayed."
 msgstr ""
 
@@ -31,12 +31,8 @@ msgid "AI Services"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/tools.htm:26
-#: luci-app-oasis/files/luci/view/tools.htm:88
+#: luci-app-oasis/files/luci/view/tools.htm:84
 msgid "AI Tool Manifest Confirmation"
-msgstr ""
-
-#: luci-app-oasis/files/luci/view/tools.htm:86
-msgid "AI selects tools independently of your manual settings. Auto selections are shared by all users until reboot. Turning Auto off and on preserves them during the same boot. The mode itself is saved across reboots."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:112
@@ -88,20 +84,32 @@ msgstr ""
 msgid "Add tool"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:246
+#: luci-app-oasis/files/luci/view/chat.htm:271
 msgid "Add {band} Wi-Fi settings"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:208
+#: luci-app-oasis/files/luci/view/chat.htm:233
 msgid "Additional message"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:151
+#: luci-app-oasis/files/luci/view/chat.htm:39
+msgid "Agent mode"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:197
+msgid "Agent: OFF"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:196
+msgid "Agent: ON"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:159
 msgid "Agree and send"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/tools.htm:16
-#: luci-app-oasis/files/luci/view/tools.htm:61
+#: luci-app-oasis/files/luci/view/tools.htm:63
 msgid "An error occurred."
 msgstr ""
 
@@ -109,13 +117,13 @@ msgstr ""
 msgid "An external RPC account is configured."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:236
+#: luci-app-oasis/files/luci/view/chat.htm:261
 #: luci-app-oasis/files/luci/view/tools.htm:33
-#: luci-app-oasis/files/luci/view/tools.htm:90
+#: luci-app-oasis/files/luci/view/tools.htm:86
 msgid "Apply"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:235
+#: luci-app-oasis/files/luci/view/chat.htm:260
 msgid "Applying the settings..."
 msgstr ""
 
@@ -128,20 +136,8 @@ msgid "Arg name"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/chat.htm:13
-#: luci-app-oasis/files/luci/view/chat.htm:62
+#: luci-app-oasis/files/luci/view/chat.htm:70
 msgid "Attach UCI info"
-msgstr ""
-
-#: luci-app-oasis/files/luci/view/tools.htm:82
-msgid "Auto mode"
-msgstr ""
-
-#: luci-app-oasis/files/luci/view/tools.htm:84
-msgid "Auto: OFF"
-msgstr ""
-
-#: luci-app-oasis/files/luci/view/tools.htm:83
-msgid "Auto: ON"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:181
@@ -160,15 +156,15 @@ msgstr ""
 msgid "Call body (editable)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:138
-#: luci-app-oasis/files/luci/view/chat.htm:150
-#: luci-app-oasis/files/luci/view/chat.htm:224
-#: luci-app-oasis/files/luci/view/chat.htm:76
-#: luci-app-oasis/files/luci/view/chat.htm:85
-#: luci-app-oasis/files/luci/view/chat.htm:95
+#: luci-app-oasis/files/luci/view/chat.htm:103
+#: luci-app-oasis/files/luci/view/chat.htm:146
+#: luci-app-oasis/files/luci/view/chat.htm:158
+#: luci-app-oasis/files/luci/view/chat.htm:249
+#: luci-app-oasis/files/luci/view/chat.htm:84
+#: luci-app-oasis/files/luci/view/chat.htm:93
 #: luci-app-oasis/files/luci/view/icons.htm:37
 #: luci-app-oasis/files/luci/view/tools.htm:32
-#: luci-app-oasis/files/luci/view/tools.htm:91
+#: luci-app-oasis/files/luci/view/tools.htm:87
 msgid "Cancel"
 msgstr ""
 
@@ -176,11 +172,11 @@ msgstr ""
 msgid "Chat Completions API"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:240
+#: luci-app-oasis/files/luci/view/chat.htm:265
 msgid "Chat data file is too large (max 512KB)."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:272
+#: luci-app-oasis/files/luci/view/chat.htm:297
 msgid "Check the Wi-Fi settings fields."
 msgstr ""
 
@@ -200,8 +196,8 @@ msgstr ""
 msgid "Clear stored key"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:133
-#: luci-app-oasis/files/luci/view/chat.htm:225
+#: luci-app-oasis/files/luci/view/chat.htm:141
+#: luci-app-oasis/files/luci/view/chat.htm:250
 msgid "Close"
 msgstr ""
 
@@ -213,7 +209,7 @@ msgstr ""
 msgid "Confirm password"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:69
+#: luci-app-oasis/files/luci/view/tools.htm:71
 msgid "Conflict: cannot change state"
 msgstr ""
 
@@ -229,8 +225,16 @@ msgstr ""
 msgid "Correct the highlighted fields before saving."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:244
+#: luci-app-oasis/files/luci/view/chat.htm:207
+msgid "Could not change the conversation mode."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:269
 msgid "Could not load the UCI configuration. Your message was not sent. Please try again."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:206
+msgid "Could not load the conversation mode."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/sysmsg.htm:10
@@ -254,14 +258,14 @@ msgstr ""
 msgid "Custom endpoint URL"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:253
-#: luci-app-oasis/files/luci/view/chat.htm:73
+#: luci-app-oasis/files/luci/view/chat.htm:278
+#: luci-app-oasis/files/luci/view/chat.htm:81
 #: luci-app-oasis/files/luci/view/icons.htm:14
 #: luci-app-oasis/files/luci/view/sysmsg.htm:84
 msgid "Delete"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:247
+#: luci-app-oasis/files/luci/view/chat.htm:272
 msgid "Delete Wi-Fi settings"
 msgstr ""
 
@@ -283,16 +287,16 @@ msgstr ""
 msgid "Deleted"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:67
+#: luci-app-oasis/files/luci/view/tools.htm:69
 msgid "Disable"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:195
+#: luci-app-oasis/files/luci/view/chat.htm:220
 msgid "Disable tool"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:176
-#: luci-app-oasis/files/luci/view/tools.htm:64
+#: luci-app-oasis/files/luci/view/tools.htm:66
 msgid "Disabled"
 msgstr ""
 
@@ -309,7 +313,7 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:190
+#: luci-app-oasis/files/luci/view/chat.htm:215
 #: luci-app-oasis/files/luci/view/chat.htm:32
 msgid "Downloading..."
 msgstr ""
@@ -322,19 +326,27 @@ msgstr ""
 msgid "Each service identifier must be unique."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:68
+#: luci-app-oasis/files/luci/view/tools.htm:70
 msgid "Enable"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/tools.htm:58
+msgid "Enable Function Calling for the selected AI service in General Setting to enable tools."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:201
+msgid "Enable Local Tool support to use Agent mode."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:163
 msgid "Enable only when the selected provider and model support tool use."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:194
+#: luci-app-oasis/files/luci/view/chat.htm:219
 msgid "Enable tool"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:63
+#: luci-app-oasis/files/luci/view/tools.htm:65
 msgid "Enabled"
 msgstr ""
 
@@ -342,7 +354,7 @@ msgstr ""
 msgid "Enabled with manual budget"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:259
+#: luci-app-oasis/files/luci/view/chat.htm:284
 msgid "Encryption"
 msgstr ""
 
@@ -379,19 +391,19 @@ msgstr ""
 msgid "Enter at least 1024 and less than Max Tokens."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:215
+#: luci-app-oasis/files/luci/view/chat.htm:240
 msgid "Enter new title"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:107
+#: luci-app-oasis/files/luci/view/chat.htm:115
 msgid "Executed reboot system!!"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:189
+#: luci-app-oasis/files/luci/view/chat.htm:214
 msgid "Executing tool..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:75
+#: luci-app-oasis/files/luci/view/chat.htm:83
 msgid "Export"
 msgstr ""
 
@@ -428,27 +440,27 @@ msgstr ""
 msgid "External system message title"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:198
+#: luci-app-oasis/files/luci/view/chat.htm:223
 msgid "Failed"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:251
+#: luci-app-oasis/files/luci/view/chat.htm:276
 msgid "Failed to delete Wi-Fi settings. Try again."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:212
+#: luci-app-oasis/files/luci/view/chat.htm:237
 msgid "Failed to delete chat. Please try again."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:214
+#: luci-app-oasis/files/luci/view/chat.htm:239
 msgid "Failed to import chat. Please try again."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:248
+#: luci-app-oasis/files/luci/view/chat.htm:273
 msgid "Failed to load Wi-Fi settings. Try again."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:77
+#: luci-app-oasis/files/luci/view/tools.htm:79
 msgid "Failed to load manifest."
 msgstr ""
 
@@ -460,11 +472,11 @@ msgstr ""
 msgid "Failed to load settings. Check the settings API and try again."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:59
+#: luci-app-oasis/files/luci/view/tools.htm:61
 msgid "Failed to refresh services"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:249
+#: luci-app-oasis/files/luci/view/chat.htm:274
 msgid "Failed to save Wi-Fi settings. Check the fields and try again."
 msgstr ""
 
@@ -476,17 +488,17 @@ msgstr ""
 msgid "Failed to save the external RPC account."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:72
+#: luci-app-oasis/files/luci/view/tools.htm:74
 msgid "Failed to update tool state"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:115
-#: luci-app-oasis/files/luci/view/chat.htm:230
+#: luci-app-oasis/files/luci/view/chat.htm:123
+#: luci-app-oasis/files/luci/view/chat.htm:255
 msgid "Finalize"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:112
-#: luci-app-oasis/files/luci/view/chat.htm:229
+#: luci-app-oasis/files/luci/view/chat.htm:120
+#: luci-app-oasis/files/luci/view/chat.htm:254
 msgid "Finalize this settings?"
 msgstr ""
 
@@ -523,29 +535,37 @@ msgstr ""
 msgid "Get current temperature for a given location."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:74
+#: luci-app-oasis/files/luci/view/tools.htm:76
 msgid "Hide Manifest"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/chat.htm:17
-#: luci-app-oasis/files/luci/view/chat.htm:66
+#: luci-app-oasis/files/luci/view/chat.htm:74
 msgid "History"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:60
+#: luci-app-oasis/files/luci/view/chat.htm:68
 #: luci-app-oasis/files/luci/view/chat.htm:7
 msgid "Import Chat Data +"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:200
+msgid "Install a compatible oasis-mod-tool package."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:198
+msgid "Install or repair oasis-mod-agent to use Agent mode."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:111
 msgid "Integration"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:206
+#: luci-app-oasis/files/luci/view/chat.htm:231
 msgid "Invalid tool response."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:207
+#: luci-app-oasis/files/luci/view/chat.htm:232
 msgid "Invalid tool response: missing {fields}"
 msgstr ""
 
@@ -553,11 +573,11 @@ msgstr ""
 msgid "Keep current key"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:266
+#: luci-app-oasis/files/luci/view/chat.htm:291
 msgid "Leave empty to keep the current passphrase."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:193
+#: luci-app-oasis/files/luci/view/chat.htm:218
 msgid "List tools"
 msgstr ""
 
@@ -577,7 +597,7 @@ msgstr ""
 msgid "Loaded"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:75
+#: luci-app-oasis/files/luci/view/tools.htm:77
 msgid "Loading manifest..."
 msgstr ""
 
@@ -585,10 +605,12 @@ msgstr ""
 msgid "Loading settings..."
 msgstr ""
 
+#: luci-app-oasis/files/luci/view/chat.htm:195
+#: luci-app-oasis/files/luci/view/chat.htm:40
 #: luci-app-oasis/files/luci/view/icons.htm:54
 #: luci-app-oasis/files/luci/view/rollback-list.htm:44
 #: luci-app-oasis/files/luci/view/sysmsg.htm:81
-#: luci-app-oasis/files/luci/view/tools.htm:71
+#: luci-app-oasis/files/luci/view/tools.htm:73
 msgid "Loading..."
 msgstr ""
 
@@ -596,24 +618,16 @@ msgstr ""
 msgid "Local Tools"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:85
-msgid "Managed by AI"
-msgstr ""
-
-#: luci-app-oasis/files/luci/view/tools.htm:73
+#: luci-app-oasis/files/luci/view/tools.htm:75
 msgid "Manifest"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:92
+#: luci-app-oasis/files/luci/view/tools.htm:88
 msgid "Manifest Path"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:76
+#: luci-app-oasis/files/luci/view/tools.htm:78
 msgid "Manifest not found."
-msgstr ""
-
-#: luci-app-oasis/files/luci/view/tools.htm:87
-msgid "Manual mode uses your saved tool settings. In Auto mode, AI can enable tools even if they are disabled here. After reboot, Auto starts with only tool discovery and management enabled."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:179
@@ -632,9 +646,13 @@ msgstr ""
 msgid "Missing tool description"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:70
+#: luci-app-oasis/files/luci/view/tools.htm:72
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:85
 msgid "Missing tool name"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:205
+msgid "Mode status unavailable"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:150
@@ -676,7 +694,7 @@ msgstr ""
 msgid "No"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:239
+#: luci-app-oasis/files/luci/view/chat.htm:264
 msgid "No AI Service"
 msgstr ""
 
@@ -692,19 +710,19 @@ msgstr ""
 msgid "No UCI commands found."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:256
+#: luci-app-oasis/files/luci/view/chat.htm:281
 msgid "No Wi-Fi access point settings were found."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:199
+#: luci-app-oasis/files/luci/view/chat.htm:224
 msgid "No change"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:66
+#: luci-app-oasis/files/luci/view/tools.htm:68
 msgid "No description."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:255
+#: luci-app-oasis/files/luci/view/chat.htm:280
 msgid "No editable Wi-Fi access points were found."
 msgstr ""
 
@@ -716,7 +734,7 @@ msgstr ""
 msgid "No key is currently configured."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:257
+#: luci-app-oasis/files/luci/view/chat.htm:282
 msgid "No radio is available for the requested Wi-Fi band."
 msgstr ""
 
@@ -724,15 +742,15 @@ msgstr ""
 msgid "No response"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:209
+#: luci-app-oasis/files/luci/view/chat.htm:234
 msgid "No response from AI service. Please check settings."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:98
+#: luci-app-oasis/files/luci/view/tools.htm:94
 msgid "None"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:201
+#: luci-app-oasis/files/luci/view/chat.htm:226
 msgid "Not executed"
 msgstr ""
 
@@ -744,19 +762,19 @@ msgstr ""
 msgid "Official endpoint"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:260
+#: luci-app-oasis/files/luci/view/chat.htm:285
 msgid "Open (no password)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:273
+#: luci-app-oasis/files/luci/view/chat.htm:298
 msgid "Open networks do not use a passphrase."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:45
+#: luci-app-oasis/files/luci/view/chat.htm:53
 msgid "Open options"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:265
+#: luci-app-oasis/files/luci/view/chat.htm:290
 msgid "Passphrase"
 msgstr ""
 
@@ -780,7 +798,7 @@ msgstr ""
 msgid "Please input system message title"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:80
+#: luci-app-oasis/files/luci/view/tools.htm:82
 msgid "Please install the extension module 'oasis-mod-tool' to enable local tools."
 msgstr ""
 
@@ -792,7 +810,7 @@ msgstr ""
 msgid "Please select an image file."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:188
+#: luci-app-oasis/files/luci/view/chat.htm:213
 msgid "Please wait {seconds}s ({percent}%)"
 msgstr ""
 
@@ -804,41 +822,45 @@ msgstr ""
 msgid "RPC access"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:270
+#: luci-app-oasis/files/luci/view/chat.htm:295
 msgid "Radio"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:232
-#: luci-app-oasis/files/luci/view/chat.htm:93
+#: luci-app-oasis/files/luci/view/chat.htm:101
+#: luci-app-oasis/files/luci/view/chat.htm:257
 msgid "Raw(JSON)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:219
+#: luci-app-oasis/files/luci/view/chat.htm:244
 msgid "Reboot"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:186
+#: luci-app-oasis/files/luci/view/chat.htm:211
 msgid "Rebooting in {seconds}s ({percent}%)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:185
+#: luci-app-oasis/files/luci/view/chat.htm:210
 msgid "Rebooting..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:60
+#: luci-app-oasis/files/luci/view/tools.htm:62
 #: luci-app-oasis/files/luci/view/tools.htm:9
 msgid "Refresh"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:202
+msgid "Refresh Agent tool registrations before enabling Agent mode."
 msgstr ""
 
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:91
 msgid "Refresh failed"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:237
+#: luci-app-oasis/files/luci/view/chat.htm:262
 msgid "Reloading in {seconds}s ({percent}%)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:254
+#: luci-app-oasis/files/luci/view/chat.htm:279
 msgid "Remove Wi-Fi network \"{ssid}\"? This cannot be undone."
 msgstr ""
 
@@ -858,12 +880,12 @@ msgstr ""
 msgid "Remove this AI service from the configuration?"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:74
-#: luci-app-oasis/files/luci/view/chat.htm:84
+#: luci-app-oasis/files/luci/view/chat.htm:82
+#: luci-app-oasis/files/luci/view/chat.htm:92
 msgid "Rename"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:81
+#: luci-app-oasis/files/luci/view/chat.htm:89
 msgid "Rename chat name"
 msgstr ""
 
@@ -883,19 +905,19 @@ msgstr ""
 msgid "Responses API"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:228
+#: luci-app-oasis/files/luci/view/chat.htm:253
 msgid "Restart"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:187
+#: luci-app-oasis/files/luci/view/chat.htm:212
 msgid "Restarting service..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:200
+#: luci-app-oasis/files/luci/view/chat.htm:225
 msgid "Result received"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:202
+#: luci-app-oasis/files/luci/view/chat.htm:227
 msgid "Result unconfirmed"
 msgstr ""
 
@@ -903,8 +925,8 @@ msgstr ""
 msgid "Retry"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:116
-#: luci-app-oasis/files/luci/view/chat.htm:231
+#: luci-app-oasis/files/luci/view/chat.htm:124
+#: luci-app-oasis/files/luci/view/chat.htm:256
 #: luci-app-oasis/files/luci/view/rollback-list.htm:41
 #: luci-app-oasis/files/luci/view/setting-v2.htm:141
 msgid "Rollback"
@@ -918,15 +940,15 @@ msgstr ""
 msgid "Rollback has been executed. You can access the UI again once the system has fully restarted."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:238
+#: luci-app-oasis/files/luci/view/chat.htm:263
 msgid "Rolling back..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:58
+#: luci-app-oasis/files/luci/view/tools.htm:60
 msgid "Running..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:258
+#: luci-app-oasis/files/luci/view/chat.htm:283
 msgid "SSID"
 msgstr ""
 
@@ -934,7 +956,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:139
+#: luci-app-oasis/files/luci/view/chat.htm:147
 msgid "Save Wi-Fi settings"
 msgstr ""
 
@@ -955,7 +977,7 @@ msgstr ""
 msgid "Select AI Icon"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:91
+#: luci-app-oasis/files/luci/view/chat.htm:99
 msgid "Select Export Type"
 msgstr ""
 
@@ -979,7 +1001,7 @@ msgstr ""
 msgid "Selected"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:44
+#: luci-app-oasis/files/luci/view/chat.htm:52
 msgid "Send"
 msgstr ""
 
@@ -987,15 +1009,15 @@ msgstr ""
 msgid "Server script name"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:96
+#: luci-app-oasis/files/luci/view/tools.htm:92
 msgid "Servers"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:227
+#: luci-app-oasis/files/luci/view/chat.htm:252
 msgid "Service \"{name}\" needs restart. Restart now?"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:226
+#: luci-app-oasis/files/luci/view/chat.htm:251
 msgid "Service restart is required. Restart now?"
 msgstr ""
 
@@ -1003,33 +1025,37 @@ msgstr ""
 msgid "Settings saved successfully."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:146
+#: luci-app-oasis/files/luci/view/chat.htm:154
 msgid "Share UCI configuration with AI?"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:42
+msgid "Shared by all chats, users and CLI sessions. The mode is saved across reboots."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/setting-v2.htm:165
 msgid "Show thinking"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:221
+#: luci-app-oasis/files/luci/view/chat.htm:246
 msgid "Shutdown"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:223
+#: luci-app-oasis/files/luci/view/chat.htm:248
 msgid "Shutting down in {seconds}s ({percent}%)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:222
+#: luci-app-oasis/files/luci/view/chat.htm:247
 msgid "Shutting down..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:79
-#: luci-app-oasis/files/luci/view/tools.htm:94
+#: luci-app-oasis/files/luci/view/tools.htm:81
+#: luci-app-oasis/files/luci/view/tools.htm:90
 msgid "Source Path"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:78
-#: luci-app-oasis/files/luci/view/tools.htm:93
+#: luci-app-oasis/files/luci/view/tools.htm:80
+#: luci-app-oasis/files/luci/view/tools.htm:89
 msgid "Source Type"
 msgstr ""
 
@@ -1045,12 +1071,12 @@ msgstr ""
 msgid "Store rollback data"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:197
+#: luci-app-oasis/files/luci/view/chat.htm:222
 msgid "Succeeded"
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/chat.htm:11
-#: luci-app-oasis/files/luci/view/chat.htm:38
+#: luci-app-oasis/files/luci/view/chat.htm:46
 msgid "System Message"
 msgstr ""
 
@@ -1058,11 +1084,11 @@ msgstr ""
 msgid "System Message List"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:218
+#: luci-app-oasis/files/luci/view/chat.htm:243
 msgid "System reboot is required. Reboot now?"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:220
+#: luci-app-oasis/files/luci/view/chat.htm:245
 msgid "System shutdown is required. Shutdown now?"
 msgstr ""
 
@@ -1072,12 +1098,12 @@ msgstr ""
 msgid "TITLE:"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:233
-#: luci-app-oasis/files/luci/view/chat.htm:94
+#: luci-app-oasis/files/luci/view/chat.htm:102
+#: luci-app-oasis/files/luci/view/chat.htm:258
 msgid "Text"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:242
+#: luci-app-oasis/files/luci/view/chat.htm:267
 msgid "The \"{config}\" UCI configuration will be included in your chat message and sent to the selected AI service. It may contain router information or credentials. Do you agree to share it?"
 msgstr ""
 
@@ -1086,7 +1112,7 @@ msgid "The first service is active."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/tools.htm:28
-#: luci-app-oasis/files/luci/view/tools.htm:89
+#: luci-app-oasis/files/luci/view/tools.htm:85
 msgid "The following AI tool manifests are not yet applied. Applying them will register their tools in Oasis."
 msgstr ""
 
@@ -1106,6 +1132,14 @@ msgstr ""
 msgid "The rollback module is unavailable. Its settings cannot be changed."
 msgstr ""
 
+#: luci-app-oasis/files/luci/view/chat.htm:204
+msgid "The selected AI service does not support Agent tools."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:203
+msgid "The selected AI service has Function Calling disabled."
+msgstr ""
+
 #: luci-app-oasis/files/luci/view/setting-v2.htm:202
 msgid "The settings changed after this page was loaded. Load the latest settings before saving again."
 msgstr ""
@@ -1118,7 +1152,11 @@ msgstr ""
 msgid "The value is too long."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:217
+#: luci-app-oasis/files/luci/view/tools.htm:57
+msgid "These settings apply when Agent mode is OFF. They do not affect tool selection while Agent mode is ON."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:242
 msgid "Thinking"
 msgstr ""
 
@@ -1126,11 +1164,11 @@ msgstr ""
 msgid "Thinking mode"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:216
+#: luci-app-oasis/files/luci/view/chat.htm:241
 msgid "Thinking..."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:271
+#: luci-app-oasis/files/luci/view/chat.htm:296
 msgid "This encryption mode is not supported by the Oasis Wi-Fi form. Use Network → Wireless to edit it."
 msgstr ""
 
@@ -1138,15 +1176,23 @@ msgstr ""
 msgid "This field is required."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:204
+#: luci-app-oasis/files/luci/view/chat.htm:229
 msgid "This response failed."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:203
+#: luci-app-oasis/files/luci/view/chat.htm:228
 msgid "This response was not completed."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:95
+#: luci-app-oasis/files/luci/view/chat.htm:209
+msgid "This turn stopped for user confirmation."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:208
+msgid "This turn stopped for user input."
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/tools.htm:91
 msgid "Tool Count"
 msgstr ""
 
@@ -1154,7 +1200,7 @@ msgstr ""
 msgid "Tool Maker"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:192
+#: luci-app-oasis/files/luci/view/chat.htm:217
 msgid "Tool activity"
 msgstr ""
 
@@ -1166,7 +1212,7 @@ msgstr ""
 msgid "Tool description"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:196
+#: luci-app-oasis/files/luci/view/chat.htm:221
 msgid "Tool execution"
 msgstr ""
 
@@ -1178,11 +1224,11 @@ msgstr ""
 msgid "Tool type"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:191
+#: luci-app-oasis/files/luci/view/chat.htm:216
 msgid "Tool used:"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:97
+#: luci-app-oasis/files/luci/view/tools.htm:93
 #: oasis-tool-maker/files/luci/view/tool-maker.htm:23
 msgid "Tools"
 msgstr ""
@@ -1195,19 +1241,19 @@ msgstr ""
 msgid "URL:"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:213
+#: luci-app-oasis/files/luci/view/chat.htm:238
 msgid "Unexpected data format"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:62
+#: luci-app-oasis/files/luci/view/tools.htm:64
 msgid "Unknown"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:81
+#: luci-app-oasis/files/luci/view/tools.htm:83
 msgid "Unknown Server"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:205
+#: luci-app-oasis/files/luci/view/chat.htm:230
 msgid "Unknown tool"
 msgstr ""
 
@@ -1221,6 +1267,10 @@ msgstr ""
 
 #: luci-app-oasis/files/luci/view/sysmsg.htm:92
 msgid "Update failed"
+msgstr ""
+
+#: luci-app-oasis/files/luci/view/chat.htm:199
+msgid "Update oasis-mod-agent to use Agent mode."
 msgstr ""
 
 #: luci-app-oasis/files/luci/view/icons.htm:36
@@ -1254,11 +1304,11 @@ msgstr ""
 msgid "Uploaded: {path} ({bytes} bytes)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:268
+#: luci-app-oasis/files/luci/view/chat.htm:293
 msgid "Use 8–63 characters for WPA3."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:267
+#: luci-app-oasis/files/luci/view/chat.htm:292
 msgid "Use 8–63 characters. WPA2 also accepts a 64-character hexadecimal key."
 msgstr ""
 
@@ -1270,40 +1320,44 @@ msgstr ""
 msgid "Use at least 12 characters. The password is never displayed after saving."
 msgstr ""
 
+#: luci-app-oasis/files/luci/view/tools.htm:59
+msgid "Use in Normal mode"
+msgstr ""
+
 #: luci-app-oasis/files/luci/view/setting-v2.htm:120
 msgid "Username"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:261
+#: luci-app-oasis/files/luci/view/chat.htm:286
 msgid "WPA2 Personal"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:262
+#: luci-app-oasis/files/luci/view/chat.htm:287
 msgid "WPA2 Personal (CCMP)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:264
+#: luci-app-oasis/files/luci/view/chat.htm:289
 msgid "WPA2/WPA3 Personal"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:263
+#: luci-app-oasis/files/luci/view/chat.htm:288
 msgid "WPA3 Personal"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:131
+#: luci-app-oasis/files/luci/view/chat.htm:139
 msgid "Wi-Fi changes can temporarily interrupt wireless connections. Use a wired connection when possible."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:130
-#: luci-app-oasis/files/luci/view/chat.htm:245
+#: luci-app-oasis/files/luci/view/chat.htm:138
+#: luci-app-oasis/files/luci/view/chat.htm:270
 msgid "Wi-Fi settings"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:252
+#: luci-app-oasis/files/luci/view/chat.htm:277
 msgid "Wi-Fi settings deleted. The wireless connection may take a moment to return."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:250
+#: luci-app-oasis/files/luci/view/chat.htm:275
 msgid "Wi-Fi settings saved. The wireless connection may take a moment to return."
 msgstr ""
 
@@ -1321,13 +1375,13 @@ msgstr ""
 msgid "You can register and modify system messages for AI."
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:234
-#: luci-app-oasis/files/luci/view/chat.htm:41
+#: luci-app-oasis/files/luci/view/chat.htm:259
+#: luci-app-oasis/files/luci/view/chat.htm:49
 msgid "Your Message (Enter to send, Shift+Enter for newline)"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/chat.htm:148
-#: luci-app-oasis/files/luci/view/chat.htm:243
+#: luci-app-oasis/files/luci/view/chat.htm:156
+#: luci-app-oasis/files/luci/view/chat.htm:268
 msgid "Your agreement is remembered on this page until you reload it or change the AI service. Cancel keeps your message without sending it."
 msgstr ""
 
@@ -1339,7 +1393,7 @@ msgstr ""
 msgid "args and args_desc mismatch"
 msgstr ""
 
-#: luci-app-oasis/files/luci/view/tools.htm:65
+#: luci-app-oasis/files/luci/view/tools.htm:67
 msgid "conflict"
 msgstr ""
 

@@ -12,6 +12,12 @@ local function fixture(t)
     local env = { support = { local_tool = "1", tool_auto = "1", tool_auto_generation = "0" },
         mode_reads = 0, prompt_reads = 0, requests = 0, effects = 0, outgoing = {} }
     local cursor = {
+        foreach = function(_, _, _, callback)
+            for _, name in ipairs({"get_tool_list", "set_tool_enabled", "set_tool_disabled"}) do
+                callback({server="oasis.tool.manager", name=name, enable="1", conflict="0"})
+            end
+            return true
+        end,
         get_bool = function(_, _, _, option) return env.support[option] == "1" end,
         get_all = function()
             env.mode_reads = env.mode_reads + 1
@@ -48,7 +54,7 @@ local function fixture(t)
     replace(t, "luci.jsonc", jsonc)
     for _, name in ipairs({ "oasis.common", "oasis.chat.error",
         "oasis.chat.function.calling.policy", "oasis.unified.chat.schema",
-        "oasis.chat.tool_sequence", "oasis.local.tool.state" }) do
+        "oasis.chat.tool_sequence", "oasis.local.tool.state", "oasis.mode", "oasis.agent.policy", "oasis.agent.prompt" }) do
         replace(t, name, nil)
     end
     local schema = require("oasis.unified.chat.schema")
@@ -69,7 +75,7 @@ local function fixture(t)
         output = { status = "OK" } }
     replace(t, "oasis.chat.transfer", { chat_with_ai = function(service, chat)
         env.requests = env.requests + 1
-        env.outgoing[env.requests] = schema.with_auto_tool_search_prompt(service, chat)
+        env.outgoing[env.requests] = require("oasis.mode").decorate_request(service, chat)
         if env.on_request then return env.on_request(service, chat) end
         return nil, "Fixture answer", false
     end })
@@ -133,7 +139,7 @@ function M.register(harness)
             env.read_error = broken == "unreadable"
             local result = env.run()
             t:assert_false(result.ok)
-            t:assert_contains(result.error.message, "Failed to read the tool mode")
+            t:assert_contains(result.error.message:lower(), "mode")
             t:assert_equal(0, env.requests)
             t:assert_equal(1, env.mode_reads)
         end
@@ -153,7 +159,7 @@ function M.register(harness)
             t:assert_false(result.ok)
             t:assert_contains(result.error.message, "Tool mode changed")
             t:assert_equal(0, env.effects)
-            t:assert_equal(2, env.mode_reads)
+            t:assert_equal(3, env.mode_reads)
             t:assert_equal("outer-token", env.service._tool_mode_token)
         end
     end)
@@ -178,6 +184,7 @@ function M.register(harness)
 
     harness:test("portable", "tool mode failure does not block the final no-tool answer after an executed tool", function(t)
         local env = fixture(t)
+        env.support.tool_auto = "0"
         env.on_request = function()
             if env.requests == 1 then return env.authorize_and_execute() end
             return nil, "Final answer", false
@@ -188,8 +195,8 @@ function M.register(harness)
         t:assert_equal("Final answer", result.message)
         t:assert_equal(2, env.requests)
         t:assert_equal(1, env.effects)
-        t:assert_equal(2, env.mode_reads)
-        t:assert_equal(1, env.prompt_reads)
+        t:assert_equal(3, env.mode_reads)
+        t:assert_equal(0, env.prompt_reads)
         t:assert_equal(env.chat, env.outgoing[2])
     end)
 
@@ -197,7 +204,7 @@ function M.register(harness)
         local env = fixture(t)
         env.on_request = function() return env.authorize_and_execute() end
         env.after_tool = function() env.support.tool_auto_generation = "1" end
-        local result = env.run({ allow_normal_tool_chaining = true })
+        local result = env.run()
         t:assert_false(result.ok)
         t:assert_contains(result.error.message, "Tool mode changed")
         t:assert_false(result.error.can_continue)
@@ -220,7 +227,7 @@ function M.register(harness)
         local env = fixture(t)
         env.read_error = true
         env.chat.messages[#env.chat.messages + 1] = { role = "tool", content = "Fixture result" }
-        t:assert_equal(env.chat, env.schema.with_auto_tool_search_prompt(env.service, env.chat))
+        t:assert_equal(env.chat, require("oasis.mode").decorate_request(env.service, env.chat))
         t:assert_equal(0, env.prompt_reads)
     end)
 end

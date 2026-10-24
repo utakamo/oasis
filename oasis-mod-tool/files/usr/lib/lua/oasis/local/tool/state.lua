@@ -2,7 +2,7 @@ local M = {}
 
 -- Read-only compatibility marker used by the core sequence controller before
 -- it exposes the Tool Search management tools.
-M.TOOL_SEARCH_ABI = 2
+M.TOOL_SEARCH_ABI = 3
 
 local CONFIG = "oasis"
 local TOOL_SECTION_TYPE = "tool"
@@ -169,13 +169,10 @@ local function set_enabled_internal(
     options = options or {}
 
     if options.manual_only then
-        local mode, err = M.get_mode(uci)
-        if not mode then return err end
-        if mode.auto_mode then
-            return failure("auto_mode_active", "Manual tool settings cannot be changed in Auto mode.")
-        end
+        -- Manual selection is persistent configuration for Normal mode.
+        -- Editing it must not depend on, or mutate, Agent selection or mode.
         if M.is_control_tool(server_name, tool_name) then
-            return failure("protected_control_tool", "Use the Auto mode switch to manage Tool Search tools.")
+            return failure("protected_control_tool", "Use the Agent mode switch to manage Tool Search tools.")
         end
     end
 
@@ -198,6 +195,10 @@ local function set_enabled_internal(
     end
 
     local desired_enable = normalized_enable(desired)
+    if desired_enable == "1" and options.require_function_calling then
+        local allowed, err = require("oasis.mode").check_function_calling(uci)
+        if not allowed then return err end
+    end
     local tools, err = collect_tools(uci)
     if not tools then
         err.server = server_name
@@ -394,7 +395,7 @@ end
 local function run_persistent(
     uci, server_name, tool_name, transaction_callback)
     local loaded, transaction = pcall(
-        require, "oasis.local.tool.uci_transaction")
+        require, "oasis.uci_transaction")
     if not loaded or type(transaction) ~= "table"
         or type(transaction.run) ~= "function" then
         return failure(
@@ -469,23 +470,6 @@ function M.set_enabled_by_name_persistent(uci, tool_name, desired, options)
     end)
 end
 
--- Missing options on existing installations deliberately mean Manual mode.
--- Read both values in one UCI response to avoid a torn mode/generation pair.
-function M.get_mode(uci)
-    local ok, support = pcall(uci.get_all, uci, CONFIG, "support")
-    if not ok or type(support) ~= "table" then
-        return nil, failure("uci_read_failed", "Failed to read the tool mode configuration.")
-    end
-    local flag = support.tool_auto or "0"
-    local generation = support.tool_auto_generation or "0"
-    if (flag ~= "0" and flag ~= "1") or type(generation) ~= "string"
-        or not generation:match("^%d+$") or #generation > 12 then
-        return nil, failure("invalid_tool_mode", "Invalid Auto mode configuration.")
-    end
-    return { auto_mode = flag == "1", token = flag .. ":" .. generation,
-        generation = tonumber(generation) }
-end
-
 local function tool_key(tool)
     return #tool.server .. ":" .. tool.server .. tool.name
 end
@@ -502,6 +486,18 @@ local function fingerprint(tool)
     return require("oasis.chat.function.calling.policy").canonical_object(definition)
 end
 
+
+M.collect = collect_tools
+M.fingerprint = fingerprint
+M.tool_key = tool_key
+M.get_mode = function(uci) return require("oasis.mode").read(uci) end
+M.set_auto_mode = function(uci, desired, options)
+    if desired ~= "0" and desired ~= "1" then
+        return failure("invalid_enable", "Agent mode must be 0 or 1.")
+    end
+    return require("oasis.mode").set_mode(desired == "1" and "agent" or "normal", uci, nil, nil, options)
+end
+
 function M.snapshot(uci, expected_token)
     local mode, err = M.get_mode(uci)
     if not mode then return nil, err end
@@ -511,28 +507,24 @@ function M.snapshot(uci, expected_token)
     local tools
     tools, err = collect_tools(uci)
     if not tools then return nil, err end
-    local stored
+    local selected
     if mode.auto_mode then
-        stored, err = require("oasis.local.tool.auto_store").read()
-        if not stored then return nil, failure("auto_state_failed", err) end
+        local runtime
+        runtime, err = require("oasis.mode").agent_runtime(uci)
+        if not runtime then return nil, err end
+        selected, err = runtime.select_tools(tools)
+        if not selected then return nil, err end
     end
     for _, tool in ipairs(tools) do
         tool.manual_enable = tool.enable
         local control = M.is_control_tool(tool.server, tool.name)
         local reserved = CONTROL_TOOLS[tool.name] == true
-        local enabled
-        if mode.auto_mode then
-            local signature = not control and fingerprint(tool) or nil
-            enabled = control or (signature ~= nil
-                and stored.enabled[tool_key(tool)] == signature)
-        else
-            enabled = not control and tool.enable == "1"
-        end
+        local enabled = mode.auto_mode and selected[tool_key(tool)] == true
+            or (not mode.auto_mode and not control and tool.enable == "1")
         enabled = enabled and not tool.conflicted and tool.name ~= ""
             and tool.server ~= "" and (not reserved or control)
         tool.enable, tool.enabled = enabled and "1" or "0", enabled == true
     end
-    -- Recheck after the registry / runtime read, especially during a mode flip.
     local latest
     latest, err = M.get_mode(uci)
     if not latest then return nil, err end
@@ -557,89 +549,9 @@ function M.list_effective(uci)
     return { status = "OK", auto_mode = snapshot.auto_mode, tool = tools }
 end
 
-local function auto_locked(callback)
-    local result, err = require("oasis.local.tool.auto_store").with_lock(callback)
-    return result or failure("auto_state_failed", err)
-end
 
-function M.set_auto_mode(uci, desired)
-    if desired ~= "0" and desired ~= "1" then
-        return failure("invalid_enable", "Auto mode must be 0 or 1.")
-    end
-    return auto_locked(function()
-        return run_persistent(uci, nil, nil, function(private_uci)
-            local mode, err = M.get_mode(private_uci)
-            if not mode then return err end
-            if mode.auto_mode == (desired == "1") then
-                return { status = "OK", changed = false, auto_mode = mode.auto_mode }
-            end
-            if desired == "1" then
-                local tools
-                tools, err = collect_tools(private_uci)
-                if not tools then return err end
-                local controls = {}
-                for _, tool in ipairs(tools) do
-                    if M.is_control_tool(tool.server, tool.name) and not tool.conflicted then
-                        controls[tool.name] = true
-                    end
-                end
-                for name in pairs(CONTROL_TOOLS) do
-                    if not controls[name] then
-                        return failure("control_tools_unavailable", "Refresh tools before enabling Auto mode.")
-                    end
-                end
-            end
-            if mode.generation >= 999999999999
-                or private_uci:set(CONFIG, "support", "tool_auto", desired) ~= true
-                or private_uci:set(CONFIG, "support", "tool_auto_generation",
-                    string.format("%.0f", mode.generation + 1)) ~= true then
-                return failure("uci_set_failed", "Failed to update Auto mode.")
-            end
-            return { status = "OK", changed = true, auto_mode = desired == "1" }
-        end)
-    end)
+-- Compatibility entry point; Agent owns automatic-selection mutations.
+function M.set_auto_enabled(...)
+    return require("oasis.agent.state").set_enabled(...)
 end
-
-function M.set_auto_enabled(uci, server_name, tool_name, desired)
-    if not is_nonempty_string(server_name) or not is_nonempty_string(tool_name)
-        or (desired ~= true and desired ~= false) then
-        return failure("invalid_target", "An exact server, tool and boolean state are required.")
-    end
-    if CONTROL_TOOLS[tool_name] then
-        return failure("protected_control_tool", "Auto mode manages Tool Search tools automatically.")
-    end
-    return auto_locked(function()
-        local snapshot, err = M.snapshot(uci)
-        if not snapshot then return err end
-        if not snapshot.auto_mode then
-            return failure("auto_mode_disabled", "Tool Search is available only in Auto mode.")
-        end
-        local target
-        for _, tool in ipairs(snapshot.tools) do
-            if tool.server == server_name and tool.name == tool_name then
-                if tool.conflicted or target then
-                    return failure("tool_conflict", "The tool name is ambiguous or conflicted.")
-                end
-                target = tool
-            end
-        end
-        if not target then return failure("tool_not_found", "No tool matches the server and name.") end
-        local store = require("oasis.local.tool.auto_store")
-        local stored
-        stored, err = store.read()
-        if not stored then return failure("auto_state_failed", err) end
-        local signature = fingerprint(target)
-        if not signature then return failure("invalid_tool", "Invalid tool definition.") end
-        local changed = target.enabled ~= desired
-        if changed then
-            stored.enabled[tool_key(target)] = desired and signature or nil
-            local written
-            written, err = store.write(stored)
-            if not written then return failure("auto_state_failed", err) end
-        end
-        return { status = "OK", changed = changed, server = server_name,
-            tool = tool_name, enable = desired and "1" or "0", enabled = desired }
-    end)
-end
-
 return M
