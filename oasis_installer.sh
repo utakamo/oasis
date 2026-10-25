@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e  # Exit immediately if a command fails
 
-OASIS_VER="${OASIS_VER:-3.2.6-r27}"
-LUCI_VER="${LUCI_VER:-3.2.6-r38}"
-TOOL_VER="${TOOL_VER:-1.1.1-r19}"
+OASIS_VER="${OASIS_VER:-3.2.6-r28}"
+LUCI_VER="${LUCI_VER:-3.2.6-r39}"
+TOOL_VER="${TOOL_VER:-1.1.1-r20}"
 AGENT_VER="${AGENT_VER:-1.1.0-r1}"
 RELEASE_TAG="${RELEASE_TAG:-v3.2.6}"
 

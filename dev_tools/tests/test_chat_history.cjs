@@ -103,6 +103,9 @@ for (const mobile of [false, true]) {
                 service: [{identifier: 'first', name: 'OpenAI', model: 'fixture-model'}, {identifier: 'second', name: 'Ollama', model: 'another-model'}]
             });
             if (url.pathname.endsWith('/confirm')) return json({status: 'NG'});
+            if (url.pathname.endsWith('/get-mode')) return json({
+                status: 'OK', enabled: false, can_enable: true, can_disable: true, token: '0:0'
+            });
             if (url.pathname.endsWith('/load-chat-data')) return json(documents[new URLSearchParams(request.postData()).get('params')]);
             if (url.pathname.endsWith('/import-chat-data')) {
                 const raw = Buffer.from(new URLSearchParams(request.postData()).get('chat_data'), 'base64').toString('utf8');
@@ -111,8 +114,13 @@ for (const mobile of [false, true]) {
                 return json({id, title: 'インポートした会話'});
             }
             if (url.pathname.endsWith('/select-ai-service')) return json({status: 'OK'});
-            if (url.pathname === '/cgi-bin/oasis') {
-                sends.push(request.postDataJSON());
+            if (url.pathname === '/cgi-bin/luci/admin/network/oasis/chat-stream') {
+                assert.equal(request.method(), 'POST');
+                const form = new URLSearchParams(request.postData());
+                assert.equal(form.get('token'), 'fixture-token');
+                const payload = JSON.parse(form.get('payload'));
+                assert.equal(payload.cmd, undefined);
+                sends.push(payload);
                 if (failedChatId) return json({error: {chat_id: failedChatId, message: 'fixture failure', can_continue: false}});
                 return json({message: {content: '切り替え後の回答'}});
             }

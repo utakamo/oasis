@@ -1,7 +1,7 @@
 <%+header%>
 <% local translate_js = require("luci.oasis.i18n").translate_js %>
 
-<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r38">
+<link rel="stylesheet" type="text/css" href="<%= resource %>/oasis/css/chat.css?v=3.2.6-r39">
 <div class="oasis-container">
     <div class="chat-list-container">
         <label for="import-chat-data" id="import-button" style="width:100%;"><%:Import Chat Data +%></label>
@@ -169,6 +169,7 @@ window.OasisChatConfig = {
     resourcePath: '<%= resource %>',
     csrfToken: '<%=token%>',
     urls: {
+        chatStream: '<%=build_url("admin", "network", "oasis", "chat-stream")%>',
         getMode: '<%=build_url("admin", "network", "oasis", "get-mode")%>',
         setMode: '<%=build_url("admin", "network", "oasis", "set-mode")%>',
         confirm: '<%=build_url("admin", "network", "oasis", "confirm")%>',
@@ -234,6 +235,8 @@ window.OasisChatStrings = {
     noResponse: <%= translate_js("No response from AI service. Please check settings.") %>,
     networkError: <%= translate_js("A network error occurred. Please try again later.") %>,
     networkErrorDetailed: <%= translate_js("A network error occurred. Please check your network connection and AI service settings.") %>,
+    chatSessionExpired: <%= translate_js("Your LuCI session has expired or is unavailable. Reload this page and sign in again.") %>,
+    chatRequestTooLarge: <%= translate_js("The message or attached UCI configuration is too large. Shorten the message or send without the configuration.") %>,
     deleteFailed: <%= translate_js("Failed to delete chat. Please try again.") %>,
     unexpectedFormat: <%= translate_js("Unexpected data format") %>,
     importFailed: <%= translate_js("Failed to import chat. Please try again.") %>,
@@ -298,10 +301,10 @@ window.OasisChatStrings = {
     wifiOpenNetwork: <%= translate_js("Open networks do not use a passphrase.") %>
 };
 </script>
-<script src="<%= resource %>/oasis/js/chat-utils.js?v=3.2.6-r38"></script>
-<script src="<%= resource %>/oasis/js/chat-tools.js?v=3.2.6-r38"></script>
-<script src="<%= resource %>/oasis/js/chat-turn.js?v=3.2.6-r38"></script>
-<script src="<%= resource %>/oasis/js/chat-mode.js?v=3.2.6-r38"></script>
-<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r38"></script>
+<script src="<%= resource %>/oasis/js/chat-utils.js?v=3.2.6-r39"></script>
+<script src="<%= resource %>/oasis/js/chat-tools.js?v=3.2.6-r39"></script>
+<script src="<%= resource %>/oasis/js/chat-turn.js?v=3.2.6-r39"></script>
+<script src="<%= resource %>/oasis/js/chat-mode.js?v=3.2.6-r39"></script>
+<script src="<%= resource %>/oasis/js/chat.js?v=3.2.6-r39"></script>
 
 <%+footer%>

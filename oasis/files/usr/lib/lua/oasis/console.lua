@@ -3,15 +3,30 @@
 local common = require("oasis.common")
 
 local M = {}
+local main_thread = {}
+local sinks = setmetatable({}, { __mode = "k" })
+local unpack_values = unpack or table.unpack
+
+local function sink_key()
+    return coroutine.running() or main_thread
+end
+
+local function pack(...)
+    return { n = select("#", ...), ... }
+end
 
 -- Thin console wrapper to centralize IO and colors
 
 function M.write(s)
-    io.write(s or "")
+    local sink = sinks[sink_key()]
+    if sink then return sink.write(s or "") end
+    return io.write(s or "")
 end
 
 function M.flush()
-    io.flush()
+    local sink = sinks[sink_key()]
+    if sink then return sink.flush() end
+    return io.flush()
 end
 
 function M.read()
@@ -19,12 +34,29 @@ function M.read()
 end
 
 function M.print(s)
-    print(s or "")
+    M.write(tostring(s or "") .. "\n")
 end
 
 function M.printf(fmt, ...)
-    io.write(string.format(fmt, ...))
-    io.flush()
+    M.write(string.format(fmt, ...))
+    M.flush()
+end
+
+-- Scope output to this request coroutine, including nested calls and failures.
+-- CLI and RPC continue to use stdout without a sink. Never replace global IO.
+function M.with_output_sink(write_fn, flush_fn, callback)
+    assert(type(write_fn) == "function", "write_fn must be a function")
+    assert(type(callback) == "function", "callback must be a function")
+    local key = sink_key()
+    local previous = sinks[key]
+    sinks[key] = {
+        write = write_fn,
+        flush = type(flush_fn) == "function" and flush_fn or function() end,
+    }
+    local result = pack(pcall(callback))
+    sinks[key] = previous
+    if not result[1] then error(result[2], 0) end
+    return unpack_values(result, 2, result.n)
 end
 
 function M.colorize(color, text)

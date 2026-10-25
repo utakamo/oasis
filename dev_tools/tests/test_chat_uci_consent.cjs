@@ -62,14 +62,24 @@ async function fixture(t, { mobile = false, japanese = false, fallback = false }
                 { identifier: 'second', name: 'Provider B', model: 'Model B' }]
         });
         if (url.pathname.endsWith('/confirm')) return json({ status: 'NG' });
+        if (url.pathname.endsWith('/get-mode')) return json({
+            status: 'OK', enabled: false, can_enable: true, can_disable: true, token: '0:0'
+        });
         if (url.pathname.endsWith('/select-ai-service')) return json({ status: 'OK' });
         if (url.pathname.endsWith('/uci-show')) {
             env.uci.push(new URLSearchParams(request.postData()).get('target'));
             if (env.uciGate) await env.uciGate;
             return route.fulfill({ status: env.uciStatus, contentType: 'application/json', body: JSON.stringify(env.uciData) });
         }
-        if (url.pathname === '/cgi-bin/oasis') {
-            env.chats.push(request.postDataJSON());
+        if (url.pathname === '/cgi-bin/luci/admin/network/oasis/chat-stream') {
+            assert.equal(request.method(), 'POST');
+            assert.match(request.headers()['content-type'], /^application\/x-www-form-urlencoded/);
+            const form = new URLSearchParams(request.postData());
+            assert.equal(form.get('token'), 'fixture-token');
+            const payload = JSON.parse(form.get('payload'));
+            assert.equal(payload.cmd, undefined);
+            env.chats.push(payload);
+            if (env.chatResponse) return env.chatResponse(route);
             return json({ message: { content: 'Fixture reply ' + env.chats.length } });
         }
         return route.fulfill({ status: 404, body: '' });
@@ -185,6 +195,102 @@ test('plain messages work before any UCI sharing agreement', async t => {
     assert.equal(env.chats[0].message, 'A plain first message');
     assert.equal(await env.dialog.isVisible(), false);
 });
+
+for (const failure of [
+    {name: 'expired session', status: 403, contentType: 'text/html', body: '<html>Login</html>', expected: 'Your LuCI session has expired'},
+    {name: 'login redirect response', status: 200, contentType: 'text/html', body: '<html>Login</html>', expected: 'Your LuCI session has expired'},
+    {name: 'invalid request', status: 400, contentType: 'application/json', body: '{"error":{"message":"Invalid fixture request","can_continue":false}}', expected: 'Invalid fixture request'},
+    {name: 'oversized request', status: 413, contentType: 'text/plain', body: '', expected: 'too large'},
+    {name: 'server failure', status: 500, contentType: 'text/plain', body: 'failed', expected: 'A network error occurred'},
+    {name: 'wrong response format', status: 200, contentType: 'text/plain', body: 'reply', expected: 'Unexpected data format'},
+    {name: 'empty stream', status: 200, contentType: 'application/x-ndjson', body: '', expected: 'No response from AI service'},
+    {name: 'truncated stream', status: 200, contentType: 'application/x-ndjson', body: '{"message":', expected: 'A network error occurred'},
+]) {
+    test(`chat ${failure.name} releases busy state without retry`, async t => {
+        const env = await fixture(t);
+        const {name, expected, ...response} = failure;
+        env.chatResponse = route => route.fulfill(response);
+        await env.send('One attempt');
+        await env.page.waitForFunction(text => [...document.querySelectorAll('.message.received')]
+            .some(node => node.textContent.includes(text) && node.querySelector('[aria-busy="false"]')), expected);
+        assert.equal(env.chats.length, 1);
+        assert.equal(await env.page.locator('#download-overlay').isVisible(), false);
+        if (name === 'expired session' && process.env.OASIS_TEST_SCREENSHOTS_DIR) {
+            await env.page.screenshot({path: path.join(process.env.OASIS_TEST_SCREENSHOTS_DIR, 'chat-session-expired.png')});
+        }
+        env.chatResponse = null;
+        await env.send('Explicit second attempt');
+        await env.waitReply(2);
+        assert.equal(env.chats.length, 2);
+    });
+}
+
+test('oversized UTF-8 message is rejected locally and is not truncated', async t => {
+    const env = await fixture(t);
+    await env.send('あ'.repeat(8193));
+    await env.page.waitForFunction(() => [...document.querySelectorAll('.message.received')]
+        .some(node => node.textContent.includes('too large') && node.querySelector('[aria-busy="false"]')));
+    assert.equal(env.chats.length, 0);
+    await env.send('Shortened by user');
+    await env.waitReply(1);
+    assert.equal(env.chats[0].message, 'Shortened by user');
+});
+
+for (const interrupted of [false, true]) {
+    test(`incremental events appear before EOF (${interrupted ? 'disconnect' : 'success'})`, async t => {
+        const env = await fixture(t);
+        const {page} = env;
+        // Route.fulfill buffers its body; use a controlled browser stream to
+        // assert rendering before completion independently of HTTP fixtures.
+        await page.evaluate(() => {
+            const original = window.fetch;
+            window.fixtureChatCalls = 0;
+            window.fetch = (url, options) => {
+                if (!String(url).endsWith('/chat-stream')) return original(url, options);
+                window.fixtureChatCalls++;
+                window.fixtureRequest = {url, credentials: options.credentials,
+                    token: options.body.get('token'), payload: JSON.parse(options.body.get('payload'))};
+                return Promise.resolve(new Response(new ReadableStream({
+                    start(controller) { window.fixtureStream = controller; }
+                }), {headers: {'Content-Type': 'application/x-ndjson'}}));
+            };
+        });
+        await env.send('Stream a reply');
+        await page.waitForFunction(() => window.fixtureStream);
+        const emit = event => page.evaluate(value => window.fixtureStream.enqueue(
+            new TextEncoder().encode(JSON.stringify(value) + '\n')), event);
+        await emit({type: 'thinking', content: 'Fixture reasoning'});
+        await emit({message: {content: 'Partial reply'}});
+        await emit({type: 'execution', message: 'Fixture execution'});
+        await page.waitForFunction(() => [...document.querySelectorAll('.message.received')]
+            .some(node => node.textContent.includes('Partial reply') && node.textContent.includes('Fixture execution')));
+        assert.equal(await page.locator('.message.received [aria-busy="true"]').count(), 1);
+        await emit({type: 'download', message: 'Fixture downloading'});
+        await page.locator('#download-overlay').waitFor({state: 'visible'});
+        if (interrupted) {
+            await page.evaluate(() => window.fixtureStream.error(new Error('fixture disconnect')));
+        } else {
+            await emit({message: {content: ' completed'}});
+            await emit({reboot: true});
+            await emit({reboot: true});
+            await page.evaluate(() => window.fixtureStream.close());
+        }
+        await page.waitForFunction(() => document.querySelector('.message.received [aria-busy="false"]'));
+        assert.equal(await page.locator('#download-overlay').isVisible(), false);
+        assert.equal(await page.evaluate(() => window.fixtureChatCalls), 1);
+        assert.deepEqual(await page.evaluate(() => window.fixtureRequest), {
+            url: '/cgi-bin/luci/admin/network/oasis/chat-stream', credentials: 'same-origin',
+            token: 'fixture-token', payload: {id: '', message: 'Stream a reply', sysmsg_key: 'default'}
+        });
+        if (!interrupted) {
+            await page.locator('#oasis-reboot').waitFor();
+            assert.equal(await page.locator('#oasis-reboot').count(), 1);
+            if (process.env.OASIS_TEST_SCREENSHOTS_DIR) {
+                await page.screenshot({path: path.join(process.env.OASIS_TEST_SCREENSHOTS_DIR, 'chat-stream-completed.png')});
+            }
+        }
+    });
+}
 
 for (const status of [200, 500]) {
 test(`failed retrieval preserves input and never sends a plain fallback message (HTTP ${status})`, async t => {

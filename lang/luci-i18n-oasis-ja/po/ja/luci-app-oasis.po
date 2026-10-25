@@ -49,6 +49,14 @@ msgstr "ネットワークエラーが発生しました。ネットワーク接
 msgid "A network error occurred. Please try again later."
 msgstr "ネットワークエラーが発生しました。時間をおいて再度お試しください。"
 
+#: luci-app-oasis/files/luci/view/chat.htm
+msgid "Your LuCI session has expired or is unavailable. Reload this page and sign in again."
+msgstr "LuCIのセッションが切れたか、利用できません。ページを再読み込みしてログインし直してください。"
+
+#: luci-app-oasis/files/luci/view/chat.htm
+msgid "The message or attached UCI configuration is too large. Shorten the message or send without the configuration."
+msgstr "メッセージまたは添付するUCI設定が大きすぎます。メッセージを短くするか、設定を添付せずに送信してください。"
+
 #: luci-app-oasis/files/luci/view/chat.htm:250
 msgid "A passphrase is already configured and is not displayed."
 msgstr "パスフレーズは設定済みですが表示されません。"

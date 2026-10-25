@@ -1701,7 +1701,6 @@ end
 local function initialize_output_service(arg)
     local service = common.select_service_obj()
     if not service then
-        print(error_msg.load_service1 .. "\n" .. error_msg.load_service2)
         debug:log("oasis.log", "initialize_output_service", "[output] select_service_obj failed.")
         return nil
     end
