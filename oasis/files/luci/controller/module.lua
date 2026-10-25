@@ -14,6 +14,8 @@ local oasis_ubus    = require("oasis.ubus.util")
 local tool_edge_account = require("oasis.tool_edge.account")
 local tool_mode     = require("oasis.mode")
 local mode_lock     = require("oasis.mode_lock")
+local chat_web      = require("oasis.chat.web")
+local chat_error    = require("oasis.chat.error")
 
 module("luci.controller.oasis.module", package.seeall)
 
@@ -43,6 +45,7 @@ function index()
     entry({"admin", "network", "oasis", "get-mode"}, call("get_mode"), nil).leaf = true
     entry({"admin", "network", "oasis", "set-mode"}, post("set_mode"), nil).leaf = true
     entry({"admin", "network", "oasis", "chat"}, template("oasis/chat"), "Chat with AI", 10).dependent=false
+    entry({"admin", "network", "oasis", "chat-stream"}, post("chat_stream"), nil).leaf = true
     entry({"admin", "network", "oasis", "load-chat-data"}, call("load_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "import-chat-data"}, call("import_chat_data"), nil).leaf = true
     entry({"admin", "network", "oasis", "delete-chat-data"}, call("delete_chat_data"), nil).leaf = true
@@ -66,6 +69,50 @@ function index()
     entry({"admin", "network", "oasis", "system-reboot"}, call("system_reboot"), nil).leaf = true
     entry({"admin", "network", "oasis", "system-shutdown"}, call("system_shutdown"), nil).leaf = true
     entry({"admin", "network", "oasis", "restart-service"}, call("restart_service"), nil).leaf = true
+end
+
+function chat_stream()
+    local content_length = luci_http.getenv("CONTENT_LENGTH")
+    local content_type = (luci_http.getenv("CONTENT_TYPE") or ""):lower():match("^%s*([^;]+)") or ""
+    content_type = content_type:gsub("%s+$", "")
+    local payload, request, err, status_code
+    if content_type ~= "application/x-www-form-urlencoded" then
+        err, status_code = chat_web.request_error("Form-encoded input is required."), 415
+    elseif (tonumber(content_length) or 0) > chat_web.MAX_HTTP_BODY_BYTES then
+        err, status_code = chat_web.request_error("The request body is too large."), 413
+    else
+        local ok
+        ok, payload = pcall(luci_http.formvalue, "payload")
+        if ok then
+            request, err, status_code = chat_web.parse_request(payload, content_length)
+        else
+            err, status_code = chat_web.request_error("The request body could not be parsed."), 400
+        end
+    end
+    luci_http.header("Cache-Control", "no-store")
+    luci_http.header("X-Content-Type-Options", "nosniff")
+    if not request then
+        local status_text = ({[400]="Bad Request", [404]="Not Found",
+            [413]="Payload Too Large", [415]="Unsupported Media Type"})[status_code]
+        luci_http.status(status_code or 400, status_text or "Bad Request")
+        luci_http.prepare_content("application/json")
+        luci_http.write(chat_error.to_json(err))
+        return
+    end
+    luci_http.header("X-Accel-Buffering", "no")
+    luci_http.prepare_content("application/x-ndjson; charset=utf-8")
+    chat_web.process(request, function(chunk)
+        -- The ucode dispatcher captures luci.http.write() through L.print until
+        -- the action returns. Its HTTP object's write method sends headers and
+        -- data to the request's actual sink (CGI or uhttpd) immediately.
+        local bridge = rawget(_G, "L")
+        if bridge and bridge.http then
+            local result = bridge.http:write(chunk)
+            assert(io.flush(), "Web chat output flush failed.")
+            return result
+        end
+        return luci_http.write(chunk)
+    end)
 end
 
 function uci_show_config(target)

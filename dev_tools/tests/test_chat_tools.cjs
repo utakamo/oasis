@@ -77,7 +77,10 @@ function fixture(options = {}) {
         window: { location: { origin: 'http://fixture.invalid' }, innerWidth: options.mobile ? 375 : 1200 },
         document: { querySelector: () => root, createElement: tag => new Element(tag) },
         console: { error: (...args) => env.errors.push(args.map(String).join(' ')) },
-        TextDecoder, activeConversation: false,
+        TextDecoder, TextEncoder, URLSearchParams, activeConversation: false,
+        URL_CHAT_STREAM: '/cgi-bin/luci/admin/network/oasis/chat-stream', CSRF_TOKEN: 'fixture-token',
+        CHAT_MAX_MESSAGE_BYTES: 24 * 1024, CHAT_MAX_PAYLOAD_BYTES: 64 * 1024,
+        CHAT_MAX_HTTP_BODY_BYTES: 96 * 1024,
         syncModeBusy() {}, message_outputing: false, targetChatId: '',
         sysmsg_key: '', resourcePath: '/resources', icon_name: 'fixture.png',
         currentAssistantMessageDiv: assistant, isKeyboardOpen: false,
@@ -85,7 +88,8 @@ function fixture(options = {}) {
         convertMarkdownToHTML: value => value,
         keepLatestMessageVisible() {}, setChatScrollLock() {},
         clearInterval: timer => { env.clearedTimer = timer; },
-        hideDownloadOverlayAndWait: async () => {}, formatChatError: err => typeof err === 'string' ? err : err.message,
+        hideDownloadOverlay() {}, hideDownloadOverlayAndWait: async () => {},
+        formatChatError: err => typeof err === 'string' ? err : err.message,
         wifiHandleUiAction: action => env.actions.push(action),
         isNumeric: value => /^\d+$/.test(value),
         show_chat_popup: () => env.popups.push('chat'),
@@ -127,13 +131,19 @@ function fixture(options = {}) {
         let chunks = events.map(item => Buffer.from(JSON.stringify(item) + '\n'));
         if (opts.bytewise) chunks = chunks.flatMap(chunk => Array.from(chunk, byte => Buffer.from([byte])));
         if (opts.joined) chunks = [Buffer.concat(chunks)];
-        context.fetch = async () => ({ ok: !opts.httpError, body: { getReader: () => ({ read: async () => {
+        context.fetch = async (url, request) => {
+            assert.equal(url, context.URL_CHAT_STREAM);
+            assert.equal(request.credentials, 'same-origin');
+            assert.equal(request.body.get('token'), 'fixture-token');
+            assert.equal(JSON.parse(request.body.get('payload')).cmd, undefined);
+            return { ok: !opts.httpError, status: opts.httpError ? 500 : 200,
+                headers: {get: () => 'application/x-ndjson'}, body: { getReader: () => ({ read: async () => {
             if (opts.flushEachChunk) env.flushTimers();
             if (opts.onRead) opts.onRead(env);
             if (chunks.length) return { value: chunks.shift(), done: false };
             if (opts.disconnect) throw new Error('fixture stream disconnected');
             return { done: true };
-        } }) } });
+        } }) } }; };
         if (opts.eofFallback) {
             // Exercise the compatibility path with a complete object left in
             // the buffer, using the very same event handler as streaming.

@@ -6,10 +6,12 @@ local debug     = require("oasis.chat.debug")
 local jsonc     = require("luci.jsonc")
 local sys       = require("luci.sys")
 local fs        = require("nixio.fs")
+local console   = require("oasis.console")
 local tool_state = require("oasis.local.tool.state")
 local uci_transaction = require("oasis.uci_transaction")
 
 local M = {}
+M.OUTPUT_SINK_VERSION = 1
 
 local lua_ubus_server_app_dir = "/usr/libexec/rpcd/"
 local ucode_ubus_server_app_dir = "/usr/share/rpcd/ucode/"
@@ -1647,11 +1649,11 @@ local function handle_option_message(msg, msg_type, format)
 
     if (format == common.ai.format.output) and option_json and (#option_json > 0) then
         debug:log("oasis.log", "handle_option_message", option_json)
-        io.write(option_json)
-        io.flush()
+        console.write(option_json)
+        console.flush()
     elseif ((format == common.ai.format.chat) or (format == common.ai.format.prompt)) and option.message then
-        io.write(option.message .. "\n\n")
-        io.flush()
+        console.write(option.message .. "\n\n")
+        console.flush()
     end
 end
 

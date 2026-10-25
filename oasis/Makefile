@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis
 PKG_VERSION:=3.2.6
-PKG_RELEASE:=27
+PKG_RELEASE:=28
 
 APP_DIR = /usr/bin
 UBUS_SERVER_APP_DIR = /usr/libexec/rpcd
@@ -15,7 +15,6 @@ LUCI_MAIN_DIR:=./files/luci
 LUA_LIBRARY_DIR = /usr/lib/lua
 LUCI_LIBRARYDIR = $(LUA_LIBRARY_DIR)/luci
 LUCI_MODULEDIR = $(LUCI_LIBRARYDIR)/controller
-LUCI_CGI_BIN_DIR = /www/cgi-bin
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -60,7 +59,6 @@ define Package/oasis/install
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list9
 	$(INSTALL_DIR) $(1)$(BACKUP_DIR)/list10
 	$(INSTALL_DIR) $(1)$(LUCI_MODULEDIR)/oasis
-	$(INSTALL_DIR) $(1)$(LUCI_CGI_BIN_DIR)
 	$(INSTALL_DATA) ./files/usr/share/rpcd/acl.d/oasis.json $(1)$(RPCD_ACL_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis $(1)$(APP_DIR)
 	$(INSTALL_BIN) ./files/usr/bin/oasis_tool_edge_account $(1)$(APP_DIR)
@@ -75,6 +73,7 @@ define Package/oasis/install
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/markdown.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/debug.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/error.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
+	$(INSTALL_DATA) ./files/usr/lib/lua/oasis/chat/web.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/tool_sequence.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/chat/response_framer.lua $(1)$(LUA_LIBRARY_DIR)/oasis/chat
 	$(INSTALL_BIN) ./files/usr/lib/lua/oasis/unified/chat/schema.lua $(1)$(LUA_LIBRARY_DIR)/oasis/unified/chat
@@ -104,11 +103,11 @@ define Package/oasis/install
 	$(INSTALL_DATA) ./files/etc/config/oasis.config $(1)$(UCI_CONFIG_DIR)/oasis
 	$(INSTALL_DATA) ./files/etc/oasis/oasis.conf $(1)$(OASIS_DIR)
 	$(INSTALL_DATA) $(LUCI_MAIN_DIR)/controller/module.lua $(1)$(LUCI_MODULEDIR)/oasis
-	$(INSTALL_BIN) $(LUCI_MAIN_DIR)$(LUCI_CGI_BIN_DIR)/oasis $(1)$(LUCI_CGI_BIN_DIR)
 endef
 
 define Package/oasis/postinst
 	#!/bin/sh
+	rm -f "$${IPKG_INSTROOT}/www/cgi-bin/oasis"
 	[ -n "$${IPKG_INSTROOT}" ] && exit 0
 	mkdir -p /tmp/oasis
 	touch /tmp/oasis/reboot_required_for_oasis

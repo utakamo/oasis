@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oasis-mod-tool
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=19
+PKG_RELEASE:=20
 
 USR_BIN_DIR = /usr/bin
 RPCD_ACL_DIR = /usr/share/rpcd/acl.d
@@ -21,7 +21,7 @@ define Package/oasis-mod-tool
     SECTION:=utakamo
     TITLE:= Remote MCP and Local Tool Plugin Module for oasis
     DEPENDS:=+oasis
-    EXTRA_DEPENDS:=oasis (>=3.2.6-r27)
+    EXTRA_DEPENDS:=oasis (>=3.2.6-r28)
     PKGARCH:=all
 endef
 

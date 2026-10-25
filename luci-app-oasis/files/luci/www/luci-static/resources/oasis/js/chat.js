@@ -31,7 +31,11 @@
     const URL_SELECT_AI_SERVICE = getUrl('selectAiService');
     const URL_LOAD_WIFI_CONFIG = getUrl('loadWifiConfig');
     const URL_UPDATE_WIFI_CONFIG = getUrl('updateWifiConfig');
+    const URL_CHAT_STREAM = getUrl('chatStream');
     const CSRF_TOKEN = config.csrfToken || '';
+    const CHAT_MAX_MESSAGE_BYTES = 24 * 1024;
+    const CHAT_MAX_PAYLOAD_BYTES = 64 * 1024;
+    const CHAT_MAX_HTTP_BODY_BYTES = 96 * 1024;
     const STR = window.OasisChatStrings || {};
     const t = (key, fallback) => (Object.prototype.hasOwnProperty.call(STR, key) ? STR[key] : fallback);
     function formatString(template, replacements) {
@@ -2767,7 +2771,6 @@
     async function send_message(receivedMessageTextContainer, messageText) {
         activeConversation = true;
         syncModeBusy();
-        const baseUrl = window.location.origin || `${window.location.protocol}//${window.location.host}`;
         let is_notify = false;
         let rebootRequired = false;
         let shutdownRequired = false;
@@ -2789,20 +2792,48 @@
                 t, sanitizeHTML, convertMarkdownToHTML,
                 onUpdate: keepLatestMessageVisible
             });
-            const response = await fetch(`${baseUrl}/cgi-bin/oasis`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cmd: 'chat',
-                    id: targetChatId,
-                    message: messageText,
-                    sysmsg_key: sysmsg_key,
-                })
+            if (!URL_CHAT_STREAM || !CSRF_TOKEN) {
+                turn.appendError(t('chatSessionExpired', 'Your LuCI session has expired or is unavailable. Reload this page and sign in again.'));
+                return;
+            }
+            const payload = JSON.stringify({
+                id: targetChatId,
+                message: messageText,
+                sysmsg_key: sysmsg_key
             });
-
+            const requestBody = new URLSearchParams({ token: CSRF_TOKEN, payload });
+            const encoder = new TextEncoder();
+            if (encoder.encode(messageText).length > CHAT_MAX_MESSAGE_BYTES
+                || encoder.encode(payload).length > CHAT_MAX_PAYLOAD_BYTES
+                || requestBody.toString().length > CHAT_MAX_HTTP_BODY_BYTES) {
+                turn.appendError(t('chatRequestTooLarge', 'The message or attached UCI configuration is too large. Shorten the message or send without the configuration.'));
+                return;
+            }
+            const response = await fetch(URL_CHAT_STREAM, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/x-ndjson, application/json' },
+                body: requestBody
+            });
+            const contentType = (response.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+            if (response.redirected || response.status === 401 || response.status === 403
+                || contentType === 'text/html') {
+                turn.appendError(t('chatSessionExpired', 'Your LuCI session has expired or is unavailable. Reload this page and sign in again.'));
+                return;
+            }
             if (!response.ok) {
-                console.error('HTTP Error:', response.status, response.statusText);
-                turn.appendError(t('networkError', 'A network error occurred. Please try again later.'));
+                let responseError;
+                if (contentType === 'application/json') {
+                    try { responseError = (await response.json()).error; } catch (_) {}
+                }
+                turn.appendError(responseError ? formatChatError(responseError)
+                    : (response.status === 413
+                        ? t('chatRequestTooLarge', 'The message or attached UCI configuration is too large. Shorten the message or send without the configuration.')
+                        : t('networkError', 'A network error occurred. Please try again later.')));
+                return;
+            }
+            if (!response.body || (contentType !== 'application/x-ndjson' && contentType !== 'application/json')) {
+                turn.appendError(t('unexpectedFormat', 'Unexpected data format'));
                 return;
             }
 
@@ -2810,6 +2841,7 @@
                 getContainer: turn.toolContainer,
                 t, sanitizeHTML, convertMarkdownToHTML
             });
+            let receivedEvent = false;
 
             function collectActions(output) {
                 if (output.reboot === true) rebootRequired = true;
@@ -2823,6 +2855,7 @@
             // fragments so tool rendering and confirmation behavior cannot diverge.
             async function handleEvent(evt) {
                 if (!evt || typeof evt !== 'object' || Array.isArray(evt)) return;
+                receivedEvent = true;
                 collectActions(evt);
                 if (evt.error) {
                     if (evt.error.chat_id && isNumeric(evt.error.chat_id)
@@ -2909,7 +2942,10 @@
             const trimmed = buffer.trim();
             if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
                 await handleJson(trimmed);
+            } else if (trimmed) {
+                throw new Error('Chat response ended with an incomplete event.');
             }
+            if (!receivedEvent) turn.appendError(t('noResponse', 'No response from AI service. Please check settings.'));
 
             // Flush the tail without rebuilding earlier text or tool notices.
             turn.flush();
@@ -2937,6 +2973,7 @@
             if (turn) turn.appendError(message);
             else receivedMessageTextContainer.textContent = message;
         } finally {
+            hideDownloadOverlay();
             if (turn) turn.finish();
             clearTypingIndicator();
             message_outputing = false;
